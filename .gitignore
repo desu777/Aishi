@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+
+# Environment files
+.env
+
+# Temp files and folders
+backend/temp/
+
+# 0gdrive-main folder
+0gdrive-main/
+0g-storage/
+storage/
+ffmpeg/ 
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# IDE files
+.vscode/
+.idea/ 

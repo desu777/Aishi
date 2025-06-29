@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌙 Dreamscape - Audio Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .recording {
+            background: linear-gradient(45deg, #ff4757, #c44569) !important;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .text-input {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 16px;
+            margin: 15px 0;
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .config {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        
+        .config-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        
+        .timer {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ff4757;
+        }
+        
+        audio {
+            width: 100%;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌙 Dreamscape Audio Test</h1>
+        
+        <div class="config">
+            <div class="config-item">
+                <strong>🌐 Server:</strong> <span id="serverUrl">http://localhost:3001</span>
+            </div>
+            <div class="config-item">
+                <strong>🎙️ Audio Support:</strong> <span id="audioSupport">Checking...</span>
+            </div>
+            <div class="config-item">
+                <strong>🤖 Whisper API:</strong> <span id="whisperStatus">Unknown</span>
+            </div>
+            <div class="config-item">
+                <strong>⏱️ Recording Time:</strong> <span id="timer" class="timer">00:00</span>
+            </div>
+        </div>
+        
+        <div class="status" id="status">
+            🚀 Ready to record your dreams!
+        </div>
+        
+        <div class="controls">
+            <button id="recordBtn" onclick="startRecording()">🎙️ Start Recording</button>
+            <button id="stopBtn" onclick="stopRecording()" disabled>⏹️ Stop Recording</button>
+            <button id="playBtn" onclick="playRecording()" disabled>▶️ Play Recording</button>
+            <button id="uploadAudioBtn" onclick="uploadAudio()" disabled>⬆️ Upload Audio</button>
+        </div>
+        
+        <div>
+            <h3>✍️ Or type your dream:</h3>
+            <textarea id="dreamText" class="text-input" placeholder="Describe your dream here..."></textarea>
+            <div style="text-align: center;">
+                <button onclick="uploadText()">⬆️ Upload Text</button>
+            </div>
+        </div>
+        
+        <audio id="audioPlayer" controls style="display: none;"></audio>
+        
+        <div class="results" id="results" style="display: none;">
+            <h3>📋 Results:</h3>
+            <pre id="resultContent"></pre>
+        </div>
+    </div>
+
+    <!-- LameJS for MP3 encoding -->
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.all.min.js"></script>
+    
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordedBlob;
+        let startTime;
+        let timerInterval;
+        let stream;
+        
+        const CONFIG = {
+            SERVER_URL: 'http://localhost:3001',
+            MAX_RECORDING_TIME: 5 * 60 * 1000 // 5 minutes
+        };
+        
+        // Check browser support and server status
+        async function initializeApp() {
+            updateStatus('🔍 Checking browser support...');
+            
+            // Check audio support
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                document.getElementById('audioSupport').textContent = '✅ Supported';
+            } else {
+                document.getElementById('audioSupport').textContent = '❌ Not supported';
+                updateStatus('❌ Your browser does not support audio recording');
+                return;
+            }
+            
+            // Check server status
+            try {
+                const response = await fetch(`${CONFIG.SERVER_URL}/api/health`);
+                const health = await response.json();
+                
+                if (health.status === 'ok') {
+                    updateStatus('✅ Server connected! Ready to record dreams.');
+                    
+                    // Check Whisper API status
+                    if (health.whisperConfigured) {
+                        document.getElementById('whisperStatus').textContent = '✅ Configured';
+                    } else {
+                        document.getElementById('whisperStatus').textContent = '❌ Not configured';
+                    }
+                } else {
+                    updateStatus('⚠️ Server health check failed');
+                }
+            } catch (error) {
+                updateStatus('❌ Cannot connect to server. Make sure it\'s running on port 3001');
+                document.getElementById('whisperStatus').textContent = '❌ Server offline';
+            }
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        function updateTimer() {
+            if (startTime) {
+                const elapsed = Date.now() - startTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+        
+        async function startRecording() {
+            try {
+                updateStatus('🎙️ Requesting microphone access...');
+                
+                stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        channelCount: 1,
+                        sampleRate: 16000,
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+                
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const webmBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    updateStatus('🔄 Converting to MP3...');
+                    
+                    try {
+                        recordedBlob = await convertToMp3(webmBlob);
+                        updateStatus('✅ Recording completed and converted to MP3!');
+                        
+                        // Enable play and upload buttons
+                        document.getElementById('playBtn').disabled = false;
+                        document.getElementById('uploadAudioBtn').disabled = false;
+                        
+                        // Show audio player
+                        const audioPlayer = document.getElementById('audioPlayer');
+                        audioPlayer.src = URL.createObjectURL(recordedBlob);
+                        audioPlayer.style.display = 'block';
+                        
+                    } catch (error) {
+                        console.error('Conversion error:', error);
+                        updateStatus('❌ Failed to convert audio to MP3');
+                    }
+                };
+                
+                mediaRecorder.start();
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 1000);
+                
+                // Update UI
+                document.getElementById('recordBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('recordBtn').classList.add('recording');
+                
+                updateStatus('🔴 Recording... Speak your dream now!');
+                
+                // Auto-stop after max time
+                setTimeout(() => {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        stopRecording();
+                        updateStatus('⏰ Recording stopped automatically (5 minute limit)');
+                    }
+                }, CONFIG.MAX_RECORDING_TIME);
+                
+            } catch (error) {
+                console.error('Recording error:', error);
+                updateStatus('❌ Failed to start recording. Please allow microphone access.');
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                clearInterval(timerInterval);
+                
+                // Stop all tracks
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Update UI
+                document.getElementById('recordBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('recordBtn').classList.remove('recording');
+                
+                updateStatus('⏹️ Recording stopped. Converting...');
+            }
+        }
+        
+        function playRecording() {
+            if (recordedBlob) {
+                const audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.play();
+            }
+        }
+        
+        async function convertToMp3(webmBlob) {
+            return new Promise((resolve, reject) => {
+                const fileReader = new FileReader();
+                
+                fileReader.onload = function() {
+                    const arrayBuffer = this.result;
+                    
+                    // Create audio context to decode WebM
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    audioContext.decodeAudioData(arrayBuffer)
+                        .then(audioBuffer => {
+                            // Convert to MP3 using LameJS
+                            const samples = audioBuffer.getChannelData(0);
+                            const sampleRate = audioBuffer.sampleRate;
+                            
+                            // Convert float32 to int16
+                            const int16Samples = new Int16Array(samples.length);
+                            for (let i = 0; i < samples.length; i++) {
+                                int16Samples[i] = Math.max(-32768, Math.min(32767, samples[i] * 32768));
+                            }
+                            
+                            // Encode to MP3
+                            const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
+                            const mp3Data = [];
+                            
+                            const sampleBlockSize = 1152;
+                            for (let i = 0; i < int16Samples.length; i += sampleBlockSize) {
+                                const sampleChunk = int16Samples.subarray(i, i + sampleBlockSize);
+                                const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+                                if (mp3buf.length > 0) {
+                                    mp3Data.push(mp3buf);
+                                }
+                            }
+                            
+                            const mp3buf = mp3encoder.flush();
+                            if (mp3buf.length > 0) {
+                                mp3Data.push(mp3buf);
+                            }
+                            
+                            const mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
+                            resolve(mp3Blob);
+                        })
+                        .catch(reject);
+                };
+                
+                fileReader.onerror = reject;
+                fileReader.readAsArrayBuffer(webmBlob);
+            });
+        }
+        
+        async function uploadAudio() {
+            if (!recordedBlob) {
+                updateStatus('❌ No audio to upload');
+                return;
+            }
+            
+            updateStatus('⬆️ Uploading audio to Dreams API...');
+            
+            try {
+                const formData = new FormData();
+                formData.append('audio', recordedBlob, 'dream_recording.mp3');
+                
+                const response = await fetch(`${CONFIG.SERVER_URL}/api/dreams/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                showResults(result);
+                
+                if (result.success) {
+                    updateStatus('✅ Audio uploaded successfully!');
+                } else {
+                    updateStatus(`❌ Upload failed: ${result.error}`);
+                }
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                updateStatus('❌ Upload failed: Network error');
+            }
+        }
+        
+        async function uploadText() {
+            const dreamText = document.getElementById('dreamText').value.trim();
+            
+            if (!dreamText) {
+                updateStatus('❌ Please enter some dream text');
+                return;
+            }
+            
+            updateStatus('⬆️ Uploading text to Dreams API...');
+            
+            try {
+                const response = await fetch(`${CONFIG.SERVER_URL}/api/dreams/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: dreamText
+                    })
+                });
+                
+                const result = await response.json();
+                
+                showResults(result);
+                
+                if (result.success) {
+                    updateStatus('✅ Text uploaded successfully!');
+                    document.getElementById('dreamText').value = '';
+                } else {
+                    updateStatus(`❌ Upload failed: ${result.error}`);
+                }
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                updateStatus('❌ Upload failed: Network error');
+            }
+        }
+        
+        function showResults(result) {
+            const resultsDiv = document.getElementById('results');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultContent.textContent = JSON.stringify(result, null, 2);
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Initialize app when page loads
+        window.addEventListener('load', initializeApp);
+        
+        // Reset timer on page load
+        document.getElementById('timer').textContent = '00:00';
+    </script>
+</body>
+</html> 
