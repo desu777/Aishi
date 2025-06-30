@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Moon, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 
 // Header Component
@@ -66,26 +66,12 @@ export const Header = () => {
       }}>
         {/* Logo */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
           fontSize: '24px',
-          fontWeight: '700',
+          fontWeight: '800',
+          fontFamily: '"Michroma", "Work Sans", sans-serif',
           color: theme.text.primary
         }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: `0 0 20px ${theme.accent.primary}50`
-          }}>
-            <Moon size={24} color="white" />
-          </div>
-          Dreamscape
+          Dreamscape.
         </div>
 
         {/* Desktop Menu */}

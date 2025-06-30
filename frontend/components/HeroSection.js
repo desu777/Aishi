@@ -2,10 +2,23 @@ import React from 'react';
 import { Play } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import Orb from './Orb';
+import { WordRotate } from './WordRotate';
+import DecryptedText from './DecryptedText';
+import { ShimmerButton } from './ShimmerButton';
 
 // Hero Section
 export const HeroSection = () => {
   const { theme } = useTheme();
+
+  const rotatingTexts = [
+    'yours.',
+    'private.',
+    'decentralized.',
+    'intelligent.',
+    'evolving.',
+    'on-chain.',
+    'unstoppable.',
+  ];
   
   return (
     <section id="home" style={{
@@ -38,8 +51,8 @@ export const HeroSection = () => {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            fontSize: 'clamp(1.1rem, 3vw, 1.8rem)',
-            fontFamily: '"Rajdhani ", "Work Sans", sans-serif',
+            fontSize: 'clamp(1.1rem, 3vw, 1.3rem)',
+            fontFamily: '"Michroma", "Work Sans", sans-serif',
             fontWeight: '800',
             color: '#FFFFFF',
             zIndex: 10,
@@ -54,18 +67,42 @@ export const HeroSection = () => {
           </div>
         </div>
 
-        <h1 style={{
+        <div style={{
           fontSize: 'clamp(2.5rem, 6vw, 4rem)',
           fontWeight: '800',
           marginBottom: '24px',
-          background: `linear-gradient(135deg, ${theme.text.primary}, ${theme.accent.primary})`,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
           lineHeight: '1.1',
-          animation: 'fadeInUp 1s ease-out 0.2s both'
+          animation: 'fadeInUp 1s ease-out 0.2s both',
+          textAlign: 'center'
         }}>
-          Unlock the Secrets of Your Dreams
-        </h1>
+          <div style={{
+            background: `linear-gradient(135deg, ${theme.text.primary}, ${theme.accent.primary})`,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            marginBottom: '0.2em'
+          }}>
+            Your dreams, now
+          </div>
+          <WordRotate
+            words={rotatingTexts}
+            duration={4000}
+            style={{
+              background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              display: 'block',
+              fontSize: 'inherit',
+              fontWeight: 'inherit'
+            }}
+            motionProps={{
+              initial: { opacity: 0, y: 50 },
+              animate: { opacity: 1, y: 0 },
+              exit: { opacity: 0, y: -50 },
+              transition: { duration: 0.8, ease: "easeOut" },
+            }}
+          />
+        </div>
 
         <p style={{
           fontSize: 'clamp(1rem, 2.5vw, 1.1rem)',
@@ -74,97 +111,44 @@ export const HeroSection = () => {
           lineHeight: '1.6',
           animation: 'fadeInUp 1s ease-out 0.4s both'
         }}>
-          Advanced AI agents analyze your dreams to provide deep insights into your subconscious mind. 
-          Transform your sleep into a journey of self-discovery with our revolutionary iNFT technology.
+          <DecryptedText
+            text="Meet the world's first iNFT. A personal AI agent that learns and evolves with every dream, its memory secured forever on the 0G blockchain."
+            animateOn="view"
+            speed={80}
+            maxIterations={25}
+            revealDirection="start"
+            style={{
+              fontSize: 'inherit',
+              color: 'inherit',
+              lineHeight: 'inherit'
+            }}
+          />
         </p>
 
         <div style={{
           display: 'flex',
-          gap: '20px',
           justifyContent: 'center',
-          flexWrap: 'wrap',
           animation: 'fadeInUp 1s ease-out 0.6s both'
         }}>
-          <button style={{
-            background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`,
-            border: 'none',
-            borderRadius: '50px',
-            padding: '16px 32px',
-            color: 'white',
-            fontSize: 'clamp(14px, 2vw, 16px)',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: `0 8px 25px ${theme.accent.primary}40`
-          }}
-          onMouseEnter={(e) => e.target.style.transform = 'translateY(-3px)'}
-          onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+          <ShimmerButton
+            background={`linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`}
+            shimmerColor="#ffffff"
+            shimmerDuration="2s"
+            borderRadius="50px"
+            style={{
+              fontSize: 'clamp(1rem, 2vw, 1.1rem)',
+              fontWeight: '700',
+              fontFamily: '"Work Sans", sans-serif',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              boxShadow: `0 8px 30px ${theme.accent.primary}40`,
+            }}
           >
-            <Play size={20} />
-            Start Dream Analysis
-          </button>
-
-          <button style={{
-            background: 'transparent',
-            border: `2px solid ${theme.accent.primary}`,
-            borderRadius: '50px',
-            padding: '16px 32px',
-            color: theme.accent.primary,
-            fontSize: 'clamp(14px, 2vw, 16px)',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = theme.accent.primary;
-            e.target.style.color = 'white';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'transparent';
-            e.target.style.color = theme.accent.primary;
-          }}
-          >
-            Learn More
-          </button>
+            Launch Your Agent
+          </ShimmerButton>
         </div>
 
-        {/* Stats */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 'clamp(30px, 8vw, 60px)',
-          marginTop: 'clamp(40px, 10vw, 80px)',
-          flexWrap: 'wrap',
-          animation: 'fadeInUp 1s ease-out 0.8s both'
-        }}>
-          {[
-            { number: '10K+', label: 'Dreams Analyzed' },
-            { number: '95%', label: 'Accuracy Rate' },
-            { number: '24/7', label: 'AI Availability' }
-          ].map((stat, index) => (
-            <div key={index} style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: 'clamp(1.5rem, 4vw, 2rem)',
-                fontWeight: '700',
-                color: theme.accent.primary,
-                marginBottom: '8px'
-              }}>
-                {stat.number}
-              </div>
-              <div style={{
-                fontSize: 'clamp(12px, 2vw, 14px)',
-                color: theme.text.secondary,
-                textTransform: 'uppercase',
-                letterSpacing: '1px'
-              }}>
-                {stat.label}
-              </div>
-            </div>
-          ))}
-        </div>
+
       </div>
     </section>
   );
