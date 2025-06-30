@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import Orb from './Orb';
 
 // Hero Section
 export const HeroSection = () => {
@@ -12,30 +13,49 @@ export const HeroSection = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '80px 20px 0',
+      padding: 'clamp(60px, 12vw, 80px) clamp(15px, 4vw, 20px) 0',
       textAlign: 'center'
     }}>
       <div style={{ maxWidth: '800px' }}>
-        <div style={{
-          marginBottom: '24px',
-          animation: 'fadeInUp 1s ease-out'
+        {/* Orb with Dreamscape text */}
+        <div style={{ 
+          width: '100%', 
+          height: 'clamp(150px, 25vw, 280px)', 
+          position: 'relative',
+                      marginBottom: 'clamp(10px, 3vw, 20px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}>
-          <span style={{
-            background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`,
-            padding: '8px 20px',
-            borderRadius: '25px',
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: '600',
-            textTransform: 'uppercase',
-            letterSpacing: '1px'
+          <Orb
+            hoverIntensity={0.5}
+            rotateOnHover={true}
+            hue={280}
+            forceHoverState={false}
+          />
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: 'clamp(1.1rem, 3vw, 1.8rem)',
+            fontFamily: '"Rajdhani ", "Work Sans", sans-serif',
+            fontWeight: '800',
+            color: '#FFFFFF',
+            zIndex: 10,
+            pointerEvents: 'none',
+            letterSpacing: '1.5px',
+            whiteSpace: 'nowrap',
+            maxWidth: '80%',
+            textAlign: 'center',
+            textShadow: '0 0 10px rgba(139, 92, 246, 0.6)'
           }}>
-            AI-Powered Dream Analysis
-          </span>
+            Dreamscape.
+          </div>
         </div>
 
         <h1 style={{
-          fontSize: 'clamp(3rem, 8vw, 5rem)',
+          fontSize: 'clamp(2.5rem, 6vw, 4rem)',
           fontWeight: '800',
           marginBottom: '24px',
           background: `linear-gradient(135deg, ${theme.text.primary}, ${theme.accent.primary})`,
@@ -48,7 +68,7 @@ export const HeroSection = () => {
         </h1>
 
         <p style={{
-          fontSize: '1.25rem',
+          fontSize: 'clamp(1rem, 2.5vw, 1.1rem)',
           color: theme.text.secondary,
           marginBottom: '40px',
           lineHeight: '1.6',
@@ -71,7 +91,7 @@ export const HeroSection = () => {
             borderRadius: '50px',
             padding: '16px 32px',
             color: 'white',
-            fontSize: '16px',
+            fontSize: 'clamp(14px, 2vw, 16px)',
             fontWeight: '600',
             cursor: 'pointer',
             transition: 'all 0.3s ease',
@@ -93,7 +113,7 @@ export const HeroSection = () => {
             borderRadius: '50px',
             padding: '16px 32px',
             color: theme.accent.primary,
-            fontSize: '16px',
+            fontSize: 'clamp(14px, 2vw, 16px)',
             fontWeight: '600',
             cursor: 'pointer',
             transition: 'all 0.3s ease'
@@ -115,8 +135,8 @@ export const HeroSection = () => {
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          gap: '60px',
-          marginTop: '80px',
+          gap: 'clamp(30px, 8vw, 60px)',
+          marginTop: 'clamp(40px, 10vw, 80px)',
           flexWrap: 'wrap',
           animation: 'fadeInUp 1s ease-out 0.8s both'
         }}>
@@ -127,7 +147,7 @@ export const HeroSection = () => {
           ].map((stat, index) => (
             <div key={index} style={{ textAlign: 'center' }}>
               <div style={{
-                fontSize: '2rem',
+                fontSize: 'clamp(1.5rem, 4vw, 2rem)',
                 fontWeight: '700',
                 color: theme.accent.primary,
                 marginBottom: '8px'
@@ -135,7 +155,7 @@ export const HeroSection = () => {
                 {stat.number}
               </div>
               <div style={{
-                fontSize: '14px',
+                fontSize: 'clamp(12px, 2vw, 14px)',
                 color: theme.text.secondary,
                 textTransform: 'uppercase',
                 letterSpacing: '1px'

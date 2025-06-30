@@ -41,11 +41,11 @@ export const FeaturesSection = () => {
 
   return (
     <section id="features" style={{
-      padding: '120px 20px',
+      padding: 'clamp(60px, 15vw, 120px) clamp(15px, 4vw, 20px)',
       background: `linear-gradient(180deg, transparent 0%, ${theme.bg.card}50 50%, transparent 100%)`
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 'clamp(40px, 10vw, 80px)' }}>
           <h2 style={{
             fontSize: 'clamp(2.5rem, 6vw, 3.5rem)',
             fontWeight: '700',
@@ -69,8 +69,8 @@ export const FeaturesSection = () => {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-          gap: '32px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(350px, 100%), 1fr))',
+          gap: 'clamp(16px, 4vw, 32px)'
         }}>
           {features.map((feature, index) => (
             <div
@@ -79,7 +79,7 @@ export const FeaturesSection = () => {
                 background: theme.bg.card,
                 backdropFilter: 'blur(20px)',
                 borderRadius: '20px',
-                padding: '32px',
+                padding: 'clamp(24px, 6vw, 32px)',
                 border: `1px solid ${theme.border}`,
                 transition: 'all 0.3s ease',
                 cursor: 'pointer'

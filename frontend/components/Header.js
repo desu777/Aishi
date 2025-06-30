@@ -4,9 +4,10 @@ import { useTheme } from './ThemeProvider';
 
 // Header Component
 export const Header = () => {
-  const { theme, darkMode, setDarkMode } = useTheme();
+  const { theme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,10 +19,16 @@ export const Header = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 768) {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
         setIsMenuOpen(false);
       }
     };
+    
+    // Initial check
+    handleResize();
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -82,8 +89,8 @@ export const Header = () => {
         </div>
 
         {/* Desktop Menu */}
-        <div className="desktop-menu" style={{
-          display: 'flex',
+        <div style={{
+          display: isMobile ? 'none' : 'flex',
           alignItems: 'center',
           gap: '32px'
         }}>
@@ -105,26 +112,6 @@ export const Header = () => {
             </a>
           ))}
           
-          {/* Theme Toggle */}
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            style={{
-              background: 'transparent',
-              border: `1px solid ${theme.border}`,
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: theme.text.primary,
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            {darkMode ? '☀️' : '🌙'}
-          </button>
-
           {/* CTA Button */}
           <button style={{
             background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`,
@@ -146,15 +133,16 @@ export const Header = () => {
 
         {/* Mobile Menu Toggle */}
         <button
-          className="mobile-menu-toggle"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           style={{
-            display: 'none',
+            display: isMobile ? 'flex' : 'none',
             background: 'transparent',
             border: 'none',
             color: theme.text.primary,
             cursor: 'pointer',
-            padding: '8px'
+            padding: '8px',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
           {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -162,13 +150,13 @@ export const Header = () => {
       </nav>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="mobile-menu" style={{
+      {isMenuOpen && isMobile && (
+        <div style={{
           position: 'absolute',
           top: '100%',
           left: 0,
           right: 0,
-          display: 'none',
+          display: 'block',
           background: theme.bg.card,
           backdropFilter: 'blur(20px)',
           borderBottom: `1px solid ${theme.border}`,
@@ -195,19 +183,7 @@ export const Header = () => {
         </div>
       )}
 
-      <style jsx>{`
-        @media (max-width: 768px) {
-          .desktop-menu {
-            display: none !important;
-          }
-          .mobile-menu-toggle {
-            display: flex !important;
-          }
-          .mobile-menu {
-            display: block !important;
-          }
-        }
-      `}</style>
+
     </header>
   );
 }; 
