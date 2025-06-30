@@ -10,12 +10,12 @@ export const FeaturesSection = () => {
   const { theme } = useTheme();
 
   const rotatingWords = [
-    'Dreams',
-    'Us',
-    'AI',
-    'Web3',
-    'Privacy',
-    'Future'
+    'Dreams.',
+    'Us.',
+    'AI.',
+    'Web3.',
+    'Privacy.',
+    'Future.'
   ];
 
   const features = [

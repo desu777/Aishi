@@ -1,5 +1,4 @@
 import React from 'react';
-import { Zap } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 
 // CTA Section
@@ -7,10 +6,8 @@ export const CTASection = () => {
   const { theme } = useTheme();
 
   return (
-    <section style={{
+    <section id="contact" style={{
       padding: '120px 20px',
-      background: `linear-gradient(135deg, ${theme.accent.primary}15, ${theme.accent.secondary}15)`,
-      borderRadius: '32px',
       margin: '0 20px'
     }}>
       <div style={{
@@ -21,45 +18,38 @@ export const CTASection = () => {
         <h2 style={{
           fontSize: 'clamp(2.5rem, 6vw, 3.5rem)',
           fontWeight: '700',
-          marginBottom: '24px',
+          marginBottom: '40px',
           background: `linear-gradient(135deg, ${theme.text.primary}, ${theme.accent.primary})`,
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent'
         }}>
-          Ready to Explore Your Dreams?
+          Did you know dreams have a huge impact on our lives?
         </h2>
 
-        <p style={{
-          fontSize: '1.25rem',
+        <div style={{
+          fontSize: '1.1rem',
           color: theme.text.secondary,
-          marginBottom: '40px',
-          lineHeight: '1.6'
+          lineHeight: '1.8',
+          textAlign: 'left',
+          maxWidth: '700px',
+          margin: '0 auto'
         }}>
-          Join thousands of dreamers who have unlocked the secrets of their subconscious mind. 
-          Start your journey of self-discovery today.
-        </p>
-
-        <button style={{
-          background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`,
-          border: 'none',
-          borderRadius: '50px',
-          padding: '20px 40px',
-          color: 'white',
-          fontSize: '18px',
-          fontWeight: '600',
-          cursor: 'pointer',
-          transition: 'all 0.3s ease',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '12px',
-          boxShadow: `0 10px 30px ${theme.accent.primary}40`
-        }}
-        onMouseEnter={(e) => e.target.style.transform = 'translateY(-3px)'}
-        onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-        >
-          <Zap size={24} />
-          Start Your Dream Journey
-        </button>
+          <p style={{ marginBottom: '24px' }}>
+            <strong style={{ color: theme.accent.primary }}>Kekulé's Discovery:</strong> The German chemist discovered the ring structure of benzene after dreaming of a snake seizing its own tail, revolutionizing organic chemistry.
+          </p>
+          
+          <p style={{ marginBottom: '24px' }}>
+            <strong style={{ color: theme.accent.primary }}>Tesla's Innovations:</strong> Nikola Tesla often solved complex electrical engineering problems through his vivid dreams, leading to breakthrough inventions in alternating current.
+          </p>
+          
+          <p style={{ marginBottom: '24px' }}>
+            <strong style={{ color: theme.accent.primary }}>Paul McCartney's "Yesterday":</strong> The melody for one of the most covered songs in music history came to McCartney in a dream, proving creativity flows through our subconscious.
+          </p>
+          
+          <p style={{ marginBottom: '0' }}>
+            <strong style={{ color: theme.accent.primary }}>Stephen King's "Misery":</strong> The bestselling author conceived the entire plot during a nightmare on a flight, showing how dreams can unlock our deepest storytelling potential.
+          </p>
+        </div>
       </div>
     </section>
   );

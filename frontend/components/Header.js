@@ -8,11 +8,30 @@ export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [activeSection, setActiveSection] = useState('home');
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
+      
+      // Detect active section based on scroll position
+      const sections = ['home', 'features', 'how-it-works', 'contact'];
+      const scrollPosition = window.scrollY + 100; // Offset for better detection
+      
+      for (const sectionId of sections) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const offsetTop = element.offsetTop;
+          const offsetHeight = element.offsetHeight;
+          
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(sectionId);
+            break;
+          }
+        }
+      }
     };
+    
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -34,11 +53,10 @@ export const Header = () => {
   }, []);
 
   const menuItems = [
-    { label: 'Home', href: '#home' },
-    { label: 'Features', href: '#features' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'About', href: '#about' },
-    { label: 'Contact', href: '#contact' }
+    { label: 'Home', href: '#home', id: 'home' },
+    { label: 'Features', href: '#features', id: 'features' },
+    { label: 'How It Works', href: '#how-it-works', id: 'how-it-works' },
+    { label: 'Did u know?', href: '#contact', id: 'contact' }
   ];
 
   return (
@@ -80,23 +98,48 @@ export const Header = () => {
           alignItems: 'center',
           gap: '32px'
         }}>
-          {menuItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              style={{
-                color: theme.text.secondary,
-                textDecoration: 'none',
-                fontWeight: '500',
-                transition: 'color 0.3s ease',
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => e.target.style.color = theme.accent.primary}
-              onMouseLeave={(e) => e.target.style.color = theme.text.secondary}
-            >
-              {item.label}
-            </a>
-          ))}
+          {menuItems.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <a
+                key={item.label}
+                href={item.href}
+                style={{
+                  color: isActive ? theme.accent.primary : theme.text.secondary,
+                  textDecoration: 'none',
+                  fontWeight: isActive ? '600' : '500',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
+                  position: 'relative'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.target.style.color = theme.accent.primary;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.target.style.color = theme.text.secondary;
+                  }
+                }}
+              >
+                {item.label}
+                {isActive && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-8px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: theme.accent.primary,
+                    transition: 'all 0.3s ease'
+                  }} />
+                )}
+              </a>
+            );
+          })}
           
           {/* CTA Button */}
           <button style={{
@@ -148,27 +191,29 @@ export const Header = () => {
           borderBottom: `1px solid ${theme.border}`,
           padding: '20px'
         }}>
-          {menuItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              style={{
-                display: 'block',
-                color: theme.text.secondary,
-                textDecoration: 'none',
-                fontWeight: '500',
-                padding: '12px 0',
-                borderBottom: `1px solid ${theme.border}`,
-                transition: 'color 0.3s ease'
-              }}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {item.label}
-            </a>
-          ))}
+          {menuItems.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <a
+                key={item.label}
+                href={item.href}
+                style={{
+                  display: 'block',
+                  color: isActive ? theme.accent.primary : theme.text.secondary,
+                  textDecoration: 'none',
+                  fontWeight: isActive ? '600' : '500',
+                  padding: '12px 0',
+                  borderBottom: `1px solid ${theme.border}`,
+                  transition: 'color 0.3s ease'
+                }}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.label}
+              </a>
+            );
+          })}
         </div>
       )}
-
 
     </header>
   );

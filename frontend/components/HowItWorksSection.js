@@ -24,22 +24,22 @@ export const HowItWorksSection = () => {
   const inftEvaluateRef = useRef(null);
 
   const rotatingWords = [
-    'Works',
-    'Flows',
-    'Evolves',
-    'Learns',
-    'Grows'
+    'Works.',
+    'Flows.',
+    'Evolves.',
+    'Learns.',
+    'Grows.'
   ];
 
   const steps = [
-    { title: "Submit Dream", description: "User shares their dream text" },
-    { title: "0G Chain", description: "Blockchain verifies & records" },
-    { title: "iNFT Agent", description: "AI agent recalls your patterns" },
-    { title: "Secure Storage", description: "Dream saved privately on 0G" },
-    { title: "AI Compute", description: "Analysis with full context" },
-    { title: "Store Results", description: "Response secured forever" },
-    { title: "Agent Evolution", description: "iNFT grows with insights" },
-    { title: "Receive Analysis", description: "Personalized interpretation" }
+    { title: "Submit Dream", description: "Share your dream through secure text input or by recording your voice, which is then automatically transcribed." },
+    { title: "0G Chain", description: "The process is initiated on the 0G blockchain, preparing the transaction that will later immutably record your dream's hash." },
+    { title: "iNFT Agent", description: "Your personal iNFT agent accesses its long-term memory, retrieving all past dream patterns and emotional profiles from 0G Storage." },
+    { title: "Secure Storage", description: "The new dream text is encrypted and uploaded to a decentralized 0G Storage node, ensuring only you have access." },
+    { title: "AI Compute", description: "An evolutionary prompt, enriched with your unique history, is sent to the decentralized 0G AI network for a deeply personalized analysis." },
+    { title: "Store Results", description: "The AI's generated analysis is also secured in 0G Storage, creating a permanent, private link to the original dream." },
+    { title: "Agent Evolution", description: "The new data hashes are submitted to the smart contract. Every 5th dream, your iNFT agent evolves, increasing its intelligence level." },
+    { title: "Receive Analysis", description: "The complete, context-aware analysis is delivered back to you, revealing insights that grow deeper with every dream." }
   ];
 
   return (
