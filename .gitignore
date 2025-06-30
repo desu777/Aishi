@@ -1,25 +1,57 @@
 # Node modules
 node_modules/
 
-# Environment files
-.env
+# Next.js build output
+.next/
 
-# Temp files and folders
-backend/temp/
+# Build directories
+build/
+dist/
+
+# Test coverage
+coverage/
+
+# Environment variables
+.env
+.env.*
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.vscode/
+.idea/
+
+# Parcel cache
+.parcel-cache/
+
+# Turbo repo
+.turbo/
+
+# ESLint cache
+.eslintcache
+
+# Vercel
+.vercel/
+
+# Webpack
+webpack/
+
+# Temp
+*.tmp
+temp/
+
+# Misc
+*.log
 
 # 0gdrive-main folder
 0gdrive-main/
 0g-storage/
 storage/
 ffmpeg/ 
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# IDE files
-.vscode/
-.idea/ 
