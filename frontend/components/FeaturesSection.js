@@ -1,42 +1,54 @@
 import React from 'react';
-import { Brain, Bot, BarChart3, Sparkles, Shield, Eye } from 'lucide-react';
+import { ShieldCheck, Zap, BrainCircuit, Key, BadgeCheck, Cpu } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import { WordRotate } from './WordRotate';
+import DecryptedText from './DecryptedText';
+import TiltedCard from './TiltedCard';
 
 // Features Section
 export const FeaturesSection = () => {
   const { theme } = useTheme();
 
+  const rotatingWords = [
+    'Dreams',
+    'Us',
+    'AI',
+    'Web3',
+    'Privacy',
+    'Future'
+  ];
+
   const features = [
     {
-      icon: <Brain size={32} />,
-      title: 'AI Dream Analysis',
-      description: 'Advanced neural networks analyze dream patterns, symbols, and emotions to provide personalized insights.'
+      icon: <Zap size={32} />,
+      title: 'Decentralized AI Analysis',
+      description: 'Your dreams are analyzed by a decentralized AI network on the 0G platform. This eliminates the "black box" problem, ensuring transparent, private, and unbiased insights that are truly your own.'
     },
     {
-      icon: <Bot size={32} />,
-      title: 'iNFT Agents',
-      description: 'Unique intelligent NFT agents that learn from your dreams and provide ongoing personalized guidance.'
+      icon: <BrainCircuit size={32} />,
+      title: 'Evolving iNFT Agent',
+      description: 'Receive a personal iNFT that acts as your evolving dream agent. It learns from every analysis, growing from a Novice to a Master, providing progressively deeper and more personalized guidance.'
     },
     {
-      icon: <BarChart3 size={32} />,
-      title: 'Dream Tracking',
-      description: 'Comprehensive tracking of dream patterns, themes, and emotional states over time.'
+      icon: <ShieldCheck size={32} />,
+      title: 'Unstoppable On-Chain Memory',
+      description: 'Your dreams and the agent\'s memory are secured forever on 0G\'s decentralized storage. This guarantees data sovereignty—no one can access, modify, or delete your data, not even us.'
     },
     {
-      icon: <Sparkles size={32} />,
-      title: 'Lucid Dreaming',
-      description: 'Tools and techniques to achieve lucid dreaming and take control of your dream experiences.'
+      icon: <Key size={32} />,
+      title: 'Deep Subconscious Insights',
+      description: 'Your iNFT agent connects patterns across multiple dreams, revealing long-term emotional trends and subconscious narratives that would otherwise remain hidden.'
     },
     {
-      icon: <Shield size={32} />,
-      title: 'Privacy First',
-      description: 'Your dreams are private. All analysis is done with complete confidentiality and security.'
+      icon: <BadgeCheck size={32} />,
+      title: 'Verifiable Agent Provenance',
+      description: 'Every stage of your agent\'s evolution is recorded immutably on the blockchain. This provides a verifiable, on-chain history of its unique learning journey.'
     },
     {
-      icon: <Eye size={32} />,
-      title: 'Deep Insights',
-      description: 'Uncover hidden meanings, recurring themes, and subconscious patterns in your dreams.'
-    }
+      icon: <Cpu size={32} />,
+      title: 'Future-Proof AI Infrastructure',
+      description: 'Built on 0G, a high-performance modular AI chain, Dreamscape leverages unparalleled speed and scalability, ensuring your journey is always seamless.'
+    },
   ];
 
   return (
@@ -50,11 +62,38 @@ export const FeaturesSection = () => {
             fontSize: 'clamp(2.5rem, 6vw, 3.5rem)',
             fontWeight: '700',
             marginBottom: '24px',
-            background: `linear-gradient(135deg, ${theme.text.primary}, ${theme.accent.primary})`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
+            lineHeight: '1.1',
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '0.3em'
           }}>
-            Powerful Features
+            <span style={{
+              background: `linear-gradient(135deg, ${theme.text.primary}, ${theme.accent.primary})`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
+              A New Paradigm for
+            </span>
+            <WordRotate
+              words={rotatingWords}
+              duration={3000}
+              style={{
+                background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontSize: 'inherit',
+                fontWeight: 'inherit'
+              }}
+              motionProps={{
+                initial: { opacity: 0, y: 30 },
+                animate: { opacity: 1, y: 0 },
+                exit: { opacity: 0, y: -30 },
+                transition: { duration: 0.6, ease: "easeOut" },
+              }}
+            />
           </h2>
           <p style={{
             fontSize: '1.125rem',
@@ -63,7 +102,18 @@ export const FeaturesSection = () => {
             margin: '0 auto',
             lineHeight: '1.6'
           }}>
-            Discover the advanced capabilities that make Dreamscape the leading platform for dream analysis and subconscious exploration.
+            <DecryptedText
+              text="Dreamscape isn't just another analysis tool. It's a revolutionary platform built on decentralized infrastructure for unparalleled privacy and intelligence."
+              animateOn="view"
+              speed={80}
+              maxIterations={25}
+              revealDirection="start"
+              style={{
+                fontSize: 'inherit',
+                color: 'inherit',
+                lineHeight: 'inherit'
+              }}
+            />
           </p>
         </div>
 
@@ -73,56 +123,61 @@ export const FeaturesSection = () => {
           gap: 'clamp(16px, 4vw, 32px)'
         }}>
           {features.map((feature, index) => (
-            <div
+            <TiltedCard
               key={index}
+              scaleOnHover={1.03}
+              rotateAmplitude={6}
               style={{
+                height: 'auto',
+                minHeight: '280px'
+              }}
+            >
+              <div style={{
                 background: theme.bg.card,
                 backdropFilter: 'blur(20px)',
                 borderRadius: '20px',
                 padding: 'clamp(24px, 6vw, 32px)',
                 border: `1px solid ${theme.border}`,
-                transition: 'all 0.3s ease',
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = `0 20px 40px ${theme.accent.primary}20`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              <div style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                background: `linear-gradient(135deg, ${theme.accent.primary}20, ${theme.accent.secondary}20)`,
+                height: '100%',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '24px',
-                color: theme.accent.primary
+                flexDirection: 'column'
               }}>
-                {feature.icon}
+                <div style={{
+                  color: theme.accent.primary,
+                  marginBottom: '24px'
+                }}>
+                  {feature.icon}
+                </div>
+                
+                <h3 style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '600',
+                  marginBottom: '16px',
+                  color: theme.text.primary
+                }}>
+                  {feature.title}
+                </h3>
+                
+                <p style={{
+                  color: theme.text.secondary,
+                  lineHeight: '1.6',
+                  flex: 1
+                }}>
+                  <DecryptedText
+                    text={feature.description}
+                    animateOn="view"
+                    speed={80}
+                    maxIterations={25}
+                    revealDirection="start"
+                    style={{
+                      fontSize: 'inherit',
+                      color: 'inherit',
+                      lineHeight: 'inherit'
+                    }}
+                  />
+                </p>
               </div>
-              
-              <h3 style={{
-                fontSize: '1.25rem',
-                fontWeight: '600',
-                marginBottom: '16px',
-                color: theme.text.primary
-              }}>
-                {feature.title}
-              </h3>
-              
-              <p style={{
-                color: theme.text.secondary,
-                lineHeight: '1.6'
-              }}>
-                {feature.description}
-              </p>
-            </div>
+            </TiltedCard>
           ))}
         </div>
       </div>
