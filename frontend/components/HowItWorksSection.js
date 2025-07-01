@@ -4,7 +4,7 @@ import { useTheme } from './ThemeProvider';
 import { AnimatedBeam } from './AnimatedBeam';
 import Circle from './Circle';
 import { WordRotate } from './WordRotate';
-import DecryptedText from './DecryptedText';
+import { ShimmerButton } from './ShimmerButton';
 import TiltedCard from './TiltedCard';
 
 // How It Works Section
@@ -144,18 +144,7 @@ export const HowItWorksSection = () => {
             lineHeight: '1.6',
             marginBottom: '32px'
           }}>
-            <DecryptedText
-              text="Experience the revolutionary flow of decentralized dream analysis powered by 0G's cutting-edge blockchain infrastructure."
-              animateOn="view"
-              speed={80}
-              maxIterations={25}
-              revealDirection="start"
-              style={{
-                fontSize: 'inherit',
-                color: 'inherit',
-                lineHeight: 'inherit'
-              }}
-            />
+            Experience the revolutionary flow of decentralized dream analysis powered by 0G's cutting-edge blockchain infrastructure.
           </p>
 
           {/* Flow Control Buttons */}
@@ -165,28 +154,30 @@ export const HowItWorksSection = () => {
             gap: '16px',
             marginBottom: '40px'
           }}>
-            <button
+            <ShimmerButton
               onClick={handlePlay}
+              background={`linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`}
+              shimmerColor="#ffffff"
+              shimmerDuration="2s"
+              borderRadius="25px"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`,
-                border: 'none',
-                borderRadius: '25px',
-                padding: '12px 24px',
-                color: 'white',
+                fontSize: '0.9rem',
                 fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: `0 4px 15px ${theme.accent.primary}40`
+                fontFamily: '"Work Sans", sans-serif',
+                letterSpacing: '0.02em',
+                padding: '12px 24px',
+                boxShadow: `0 4px 15px ${theme.accent.primary}40`,
+                transition: 'transform 0.3s ease'
               }}
-              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               {isPlaying ? <Pause size={18} /> : <Play size={18} />}
               {isPlaying ? 'Pause Flow' : 'Start Flow'}
-            </button>
+            </ShimmerButton>
             
             <button
               onClick={handleReset}

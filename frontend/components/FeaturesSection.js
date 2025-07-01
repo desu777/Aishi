@@ -2,7 +2,6 @@ import React from 'react';
 import { ShieldCheck, Zap, BrainCircuit, Key, BadgeCheck, Cpu } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { WordRotate } from './WordRotate';
-import DecryptedText from './DecryptedText';
 import TiltedCard from './TiltedCard';
 
 // Features Section
@@ -102,18 +101,7 @@ export const FeaturesSection = () => {
             margin: '0 auto',
             lineHeight: '1.6'
           }}>
-            <DecryptedText
-              text="Dreamscape isn't just another analysis tool. It's a revolutionary platform built on decentralized infrastructure for unparalleled privacy and intelligence."
-              animateOn="view"
-              speed={80}
-              maxIterations={25}
-              revealDirection="start"
-              style={{
-                fontSize: 'inherit',
-                color: 'inherit',
-                lineHeight: 'inherit'
-              }}
-            />
+            Dreamscape isn't just another analysis tool. It's a revolutionary platform built on decentralized infrastructure for unparalleled privacy and intelligence.
           </p>
         </div>
 
@@ -163,18 +151,7 @@ export const FeaturesSection = () => {
                   lineHeight: '1.6',
                   flex: 1
                 }}>
-                  <DecryptedText
-                    text={feature.description}
-                    animateOn="view"
-                    speed={80}
-                    maxIterations={25}
-                    revealDirection="start"
-                    style={{
-                      fontSize: 'inherit',
-                      color: 'inherit',
-                      lineHeight: 'inherit'
-                    }}
-                  />
+                  {feature.description}
                 </p>
               </div>
             </TiltedCard>

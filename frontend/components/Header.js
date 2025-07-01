@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from './ThemeProvider';
 import { ShimmerButton } from './ShimmerButton';
 
@@ -90,7 +91,17 @@ export const Header = () => {
           fontFamily: '"Michroma", "Work Sans", sans-serif',
           color: theme.text.primary
         }}>
-          Dreamscape.
+          <img 
+            src="/logo.png" 
+            alt="Dreamscape" 
+            style={{
+              height: '80px',
+              width: 'auto',
+              marginTop: '8px',
+              transition: 'all 0.3s ease',
+              filter: scrolled ? 'brightness(1.1)' : 'none'
+            }}
+          />
         </div>
 
         {/* Desktop Menu */}
@@ -165,7 +176,7 @@ export const Header = () => {
         </div>
 
         {/* Mobile Menu Toggle */}
-        <button
+        <motion.button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           style={{
             display: isMobile ? 'flex' : 'none',
@@ -177,74 +188,117 @@ export const Header = () => {
             alignItems: 'center',
             justifyContent: 'center'
           }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.2 }}
         >
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+          <motion.div
+            animate={{ rotate: isMenuOpen ? 180 : 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </motion.div>
+        </motion.button>
       </nav>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && isMobile && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          display: 'block',
-          background: theme.bg.card,
-          backdropFilter: 'blur(20px)',
-          borderBottom: `1px solid ${theme.border}`,
-          padding: '20px'
-        }}>
-          {menuItems.map((item) => {
-            const isActive = activeSection === item.id;
-            return (
-              <a
-                key={item.label}
-                href={item.href}
-                style={{
-                  display: 'block',
-                  color: isActive ? theme.accent.primary : theme.text.secondary,
-                  textDecoration: 'none',
-                  fontWeight: isActive ? '600' : '500',
-                  padding: '12px 0',
-                  borderBottom: `1px solid ${theme.border}`,
-                  transition: 'color 0.3s ease'
-                }}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.label}
-              </a>
-            );
-          })}
-          
-          {/* Mobile CTA Button */}
-          <div style={{ 
-            marginTop: '20px', 
-            display: 'flex', 
-            justifyContent: 'center' 
-          }}>
-            <ShimmerButton
-              background={`linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`}
-              shimmerColor="#ffffff"
-              shimmerDuration="2s"
-              borderRadius="25px"
-              style={{
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                fontFamily: '"Work Sans", sans-serif',
-                letterSpacing: '0.02em',
-                padding: '12px 24px',
-                boxShadow: `0 4px 15px ${theme.accent.primary}30`,
-                width: '100%',
-                maxWidth: '200px'
-              }}
-              onClick={() => setIsMenuOpen(false)}
+      {/* Mobile Menu with Animation */}
+      <AnimatePresence>
+        {isMenuOpen && isMobile && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ 
+              duration: 0.3, 
+              ease: "easeInOut",
+              opacity: { duration: 0.2 }
+            }}
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              background: theme.bg.card,
+              backdropFilter: 'blur(20px)',
+              borderBottom: `1px solid ${theme.border}`,
+              overflow: 'hidden'
+            }}
+          >
+            <motion.div
+              initial={{ y: -20 }}
+              animate={{ y: 0 }}
+              exit={{ y: -20 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              style={{ padding: '20px' }}
             >
-              Get Started
-            </ShimmerButton>
-          </div>
-        </div>
-      )}
+              {menuItems.map((item, index) => {
+                const isActive = activeSection === item.id;
+                return (
+                  <motion.a
+                    key={item.label}
+                    href={item.href}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ 
+                      duration: 0.3, 
+                      delay: index * 0.05 + 0.15,
+                      ease: "easeOut"
+                    }}
+                    style={{
+                      display: 'block',
+                      color: isActive ? theme.accent.primary : theme.text.secondary,
+                      textDecoration: 'none',
+                      fontWeight: isActive ? '600' : '500',
+                      padding: '12px 0',
+                      borderBottom: `1px solid ${theme.border}`,
+                      transition: 'color 0.3s ease'
+                    }}
+                    onClick={() => setIsMenuOpen(false)}
+                    whileHover={{ x: 10, color: theme.accent.primary }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {item.label}
+                  </motion.a>
+                );
+              })}
+              
+              {/* Mobile CTA Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3, delay: 0.4 }}
+                style={{ 
+                  marginTop: '20px', 
+                  display: 'flex', 
+                  justifyContent: 'center' 
+                }}
+              >
+                <ShimmerButton
+                  background={`linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`}
+                  shimmerColor="#ffffff"
+                  shimmerDuration="2s"
+                  borderRadius="25px"
+                  style={{
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    fontFamily: '"Work Sans", sans-serif',
+                    letterSpacing: '0.02em',
+                    padding: '12px 24px',
+                    boxShadow: `0 4px 15px ${theme.accent.primary}30`,
+                    width: '100%',
+                    maxWidth: '200px'
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Get Started
+                </ShimmerButton>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </header>
   );

@@ -3,7 +3,6 @@ import { Play } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import Orb from './Orb';
 import { WordRotate } from './WordRotate';
-import DecryptedText from './DecryptedText';
 import { ShimmerButton } from './ShimmerButton';
 
 // Hero Section
@@ -33,7 +32,7 @@ export const HeroSection = () => {
         {/* Orb with Dreamscape text */}
         <div style={{ 
           width: '100%', 
-          height: 'clamp(150px, 25vw, 280px)', 
+          height: 'clamp(200px, 30vw, 320px)', 
           position: 'relative',
                       marginBottom: 'clamp(10px, 3vw, 20px)',
           display: 'flex',
@@ -51,19 +50,22 @@ export const HeroSection = () => {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            fontSize: 'clamp(1.1rem, 3vw, 1.3rem)',
-            fontFamily: '"Michroma", "Work Sans", sans-serif',
-            fontWeight: '800',
-            color: '#FFFFFF',
             zIndex: 10,
             pointerEvents: 'none',
-            letterSpacing: '1.5px',
             whiteSpace: 'nowrap',
             maxWidth: '80%',
-            textAlign: 'center',
-            textShadow: '0 0 10px rgba(139, 92, 246, 0.6)'
-          }}>
-            Dreamscape.
+            textAlign: 'center'
+          }} className="orb-text">
+            <img
+              src="/logo.png"
+              alt="Dreamscape"
+              style={{
+                width: 'clamp(140px, 22vw, 190px)',
+                height: 'auto',
+                filter: 'drop-shadow(0 0 10px rgba(139, 92, 246, 0.6))',
+                transition: 'all 0.3s ease'
+              }}
+            />
           </div>
         </div>
 
@@ -111,18 +113,7 @@ export const HeroSection = () => {
           lineHeight: '1.6',
           animation: 'fadeInUp 1s ease-out 0.4s both'
         }}>
-          <DecryptedText
-            text="Meet the world's first iNFT. A personal AI agent that learns and evolves with every dream, its memory secured forever on the 0G blockchain."
-            animateOn="view"
-            speed={80}
-            maxIterations={25}
-            revealDirection="start"
-            style={{
-              fontSize: 'inherit',
-              color: 'inherit',
-              lineHeight: 'inherit'
-            }}
-          />
+          Meet the world's first iNFT. A personal AI agent that learns and evolves with every dream, its memory secured forever on the 0G blockchain.
         </p>
 
         <div style={{
@@ -142,7 +133,10 @@ export const HeroSection = () => {
               letterSpacing: '0.05em',
               textTransform: 'uppercase',
               boxShadow: `0 8px 30px ${theme.accent.primary}40`,
+              transition: 'transform 0.3s ease'
             }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
             Launch Your Agent
           </ShimmerButton>
