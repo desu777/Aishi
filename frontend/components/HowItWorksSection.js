@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { User, Brain } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { User, Brain, Play, Pause, RotateCcw } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { AnimatedBeam } from './AnimatedBeam';
 import Circle from './Circle';
@@ -23,6 +23,11 @@ export const HowItWorksSection = () => {
   const storageResultRef = useRef(null);
   const inftEvaluateRef = useRef(null);
 
+  // Flow animation state
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+
   const rotatingWords = [
     'Works.',
     'Flows.',
@@ -40,6 +45,48 @@ export const HowItWorksSection = () => {
     { title: "Store Results", description: "The AI's generated analysis is also secured in 0G Storage, creating a permanent, private link to the original dream." },
     { title: "Agent Evolution", description: "The new data hashes are submitted to the smart contract. Every 5th dream, your iNFT agent evolves, increasing its intelligence level." },
     { title: "Receive Analysis", description: "The complete, context-aware analysis is delivered back to you, revealing insights that grow deeper with every dream." }
+  ];
+
+  // Animation control
+  useEffect(() => {
+    let interval;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setCurrentStep((prev) => {
+          if (prev >= 7) {
+            setIsPlaying(false);
+            return 7;
+          }
+          return prev + 1;
+        });
+      }, 2000); // 2 seconds per step
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  const handlePlay = () => {
+    if (!hasStarted) {
+      setHasStarted(true);
+      setCurrentStep(0);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleReset = () => {
+    setCurrentStep(0);
+    setIsPlaying(false);
+    setHasStarted(false);
+  };
+
+  // Define beam configurations
+  const beamConfigs = [
+    { from: userRef, to: chainRef, curvature: -30 },
+    { from: chainRef, to: inftRef, curvature: 30 },
+    { from: inftRef, to: storageRef, curvature: -50 },
+    { from: storageRef, to: computeRef, curvature: 20 },
+    { from: computeRef, to: storageResultRef, curvature: -20 },
+    { from: storageResultRef, to: inftEvaluateRef, curvature: 40 },
+    { from: inftEvaluateRef, to: userResultRef, curvature: -25 }
   ];
 
   return (
@@ -93,7 +140,8 @@ export const HowItWorksSection = () => {
             color: theme.text.secondary,
             maxWidth: '600px',
             margin: '0 auto',
-            lineHeight: '1.6'
+            lineHeight: '1.6',
+            marginBottom: '32px'
           }}>
             <DecryptedText
               text="Experience the revolutionary flow of decentralized dream analysis powered by 0G's cutting-edge blockchain infrastructure."
@@ -108,6 +156,66 @@ export const HowItWorksSection = () => {
               }}
             />
           </p>
+
+          {/* Flow Control Buttons */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '16px',
+            marginBottom: '40px'
+          }}>
+            <button
+              onClick={handlePlay}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`,
+                border: 'none',
+                borderRadius: '25px',
+                padding: '12px 24px',
+                color: 'white',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: `0 4px 15px ${theme.accent.primary}40`
+              }}
+              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+            >
+              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+              {isPlaying ? 'Pause Flow' : 'Start Flow'}
+            </button>
+            
+            <button
+              onClick={handleReset}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: theme.bg.card,
+                border: `1px solid ${theme.border}`,
+                borderRadius: '25px',
+                padding: '12px 24px',
+                color: theme.text.secondary,
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                backdropFilter: 'blur(10px)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.color = theme.text.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.color = theme.text.secondary;
+              }}
+            >
+              <RotateCcw size={18} />
+              Reset
+            </button>
+          </div>
         </div>
 
         {/* Flow Diagram */}
@@ -126,18 +234,78 @@ export const HowItWorksSection = () => {
             top: '20px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: `linear-gradient(135deg, ${theme.accent.primary}20, ${theme.accent.secondary}20)`
+            background: currentStep >= 0 ? 
+              `linear-gradient(135deg, ${theme.accent.primary}40, ${theme.accent.secondary}40)` :
+              `linear-gradient(135deg, ${theme.accent.primary}20, ${theme.accent.secondary}20)`,
+            border: currentStep >= 0 ? 
+              `2px solid ${theme.accent.primary}` :
+              `2px solid rgba(255, 255, 255, 0.1)`,
+            boxShadow: currentStep >= 0 ? 
+              `0 0 30px ${theme.accent.primary}50` :
+              '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
-            <User size={32} color={theme.accent.primary} />
+            <User size={32} color={currentStep >= 0 ? theme.accent.primary : theme.text.secondary} />
+            {currentStep >= 0 && (
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: theme.accent.primary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                1
+              </div>
+            )}
           </Circle>
 
           {/* 0G Chain */}
           <Circle ref={chainRef} size="70px" style={{
             position: 'absolute',
             top: '120px',
-            left: '20%'
+            left: '20%',
+            background: currentStep >= 1 ? 
+              `linear-gradient(135deg, ${theme.accent.primary}20, ${theme.accent.secondary}20)` :
+              'rgba(255, 255, 255, 0.05)',
+            border: currentStep >= 1 ? 
+              `2px solid ${theme.accent.primary}` :
+              `2px solid rgba(255, 255, 255, 0.1)`,
+            boxShadow: currentStep >= 1 ? 
+              `0 0 30px ${theme.accent.primary}50` :
+              '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
-            <img src="/chain.png" alt="0G Chain" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+            <img src="/chain.png" alt="0G Chain" style={{ 
+              width: '40px', 
+              height: '40px', 
+              objectFit: 'contain',
+              filter: currentStep >= 1 ? 'brightness(1.3)' : 'brightness(0.7)'
+            }} />
+            {currentStep >= 1 && (
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: theme.accent.primary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                2
+              </div>
+            )}
           </Circle>
 
           {/* iNFT Agent */}
@@ -145,18 +313,83 @@ export const HowItWorksSection = () => {
             position: 'absolute',
             top: '120px',
             right: '20%',
-            background: `linear-gradient(135deg, ${theme.accent.primary}15, ${theme.accent.secondary}15)`
+            background: currentStep >= 2 ? 
+              `linear-gradient(135deg, ${theme.accent.primary}30, ${theme.accent.secondary}30)` :
+              `linear-gradient(135deg, ${theme.accent.primary}15, ${theme.accent.secondary}15)`,
+            border: currentStep >= 2 ? 
+              `2px solid ${theme.accent.primary}` :
+              `2px solid rgba(255, 255, 255, 0.1)`,
+            boxShadow: currentStep >= 2 ? 
+              `0 0 30px ${theme.accent.primary}50` :
+              '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
-            <img src="/iNFT.png" alt="iNFT Agent" style={{ width: '45px', height: '45px', objectFit: 'contain' }} />
+            <img src="/iNFT.png" alt="iNFT Agent" style={{ 
+              width: '45px', 
+              height: '45px', 
+              objectFit: 'contain',
+              filter: currentStep >= 2 ? 'brightness(1.3)' : 'brightness(0.7)'
+            }} />
+            {currentStep >= 2 && (
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: theme.accent.primary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                3
+              </div>
+            )}
           </Circle>
 
           {/* Storage Node */}
           <Circle ref={storageRef} size="70px" style={{
             position: 'absolute',
             top: '250px',
-            left: '15%'
+            left: '15%',
+            background: currentStep >= 3 ? 
+              `linear-gradient(135deg, ${theme.accent.primary}20, ${theme.accent.secondary}20)` :
+              'rgba(255, 255, 255, 0.05)',
+            border: currentStep >= 3 ? 
+              `2px solid ${theme.accent.primary}` :
+              `2px solid rgba(255, 255, 255, 0.1)`,
+            boxShadow: currentStep >= 3 ? 
+              `0 0 30px ${theme.accent.primary}50` :
+              '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
-            <img src="/storage.png" alt="0G Storage" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+            <img src="/storage.png" alt="0G Storage" style={{ 
+              width: '40px', 
+              height: '40px', 
+              objectFit: 'contain',
+              filter: currentStep >= 3 ? 'brightness(1.3)' : 'brightness(0.7)'
+            }} />
+            {currentStep >= 3 && (
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: theme.accent.primary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                4
+              </div>
+            )}
           </Circle>
 
           {/* 0G Compute */}
@@ -165,18 +398,83 @@ export const HowItWorksSection = () => {
             top: '250px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: `linear-gradient(135deg, ${theme.accent.secondary}15, ${theme.accent.primary}15)`
+            background: currentStep >= 4 ? 
+              `linear-gradient(135deg, ${theme.accent.secondary}30, ${theme.accent.primary}30)` :
+              `linear-gradient(135deg, ${theme.accent.secondary}15, ${theme.accent.primary}15)`,
+            border: currentStep >= 4 ? 
+              `2px solid ${theme.accent.primary}` :
+              `2px solid rgba(255, 255, 255, 0.1)`,
+            boxShadow: currentStep >= 4 ? 
+              `0 0 30px ${theme.accent.primary}50` :
+              '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
-            <img src="/compute.png" alt="0G Compute" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+            <img src="/compute.png" alt="0G Compute" style={{ 
+              width: '42px', 
+              height: '42px', 
+              objectFit: 'contain',
+              filter: currentStep >= 4 ? 'brightness(1.3)' : 'brightness(0.7)'
+            }} />
+            {currentStep >= 4 && (
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: theme.accent.primary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                5
+              </div>
+            )}
           </Circle>
 
           {/* Storage Results */}
           <Circle ref={storageResultRef} size="70px" style={{
             position: 'absolute',
             top: '250px',
-            right: '15%'
+            right: '15%',
+            background: currentStep >= 5 ? 
+              `linear-gradient(135deg, ${theme.accent.primary}20, ${theme.accent.secondary}20)` :
+              'rgba(255, 255, 255, 0.05)',
+            border: currentStep >= 5 ? 
+              `2px solid ${theme.accent.primary}` :
+              `2px solid rgba(255, 255, 255, 0.1)`,
+            boxShadow: currentStep >= 5 ? 
+              `0 0 30px ${theme.accent.primary}50` :
+              '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
-            <img src="/storage.png" alt="0G Storage" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+            <img src="/storage.png" alt="0G Storage" style={{ 
+              width: '40px', 
+              height: '40px', 
+              objectFit: 'contain',
+              filter: currentStep >= 5 ? 'brightness(1.3)' : 'brightness(0.7)'
+            }} />
+            {currentStep >= 5 && (
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: theme.accent.primary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                6
+              </div>
+            )}
           </Circle>
 
           {/* iNFT Evaluate */}
@@ -184,9 +482,41 @@ export const HowItWorksSection = () => {
             position: 'absolute',
             top: '380px',
             left: '30%',
-            background: `linear-gradient(135deg, ${theme.accent.primary}15, ${theme.accent.secondary}15)`
+            background: currentStep >= 6 ? 
+              `linear-gradient(135deg, ${theme.accent.primary}30, ${theme.accent.secondary}30)` :
+              `linear-gradient(135deg, ${theme.accent.primary}15, ${theme.accent.secondary}15)`,
+            border: currentStep >= 6 ? 
+              `2px solid ${theme.accent.primary}` :
+              `2px solid rgba(255, 255, 255, 0.1)`,
+            boxShadow: currentStep >= 6 ? 
+              `0 0 30px ${theme.accent.primary}50` :
+              '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
-            <img src="/iNFTevaluate.png" alt="iNFT Evaluate" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+            <img src="/iNFTevaluate.png" alt="iNFT Evaluate" style={{ 
+              width: '42px', 
+              height: '42px', 
+              objectFit: 'contain',
+              filter: currentStep >= 6 ? 'brightness(1.3)' : 'brightness(0.7)'
+            }} />
+            {currentStep >= 6 && (
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: theme.accent.primary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                7
+              </div>
+            )}
           </Circle>
 
           {/* User (End) */}
@@ -195,74 +525,57 @@ export const HowItWorksSection = () => {
             top: '500px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: `linear-gradient(135deg, ${theme.accent.primary}20, ${theme.accent.secondary}20)`
+            background: currentStep >= 7 ? 
+              `linear-gradient(135deg, ${theme.accent.primary}40, ${theme.accent.secondary}40)` :
+              `linear-gradient(135deg, ${theme.accent.primary}20, ${theme.accent.secondary}20)`,
+            border: currentStep >= 7 ? 
+              `2px solid ${theme.accent.primary}` :
+              `2px solid rgba(255, 255, 255, 0.1)`,
+            boxShadow: currentStep >= 7 ? 
+              `0 0 30px ${theme.accent.primary}50` :
+              '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
-            <User size={32} color={theme.accent.primary} />
+            <User size={32} color={currentStep >= 7 ? theme.accent.primary : theme.text.secondary} />
+            {currentStep >= 7 && (
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: theme.accent.primary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'white'
+              }}>
+                8
+              </div>
+            )}
           </Circle>
 
-          {/* Animated Beams */}
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={userRef}
-            toRef={chainRef}
-            curvature={-30}
-            duration={2}
-            delay={0}
-          />
-          
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={chainRef}
-            toRef={inftRef}
-            curvature={30}
-            duration={2}
-            delay={0.3}
-          />
-          
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={inftRef}
-            toRef={storageRef}
-            curvature={-50}
-            duration={2}
-            delay={0.6}
-          />
-          
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={storageRef}
-            toRef={computeRef}
-            curvature={20}
-            duration={2}
-            delay={0.9}
-          />
-          
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={computeRef}
-            toRef={storageResultRef}
-            curvature={-20}
-            duration={2}
-            delay={1.2}
-          />
-          
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={storageResultRef}
-            toRef={inftEvaluateRef}
-            curvature={40}
-            duration={2}
-            delay={1.5}
-          />
-          
-          <AnimatedBeam
-            containerRef={containerRef}
-            fromRef={inftEvaluateRef}
-            toRef={userResultRef}
-            curvature={-25}
-            duration={2}
-            delay={1.8}
-          />
+          {/* Animated Beams - only show active ones */}
+          {beamConfigs.map((config, index) => (
+            hasStarted && currentStep > index && (
+              <AnimatedBeam
+                key={`beam-${index}`}
+                containerRef={containerRef}
+                fromRef={config.from}
+                toRef={config.to}
+                curvature={config.curvature}
+                duration={1.5}
+                delay={0}
+                pathColor={`${theme.accent.primary}40`}
+                pathWidth={3}
+                pathOpacity={0.8}
+                gradientStartColor={theme.accent.primary}
+                gradientStopColor={theme.accent.secondary}
+              />
+            )
+          ))}
         </div>
 
         {/* Steps Grid */}
@@ -276,28 +589,30 @@ export const HowItWorksSection = () => {
             <div
               key={index}
               style={{
-                background: theme.bg.card,
+                background: currentStep >= index ? 
+                  `${theme.bg.card}CC` : 
+                  theme.bg.card,
                 backdropFilter: 'blur(20px)',
                 borderRadius: '16px',
                 padding: '20px',
-                border: `1px solid ${theme.border}`,
+                border: currentStep >= index ? 
+                  `2px solid ${theme.accent.primary}60` : 
+                  `1px solid ${theme.border}`,
                 textAlign: 'center',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = `0 12px 30px ${theme.accent.primary}15`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
+                transition: 'all 0.3s ease',
+                transform: currentStep >= index ? 'translateY(-2px)' : 'translateY(0)',
+                boxShadow: currentStep >= index ? 
+                  `0 12px 30px ${theme.accent.primary}20` : 
+                  'none'
               }}
             >
               <div style={{
                 width: '32px',
                 height: '32px',
                 borderRadius: '50%',
-                background: theme.accent.primary,
+                background: currentStep >= index ? 
+                  theme.accent.primary : 
+                  theme.text.secondary,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -305,7 +620,10 @@ export const HowItWorksSection = () => {
                 color: 'white',
                 fontWeight: '700',
                 fontSize: '14px',
-                boxShadow: `0 4px 12px ${theme.accent.primary}30`
+                boxShadow: currentStep >= index ? 
+                  `0 4px 12px ${theme.accent.primary}40` : 
+                  'none',
+                transition: 'all 0.3s ease'
               }}>
                 {index + 1}
               </div>
@@ -314,7 +632,10 @@ export const HowItWorksSection = () => {
                 fontSize: '1.1rem',
                 fontWeight: '600',
                 marginBottom: '8px',
-                color: theme.text.primary
+                color: currentStep >= index ? 
+                  theme.accent.primary : 
+                  theme.text.primary,
+                transition: 'color 0.3s ease'
               }}>
                 {step.title}
               </h4>
