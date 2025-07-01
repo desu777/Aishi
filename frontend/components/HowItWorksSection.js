@@ -5,6 +5,7 @@ import { AnimatedBeam } from './AnimatedBeam';
 import Circle from './Circle';
 import { WordRotate } from './WordRotate';
 import DecryptedText from './DecryptedText';
+import TiltedCard from './TiltedCard';
 
 // How It Works Section
 export const HowItWorksSection = () => {
@@ -586,9 +587,16 @@ export const HowItWorksSection = () => {
           marginTop: '40px'
         }}>
           {steps.map((step, index) => (
-            <div
+            <TiltedCard
               key={index}
+              scaleOnHover={currentStep >= index ? 1.08 : 1.05}
+              rotateAmplitude={currentStep >= index ? 10 : 6}
               style={{
+                height: 'auto',
+                minHeight: '200px'
+              }}
+            >
+              <div style={{
                 background: currentStep >= index ? 
                   `${theme.bg.card}CC` : 
                   theme.bg.card,
@@ -603,51 +611,55 @@ export const HowItWorksSection = () => {
                 transform: currentStep >= index ? 'translateY(-2px)' : 'translateY(0)',
                 boxShadow: currentStep >= index ? 
                   `0 12px 30px ${theme.accent.primary}20` : 
-                  'none'
-              }}
-            >
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: currentStep >= index ? 
-                  theme.accent.primary : 
-                  theme.text.secondary,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px',
-                color: 'white',
-                fontWeight: '700',
-                fontSize: '14px',
-                boxShadow: currentStep >= index ? 
-                  `0 4px 12px ${theme.accent.primary}40` : 
                   'none',
-                transition: 'all 0.3s ease'
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
               }}>
-                {index + 1}
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: currentStep >= index ? 
+                    theme.accent.primary : 
+                    theme.text.secondary,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  color: 'white',
+                  fontWeight: '700',
+                  fontSize: '14px',
+                  boxShadow: currentStep >= index ? 
+                    `0 4px 12px ${theme.accent.primary}40` : 
+                    'none',
+                  transition: 'all 0.3s ease'
+                }}>
+                  {index + 1}
+                </div>
+                
+                <h4 style={{
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  marginBottom: '8px',
+                  color: currentStep >= index ? 
+                    theme.accent.primary : 
+                    theme.text.primary,
+                  transition: 'color 0.3s ease'
+                }}>
+                  {step.title}
+                </h4>
+                
+                <p style={{
+                  color: theme.text.secondary,
+                  fontSize: '0.9rem',
+                  lineHeight: '1.4'
+                }}>
+                  {step.description}
+                </p>
               </div>
-              
-              <h4 style={{
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                marginBottom: '8px',
-                color: currentStep >= index ? 
-                  theme.accent.primary : 
-                  theme.text.primary,
-                transition: 'color 0.3s ease'
-              }}>
-                {step.title}
-              </h4>
-              
-              <p style={{
-                color: theme.text.secondary,
-                fontSize: '0.9rem',
-                lineHeight: '1.4'
-              }}>
-                {step.description}
-              </p>
-            </div>
+            </TiltedCard>
           ))}
         </div>
       </div>
