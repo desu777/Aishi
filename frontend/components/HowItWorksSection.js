@@ -222,15 +222,16 @@ export const HowItWorksSection = () => {
         {/* Flow Diagram */}
         <div 
           ref={containerRef}
+          className="flow-diagram"
           style={{
             position: 'relative',
-            height: '600px',
+            height: '650px',
             marginBottom: '60px',
             padding: '20px'
           }}
         >
           {/* User (Start) */}
-          <Circle ref={userRef} size="80px" style={{
+          <Circle ref={userRef} size="100px" style={{
             position: 'absolute',
             top: '20px',
             left: '50%',
@@ -245,7 +246,7 @@ export const HowItWorksSection = () => {
               `0 0 30px ${theme.accent.primary}50` :
               '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
-            <User size={32} color={currentStep >= 0 ? theme.accent.primary : theme.text.secondary} />
+            <User size={40} color={currentStep >= 0 ? theme.accent.primary : theme.text.secondary} />
             {currentStep >= 0 && (
               <div style={{
                 position: 'absolute',
@@ -268,7 +269,7 @@ export const HowItWorksSection = () => {
           </Circle>
 
           {/* 0G Chain */}
-          <Circle ref={chainRef} size="70px" style={{
+          <Circle ref={chainRef} size="90px" style={{
             position: 'absolute',
             top: '120px',
             left: '20%',
@@ -283,8 +284,8 @@ export const HowItWorksSection = () => {
               '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
             <img src="/chain.png" alt="0G Chain" style={{ 
-              width: '40px', 
-              height: '40px', 
+              width: '60px', 
+              height: '60px', 
               objectFit: 'contain',
               filter: currentStep >= 1 ? 'brightness(1.3)' : 'brightness(0.7)'
             }} />
@@ -310,7 +311,7 @@ export const HowItWorksSection = () => {
           </Circle>
 
           {/* iNFT Agent */}
-          <Circle ref={inftRef} size="80px" style={{
+          <Circle ref={inftRef} size="100px" style={{
             position: 'absolute',
             top: '120px',
             right: '20%',
@@ -325,8 +326,8 @@ export const HowItWorksSection = () => {
               '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
             <img src="/iNFT.png" alt="iNFT Agent" style={{ 
-              width: '45px', 
-              height: '45px', 
+              width: '60px', 
+              height: '60px', 
               objectFit: 'contain',
               filter: currentStep >= 2 ? 'brightness(1.3)' : 'brightness(0.7)'
             }} />
@@ -352,7 +353,7 @@ export const HowItWorksSection = () => {
           </Circle>
 
           {/* Storage Node */}
-          <Circle ref={storageRef} size="70px" style={{
+          <Circle ref={storageRef} size="90px" style={{
             position: 'absolute',
             top: '250px',
             left: '15%',
@@ -367,8 +368,8 @@ export const HowItWorksSection = () => {
               '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
             <img src="/storage.png" alt="0G Storage" style={{ 
-              width: '40px', 
-              height: '40px', 
+              width: '60px', 
+              height: '60px', 
               objectFit: 'contain',
               filter: currentStep >= 3 ? 'brightness(1.3)' : 'brightness(0.7)'
             }} />
@@ -394,7 +395,7 @@ export const HowItWorksSection = () => {
           </Circle>
 
           {/* 0G Compute */}
-          <Circle ref={computeRef} size="75px" style={{
+          <Circle ref={computeRef} size="95px" style={{
             position: 'absolute',
             top: '250px',
             left: '50%',
@@ -410,8 +411,8 @@ export const HowItWorksSection = () => {
               '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
             <img src="/compute.png" alt="0G Compute" style={{ 
-              width: '42px', 
-              height: '42px', 
+              width: '60px', 
+              height: '60px', 
               objectFit: 'contain',
               filter: currentStep >= 4 ? 'brightness(1.3)' : 'brightness(0.7)'
             }} />
@@ -437,7 +438,7 @@ export const HowItWorksSection = () => {
           </Circle>
 
           {/* Storage Results */}
-          <Circle ref={storageResultRef} size="70px" style={{
+          <Circle ref={storageResultRef} size="90px" style={{
             position: 'absolute',
             top: '250px',
             right: '15%',
@@ -452,8 +453,8 @@ export const HowItWorksSection = () => {
               '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
             <img src="/storage.png" alt="0G Storage" style={{ 
-              width: '40px', 
-              height: '40px', 
+              width: '60px', 
+              height: '60px', 
               objectFit: 'contain',
               filter: currentStep >= 5 ? 'brightness(1.3)' : 'brightness(0.7)'
             }} />
@@ -479,7 +480,7 @@ export const HowItWorksSection = () => {
           </Circle>
 
           {/* iNFT Evaluate */}
-          <Circle ref={inftEvaluateRef} size="75px" style={{
+          <Circle ref={inftEvaluateRef} size="95px" style={{
             position: 'absolute',
             top: '380px',
             left: '30%',
@@ -494,8 +495,8 @@ export const HowItWorksSection = () => {
               '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
             <img src="/iNFTevaluate.png" alt="iNFT Evaluate" style={{ 
-              width: '42px', 
-              height: '42px', 
+              width: '65px', 
+              height: '65px', 
               objectFit: 'contain',
               filter: currentStep >= 6 ? 'brightness(1.3)' : 'brightness(0.7)'
             }} />
@@ -521,7 +522,7 @@ export const HowItWorksSection = () => {
           </Circle>
 
           {/* User (End) */}
-          <Circle ref={userResultRef} size="80px" style={{
+          <Circle ref={userResultRef} size="100px" style={{
             position: 'absolute',
             top: '500px',
             left: '50%',
@@ -536,7 +537,7 @@ export const HowItWorksSection = () => {
               `0 0 30px ${theme.accent.primary}50` :
               '0 0 20px -12px rgba(0,0,0,0.8)'
           }}>
-            <User size={32} color={currentStep >= 7 ? theme.accent.primary : theme.text.secondary} />
+            <User size={40} color={currentStep >= 7 ? theme.accent.primary : theme.text.secondary} />
             {currentStep >= 7 && (
               <div style={{
                 position: 'absolute',

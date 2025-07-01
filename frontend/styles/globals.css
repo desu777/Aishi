@@ -71,15 +71,74 @@ a[href^="#"] {
   scroll-behavior: smooth;
 }
 
+/* Prevent text overflow during resize */
+.orb-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.orb-text {
+  transition: all 0.2s ease-out;
+  will-change: transform, opacity;
+}
+
+/* How It Works diagram improvements */
+.flow-diagram {
+  position: relative;
+  height: 650px !important; /* Zwiększone z 600px dla większych okręgów */
+}
+
+/* Hover effects for Circle components */
+.circle-component:hover {
+  transform: scale(1.15) !important;
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.8) !important;
+}
+
+/* ShimmerButton gradient improvements */
+.shimmer-button {
+  background-clip: padding-box !important;
+  border: 1px solid transparent !important;
+  background-origin: border-box !important;
+}
+
+.shimmer-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+  border-radius: inherit;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: subtract;
+  -webkit-mask-composite: destination-out;
+  pointer-events: none;
+}
+
 /* Responsywność */
 @media (max-width: 768px) {
   html {
     font-size: 14px;
+  }
+  
+  /* Większy orb na tabletach */
+  .orb-container {
+    height: clamp(220px, 35vw, 300px) !important;
   }
 }
 
 @media (max-width: 480px) {
   html {
     font-size: 13px;
+  }
+  
+  /* Jeszcze większy orb na telefonach */
+  .orb-container {
+    height: clamp(240px, 40vw, 320px) !important;
+    margin-bottom: clamp(20px, 5vw, 30px) !important;
+  }
+  
+  /* Większy tekst w orbie na mobile */
+  .orb-text {
+    font-size: clamp(1.4rem, 4vw, 1.6rem) !important;
   }
 } 

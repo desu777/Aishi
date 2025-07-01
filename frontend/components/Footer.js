@@ -25,18 +25,18 @@ export const Footer = () => {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
+          gap: '16px',
           color: theme.text.secondary,
-          fontSize: '0.9rem',
+          fontSize: '1.1rem',
           fontWeight: '500'
         }}>
           <span>Powered by</span>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '6px 12px',
-            borderRadius: '20px',
+            gap: '12px',
+            padding: '10px 18px',
+            borderRadius: '25px',
             background: `${theme.bg.panel}60`,
             border: `1px solid ${theme.border}`,
             backdropFilter: 'blur(10px)',
@@ -45,29 +45,32 @@ export const Footer = () => {
           onMouseEnter={(e) => {
             e.currentTarget.style.background = `${theme.accent.primary}20`;
             e.currentTarget.style.borderColor = `${theme.accent.primary}40`;
-            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = `0 8px 25px ${theme.accent.primary}30`;
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.background = `${theme.bg.panel}60`;
             e.currentTarget.style.borderColor = theme.border;
             e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
           }}
           >
             <img 
               src="/pfp.jpg" 
               alt="desu profile" 
               style={{
-                width: '24px',
-                height: '24px',
+                width: '32px',
+                height: '32px',
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: `1px solid ${theme.border}`
+                border: `2px solid ${theme.border}`,
+                transition: 'all 0.3s ease'
               }}
             />
             <span style={{
               color: theme.accent.primary,
               fontWeight: '600',
-              fontSize: '0.95rem'
+              fontSize: '1.1rem'
             }}>
               desu
             </span>

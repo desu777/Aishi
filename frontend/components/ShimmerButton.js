@@ -78,6 +78,8 @@ export const ShimmerButton = React.forwardRef(
             borderRadius: 'var(--radius)',
             transformOrigin: 'center',
             transition: 'transform 300ms ease-in-out',
+            backgroundClip: 'padding-box',
+            isolation: 'isolate',
             ...style
           }}
           onMouseDown={(e) => e.currentTarget.style.transform = 'translateY(1px)'}
@@ -91,8 +93,9 @@ export const ShimmerButton = React.forwardRef(
               position: 'absolute',
               inset: 0,
               zIndex: -30,
-              filter: 'blur(2px)',
-              overflow: 'visible',
+              filter: 'blur(1px)',
+              overflow: 'hidden',
+              borderRadius: 'var(--radius)',
               containerType: 'size'
             }}
           >
@@ -132,12 +135,13 @@ export const ShimmerButton = React.forwardRef(
               inset: 0,
               width: '100%',
               height: '100%',
-              borderRadius: '32px',
+              borderRadius: 'var(--radius)',
               padding: '6px 16px',
               fontSize: '14px',
               fontWeight: '500',
               boxShadow: 'inset 0 -8px 10px rgba(255, 255, 255, 0.12)',
-              transition: 'all 300ms ease-in-out'
+              transition: 'all 300ms ease-in-out',
+              pointerEvents: 'none'
             }}
             onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'inset 0 -6px 10px rgba(255, 255, 255, 0.25)'}
             onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'inset 0 -8px 10px rgba(255, 255, 255, 0.12)'}
@@ -150,7 +154,7 @@ export const ShimmerButton = React.forwardRef(
               zIndex: -20,
               background: 'var(--bg)',
               borderRadius: 'var(--radius)',
-              inset: 'var(--cut)'
+              inset: '1px'
             }}
           />
         </button>

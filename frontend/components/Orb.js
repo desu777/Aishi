@@ -212,8 +212,23 @@ export default function Orb({
         gl.canvas.width / gl.canvas.height
       );
     }
-    window.addEventListener("resize", resize);
-    resize();
+
+    // Debounced resize for better performance
+    let resizeTimeout;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(resize, 50);
+    };
+    
+    // Use ResizeObserver for container-specific resize detection
+    let resizeObserver;
+    if (window.ResizeObserver) {
+      resizeObserver = new ResizeObserver(debouncedResize);
+      resizeObserver.observe(container);
+    }
+    
+    window.addEventListener("resize", debouncedResize);
+    resize(); // Initial resize
 
     let targetHover = 0;
     let lastTime = 0;
@@ -269,10 +284,16 @@ export default function Orb({
 
     return () => {
       cancelAnimationFrame(rafId);
-      window.removeEventListener("resize", resize);
+      clearTimeout(resizeTimeout);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      window.removeEventListener("resize", debouncedResize);
       container.removeEventListener("mousemove", handleMouseMove);
       container.removeEventListener("mouseleave", handleMouseLeave);
+      if (container.contains(gl.canvas)) {
       container.removeChild(gl.canvas);
+      }
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import { ShimmerButton } from './ShimmerButton';
 
 // Header Component
 export const Header = () => {
@@ -142,22 +143,25 @@ export const Header = () => {
           })}
           
           {/* CTA Button */}
-          <button style={{
-            background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`,
-            border: 'none',
-            borderRadius: '25px',
-            padding: '12px 24px',
-            color: 'white',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'transform 0.3s ease',
-            boxShadow: `0 4px 15px ${theme.accent.primary}30`
-          }}
-          onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-          onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+          <ShimmerButton
+            background={`linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`}
+            shimmerColor="#ffffff"
+            shimmerDuration="2s"
+            borderRadius="25px"
+            style={{
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              fontFamily: '"Work Sans", sans-serif',
+              letterSpacing: '0.02em',
+              padding: '12px 24px',
+              boxShadow: `0 4px 15px ${theme.accent.primary}30`,
+              transition: 'transform 0.3s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
             Get Started
-          </button>
+          </ShimmerButton>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -212,6 +216,33 @@ export const Header = () => {
               </a>
             );
           })}
+          
+          {/* Mobile CTA Button */}
+          <div style={{ 
+            marginTop: '20px', 
+            display: 'flex', 
+            justifyContent: 'center' 
+          }}>
+            <ShimmerButton
+              background={`linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`}
+              shimmerColor="#ffffff"
+              shimmerDuration="2s"
+              borderRadius="25px"
+              style={{
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                fontFamily: '"Work Sans", sans-serif',
+                letterSpacing: '0.02em',
+                padding: '12px 24px',
+                boxShadow: `0 4px 15px ${theme.accent.primary}30`,
+                width: '100%',
+                maxWidth: '200px'
+              }}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Get Started
+            </ShimmerButton>
+          </div>
         </div>
       )}
 
