@@ -1,6 +1,7 @@
 'use client';
 
 import React, { ReactNode, MouseEvent, CSSProperties } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface SidebarItemProps {
@@ -14,10 +15,11 @@ interface SidebarItemProps {
 
 const SidebarItem = ({ icon, label, active, to, isCollapsed, onClick }: SidebarItemProps) => {
   const { theme, debugLog } = useTheme();
+  const router = useRouter();
+  const pathname = usePathname();
   
-  // TODO: Replace with actual router logic - dla testu można sprawdzić obecny URL
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-  const isActive = active !== undefined ? active : (to === '/' ? currentPath === '/' : currentPath.startsWith(to || ''));
+  // Check if current route is active
+  const isActive = active !== undefined ? active : (to === '/' ? pathname === '/' : pathname.startsWith(to || ''));
   
   const itemStyle: CSSProperties = {
     display: 'flex',
@@ -39,12 +41,11 @@ const SidebarItem = ({ icon, label, active, to, isCollapsed, onClick }: SidebarI
   };
   
   const handleClick = (e: MouseEvent<HTMLDivElement>): void => {
-    debugLog('Sidebar item clicked', { label, to });
+    debugLog('Sidebar item clicked', { label, to, currentPath: pathname });
     
     if (to) {
       e.preventDefault();
-      // TODO: Add navigation logic
-      console.log(`Navigate to: ${to}`);
+      router.push(to);
     }
     if (onClick) onClick();
   };

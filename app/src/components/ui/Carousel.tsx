@@ -24,7 +24,7 @@ export interface CarouselProps {
 const DRAG_BUFFER = 0;
 const VELOCITY_THRESHOLD = 300;
 const GAP = 16;
-const SPRING_OPTIONS = { type: "spring", stiffness: 200, damping: 25, duration: 0.8 };
+const SPRING_OPTIONS = { type: "spring" as const, stiffness: 200, damping: 25, duration: 0.8 };
 
 export default function Carousel({
   items = [],

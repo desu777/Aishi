@@ -2,6 +2,7 @@
 
 import React, { CSSProperties } from 'react';
 import { Home, Upload, History, Settings, X, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useTheme } from '../../contexts/ThemeContext';
 import SidebarItem from './SidebarItem';
 
@@ -15,6 +16,7 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: SidebarProps) => {
   const { theme, debugLog } = useTheme();
+  const router = useRouter();
   
   // Compute sidebar styles based on state
   const sidebarStyle: CSSProperties = {
@@ -37,7 +39,7 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
   
   const handleLogoClick = (): void => {
     debugLog('Logo clicked - navigating to home');
-    // TODO: Add navigation
+    router.push('/');
     if (isMobile) onClose();
   };
 
@@ -154,8 +156,8 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
         />
         <SidebarItem 
           icon={<User size={18} />} 
-          label="My Agent" 
-          to="/agent"
+          label="Agent Dashboard" 
+          to="/dream-agent"
           isCollapsed={isCollapsed}
           onClick={isMobile ? onClose : undefined}
         />
