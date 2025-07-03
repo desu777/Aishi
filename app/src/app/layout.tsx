@@ -7,6 +7,11 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Dreamscape - AI Dream Agent',
   description: 'The world\'s first intelligent NFT that learns and evolves with your dreams',
+  icons: {
+    icon: '/logo_clean.png',
+    shortcut: '/logo_clean.png',
+    apple: '/logo_clean.png',
+  },
 }
 
 interface RootLayoutProps {
