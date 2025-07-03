@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { ReactNode } from 'react';
 import '@rainbow-me/rainbowkit/styles.css';
 import {
   getDefaultConfig,
   RainbowKitProvider,
   darkTheme,
+  AvatarComponent,
 } from '@rainbow-me/rainbowkit';
 import { WagmiProvider } from 'wagmi';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
@@ -24,29 +25,40 @@ const config = getDefaultConfig({
 });
 
 // Custom avatar component for dream theme
-const CustomAvatar = ({ size }) => {
+interface CustomAvatarProps {
+  size: number;
+}
+
+const CustomAvatar: AvatarComponent = ({ size }: CustomAvatarProps) => {
   return (
     <div
       style={{
         width: size,
         height: size,
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #8B5CF6, #A855F7)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '12px',
-        fontWeight: 'bold'
+        justifyContent: 'center'
       }}
     >
-      🧠
+      <img 
+        src="/logo.png" 
+        alt="Dreamscape" 
+        style={{
+          width: size,
+          height: size,
+          objectFit: 'contain'
+        }}
+      />
     </div>
   );
 };
 
 // Main Wallet Provider
-export const WalletProvider = ({ children }) => {
+interface WalletProviderProps {
+  children: ReactNode;
+}
+
+export const WalletProvider = ({ children }: WalletProviderProps) => {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
@@ -59,7 +71,11 @@ export const WalletProvider = ({ children }) => {
 };
 
 // Inner component that uses theme context
-const RainbowKitProviderWrapper = ({ children }) => {
+interface RainbowKitProviderWrapperProps {
+  children: ReactNode;
+}
+
+const RainbowKitProviderWrapper = ({ children }: RainbowKitProviderWrapperProps) => {
   const { theme, debugLog } = useTheme();
   
   // Create Dreamscape violet theme for RainbowKit
@@ -115,7 +131,7 @@ const RainbowKitProviderWrapper = ({ children }) => {
     <RainbowKitProvider 
       theme={customTheme}
       avatar={CustomAvatar}
-      modalSize="compact"
+      modalSize="wide"
       initialChain={galileoTestnet.id}
       showRecentTransactions={true}
     >

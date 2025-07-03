@@ -1,15 +1,21 @@
 'use client';
 
-import React from 'react';
-import { Home, Brain, Upload, History, Settings, X, User } from 'lucide-react';
+import React, { CSSProperties } from 'react';
+import { Home, Upload, History, Settings, X, User } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import SidebarItem from './SidebarItem';
 
-const Sidebar = ({ isOpen, isMobile, onClose }) => {
+interface SidebarProps {
+  isOpen: boolean;
+  isMobile: boolean;
+  onClose: () => void;
+}
+
+const Sidebar = ({ isOpen, isMobile, onClose }: SidebarProps) => {
   const { theme, debugLog } = useTheme();
   
   // Compute sidebar styles based on state
-  const sidebarStyle = {
+  const sidebarStyle: CSSProperties = {
     width: '240px',
     backgroundColor: theme.bg.card,      // Z /client
     borderRight: `1px solid ${theme.border}`,
@@ -27,7 +33,7 @@ const Sidebar = ({ isOpen, isMobile, onClose }) => {
     overflowY: 'auto'
   };
   
-  const handleLogoClick = () => {
+  const handleLogoClick = (): void => {
     debugLog('Logo clicked - navigating to home');
     // TODO: Add navigation
     if (isMobile) onClose();
@@ -70,36 +76,31 @@ const Sidebar = ({ isOpen, isMobile, onClose }) => {
         {/* Dream Agent Avatar */}
         <div style={{ 
           position: 'relative', 
-          marginBottom: '10px',
-          width: '80px',
-          height: '80px',
-          borderRadius: '50%',
-          background: theme.gradients.primary,
+          marginBottom: '15px',
+          width: '120px',
+          height: '120px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: `0 0 20px rgba(139, 92, 246, 0.3)`
+          justifyContent: 'center'
         }}>
-          <Brain size={40} color="white" />
+          <img 
+            src="/logo.png" 
+            alt="Dreamscape Logo" 
+            style={{
+              width: '140px',
+              height: '140px',
+              objectFit: 'contain'
+            }}
+          />
         </div>
         
-        {/* Brand Name */}
-        <span style={{ 
-          fontWeight: 'bold', 
-          fontSize: '24px',
-          background: theme.gradients.primary,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textAlign: 'center'
-        }}>
-          Dreamscape.
-        </span>
         <span style={{
-          fontSize: '12px',
+          fontSize: '13px',
           color: theme.text.secondary,
-          marginTop: '4px'
+          textAlign: 'center',
+          lineHeight: '1.4'
         }}>
-          AI Dream Agent
+          Your Personal AI Dream Agent
         </span>
       </div>
       

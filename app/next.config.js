@@ -2,9 +2,19 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  experimental: {
-    appDir: true,
-  },
+  // Bundle analysis
+  ...(process.env.ANALYZE === 'true' && {
+    bundleAnalyzer: {
+      enabled: true,
+    },
+  }),
+  
+  // Compression
+  compress: true,
+  
+  // Performance optimizations
+  poweredByHeader: false,
+  
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,

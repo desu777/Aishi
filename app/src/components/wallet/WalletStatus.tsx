@@ -5,7 +5,11 @@ import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
 
-const WalletStatus = ({ showDetails = false }) => {
+interface WalletStatusProps {
+  showDetails?: boolean;
+}
+
+const WalletStatus = ({ showDetails = false }: WalletStatusProps) => {
   const { theme } = useTheme();
   const { 
     isConnected, 

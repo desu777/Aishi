@@ -4,11 +4,21 @@ import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } fro
 import { useConnectModal, useAccountModal, useChainModal } from '@rainbow-me/rainbowkit';
 import { galileoTestnet } from '../config/chains';
 import { useTheme } from '../contexts/ThemeContext';
+import type { Address } from 'viem';
+import { WalletState } from '../types';
 
-export const useWallet = () => {
+export const useWallet = (): WalletState & {
+  connectWallet: () => Promise<void>;
+  disconnectWallet: () => Promise<void>;
+  switchToOGNetwork: () => Promise<void>;
+  openAccount: () => void;
+  openChain: () => void;
+  connectError: Error | null;
+  debugLog: (message: string, data?: any) => void;
+} => {
   const { debugLog } = useTheme();
   const { address, isConnected, isConnecting, isDisconnected } = useAccount();
-  const { connect, connectors, error: connectError, isLoading, pendingConnector } = useConnect();
+  const { connect, connectors, error: connectError, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
@@ -25,7 +35,7 @@ export const useWallet = () => {
   const isCorrectNetwork = chainId === galileoTestnet.id;
   
   // Connect wallet function
-  const connectWallet = async () => {
+  const connectWallet = async (): Promise<void> => {
     debugLog('Opening connect modal');
     if (openConnectModal) {
       openConnectModal();
@@ -33,13 +43,13 @@ export const useWallet = () => {
   };
   
   // Disconnect wallet function
-  const disconnectWallet = async () => {
+  const disconnectWallet = async (): Promise<void> => {
     debugLog('Disconnecting wallet', { address });
     disconnect();
   };
   
   // Switch to 0G network
-  const switchToOGNetwork = async () => {
+  const switchToOGNetwork = async (): Promise<void> => {
     debugLog('Switching to 0G Galileo network');
     try {
       await switchChain({ chainId: galileoTestnet.id });
@@ -50,7 +60,7 @@ export const useWallet = () => {
   };
   
   // Open account modal
-  const openAccount = () => {
+  const openAccount = (): void => {
     debugLog('Opening account modal');
     if (openAccountModal) {
       openAccountModal();
@@ -58,7 +68,7 @@ export const useWallet = () => {
   };
   
   // Open chain modal
-  const openChain = () => {
+  const openChain = (): void => {
     debugLog('Opening chain modal');
     if (openChainModal) {
       openChainModal();
@@ -66,7 +76,7 @@ export const useWallet = () => {
   };
   
   // Get network name from env or fallback
-  const getNetworkName = () => {
+  const getNetworkName = (): string => {
     if (chainId === galileoTestnet.id) {
       return process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '0G';
     }
@@ -74,7 +84,7 @@ export const useWallet = () => {
   };
   
   // Get network display name
-  const getNetworkDisplayName = () => {
+  const getNetworkDisplayName = (): string => {
     if (chainId === galileoTestnet.id) {
       return process.env.NEXT_PUBLIC_CHAIN_NAME || '0G Galileo';
     }
@@ -88,7 +98,7 @@ export const useWallet = () => {
     isConnected,
     isConnecting,
     isDisconnected,
-    isLoading,
+    isLoading: isPending,
     
     // Network state
     chainId,

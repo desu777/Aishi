@@ -1,16 +1,21 @@
 'use client';
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { ThemeContextType, ThemeColors } from '../types';
 
 // Create context
-const ThemeContext = createContext();
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 // Theme provider component
-export const ThemeProvider = ({ children }) => {
+interface ThemeProviderProps {
+  children: ReactNode;
+}
+
+export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const [mounted, setMounted] = useState(false);
   
   // Debug helper
-  const debugLog = (message, data = null) => {
+  const debugLog = (message: string, data: any = null) => {
     if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
       console.log(`[🔮 DREAMSCAPE] ${message}`, data || '');
     }
@@ -22,7 +27,7 @@ export const ThemeProvider = ({ children }) => {
   }, []);
 
   // Dreamscape Theme - bazowe kolory z /client + violet accents
-  const theme = {
+  const theme: ThemeColors = {
     // Bazowe tła (z /client)
     bg: {
       main: '#0A0A0A',      // Główne tło - czarny
@@ -85,7 +90,7 @@ export const ThemeProvider = ({ children }) => {
 };
 
 // Custom hook to use the theme context
-export const useTheme = () => {
+export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext);
   if (context === undefined) {
     throw new Error('useTheme must be used within a ThemeProvider');

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { MouseEvent } from 'react';
 import { Wallet, AlertTriangle, Check } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
@@ -43,14 +43,14 @@ const ConnectButton = () => {
           position: 'relative',
           overflow: 'hidden'
         }}
-        onMouseEnter={(e) => {
+        onMouseEnter={(e: MouseEvent<HTMLButtonElement>) => {
           if (!isConnecting) {
             e.currentTarget.style.backgroundColor = theme.dream.purple;
             e.currentTarget.style.transform = 'translateY(-1px)';
             e.currentTarget.style.boxShadow = `0 4px 15px rgba(139, 92, 246, 0.4)`;
           }
         }}
-        onMouseLeave={(e) => {
+        onMouseLeave={(e: MouseEvent<HTMLButtonElement>) => {
           if (!isConnecting) {
             e.currentTarget.style.backgroundColor = theme.accent.primary;
             e.currentTarget.style.transform = 'translateY(0)';
@@ -102,11 +102,11 @@ const ConnectButton = () => {
           transition: 'all 0.2s ease',
           boxShadow: `0 0 10px rgba(255, 77, 79, 0.3)`
         }}
-        onMouseEnter={(e) => {
+        onMouseEnter={(e: MouseEvent<HTMLButtonElement>) => {
           e.currentTarget.style.backgroundColor = '#ff7875';
           e.currentTarget.style.transform = 'translateY(-1px)';
         }}
-        onMouseLeave={(e) => {
+        onMouseLeave={(e: MouseEvent<HTMLButtonElement>) => {
           e.currentTarget.style.backgroundColor = '#ff4d4f';
           e.currentTarget.style.transform = 'translateY(0)';
         }}
@@ -136,12 +136,12 @@ const ConnectButton = () => {
         transition: 'all 0.2s ease',
         boxShadow: `0 0 10px rgba(139, 92, 246, 0.2)`
       }}
-      onMouseEnter={(e) => {
+      onMouseEnter={(e: MouseEvent<HTMLButtonElement>) => {
         e.currentTarget.style.backgroundColor = theme.bg.panel;
         e.currentTarget.style.borderColor = theme.dream.purple;
         e.currentTarget.style.transform = 'translateY(-1px)';
       }}
-      onMouseLeave={(e) => {
+      onMouseLeave={(e: MouseEvent<HTMLButtonElement>) => {
         e.currentTarget.style.backgroundColor = theme.bg.card;
         e.currentTarget.style.borderColor = theme.accent.primary;
         e.currentTarget.style.transform = 'translateY(0)';
@@ -149,16 +149,21 @@ const ConnectButton = () => {
     >
       {/* Avatar */}
       <div style={{
-        width: '20px',
-        height: '20px',
-        borderRadius: '50%',
-        background: theme.gradients.primary,
+        width: '32px',
+        height: '32px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '10px'
+        justifyContent: 'center'
       }}>
-        🧠
+        <img 
+          src="/logo.png" 
+          alt="Dreamscape" 
+          style={{
+            width: '32px',
+            height: '32px',
+            objectFit: 'contain'
+          }}
+        />
       </div>
       
       {/* Address */}

@@ -1,15 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { ReactNode, MouseEvent, CSSProperties } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 
-const SidebarItem = ({ icon, label, active, to, onClick }) => {
+interface SidebarItemProps {
+  icon: ReactNode;
+  label: string;
+  active?: boolean;
+  to?: string;
+  onClick?: () => void;
+}
+
+const SidebarItem = ({ icon, label, active, to, onClick }: SidebarItemProps) => {
   const { theme, debugLog } = useTheme();
   
   // TODO: Replace with actual router logic
   const isActive = active !== undefined ? active : false;
   
-  const itemStyle = {
+  const itemStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
     padding: '12px 20px',
@@ -22,7 +30,7 @@ const SidebarItem = ({ icon, label, active, to, onClick }) => {
     margin: '2px 0'
   };
   
-  const handleClick = (e) => {
+  const handleClick = (e: MouseEvent<HTMLDivElement>): void => {
     debugLog('Sidebar item clicked', { label, to });
     
     if (to) {

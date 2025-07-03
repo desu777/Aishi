@@ -1,4 +1,5 @@
 import { defineChain } from 'viem';
+import type { Chain } from 'viem';
 
 // 0G Galileo Testnet configuration from environment variables
 export const galileoTestnet = defineChain({

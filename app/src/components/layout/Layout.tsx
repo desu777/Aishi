@@ -1,19 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Menu } from 'lucide-react';
 
-const Layout = ({ children }) => {
+interface LayoutProps {
+  children: ReactNode;
+}
+
+const Layout = ({ children }: LayoutProps) => {
   const { theme, debugLog } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   
   // Check if we're on mobile on mount and when window resizes
   useEffect(() => {
-    const checkIsMobile = () => {
+    const checkIsMobile = (): void => {
       setIsMobile(window.innerWidth < 768);
       // Auto-close sidebar on mobile
       if (window.innerWidth < 768) {
@@ -35,7 +39,7 @@ const Layout = ({ children }) => {
   }, [debugLog]);
   
   // Toggle sidebar
-  const toggleSidebar = () => {
+  const toggleSidebar = (): void => {
     setSidebarOpen(prev => !prev);
     debugLog('Sidebar toggled', { open: !sidebarOpen });
   };
@@ -45,13 +49,31 @@ const Layout = ({ children }) => {
   
   return (
     <div style={{ 
-      backgroundColor: theme.bg.main,
       color: theme.text.primary,
       minHeight: '100vh',
       display: 'flex',
       transition: 'all 0.3s ease',
       position: 'relative'
     }}>
+      {/* Video Background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: -1,
+          opacity: 0.15 // Subtle background effect
+        }}
+      >
+        <source src="/pendi-bg.mp4" type="video/mp4" />
+      </video>
       {/* Mobile Sidebar Overlay */}
       {isMobile && sidebarOpen && (
         <div 
