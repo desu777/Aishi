@@ -38,12 +38,14 @@ const dreamRoutes = require('./routes/dreams');
 const computeRoutes = require('./routes/compute');
 const agentRoutes = require('./routes/agent');
 const storageRoutes = require('./routes/storage');
+const helperRoutes = require('./routes/helper-routes');
 
 app.use('/api/test', upload.single('file'), testRoutes);
 app.use('/api/dreams', upload.single('audio'), dreamRoutes);
 app.use('/api/compute', computeRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/storage', storageRoutes);
+app.use('/api/helper', helperRoutes);
 
 // Enhanced health check endpoint with deployment status
 app.get('/api/health', async (req, res) => {
