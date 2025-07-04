@@ -57,24 +57,6 @@ DREAM_VERIFIER_ADDRESS=0x5BeD3AAFb930128ed20Beed927733b796C33C8BA
 DREAM_AGENT_NFT_ADDRESS=0xDcE93Cc4e8a32d8fC3d5c2Db56944Fa9d19d2a04
 ```
 
-## Deployment Instructions
 
-1. **Deploy Contracts**:
-   ```bash
-   npm install  # Install Hardhat dependencies
-   npm run compile  # Compile contracts
-   npm run deploy  # Deploy to 0G Galileo
-   ```
 
-2. **Update Environment**:
-   Add the deployed contract addresses to `.env` file
-
-3. **Test Integration**:
-   ```bash
-   npm run dev  # Start server
-   curl http://localhost:3001/api/health  # Check all services
-   
-   # Test progressive fee escalation with SDK override:
-   node test-sdk-override.js  # Verify SDK override mechanism
-   node test-storage.js       # Full storage integration test
-   ```
+TREASURY=0x0f13e85B575964B8b4b77E37d43A6aE9E354e94C

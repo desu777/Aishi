@@ -32,14 +32,18 @@ const Header = ({ toggleSidebar, isMobile }: HeaderProps) => {
         display: 'flex', 
         flexDirection: 'column',
         padding: '20px',
-        borderBottom: scrolled ? `1px solid ${theme.border}` : 'none',
+        boxShadow: scrolled 
+          ? `0 1px 3px rgba(0, 0, 0, 0.1), inset 0 -1px 0 rgba(139, 92, 246, 0.1)` 
+          : 'none',
         gap: '10px',
         position: 'sticky',
         top: 0,
         zIndex: 10,
-        backgroundColor: scrolled ? theme.bg.main : 'rgba(10, 10, 10, 0.3)',
-        backdropFilter: scrolled ? 'none' : 'blur(10px)',
-        transition: 'all 0.3s ease'
+        backgroundColor: scrolled 
+          ? 'rgba(10, 10, 10, 0.95)' 
+          : 'rgba(10, 10, 10, 0.3)',
+        backdropFilter: scrolled ? 'blur(15px) saturate(180%)' : 'blur(10px)',
+        transition: 'background-color 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease'
       }}
     >
       {/* Top row - Menu button and wallet */}

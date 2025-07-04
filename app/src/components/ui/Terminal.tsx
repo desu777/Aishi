@@ -216,7 +216,7 @@ Run 'mint' to create your dream agent.`;
 
          {/* Title */}
          <div style={{
-           fontSize: 'clamp(10px, 2.5vw, 13px)',
+           fontSize: 'clamp(12px, 3vw, 15px)',
            color: darkMode ? '#ffffff' : '#000000',
            fontWeight: '500',
            textAlign: 'center',
@@ -242,7 +242,7 @@ Run 'mint' to create your dream agent.`;
            padding: 'clamp(8px, 3vw, 16px)',
            backgroundColor: colors.bg,
            color: colors.text,
-           fontSize: 'clamp(12px, 3vw, 14px)',
+           fontSize: 'clamp(15px, 4vw, 18px)',
            lineHeight: '1.4',
            overflowY: 'auto',
            cursor: 'text',
@@ -281,7 +281,7 @@ Run 'mint' to create your dream agent.`;
                border: 'none',
                outline: 'none',
                color: colors.text,
-               fontSize: 'clamp(12px, 3vw, 14px)',
+               fontSize: 'clamp(15px, 4vw, 18px)',
                fontFamily: 'inherit',
                flex: 1,
                caretColor: theme.accent.primary
@@ -291,7 +291,7 @@ Run 'mint' to create your dream agent.`;
           {isLoading && (
             <span style={{
               color: colors.system,
-              fontSize: '12px',
+              fontSize: 'clamp(14px, 3.5vw, 16px)',
               marginLeft: '8px'
             }}>
               ⏳

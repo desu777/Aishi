@@ -1,62 +1,179 @@
 const { ethers } = require('ethers');
 const StorageService = require('./storageService');
 const ComputeService = require('./computeService');
+const { getContractAddress, getDreamAgentNFTInfo, checkDeploymentStatus } = require('../../utils/contractAddresses');
 
-// ABI for DreamAgentNFT (simplified for key functions)
+// Enhanced ABI for DreamAgentNFT with personalization features and fee system
 const DREAM_AGENT_NFT_ABI = [
-  "function mint(bytes[] calldata proofs, string[] calldata descriptions, address to) external payable returns (uint256 tokenId)",
+  // Enhanced mint function with agent name and fee
+  "function mint(bytes[] calldata proofs, string[] calldata descriptions, string memory agentName, address to) external payable returns (uint256 tokenId)",
   "function update(uint256 tokenId, bytes[] calldata proofs) external",
+  "function recordConversation(uint256 tokenId, bytes32 conversationHash) external",
   "function transfer(address to, uint256 tokenId, bytes[] calldata proofs) external",
-  "function clone(address to, uint256 tokenId, bytes[] calldata proofs) external payable returns (uint256 newTokenId)",
+  "function clone(address to, uint256 tokenId, string memory newAgentName, bytes[] calldata proofs) external payable returns (uint256 newTokenId)",
   "function ownerOf(uint256 tokenId) external view returns (address)",
-  "function getAgentInfo(uint256 tokenId) external view returns (address owner, uint256 intelligenceLevel, uint256 dreamCount, uint256 lastUpdated, string[] memory dataDescriptions)",
+  
+  // Enhanced view functions with fee information
+  "function getAgentInfo(uint256 tokenId) external view returns (address owner, string memory agentName, uint256 intelligenceLevel, uint256 dreamCount, uint256 conversationCount, uint256 lastUpdated, string[] memory dataDescriptions)",
   "function totalAgents() external view returns (uint256)",
+  "function MAX_AGENTS() external view returns (uint256)",
+  "function getRemainingSupply() external view returns (uint256)",
+  "function isNameAvailable(string memory agentName) external view returns (bool)",
+  
+  // Fee system functions
+  "function getMintingFee() external pure returns (uint256)",
+  "function getTreasury() external view returns (address)",
+  "function getTotalFeesCollected() external view returns (uint256)",
+  "function MINTING_FEE() external view returns (uint256)",
+  
+  // Events
   "event DreamProcessed(uint256 indexed tokenId, bytes32 dreamHash, uint256 newIntelligenceLevel)",
-  "event AgentEvolved(uint256 indexed tokenId, uint256 oldLevel, uint256 newLevel)"
+  "event AgentEvolved(uint256 indexed tokenId, uint256 oldLevel, uint256 newLevel)",
+  "event AgentConversation(uint256 indexed tokenId, bytes32 conversationHash)",
+  "event PersonalityEvolved(uint256 indexed tokenId, string trait, uint256 strength)",
+  "event Minted(uint256 indexed tokenId, address indexed creator, address indexed owner, bytes32[] dataHashes, string[] dataDescriptions)",
+  "event FeePaid(uint256 indexed tokenId, address indexed payer, uint256 amount)"
 ];
 
 class INFTAgentService {
   constructor() {
+    // Debug logging helper
+    this.debugLog = (message, data = null) => {
+      if (process.env.DREAMSCAPE_TEST === 'true') {
+        console.log(`[🔮 INFT] ${message}`, data || '');
+      }
+    };
+    
     this.storageService = new StorageService();
     this.computeService = new ComputeService();
     
-    // Initialize contract connection
+    // Initialize contract connection using deployment addresses
     this.provider = new ethers.JsonRpcProvider("https://evmrpc-testnet.0g.ai");
     this.signer = new ethers.Wallet(process.env.WALLET_PRIVATE_KEY, this.provider);
     
-    if (!process.env.DREAM_AGENT_NFT_ADDRESS) {
-      console.warn('[INFTAgentService] Warning: DREAM_AGENT_NFT_ADDRESS not set. Deploy contracts first.');
+    this.initializeContract();
+  }
+
+  /**
+   * Initialize contract using deployment addresses
+   */
+  initializeContract() {
+    const deploymentStatus = checkDeploymentStatus('galileo');
+    
+    if (!deploymentStatus.deployed) {
+      console.warn('[INFTAgentService] ⚠️  Contracts not deployed:', deploymentStatus.error);
+      this.debugLog('Contract initialization failed', deploymentStatus);
       this.contract = null;
-    } else {
-      this.contract = new ethers.Contract(
-        process.env.DREAM_AGENT_NFT_ADDRESS,
-        DREAM_AGENT_NFT_ABI,
-        this.signer
-      );
-      console.log('[INFTAgentService] Connected to DreamAgentNFT at:', process.env.DREAM_AGENT_NFT_ADDRESS);
+      return;
+    }
+    
+    const contractAddress = getContractAddress('DreamAgentNFT', 'galileo');
+    
+    if (!contractAddress) {
+      console.warn('[INFTAgentService] ⚠️  DreamAgentNFT address not found. Deploy contracts first.');
+      this.contract = null;
+      return;
+    }
+    
+    this.contract = new ethers.Contract(
+      contractAddress,
+      DREAM_AGENT_NFT_ABI,
+      this.signer
+    );
+    
+    console.log('[INFTAgentService] ✅ Connected to DreamAgentNFT at:', contractAddress);
+    this.debugLog('Contract initialized', { address: contractAddress });
+  }
+
+  /**
+   * Get minting fee information
+   * @returns {Promise<Object>}
+   */
+  async getMintingFeeInfo() {
+    if (!this.contract) {
+      throw new Error('DreamAgentNFT contract not deployed');
+    }
+
+    try {
+      const [mintingFeeWei, treasury, totalFeesCollected] = await Promise.all([
+        this.contract.getMintingFee(),
+        this.contract.getTreasury(),
+        this.contract.getTotalFeesCollected()
+      ]);
+
+      const mintingFeeEther = ethers.formatEther(mintingFeeWei);
+      const totalFeesEther = ethers.formatEther(totalFeesCollected);
+
+      this.debugLog('Minting fee info retrieved', {
+        mintingFeeEther,
+        mintingFeeWei: mintingFeeWei.toString(),
+        treasury,
+        totalFeesEther
+      });
+
+      return {
+        mintingFeeWei: mintingFeeWei.toString(),
+        mintingFeeEther,
+        mintingFeeOG: mintingFeeEther,
+        treasury,
+        totalFeesCollected: totalFeesCollected.toString(),
+        totalFeesEther,
+        currency: 'OG'
+      };
+
+    } catch (error) {
+      console.error('[INFTAgentService] Failed to get minting fee info:', error);
+      this.debugLog('Minting fee info retrieval failed', error.message);
+      throw new Error(`Failed to get minting fee info: ${error.message}`);
     }
   }
 
   /**
-   * Create a new dream agent for a user
+   * Create a new personalized dream agent for a user (with fee payment)
    * @param {string} userAddress - User's wallet address
-   * @returns {Promise<{tokenId: number, personalityHash: string}>}
+   * @param {string} agentName - Name for the agent
+   * @returns {Promise<{tokenId: number, agentName: string, personalityHash: string, feeInfo: object}>}
    */
-  async createDreamAgent(userAddress) {
-    const DEBUG = process.env.DREAMSCAPE_TEST === 'true';
-    
+  async createDreamAgent(userAddress, agentName) {
     if (!this.contract) {
       throw new Error('DreamAgentNFT contract not deployed. Run: npm run deploy');
     }
 
     try {
-      if (DEBUG) console.log('[INFTAgentService] Creating dream agent for:', userAddress);
+      this.debugLog('Creating personalized dream agent with fee payment', { userAddress, agentName });
 
-      // 1. Create initial agent personality
+      // Get minting fee information
+      const feeInfo = await this.getMintingFeeInfo();
+      this.debugLog('Minting fee required', { 
+        fee: feeInfo.mintingFeeEther + ' OG',
+        treasury: feeInfo.treasury 
+      });
+
+      // Check if name is available
+      const nameAvailable = await this.contract.isNameAvailable(agentName);
+      if (!nameAvailable) {
+        throw new Error(`Agent name "${agentName}" is already taken. Please choose another name.`);
+      }
+
+      // Check remaining supply
+      const remainingSupply = await this.contract.getRemainingSupply();
+      if (remainingSupply <= 0) {
+        throw new Error('Maximum number of agents (1000) has been reached. No more agents can be minted.');
+      }
+
+      this.debugLog('Name available and supply remaining', { 
+        agentName, 
+        remainingSupply: remainingSupply.toString(),
+        requiredFee: feeInfo.mintingFeeEther + ' OG'
+      });
+
+      // 1. Create initial agent personality with name
       const initialPersonality = {
         userId: userAddress,
+        agentName: agentName,
         createdAt: Date.now(),
         dreamCount: 0,
+        conversationCount: 0,
         patterns: {},
         emotionalProfile: {
           dominant: [],
@@ -65,41 +182,57 @@ class INFTAgentService {
         },
         intelligenceLevel: 1,
         personalizedPrompts: {
-          basePrompt: "Analyze this dream with a focus on personal growth and emotional understanding.",
+          basePrompt: `You are ${agentName}, a personalized AI dream analysis companion. You focus on personal growth and emotional understanding tailored to your owner's unique patterns.`,
           contextMemory: []
         },
-        version: "1.0"
+        traits: {
+          analytical: 0,
+          empathetic: 0,
+          supportive: 50,
+          insightful: 25
+        },
+        mintingInfo: {
+          fee: feeInfo.mintingFeeEther,
+          currency: 'OG',
+          treasury: feeInfo.treasury,
+          timestamp: Date.now()
+        },
+        version: "2.0"
       };
 
-      if (DEBUG) console.log('[INFTAgentService] Initial personality created');
+      this.debugLog('Initial personality created with minting info', { agentName });
 
       // 2. Upload personality to 0G Storage
       const personalityUpload = await this.storageService.uploadJSON(initialPersonality);
-      if (DEBUG) console.log('[INFTAgentService] Personality uploaded to 0G Storage:', personalityUpload.rootHash);
+      this.debugLog('Personality uploaded to 0G Storage', personalityUpload.rootHash);
 
       // 3. Create initial empty patterns data
       const initialPatterns = {
+        agentName: agentName,
         flyingDreams: 0,
         stressIndicators: 0,
         lucidDreamTriggers: 0,
         symbolicElements: {},
-        emotionalTrends: []
+        emotionalTrends: [],
+        conversationTopics: []
       };
 
       const patternsUpload = await this.storageService.uploadJSON(initialPatterns);
-      if (DEBUG) console.log('[INFTAgentService] Patterns uploaded to 0G Storage:', patternsUpload.rootHash);
+      this.debugLog('Patterns uploaded to 0G Storage', patternsUpload.rootHash);
 
       // 4. Create initial emotional profile
       const initialEmotions = {
+        agentName: agentName,
         dominantEmotions: [],
         fearPatterns: [],
         joyTriggers: [],
         stressFactors: [],
-        healingProgress: {}
+        healingProgress: {},
+        conversationEmotions: []
       };
 
       const emotionsUpload = await this.storageService.uploadJSON(initialEmotions);
-      if (DEBUG) console.log('[INFTAgentService] Emotions uploaded to 0G Storage:', emotionsUpload.rootHash);
+      this.debugLog('Emotions uploaded to 0G Storage', emotionsUpload.rootHash);
 
       // 5. Prepare mint data
       const proofs = [
@@ -116,12 +249,24 @@ class INFTAgentService {
         "emotional_profile"
       ];
 
-      if (DEBUG) console.log('[INFTAgentService] Minting agent with proofs:', proofs.length);
+      this.debugLog('Minting personalized agent with fee payment', { 
+        agentName, 
+        proofsLength: proofs.length,
+        requiredFee: feeInfo.mintingFeeWei + ' wei'
+      });
 
-      // 6. Mint iNFT
-      const tx = await this.contract.mint(proofs, descriptions, userAddress);
+      // 6. Mint personalized iNFT with name and fee payment
+      const mintingFeeWei = feeInfo.mintingFeeWei;
+      const tx = await this.contract.mint(proofs, descriptions, agentName, userAddress, {
+        value: mintingFeeWei
+      });
       const receipt = await tx.wait();
       
+      this.debugLog('Transaction submitted', { 
+        txHash: tx.hash,
+        feePaid: ethers.formatEther(mintingFeeWei) + ' OG'
+      });
+
       // Find Minted event to get tokenId
       const mintedEvent = receipt.logs.find(log => {
         try {
@@ -139,19 +284,97 @@ class INFTAgentService {
       const parsedEvent = this.contract.interface.parseLog(mintedEvent);
       const tokenId = parsedEvent.args._tokenId.toString();
 
-      if (DEBUG) console.log('[INFTAgentService] Agent minted with tokenId:', tokenId);
+      // Find FeePaid event
+      const feePaidEvent = receipt.logs.find(log => {
+        try {
+          const parsed = this.contract.interface.parseLog(log);
+          return parsed && parsed.name === 'FeePaid';
+        } catch (e) {
+          return false;
+        }
+      });
+
+      this.debugLog('Personalized agent minted successfully with fee payment', { 
+        tokenId, 
+        agentName,
+        txHash: tx.hash,
+        feePaid: feeInfo.mintingFeeEther + ' OG',
+        treasury: feeInfo.treasury
+      });
 
       return {
         tokenId: parseInt(tokenId),
+        agentName: agentName,
         personalityHash: personalityUpload.rootHash,
         patternsHash: patternsUpload.rootHash,
         emotionsHash: emotionsUpload.rootHash,
+        txHash: tx.hash,
+        feeInfo: {
+          feePaid: feeInfo.mintingFeeEther,
+          feeWei: feeInfo.mintingFeeWei,
+          currency: 'OG',
+          treasury: feeInfo.treasury,
+          feeUSD: (parseFloat(feeInfo.mintingFeeEther) * (parseFloat(process.env.OG_PRICE_USD) || 0.1)).toFixed(4)
+        }
+      };
+
+    } catch (error) {
+      console.error('[INFTAgentService] Failed to create personalized dream agent:', error);
+      this.debugLog('Agent creation failed', error.message);
+      
+      // Handle specific error messages
+      if (error.message.includes('Insufficient payment')) {
+        throw new Error(`Insufficient payment for minting. Required: 0.1 OG`);
+      } else if (error.message.includes('Treasury payment failed')) {
+        throw new Error(`Treasury payment failed. Please try again.`);
+      }
+      
+      throw new Error(`Failed to create dream agent: ${error.message}`);
+    }
+  }
+
+  /**
+   * Record a conversation with an agent
+   * @param {number} tokenId - Agent token ID
+   * @param {string} conversationData - Conversation data
+   * @returns {Promise<Object>}
+   */
+  async recordConversation(tokenId, conversationData) {
+    if (!this.contract) {
+      throw new Error('DreamAgentNFT contract not deployed');
+    }
+
+    try {
+      this.debugLog('Recording conversation', { tokenId });
+
+      // Store conversation in 0G Storage
+      const conversationUpload = await this.storageService.uploadJSON({
+        tokenId,
+        timestamp: Date.now(),
+        conversation: conversationData,
+        type: 'agent_conversation'
+      });
+
+      // Record on blockchain
+      const conversationHash = ethers.keccak256(ethers.toUtf8Bytes(conversationUpload.rootHash));
+      const tx = await this.contract.recordConversation(tokenId, conversationHash);
+      await tx.wait();
+
+      this.debugLog('Conversation recorded', { 
+        tokenId, 
+        hash: conversationUpload.rootHash,
+        txHash: tx.hash
+      });
+
+      return {
+        conversationHash: conversationUpload.rootHash,
         txHash: tx.hash
       };
 
     } catch (error) {
-      console.error('[INFTAgentService] Failed to create dream agent:', error);
-      throw new Error(`Failed to create dream agent: ${error.message}`);
+      console.error('[INFTAgentService] Failed to record conversation:', error);
+      this.debugLog('Conversation recording failed', error.message);
+      throw new Error(`Failed to record conversation: ${error.message}`);
     }
   }
 
@@ -275,7 +498,7 @@ class INFTAgentService {
   }
 
   /**
-   * Get agent information
+   * Get enhanced agent information with personalization data
    * @param {number} tokenId - Agent token ID
    * @returns {Promise<Object>}
    */
@@ -285,80 +508,111 @@ class INFTAgentService {
     }
 
     try {
-      const [owner, intelligenceLevel, dreamCount, lastUpdated, dataDescriptions] = 
-        await this.contract.getAgentInfo(tokenId);
+      this.debugLog('Getting enhanced agent info', { tokenId });
 
-      return {
-        tokenId: tokenId,
-        owner: owner,
-        intelligenceLevel: parseInt(intelligenceLevel.toString()),
-        dreamCount: parseInt(dreamCount.toString()),
-        lastUpdated: parseInt(lastUpdated.toString()),
-        dataDescriptions: dataDescriptions,
-        isActive: owner !== ethers.ZeroAddress
+      const agentInfo = await this.contract.getAgentInfo(tokenId);
+      
+      const info = {
+        tokenId,
+        owner: agentInfo[0],
+        agentName: agentInfo[1],
+        intelligenceLevel: parseInt(agentInfo[2].toString()),
+        dreamCount: parseInt(agentInfo[3].toString()),
+        conversationCount: parseInt(agentInfo[4].toString()),
+        lastUpdated: parseInt(agentInfo[5].toString()),
+        dataDescriptions: agentInfo[6]
       };
+
+      this.debugLog('Enhanced agent info retrieved', info);
+      return info;
+
     } catch (error) {
       console.error('[INFTAgentService] Failed to get agent info:', error);
+      this.debugLog('Agent info retrieval failed', { tokenId, error: error.message });
       throw new Error(`Failed to get agent info: ${error.message}`);
     }
   }
 
   /**
-   * Check if user owns an agent
-   * @param {string} userAddress - User's wallet address
-   * @returns {Promise<{hasAgent: boolean, tokenId?: number}>}
-   */
-  async getUserAgent(userAddress) {
-    if (!this.contract) {
-      return { hasAgent: false };
-    }
-
-    try {
-      // Simple approach: check agents 1-100 (for testing)
-      // In production, you'd maintain a mapping or emit events to track this
-      const totalAgents = await this.contract.totalAgents();
-      const maxCheck = Math.min(parseInt(totalAgents.toString()), 100);
-
-      for (let tokenId = 1; tokenId <= maxCheck; tokenId++) {
-        try {
-          const owner = await this.contract.ownerOf(tokenId);
-          if (owner.toLowerCase() === userAddress.toLowerCase()) {
-            return { hasAgent: true, tokenId: tokenId };
-          }
-        } catch (e) {
-          // Token doesn't exist, continue
-          continue;
-        }
-      }
-
-      return { hasAgent: false };
-    } catch (error) {
-      console.error('[INFTAgentService] Failed to check user agent:', error);
-      return { hasAgent: false };
-    }
-  }
-
-  /**
-   * Get contract statistics
+   * Get contract statistics including supply information
    * @returns {Promise<Object>}
    */
   async getContractStats() {
     if (!this.contract) {
-      return { deployed: false };
+      return {
+        deployed: false,
+        error: 'Contract not deployed'
+      };
     }
 
     try {
-      const totalAgents = await this.contract.totalAgents();
-      
-      return {
+      this.debugLog('Getting contract statistics with fee info');
+
+      const [totalAgents, maxAgents, remainingSupply, mintingFeeWei, treasury, totalFeesCollected] = await Promise.all([
+        this.contract.totalAgents(),
+        this.contract.MAX_AGENTS(),
+        this.contract.getRemainingSupply(),
+        this.contract.getMintingFee(),
+        this.contract.getTreasury(),
+        this.contract.getTotalFeesCollected()
+      ]);
+
+      const mintingFeeEther = ethers.formatEther(mintingFeeWei);
+      const totalFeesEther = ethers.formatEther(totalFeesCollected);
+
+      const stats = {
         deployed: true,
         contractAddress: this.contract.target,
         totalAgents: parseInt(totalAgents.toString()),
-        network: "0G Galileo Testnet"
+        maxAgents: parseInt(maxAgents.toString()),
+        remainingSupply: parseInt(remainingSupply.toString()),
+        network: 'galileo',
+        
+        // Fee information
+        feeSystem: {
+          mintingFeeWei: mintingFeeWei.toString(),
+          mintingFeeEther,
+          mintingFeeOG: mintingFeeEther,
+          currency: 'OG',
+          treasury,
+          totalFeesCollected: totalFeesCollected.toString(),
+          totalFeesEther,
+          revenueGenerated: totalFeesEther,
+          maxRevenuePotential: (1000 * parseFloat(mintingFeeEther)).toString(),
+          feeUSD: (parseFloat(mintingFeeEther) * (parseFloat(process.env.OG_PRICE_USD) || 0.1)).toFixed(4)
+        }
       };
+
+      this.debugLog('Contract statistics with fees retrieved', stats);
+      return { stats };
+
     } catch (error) {
       console.error('[INFTAgentService] Failed to get contract stats:', error);
-      return { deployed: false, error: error.message };
+      this.debugLog('Contract stats retrieval failed', error.message);
+      return {
+        deployed: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Check if agent name is available
+   * @param {string} agentName - Proposed agent name
+   * @returns {Promise<boolean>}
+   */
+  async isNameAvailable(agentName) {
+    if (!this.contract) {
+      throw new Error('DreamAgentNFT contract not deployed');
+    }
+
+    try {
+      const available = await this.contract.isNameAvailable(agentName);
+      this.debugLog('Name availability checked', { agentName, available });
+      return available;
+    } catch (error) {
+      console.error('[INFTAgentService] Failed to check name availability:', error);
+      return false;
     }
   }
 

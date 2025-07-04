@@ -1,0 +1,22 @@
+{
+  "galileo": {
+    "SimpleDreamVerifier": "0x7E40d1f83c07f89F338A71f002c7C4637C741B8b",
+    "lastUpdate": "2025-07-04T09:03:05.129Z",
+    "DreamAgentNFT": {
+      "address": "0x354034e2B275f23aEC2EA4B7Ae23E1d96F4e18Cb",
+      "deployedAt": "2025-07-04T09:03:05.129Z",
+      "name": "Dreamscape AI Agents",
+      "symbol": "DREAM",
+      "totalAgents": "0",
+      "maxAgents": "1000",
+      "remainingSupply": "1000",
+      "mintingFeeEther": "0.1",
+      "mintingFeeWei": "100000000000000000",
+      "treasury": "0x0f13e85B575964B8b4b77E37d43A6aE9E354e94C",
+      "totalFeesCollected": "0",
+      "verifier": "0x7E40d1f83c07f89F338A71f002c7C4637C741B8b",
+      "gasUsed": "3165755",
+      "hasFeeSytem": true
+    }
+  }
+}
