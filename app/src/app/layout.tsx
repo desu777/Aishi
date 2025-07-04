@@ -1,6 +1,7 @@
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { WalletProvider } from '../providers/WalletProvider';
 import '../styles/globals.css';
+import '@rainbow-me/rainbowkit/styles.css';
 import { ReactNode } from 'react';
 import { Metadata } from 'next';
 

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import '@rainbow-me/rainbowkit/styles.css';
 import {
   getDefaultConfig,
   RainbowKitProvider,
