@@ -453,6 +453,48 @@ export function useCompute() {
     }
   }, [isConnected, address, signMessage, debugLog]);
 
+  // Acknowledge provider
+  const acknowledgeProvider = useCallback(async (providerAddress: string) => {
+    if (!isConnected || !address) {
+      setError('Please connect your wallet first');
+      return { success: false };
+    }
+
+    setIsLoading(true);
+    setIsInitializing(true); // Enable signature polling
+    setError(null);
+
+    try {
+      debugLog('Acknowledging provider', { address, provider: providerAddress });
+
+      const timestamp = Date.now();
+      const message = `Acknowledge provider ${providerAddress} for ${address} at ${timestamp}`;
+      const signature = await signMessage(message);
+
+      const response = await api.post(`/broker/acknowledge/${providerAddress}`, {
+        address,
+        signature,
+        timestamp
+      });
+
+      if (response.data.success) {
+        debugLog('Provider acknowledged', response.data);
+        return { success: true, message: response.data.message };
+      } else {
+        throw new Error(response.data.error || 'Provider acknowledgment failed');
+      }
+
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to acknowledge provider';
+      debugLog('Provider acknowledgment error', err);
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      setIsLoading(false);
+      setIsInitializing(false); // Disable signature polling
+    }
+  }, [isConnected, address, signMessage, debugLog]);
+
   // Quick test
   const quickTest = useCallback(async (model: 'llama' | 'deepseek' = 'llama') => {
     if (!address) {
@@ -580,6 +622,7 @@ export function useCompute() {
     fundAccount,
     getModels,
     analyzeDream,
+    acknowledgeProvider,
     quickTest,
     getBrokerInfo,
     checkHealth,

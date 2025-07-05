@@ -38,10 +38,10 @@ export default function TestComputePage() {
     getBrokerInfo,
     getModels,
     analyzeDream,
+    acknowledgeProvider,
     quickTest,
     checkHealth,
     clearError,
-    loadInitialData,
     processSignatureRequest
   } = useCompute();
 
