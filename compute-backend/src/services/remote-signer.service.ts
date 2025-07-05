@@ -8,7 +8,7 @@ import axios from 'axios';
 export class RemoteSigner {
   private userAddress: string;
   public provider: ethers.JsonRpcProvider;
-  private apiUrl: string = 'http://localhost:3001/api/signature';
+  private apiUrl: string = process.env.SIGNATURE_API_URL || 'http://localhost:3001/api/signature';
   
   constructor(userAddress: string, provider: ethers.JsonRpcProvider) {
     this.userAddress = userAddress;
@@ -70,10 +70,11 @@ export class RemoteSigner {
   // Create signer-like interface for 0G SDK
   async sendTransaction(tx: ethers.TransactionRequest): Promise<ethers.TransactionResponse> {
     // For broker operations, we need to prepare and broadcast transaction
+    const network = await this.provider.getNetwork();
     const populatedTx = {
       ...tx,
       from: this.userAddress,
-      chainId: (await this.provider.getNetwork()).chainId
+      chainId: Number(network.chainId) // Convert bigint to number
     };
     
     // Get signature

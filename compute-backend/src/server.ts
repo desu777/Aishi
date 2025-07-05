@@ -49,8 +49,14 @@ class ComputeBackendServer {
     // Logging middleware
     this.app.use(requestLogger);
 
-    // Global rate limiting
-    this.app.use(globalRateLimit);
+    // Global rate limiting (exclude signature endpoints)
+    this.app.use((req, res, next) => {
+      // Skip rate limiting for signature endpoints
+      if (req.path.startsWith('/api/signature/')) {
+        return next();
+      }
+      return globalRateLimit(req, res, next);
+    });
 
     logger.info('Middleware configured successfully');
   }

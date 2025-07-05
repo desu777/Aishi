@@ -1,7 +1,6 @@
 import { ethers } from 'ethers';
-import { createZGComputeNetworkBroker, ZGComputeNetworkBroker } from '@0glabs/0g-serving-broker';
 import { networkConfig } from '../config/env';
-import { CONTRACT_ADDRESSES, OFFICIAL_PROVIDERS } from '../config/constants';
+import { OFFICIAL_PROVIDERS } from '../config/constants';
 import { 
   BrokerSession, 
   ComputeBackendError, 
@@ -17,17 +16,68 @@ import {
   removeBrokerSession 
 } from '../utils/cache';
 import { logOperation, logError } from '../utils/logger';
-import { createRemoteSigner } from './remote-signer.service';
+import { FrontendDelegatedBroker, createFrontendDelegatedBroker } from './frontend-delegated-broker';
+import axios from 'axios';
 
 /**
  * Broker Service - Manages 0G Compute Network broker instances
- * Uses RemoteSigner to delegate signing operations to frontend
+ * Uses FrontendDelegatedBroker instead of SDK's broker
  */
 export class BrokerService {
   private provider: ethers.JsonRpcProvider;
+  private apiUrl: string = process.env.SIGNATURE_API_URL || 'http://localhost:3001/api/signature';
 
   constructor() {
     this.provider = new ethers.JsonRpcProvider(networkConfig.computeRpcUrl);
+  }
+
+  /**
+   * Create signature callback that communicates with frontend
+   */
+  private createSignatureCallback(address: string) {
+    return async (operation: any): Promise<string> => {
+      const operationId = this.generateOperationId(operation.type, JSON.stringify(operation));
+      
+      logOperation('signature_request_creating', address, false, { 
+        operationId, 
+        type: operation.type 
+      });
+      
+      // Create signature request
+      await axios.post(`${this.apiUrl}/request`, {
+        operationId,
+        address,
+        operation
+      });
+      
+      // Wait for signature (long polling)
+      try {
+        const response = await axios.get(`${this.apiUrl}/wait/${operationId}`, {
+          timeout: 65000 // 65 seconds
+        });
+        
+        if (response.data.success && response.data.signature) {
+          logOperation('signature_received', address, true, { operationId });
+          return response.data.signature;
+        }
+        
+        throw new Error('Failed to get signature');
+      } catch (error: any) {
+        if (error.code === 'ECONNABORTED') {
+          throw new Error('Signature timeout - user did not sign in time');
+        }
+        throw error;
+      }
+    };
+  }
+
+  /**
+   * Generate unique operation ID
+   */
+  private generateOperationId(type: string, data: string): string {
+    const timestamp = Date.now();
+    const hash = ethers.keccak256(ethers.toUtf8Bytes(data));
+    return `${type}_${timestamp}_${hash.slice(0, 10)}`;
   }
 
   /**
@@ -48,41 +98,88 @@ export class BrokerService {
         };
       }
 
-      // Create RemoteSigner that will delegate signing to frontend
-      const remoteSigner = createRemoteSigner(address, this.provider);
+      // Create signature callback
+      const signatureCallback = this.createSignatureCallback(address);
 
-      // Create broker instance with RemoteSigner
+      // Create custom broker
       logOperation('init_broker_creating', address, false);
-      const broker = await createZGComputeNetworkBroker(remoteSigner);
+      const broker = await createFrontendDelegatedBroker(
+        address, 
+        this.provider, 
+        signatureCallback
+      );
 
-      // Try to check ledger - this will trigger signature requests
+      // Check if ledger exists
+      let ledgerExists = false;
       let ledgerInfo;
+      
       try {
+        logOperation('init_broker_checking_ledger', address, false);
         ledgerInfo = await broker.ledger.getLedger();
-        logOperation('init_broker_ledger_exists', address, true);
+        ledgerExists = true;
+        logOperation('init_broker_ledger_exists', address, true, {
+          balance: ethers.formatEther(ledgerInfo.ledgerInfo[0])
+        });
       } catch (error: any) {
         if (error.message.includes('LedgerNotExists')) {
-          // Create new ledger - this will require user to sign transaction
-          logOperation('init_broker_ledger_creating', address, false);
-          await broker.ledger.addLedger(0.1); // 0.1 OG initial funding from user's wallet
-          ledgerInfo = await broker.ledger.getLedger();
-          logOperation('init_broker_ledger_created', address, true, { initialFunding: 0.1 });
+          logOperation('init_broker_ledger_not_exists', address, true);
+          ledgerExists = false;
         } else {
+          logError('Error checking ledger', error, { address });
           throw error;
+        }
+      }
+
+      // Create ledger if it doesn't exist
+      if (!ledgerExists) {
+        try {
+          logOperation('init_broker_creating_ledger', address, false);
+          
+          // This will trigger a transaction signature request
+          await broker.ledger.addLedger(0.1); // 0.1 OG initial funding
+          
+          // Verify ledger was created
+          ledgerInfo = await broker.ledger.getLedger();
+          logOperation('init_broker_ledger_created', address, true, { 
+            initialFunding: 0.1,
+            balance: ethers.formatEther(ledgerInfo.ledgerInfo[0])
+          });
+        } catch (error: any) {
+          logError('Failed to create ledger', error, { address });
+          
+          if (error.message.includes('user rejected') || error.message.includes('denied')) {
+            throw new ComputeBackendError(
+              'Transaction was rejected by user. Please approve the transaction to initialize your broker.',
+              400,
+              'USER_REJECTED'
+            );
+          }
+          
+          if (error.message.includes('insufficient funds')) {
+            throw new InsufficientFundsError(
+              'Insufficient funds. You need at least 0.1 OG plus gas fees to initialize broker.'
+            );
+          }
+          
+          throw new ComputeBackendError(
+            'Failed to create ledger. Please ensure you have sufficient funds and try again.',
+            500,
+            'LEDGER_CREATE_FAILED'
+          );
         }
       }
 
       // Cache broker session
       const brokerSession: BrokerSession = {
-        broker,
-        wallet: remoteSigner as any, // RemoteSigner acts as wallet
+        broker: broker as any, // Cast to any since it's our custom implementation
+        wallet: { address } as any, // Simplified wallet object
         initialized: true,
         lastUsed: new Date()
       };
       setBrokerSession(address, brokerSession);
 
       logOperation('init_broker_success', address, true, {
-        ledgerBalance: ethers.formatEther(ledgerInfo.ledgerInfo[0])
+        ledgerBalance: ledgerInfo ? ethers.formatEther(ledgerInfo.ledgerInfo[0]) : 'unknown'
       });
 
       return {
@@ -115,7 +212,21 @@ export class BrokerService {
       
       updateBrokerActivity(address);
 
-      const ledgerInfo = await brokerSession.broker.ledger.getLedger();
+      let ledgerInfo;
+      try {
+        ledgerInfo = await brokerSession.broker.ledger.getLedger();
+      } catch (error: any) {
+        if (error.message.includes('LedgerNotExists')) {
+          // Ledger doesn't exist yet
+          return {
+            balance: "0",
+            formatted: "0 OG",
+            currency: "OG"
+          };
+        }
+        throw error;
+      }
+
       const balance = ledgerInfo.ledgerInfo[0];
       const formatted = ethers.formatEther(balance);
 
@@ -145,23 +256,54 @@ export class BrokerService {
       const brokerSession = await this.getBrokerInstance(address);
       const amountNum = parseFloat(amount);
       
+      if (isNaN(amountNum) || amountNum <= 0) {
+        throw new ComputeBackendError('Invalid amount. Must be a positive number.', 400, 'INVALID_AMOUNT');
+      }
+      
       updateBrokerActivity(address);
 
       // Get current balance
-      const currentBalance = await brokerSession.broker.ledger.getLedger();
-      const currentFormatted = parseFloat(ethers.formatEther(currentBalance.ledgerInfo[0]));
+      let currentBalance;
+      try {
+        const currentLedger = await brokerSession.broker.ledger.getLedger();
+        currentBalance = parseFloat(ethers.formatEther(currentLedger.ledgerInfo[0]));
+      } catch (error: any) {
+        if (error.message.includes('LedgerNotExists')) {
+          currentBalance = 0;
+        } else {
+          throw error;
+        }
+      }
 
       logOperation('fund_account_start', address, false, { 
         amount: amountNum, 
-        currentBalance: currentFormatted 
+        currentBalance 
       });
 
-      // Add funds to ledger
-      await brokerSession.broker.ledger.depositFund(amountNum);
+      // Add funds - this will trigger transaction signature
+      try {
+        await brokerSession.broker.ledger.depositFund(amountNum);
+      } catch (error: any) {
+        if (error.message.includes('user rejected') || error.message.includes('denied')) {
+          throw new ComputeBackendError(
+            'Transaction was rejected by user.',
+            400,
+            'USER_REJECTED'
+          );
+        }
+        
+        if (error.message.includes('insufficient funds')) {
+          throw new InsufficientFundsError(
+            `Insufficient funds. You need ${amount} OG plus gas fees.`
+          );
+        }
+        
+        throw error;
+      }
 
       // Get updated balance
-      const newBalance = await brokerSession.broker.ledger.getLedger();
-      const newFormatted = ethers.formatEther(newBalance.ledgerInfo[0]);
+      const newLedger = await brokerSession.broker.ledger.getLedger();
+      const newFormatted = ethers.formatEther(newLedger.ledgerInfo[0]);
 
       logOperation('fund_account_success', address, true, {
         amount: amountNum,
@@ -193,8 +335,14 @@ export class BrokerService {
       
       updateBrokerActivity(address);
 
-      // List services from contract (like in test-compute.ts)
-      const services = await brokerSession.broker.inference.listService();
+      // List services
+      let services;
+      try {
+        services = await brokerSession.broker.inference.listService();
+      } catch (error: any) {
+        logError('Failed to list services', error, { address });
+        return this.getDefaultModels();
+      }
 
       const models = services
         .filter((service: any) => Object.values(OFFICIAL_PROVIDERS).includes(service.provider))
@@ -206,7 +354,7 @@ export class BrokerService {
             id: modelName === 'llama-3.3-70b-instruct' ? 'llama' : 'deepseek',
             name: modelName,
             provider: service.provider,
-            costPerQuery: `${ethers.formatEther(service.inputPrice || 0)}-${ethers.formatEther(service.outputPrice || 0)} OG`,
+            costPerQuery: 'Free on Testnet',
             features: modelName === 'llama-3.3-70b-instruct' 
               ? ['fast', 'conversational', 'general-purpose']
               : ['detailed', 'analytical', 'reasoning'],
@@ -216,7 +364,7 @@ export class BrokerService {
 
       logOperation('get_models', address, true, { modelsCount: models.length });
 
-      return models;
+      return models.length > 0 ? models : this.getDefaultModels();
 
     } catch (error) {
       logError('Get models failed', error as Error, { address });
@@ -239,17 +387,9 @@ export class BrokerService {
 
       logOperation('acknowledge_provider_start', address, false, { provider: providerAddress });
 
-      // Acknowledge provider (like in test-compute.ts)
-      try {
-        await brokerSession.broker.inference.acknowledgeProviderSigner(providerAddress);
-        logOperation('acknowledge_provider_success', address, true, { provider: providerAddress });
-      } catch (error: any) {
-        if (error.message.includes('already acknowledged')) {
-          logOperation('acknowledge_provider_exists', address, true, { provider: providerAddress });
-        } else {
-          throw error;
-        }
-      }
+      await brokerSession.broker.inference.acknowledgeProviderSigner(providerAddress);
+      
+      logOperation('acknowledge_provider_success', address, true, { provider: providerAddress });
 
     } catch (error) {
       logError('Acknowledge provider failed', error as Error, { address, provider: providerAddress });
@@ -291,6 +431,30 @@ export class BrokerService {
   }
 
   /**
+   * Get default models when service listing fails
+   */
+  private getDefaultModels() {
+    return [
+      {
+        id: 'llama',
+        name: 'llama-3.3-70b-instruct',
+        provider: OFFICIAL_PROVIDERS['llama-3.3-70b-instruct'],
+        costPerQuery: 'Free on Testnet',
+        features: ['fast', 'conversational', 'general-purpose'],
+        available: true
+      },
+      {
+        id: 'deepseek',
+        name: 'deepseek-r1-70b',
+        provider: OFFICIAL_PROVIDERS['deepseek-r1-70b'],
+        costPerQuery: 'Free on Testnet',
+        features: ['detailed', 'analytical', 'reasoning'],
+        available: true
+      }
+    ];
+  }
+
+  /**
    * Get broker info for debugging
    */
   async getBrokerInfo(address: string) {
@@ -304,13 +468,19 @@ export class BrokerService {
         };
       }
 
-      const balance = await this.getBalance(address);
+      let balance = 'unknown';
+      try {
+        const balanceInfo = await this.getBalance(address);
+        balance = balanceInfo.formatted;
+      } catch (error) {
+        // Ignore balance errors
+      }
       
       return {
         initialized: session.initialized,
         lastUsed: session.lastUsed,
-        balance: balance.formatted,
-        walletAddress: session.wallet?.address || 'unknown'
+        balance,
+        walletAddress: address
       };
 
     } catch (error) {

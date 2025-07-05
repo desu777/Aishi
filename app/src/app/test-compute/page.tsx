@@ -55,12 +55,7 @@ export default function TestComputePage() {
   const [activeTab, setActiveTab] = useState<'broker' | 'ai' | 'health'>('broker');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Load initial data when wallet connects
-  useEffect(() => {
-    if (isConnected && address) {
-      loadInitialData();
-    }
-  }, [isConnected, address, loadInitialData]);
+  // Initial data is loaded automatically by useCompute hook
 
   // Handlers
   const handleInitializeBroker = async () => {

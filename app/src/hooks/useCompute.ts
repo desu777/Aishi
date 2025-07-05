@@ -67,7 +67,7 @@ interface SignatureRequest {
   timestamp: number;
 }
 
-// Create axios instance with default config
+// Create axios instance with default config and retry logic
 const api = axios.create({
   baseURL: API_URL,
   timeout: 60000, // 60 seconds for AI responses
@@ -75,6 +75,20 @@ const api = axios.create({
     'Content-Type': 'application/json'
   }
 });
+
+// Add response interceptor for rate limit handling
+api.interceptors.response.use(
+  response => response,
+  async error => {
+    if (error.response?.status === 429) {
+      // Rate limited - wait and retry once
+      const retryAfter = parseInt(error.response.headers['retry-after'] || '2');
+      await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+      return api.request(error.config);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Main compute hook
 export function useCompute() {
@@ -88,8 +102,10 @@ export function useCompute() {
   const [pendingSignatures, setPendingSignatures] = useState<SignatureRequest[]>([]);
   const [isInitializing, setIsInitializing] = useState(false);
   
-  // Polling interval ref
+  // Refs for cleanup and debouncing
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const loadInitialDataRef = useRef<NodeJS.Timeout | null>(null);
+  const processingRequestRef = useRef<string | null>(null);
 
   // Helper to sign message
   const signMessage = useCallback(async (message: string): Promise<string> => {
@@ -101,17 +117,17 @@ export function useCompute() {
     return await signer.signMessage(message);
   }, []);
 
-  // Helper to sign transaction
-  const signTransaction = useCallback(async (tx: any): Promise<string> => {
+  // Helper to send transaction (MetaMask will sign and send)
+  const sendTransaction = useCallback(async (tx: any): Promise<string> => {
     if (!window.ethereum) throw new Error('No wallet found');
     
     const { ethers } = await import('ethers');
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     
-    // Sign the transaction
-    const signedTx = await signer.signTransaction(tx);
-    return signedTx;
+    // Send the transaction (MetaMask will sign and send)
+    const txResponse = await signer.sendTransaction(tx);
+    return txResponse.hash;
   }, []);
 
   // Helper to sign typed data
@@ -127,22 +143,40 @@ export function useCompute() {
 
   // Check for pending signature requests
   const checkPendingSignatures = useCallback(async () => {
-    if (!address || !isInitializing) return;
+    if (!address) return;
     
     try {
       const response = await api.get(`/signature/pending/${address}`);
-      if (response.data.success && response.data.requests.length > 0) {
-        setPendingSignatures(response.data.requests);
-        debugLog('Pending signature requests', response.data.requests);
+      if (response.data.success) {
+        const newRequests = response.data.requests || [];
+        
+        // Always update with fresh list from backend
+        setPendingSignatures(prev => {
+          // Only log if there are actual new requests
+          const existingIds = prev.map(r => r.operationId);
+          const reallyNew = newRequests.filter((req: any) => !existingIds.includes(req.operationId));
+          
+          if (reallyNew.length > 0) {
+            debugLog('New pending signature requests', reallyNew);
+          }
+          
+          // Return the fresh list from backend (already filtered for unresolved)
+          return newRequests;
+        });
       }
     } catch (err: any) {
       debugLog('Failed to check pending signatures', err);
     }
-  }, [address, isInitializing, debugLog]);
+  }, [address, debugLog]);
 
   // Process signature request
   const processSignatureRequest = useCallback(async (request: SignatureRequest) => {
     try {
+      debugLog('Processing signature request', { 
+        operationId: request.operationId, 
+        type: request.operation.type 
+      });
+      
       let signature: string;
       
       switch (request.operation.type) {
@@ -152,8 +186,9 @@ export function useCompute() {
           break;
           
         case 'signTransaction':
-          debugLog('Signing transaction', request.operation.transaction);
-          signature = await signTransaction(request.operation.transaction);
+          debugLog('Sending transaction', request.operation.transaction);
+          signature = await sendTransaction(request.operation.transaction);
+          debugLog('Transaction sent', { txHash: signature });
           break;
           
         case 'signTypedData':
@@ -174,30 +209,36 @@ export function useCompute() {
       const authMessage = `Provide signature for ${address} at ${timestamp}`;
       const authSignature = await signMessage(authMessage);
       
+      debugLog('Sending signature to backend', { 
+        operationId: request.operationId,
+        hasSignature: !!signature 
+      });
+      
       await api.post('/signature/provide', {
         operationId: request.operationId,
         signature,
         address,
-        authSignature, // Fixed duplicate key
+        authSignature,
         timestamp
       });
       
-      debugLog('Signature provided', { operationId: request.operationId });
-      
-      // Remove from pending
-      setPendingSignatures(prev => prev.filter(r => r.operationId !== request.operationId));
+      debugLog('Signature provided successfully', { operationId: request.operationId });
       
     } catch (err: any) {
-      debugLog('Failed to process signature request', err);
+      debugLog('Failed to process signature request', { 
+        error: err.message,
+        operationId: request.operationId 
+      });
       setError(`Failed to sign: ${err.message}`);
+      throw err; // Re-throw to trigger finally block
     }
-  }, [address, signMessage, signTransaction, signTypedData, debugLog]);
+  }, [address, signMessage, sendTransaction, signTypedData, debugLog]);
 
-  // Start polling for signatures when initializing
+  // Start polling for signatures when address is available
   useEffect(() => {
-    if (isInitializing && address) {
-      // Start polling
-      pollingInterval.current = setInterval(checkPendingSignatures, 1000);
+    if (address) {
+      // Start polling (reduced frequency to avoid rate limits)
+      pollingInterval.current = setInterval(checkPendingSignatures, 5000); // 3s instead of 2s
       
       return () => {
         if (pollingInterval.current) {
@@ -205,18 +246,26 @@ export function useCompute() {
         }
       };
     }
-  }, [isInitializing, address, checkPendingSignatures]);
+  }, [address, checkPendingSignatures]);
 
-  // Auto-process pending signatures
+  // Auto-process pending signatures (with debouncing to prevent spam)
   useEffect(() => {
-    if (pendingSignatures.length > 0) {
+    if (pendingSignatures.length > 0 && !processingRequestRef.current) {
       // Process first pending signature
       const request = pendingSignatures[0];
-      processSignatureRequest(request);
+      
+      // Mark as processing to prevent duplicate processing
+      processingRequestRef.current = request.operationId;
+      
+      // Process the request
+      processSignatureRequest(request).finally(() => {
+        // Clear processing flag when done
+        processingRequestRef.current = null;
+      });
     }
   }, [pendingSignatures, processSignatureRequest]);
 
-  // Initialize broker (updated to handle signatures)
+  // Initialize broker
   const initializeBroker = useCallback(async () => {
     if (!isConnected || !address) {
       setError('Please connect your wallet first');
@@ -304,6 +353,7 @@ export function useCompute() {
     }
 
     setIsLoading(true);
+    setIsInitializing(true); // Enable signature polling
     setError(null);
 
     try {
@@ -338,6 +388,7 @@ export function useCompute() {
       return { success: false, error: errorMsg };
     } finally {
       setIsLoading(false);
+      setIsInitializing(false); // Disable signature polling
     }
   }, [isConnected, address, signMessage, debugLog]);
 
@@ -468,24 +519,51 @@ export function useCompute() {
     setError(null);
   }, []);
 
-  // Load initial data
+  // Load initial data with debounce to prevent rate limiting
   const loadInitialData = useCallback(async () => {
     if (!address) return;
 
-    try {
-      setIsLoading(true);
-      await Promise.all([
-        getModels(),
-        getBrokerInfo(),
-        checkHealth()
-      ]);
-    } catch (err: any) {
-      debugLog('Failed to load initial data', err);
-    } finally {
-      setIsLoading(false);
+    // Clear any pending load
+    if (loadInitialDataRef.current) {
+      clearTimeout(loadInitialDataRef.current);
     }
+
+    // Debounce the load to prevent multiple rapid calls
+    loadInitialDataRef.current = setTimeout(async () => {
+      try {
+        setIsLoading(true);
+        // Load data sequentially with delays to avoid rate limiting
+        await getModels();
+        await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay
+        await getBrokerInfo();
+        await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay
+        await checkHealth();
+      } catch (err: any) {
+        debugLog('Failed to load initial data', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 1000); // 1 second debounce
   }, [address, getModels, getBrokerInfo, checkHealth, debugLog]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (loadInitialDataRef.current) {
+        clearTimeout(loadInitialDataRef.current);
+      }
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
+      }
+    };
+  }, []);
+
+  // Load initial data when address changes
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
+
+  // Return hook interface
   return {
     // State
     isLoading,
@@ -493,28 +571,23 @@ export function useCompute() {
     brokerInfo,
     models,
     healthStatus,
-    isConnected,
-    address,
     pendingSignatures,
     isInitializing,
-    
-    // Broker operations
+
+    // Actions
     initializeBroker,
     checkBalance,
     fundAccount,
-    getBrokerInfo,
-    
-    // AI operations
     getModels,
     analyzeDream,
     quickTest,
-    
-    // Utils
+    getBrokerInfo,
     checkHealth,
     clearError,
-    loadInitialData,
-    
-    // Signature handling
-    processSignatureRequest
+    processSignatureRequest,
+
+    // Utilities
+    isConnected: isConnected && !!address,
+    address
   };
-} 
+}

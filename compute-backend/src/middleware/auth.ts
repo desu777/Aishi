@@ -259,9 +259,9 @@ export function authenticateAIAnalysis(req: Request, res: Response, next: NextFu
 // Middleware for signature request authentication
 export function authenticateSignatureRequest(req: Request, res: Response, next: NextFunction) {
   try {
-    const { address, signature, timestamp } = req.body;
+    const { address, authSignature, timestamp } = req.body;
     
-    if (!address || !signature || !timestamp) {
+    if (!address || !authSignature || !timestamp) {
       throw new AuthenticationError('Missing required authentication fields');
     }
     
@@ -270,7 +270,7 @@ export function authenticateSignatureRequest(req: Request, res: Response, next: 
     }
     
     const message = `Provide signature for ${address} at ${timestamp}`;
-    const verification = verifySignature(address, signature, message, timestamp);
+    const verification = verifySignature(address, authSignature, message, timestamp);
     
     if (!verification.isValid) {
       throw new AuthenticationError(verification.message || 'Invalid signature');
