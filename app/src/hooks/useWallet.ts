@@ -1,10 +1,11 @@
 'use client';
 
-import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain, useSendTransaction } from 'wagmi';
 import { useConnectModal, useAccountModal, useChainModal } from '@rainbow-me/rainbowkit';
 import { galileoTestnet } from '../config/chains';
 import { useTheme } from '../contexts/ThemeContext';
 import type { Address } from 'viem';
+import { parseEther } from 'viem';
 import { WalletState } from '../types';
 
 export const useWallet = (): WalletState & {
@@ -13,8 +14,10 @@ export const useWallet = (): WalletState & {
   switchToOGNetwork: () => Promise<void>;
   openAccount: () => void;
   openChain: () => void;
+  sendOGToMasterWallet: (amount: string) => Promise<{ success: boolean; txHash?: string; error?: string }>;
   connectError: Error | null;
   debugLog: (message: string, data?: any) => void;
+  isSendingTransaction: boolean;
 } => {
   const { debugLog } = useTheme();
   const { address, isConnected, isConnecting, isDisconnected } = useAccount();
@@ -22,6 +25,7 @@ export const useWallet = (): WalletState & {
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
+  const { sendTransactionAsync, isPending: isSendingTransaction } = useSendTransaction();
   
   // RainbowKit modals
   const { openConnectModal } = useConnectModal();
@@ -56,6 +60,52 @@ export const useWallet = (): WalletState & {
     } catch (error) {
       debugLog('Failed to switch network', error);
       throw error;
+    }
+  };
+  
+  // Send OG to Master Wallet
+  const sendOGToMasterWallet = async (amount: string): Promise<{ success: boolean; txHash?: string; error?: string }> => {
+    try {
+      const masterWalletAddress = process.env.NEXT_PUBLIC_MASTER_WALLET;
+      
+      if (!masterWalletAddress) {
+        throw new Error('Master wallet address not configured');
+      }
+      
+      if (!isConnected || !address) {
+        throw new Error('Wallet not connected');
+      }
+      
+      if (!isCorrectNetwork) {
+        throw new Error('Wrong network. Please switch to 0G Galileo Testnet');
+      }
+      
+      debugLog('Sending OG to Master Wallet', { 
+        amount, 
+        to: masterWalletAddress,
+        from: address 
+      });
+      
+      const txHash = await sendTransactionAsync({
+        to: masterWalletAddress as Address,
+        value: parseEther(amount),
+        chainId: galileoTestnet.id
+      });
+      
+      debugLog('Transaction sent successfully', { txHash });
+      
+      return {
+        success: true,
+        txHash: txHash
+      };
+      
+    } catch (error: any) {
+      debugLog('Failed to send transaction', error);
+      
+      return {
+        success: false,
+        error: error.message || 'Transaction failed'
+      };
     }
   };
   
@@ -110,8 +160,12 @@ export const useWallet = (): WalletState & {
     connectWallet,
     disconnectWallet,
     switchToOGNetwork,
+    sendOGToMasterWallet,
     openAccount,
     openChain,
+    
+    // States
+    isSendingTransaction,
     
     // Errors
     connectError,

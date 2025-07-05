@@ -1,7 +1,7 @@
 'use client';
 
 import React, { CSSProperties } from 'react';
-import { Home, Upload, History, Settings, X, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, Upload, X, User, ChevronLeft, ChevronRight, Brain } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '../../contexts/ThemeContext';
 import SidebarItem from './SidebarItem';
@@ -17,6 +17,9 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: SidebarProps) => {
   const { theme, debugLog } = useTheme();
   const router = useRouter();
+  
+  // Check if test features are enabled
+  const isDreamTest = process.env.NEXT_PUBLIC_DREAM_TEST === 'true';
   
   // Compute sidebar styles based on state
   const sidebarStyle: CSSProperties = {
@@ -161,27 +164,24 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
           isCollapsed={isCollapsed}
           onClick={isMobile ? onClose : undefined}
         />
-        <SidebarItem 
-          icon={<Upload size={18} />} 
-          label="Upload Dream" 
-          to="/upload"
-          isCollapsed={isCollapsed}
-          onClick={isMobile ? onClose : undefined}
-        />
-        <SidebarItem 
-          icon={<History size={18} />} 
-          label="Dream History" 
-          to="/history"
-          isCollapsed={isCollapsed}
-          onClick={isMobile ? onClose : undefined}
-        />
-        <SidebarItem 
-          icon={<Settings size={18} />} 
-          label="Settings" 
-          to="/settings"
-          isCollapsed={isCollapsed}
-          onClick={isMobile ? onClose : undefined}
-        />
+        {isDreamTest && (
+          <SidebarItem 
+            icon={<Upload size={18} />} 
+            label="Upload Dream" 
+            to="/upload"
+            isCollapsed={isCollapsed}
+            onClick={isMobile ? onClose : undefined}
+          />
+        )}
+        {isDreamTest && (
+          <SidebarItem 
+            icon={<Brain size={18} />} 
+            label="Compute Test" 
+            to="/compute"
+            isCollapsed={isCollapsed}
+            onClick={isMobile ? onClose : undefined}
+          />
+        )}
       </div>
       
       {/* Footer */}
