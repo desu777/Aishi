@@ -1,0 +1,25 @@
+{
+  "name": "dreamscape-test-compute",
+  "version": "1.0.0",
+  "description": "Test script for 0G Compute integration in Dreamscape",
+  "main": "test-compute.js",
+  "scripts": {
+    "test": "node dist/test-compute.js",
+    "dev": "ts-node test-compute.ts",
+    "build": "tsc",
+    "start": "npm run build && npm run test"
+  },
+  "dependencies": {
+    "@0glabs/0g-serving-broker": "^0.2.13",
+    "@types/crypto-js": "^4.2.2",
+    "crypto-js": "^4.2.0",
+    "ethers": "^6.13.1",
+    "openai": "^4.78.1",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+} 
