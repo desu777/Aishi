@@ -16,6 +16,10 @@ coverage/
 .env
 .env.*
 doors.md
+
+# Contract deployment files (contain sensitive info)
+contracts/frontend-contracts.json
+contracts/deployment-addresses.json
 # System files
 .DS_Store
 Thumbs.db
