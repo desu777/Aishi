@@ -32,6 +32,11 @@ const nextConfig = {
   // Performance optimizations
   poweredByHeader: false,
   
+  env: {
+    NEXT_PUBLIC_COMPUTE_API_URL: process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api',
+    NEXT_PUBLIC_DREAM_TEST: process.env.NEXT_PUBLIC_DREAM_TEST || 'true',
+  },
+  
   webpack: (config, { isServer }) => {
     // CSS loader configuration for RainbowKit
     config.module.rules.push({

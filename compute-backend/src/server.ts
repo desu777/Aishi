@@ -12,6 +12,7 @@ import logger from './utils/logger';
 import brokerRoutes from './routes/broker.routes';
 import aiRoutes from './routes/ai.routes';
 import healthRoutes from './routes/health.routes';
+import signatureRoutes from './routes/signature.routes';
 
 /**
  * Dreamscape Compute Backend Server
@@ -67,6 +68,9 @@ class ComputeBackendServer {
     // AI analysis routes
     this.app.use('/api/ai', aiRoutes);
 
+    // Signature handling routes
+    this.app.use('/api/signature', signatureRoutes);
+
     // Root endpoint
     this.app.get('/', (req, res) => {
       res.json({
@@ -77,7 +81,8 @@ class ComputeBackendServer {
         endpoints: {
           health: '/api/health',
           broker: '/api/broker',
-          ai: '/api/ai'
+          ai: '/api/ai',
+          signature: '/api/signature'
         }
       });
     });

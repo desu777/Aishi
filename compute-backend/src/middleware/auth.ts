@@ -254,4 +254,46 @@ export function authenticateAIAnalysis(req: Request, res: Response, next: NextFu
       });
     }
   }
+}
+
+// Middleware for signature request authentication
+export function authenticateSignatureRequest(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { address, signature, timestamp } = req.body;
+    
+    if (!address || !signature || !timestamp) {
+      throw new AuthenticationError('Missing required authentication fields');
+    }
+    
+    if (!ethers.isAddress(address)) {
+      throw new AuthenticationError('Invalid Ethereum address');
+    }
+    
+    const message = `Provide signature for ${address} at ${timestamp}`;
+    const verification = verifySignature(address, signature, message, timestamp);
+    
+    if (!verification.isValid) {
+      throw new AuthenticationError(verification.message || 'Invalid signature');
+    }
+    
+    // Attach user info to request
+    (req as AuthenticatedRequest).userAddress = address;
+    (req as AuthenticatedRequest).timestamp = timestamp;
+    
+    next();
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+        code: error.code
+      });
+    } else {
+      logError('Signature request authentication error', error as Error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal authentication error'
+      });
+    }
+  }
 } 

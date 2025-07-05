@@ -17,10 +17,11 @@ import {
   removeBrokerSession 
 } from '../utils/cache';
 import { logOperation, logError } from '../utils/logger';
+import { createRemoteSigner } from './remote-signer.service';
 
 /**
  * Broker Service - Manages 0G Compute Network broker instances
- * Based on working test-compute.ts implementation
+ * Uses RemoteSigner to delegate signing operations to frontend
  */
 export class BrokerService {
   private provider: ethers.JsonRpcProvider;
@@ -30,7 +31,7 @@ export class BrokerService {
   }
 
   /**
-   * Initialize broker account for a user
+   * Initialize broker account for a user using RemoteSigner
    */
   async initializeBroker(address: string): Promise<InitBrokerResponse> {
     try {
@@ -47,28 +48,23 @@ export class BrokerService {
         };
       }
 
-      // Create a temporary wallet for broker operations
-      // Note: We don't store private keys, just use them for broker initialization
-      const randomPrivateKey = ethers.hexlify(ethers.randomBytes(32));
-      const wallet = new ethers.Wallet(randomPrivateKey, this.provider);
+      // Create RemoteSigner that will delegate signing to frontend
+      const remoteSigner = createRemoteSigner(address, this.provider);
 
-      // Create broker instance (similar to test-compute.ts)
-      const broker = await createZGComputeNetworkBroker(
-        wallet,
-        CONTRACT_ADDRESSES.LEDGER,
-        CONTRACT_ADDRESSES.INFERENCE,
-        CONTRACT_ADDRESSES.FINE_TUNING
-      );
+      // Create broker instance with RemoteSigner
+      logOperation('init_broker_creating', address, false);
+      const broker = await createZGComputeNetworkBroker(remoteSigner);
 
-      // Try to create ledger account
+      // Try to check ledger - this will trigger signature requests
       let ledgerInfo;
       try {
         ledgerInfo = await broker.ledger.getLedger();
         logOperation('init_broker_ledger_exists', address, true);
       } catch (error: any) {
         if (error.message.includes('LedgerNotExists')) {
-          // Create new ledger with initial funding
-          await broker.ledger.addLedger(0.1); // 0.1 OG initial funding
+          // Create new ledger - this will require user to sign transaction
+          logOperation('init_broker_ledger_creating', address, false);
+          await broker.ledger.addLedger(0.1); // 0.1 OG initial funding from user's wallet
           ledgerInfo = await broker.ledger.getLedger();
           logOperation('init_broker_ledger_created', address, true, { initialFunding: 0.1 });
         } else {
@@ -79,7 +75,7 @@ export class BrokerService {
       // Cache broker session
       const brokerSession: BrokerSession = {
         broker,
-        wallet,
+        wallet: remoteSigner as any, // RemoteSigner acts as wallet
         initialized: true,
         lastUsed: new Date()
       };
@@ -97,6 +93,9 @@ export class BrokerService {
 
     } catch (error) {
       logError('Broker initialization failed', error as Error, { address });
+      
+      // Cleanup on failure
+      
       throw new ComputeBackendError(
         `Failed to initialize broker: ${(error as Error).message}`,
         500,
@@ -104,6 +103,8 @@ export class BrokerService {
       );
     }
   }
+
+
 
   /**
    * Get broker balance

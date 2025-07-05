@@ -31,7 +31,7 @@ export const serverConfig: ServerConfig = {
   port: getEnvVarAsNumber('PORT', 3001),
   nodeEnv: getEnvVar('NODE_ENV', 'development'),
   corsOrigins: getEnvVarAsArray('CORS_ORIGINS', ['http://localhost:3003']),
-  maxRequestsPerMinute: getEnvVarAsNumber('MAX_REQUESTS_PER_MINUTE', 10),
+  maxRequestsPerMinute: getEnvVarAsNumber('MAX_REQUESTS_PER_MINUTE', 1000), // 10 -> 1000 (100x więcej)
   sessionTimeoutMinutes: getEnvVarAsNumber('SESSION_TIMEOUT_MINUTES', 30),
   logLevel: getEnvVar('LOG_LEVEL', 'info')
 };
@@ -45,8 +45,8 @@ export const networkConfig: NetworkConfig = {
 };
 
 export const rateLimitConfig: RateLimitConfig = {
-  maxAiQueriesPerDay: getEnvVarAsNumber('MAX_AI_QUERIES_PER_DAY', 100),
-  maxFundOperationsPerHour: getEnvVarAsNumber('MAX_FUND_OPERATIONS_PER_HOUR', 5)
+  maxAiQueriesPerDay: getEnvVarAsNumber('MAX_AI_QUERIES_PER_DAY', 10000), // 100 -> 10000 (100x więcej)
+  maxFundOperationsPerHour: getEnvVarAsNumber('MAX_FUND_OPERATIONS_PER_HOUR', 1000) // 5 -> 1000 (200x więcej)
 };
 
 // Validation
@@ -62,4 +62,4 @@ console.log('🔧 Environment configuration loaded:');
 console.log(`- Server: ${serverConfig.nodeEnv} mode on port ${serverConfig.port}`);
 console.log(`- Network: ${networkConfig.computeRpcUrl}`);
 console.log(`- Default Model: ${networkConfig.defaultModel}`);
-console.log(`- Rate Limits: ${rateLimitConfig.maxAiQueriesPerDay} AI queries/day`); 
+console.log(`- Rate Limits: ${serverConfig.maxRequestsPerMinute} requests/min, ${rateLimitConfig.maxAiQueriesPerDay} AI queries/day, ${rateLimitConfig.maxFundOperationsPerHour} fund ops/hour`); 
