@@ -124,25 +124,11 @@ interface IPersonalityEvolution {
     function canProcessDreamToday(uint256 tokenId) 
         external view returns (bool canProcess);
     
-    /// @notice Calculate personality rarity score
-    /// @param tokenId Agent to analyze
-    /// @return rarityScore Rarity score based on trait distribution
-    function calculatePersonalityRarity(uint256 tokenId) 
-        external view returns (uint256 rarityScore);
+
     
-    /// @notice Get agent's dominant personality traits (top 3)
-    /// @param tokenId Agent to analyze
-    /// @return traits Array of dominant trait names
-    /// @return values Array of corresponding trait values
-    function getDominantTraits(uint256 tokenId) 
-        external view returns (string[] memory traits, uint8[] memory values);
+
     
-    /// @notice Get agent's response style based on personality
-    /// @param tokenId Agent to analyze
-    /// @return style Response style description
-    /// @return primaryTrait Most dominant trait influencing style
-    function getResponseStyle(uint256 tokenId) 
-        external view returns (string memory style, string memory primaryTrait);
+
     
     // Advanced Analytics
     
@@ -170,9 +156,5 @@ interface IPersonalityEvolution {
     
     // Batch Operations
     
-    /// @notice Get multiple agents' personality summaries
-    /// @param tokenIds Array of agent IDs
-    /// @return summaries Array of personality summaries
-    function getPersonalitySummaries(uint256[] calldata tokenIds) 
-        external view returns (PersonalityTraits[] memory summaries);
+
 } 

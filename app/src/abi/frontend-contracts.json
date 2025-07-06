@@ -1,7 +1,7 @@
 {
   "galileo": {
-    "DreamAgentNFTv2": {
-      "address": "0x2BA644C34A39F610C8d9beB9757220Fb7D7d728b",
+    "DreamscapeAgent": {
+      "address": "0x0f148e9f86b3376D1652C5f819D691159Ba2E2F7",
       "abi": [
         {
           "inputs": [
@@ -947,25 +947,6 @@
               "type": "uint256"
             }
           ],
-          "name": "calculatePersonalityRarity",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "rarityScore",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "tokenId",
-              "type": "uint256"
-            }
-          ],
           "name": "canProcessDreamToday",
           "outputs": [
             {
@@ -975,59 +956,6 @@
             }
           ],
           "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "to",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "tokenId",
-              "type": "uint256"
-            },
-            {
-              "internalType": "bytes[]",
-              "name": "",
-              "type": "bytes[]"
-            }
-          ],
-          "name": "clone",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "newTokenId",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "payable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "name": "clonePublic",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "payable",
           "type": "function"
         },
         {
@@ -1146,6 +1074,129 @@
               "type": "uint256"
             }
           ],
+          "name": "getAgentInfo",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "tokenId",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address",
+                  "name": "owner",
+                  "type": "address"
+                },
+                {
+                  "internalType": "string",
+                  "name": "agentName",
+                  "type": "string"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "createdAt",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "lastUpdated",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "intelligenceLevel",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "dreamCount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "conversationCount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "personalityInitialized",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "totalEvolutions",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "lastEvolutionDate",
+                  "type": "uint256"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "uint8",
+                      "name": "creativity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "analytical",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "empathy",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "intuition",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "resilience",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "curiosity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "dominantMood",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "lastDreamDate",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct IPersonalityEvolution.PersonalityTraits",
+                  "name": "personality",
+                  "type": "tuple"
+                }
+              ],
+              "internalType": "struct DreamscapeAgent.AgentInfo",
+              "name": "info",
+              "type": "tuple"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            }
+          ],
           "name": "getAgentName",
           "outputs": [
             {
@@ -1195,30 +1246,6 @@
               "internalType": "uint256",
               "name": "",
               "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "tokenId",
-              "type": "uint256"
-            }
-          ],
-          "name": "getDominantTraits",
-          "outputs": [
-            {
-              "internalType": "string[]",
-              "name": "traits",
-              "type": "string[]"
-            },
-            {
-              "internalType": "uint8[]",
-              "name": "values",
-              "type": "uint8[]"
             }
           ],
           "stateMutability": "view",
@@ -1280,59 +1307,140 @@
         {
           "inputs": [
             {
-              "internalType": "uint256[]",
-              "name": "tokenIds",
-              "type": "uint256[]"
+              "internalType": "address",
+              "name": "owner",
+              "type": "address"
             }
           ],
-          "name": "getPersonalitySummaries",
+          "name": "getOwnerAgent",
           "outputs": [
             {
               "components": [
                 {
-                  "internalType": "uint8",
-                  "name": "creativity",
-                  "type": "uint8"
+                  "internalType": "uint256",
+                  "name": "tokenId",
+                  "type": "uint256"
                 },
                 {
-                  "internalType": "uint8",
-                  "name": "analytical",
-                  "type": "uint8"
-                },
-                {
-                  "internalType": "uint8",
-                  "name": "empathy",
-                  "type": "uint8"
-                },
-                {
-                  "internalType": "uint8",
-                  "name": "intuition",
-                  "type": "uint8"
-                },
-                {
-                  "internalType": "uint8",
-                  "name": "resilience",
-                  "type": "uint8"
-                },
-                {
-                  "internalType": "uint8",
-                  "name": "curiosity",
-                  "type": "uint8"
+                  "internalType": "address",
+                  "name": "owner",
+                  "type": "address"
                 },
                 {
                   "internalType": "string",
-                  "name": "dominantMood",
+                  "name": "agentName",
                   "type": "string"
                 },
                 {
                   "internalType": "uint256",
-                  "name": "lastDreamDate",
+                  "name": "createdAt",
                   "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "lastUpdated",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "intelligenceLevel",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "dreamCount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "conversationCount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "personalityInitialized",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "totalEvolutions",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "lastEvolutionDate",
+                  "type": "uint256"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "uint8",
+                      "name": "creativity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "analytical",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "empathy",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "intuition",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "resilience",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "curiosity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "dominantMood",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "lastDreamDate",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct IPersonalityEvolution.PersonalityTraits",
+                  "name": "personality",
+                  "type": "tuple"
                 }
               ],
-              "internalType": "struct IPersonalityEvolution.PersonalityTraits[]",
-              "name": "summaries",
-              "type": "tuple[]"
+              "internalType": "struct DreamscapeAgent.AgentInfo",
+              "name": "info",
+              "type": "tuple"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "owner",
+              "type": "address"
+            }
+          ],
+          "name": "getOwnerTokenId",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
             }
           ],
           "stateMutability": "view",
@@ -1402,30 +1510,6 @@
         {
           "inputs": [
             {
-              "internalType": "uint256",
-              "name": "tokenId",
-              "type": "uint256"
-            }
-          ],
-          "name": "getResponseStyle",
-          "outputs": [
-            {
-              "internalType": "string",
-              "name": "style",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "primaryTrait",
-              "type": "string"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
               "internalType": "bytes32",
               "name": "role",
               "type": "bytes32"
@@ -1437,6 +1521,136 @@
               "internalType": "bytes32",
               "name": "",
               "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "getUserAgent",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "tokenId",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address",
+                  "name": "owner",
+                  "type": "address"
+                },
+                {
+                  "internalType": "string",
+                  "name": "agentName",
+                  "type": "string"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "createdAt",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "lastUpdated",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "intelligenceLevel",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "dreamCount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "conversationCount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "personalityInitialized",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "totalEvolutions",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "lastEvolutionDate",
+                  "type": "uint256"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "uint8",
+                      "name": "creativity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "analytical",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "empathy",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "intuition",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "resilience",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "curiosity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "dominantMood",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "lastDreamDate",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct IPersonalityEvolution.PersonalityTraits",
+                  "name": "personality",
+                  "type": "tuple"
+                }
+              ],
+              "internalType": "struct DreamscapeAgent.AgentInfo",
+              "name": "info",
+              "type": "tuple"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "getUserTokenId",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
             }
           ],
           "stateMutability": "view",
@@ -1551,35 +1765,6 @@
           "inputs": [
             {
               "internalType": "bytes[]",
-              "name": "",
-              "type": "bytes[]"
-            },
-            {
-              "internalType": "string[]",
-              "name": "",
-              "type": "string[]"
-            },
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "name": "mint",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "payable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "bytes[]",
               "name": "proofs",
               "type": "bytes[]"
             },
@@ -1669,6 +1854,25 @@
               "internalType": "address",
               "name": "",
               "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "name": "ownerToTokenId",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
             }
           ],
           "stateMutability": "view",
@@ -1875,25 +2079,6 @@
           "type": "function"
         },
         {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "tokenId",
-              "type": "uint256"
-            }
-          ],
-          "name": "tokenURI",
-          "outputs": [
-            {
-              "internalType": "string",
-              "name": "",
-              "type": "string"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
           "inputs": [],
           "name": "totalAgents",
           "outputs": [
@@ -1953,24 +2138,6 @@
           "name": "transfer",
           "outputs": [],
           "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "name": "transferPublic",
-          "outputs": [],
-          "stateMutability": "pure",
           "type": "function"
         },
         {
@@ -2090,7 +2257,7 @@
         }
       ]
     },
-    "lastUpdate": "2025-07-06T09:25:39.015Z",
+    "lastUpdate": "2025-07-06T12:27:04.936Z",
     "chainId": 16601,
     "rpcUrl": "https://evmrpc-testnet.0g.ai"
   }

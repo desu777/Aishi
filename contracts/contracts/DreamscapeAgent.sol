@@ -8,10 +8,10 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
-/// @title DreamAgentNFTv2 - Enhanced Personality Evolution iNFTs
+/// @title DreamscapeAgent - Enhanced Personality Evolution iNFTs
 /// @notice Advanced dream agents that develop unique personalities based on user dreams
-/// @dev Implements ERC-7857 with comprehensive personality evolution system
-contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, AccessControl, Pausable {
+/// @dev Implements ERC-7857 with comprehensive personality evolution system. Limited to 1 agent per wallet.
+contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, AccessControl, Pausable {
     
     // Data types for dream agents (from v1)
     string constant DREAM_PATTERNS = "dream_patterns";
@@ -89,6 +89,9 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     uint256 public totalAgents = 0;
     uint256 public totalFeesCollected = 0;
     
+    // One agent per wallet optimization
+    mapping(address => uint256) public ownerToTokenId; // 0 = no agent
+    
     // Personality system state
     mapping(uint256 => PersonalityTraits) public agentPersonalities;
     mapping(uint256 => bytes32[]) public dreamHashes;
@@ -102,8 +105,8 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     mapping(uint256 => string) public responseStyles;
     
     // Contract metadata
-    string public name = "Dreamscape AI Agents v2";
-    string public symbol = "DREAMv2";
+    string public name = "DreamscapeAgent";
+    string public symbol = "DREAM";
     
     // Verifier for proof validation
     IERC7857DataVerifier public immutable verifier;
@@ -147,6 +150,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         address to
     ) external payable nonReentrant whenNotPaused returns (uint256 tokenId) {
         require(to != address(0), "Invalid address");
+        require(ownerToTokenId[to] == 0, "Wallet already has an agent");
         require(descriptions.length == proofs.length, "Length mismatch");
         require(totalAgents < MAX_AGENTS, "Max limit reached");
         require(bytes(agentName).length > 0 && bytes(agentName).length <= 32, "Invalid name");
@@ -167,6 +171,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         
         // Create new agent
         tokenId = nextTokenId++;
+        ownerToTokenId[to] = tokenId; // Update owner mapping
         agents[tokenId] = DreamAgent({
             owner: to,
             agentName: agentName,
@@ -387,105 +392,11 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         return block.timestamp > agentPersonalities[tokenId].lastDreamDate + 1 days;
     }
     
-    /// @notice Calculate personality rarity score
-    /// @param tokenId Agent to analyze
-    /// @return rarityScore Rarity score based on trait distribution
-    function calculatePersonalityRarity(uint256 tokenId) 
-        external view override returns (uint256 rarityScore) {
-        require(agents[tokenId].owner != address(0), "Agent does not exist");
-        
-        PersonalityTraits memory traits = agentPersonalities[tokenId];
-        
-        // Base rarity from trait variance
-        uint256 traitVariance = _calculateTraitVariance(traits);
-        
-        // Bonus for dominant traits (>80)
-        uint256 dominantTraits = _countDominantTraits(traits);
-        
-        // Penalty for balanced personalities (all traits 40-60)
-        uint256 balancePenalty = _calculateBalancePenalty(traits);
-        
-        // Evolution bonus
-        uint256 evolutionBonus = agents[tokenId].totalEvolutions * 10;
-        
-        rarityScore = traitVariance + dominantTraits * 100 - balancePenalty + evolutionBonus;
-    }
+
     
-    /// @notice Get agent's dominant personality traits (top 3)
-    /// @param tokenId Agent to analyze
-    /// @return traits Array of dominant trait names
-    /// @return values Array of corresponding trait values
-    function getDominantTraits(uint256 tokenId) 
-        external view override returns (string[] memory traits, uint8[] memory values) {
-        require(agents[tokenId].owner != address(0), "Agent does not exist");
-        
-        PersonalityTraits memory personality = agentPersonalities[tokenId];
-        
-        // Create arrays for sorting
-        string[6] memory allTraits = ["creativity", "analytical", "empathy", "intuition", "resilience", "curiosity"];
-        uint8[6] memory allValues = [
-            personality.creativity,
-            personality.analytical,
-            personality.empathy,
-            personality.intuition,
-            personality.resilience,
-            personality.curiosity
-        ];
-        
-        // Sort and get top 3
-        traits = new string[](3);
-        values = new uint8[](3);
-        
-        for (uint256 i = 0; i < 3; i++) {
-            uint256 maxIndex = 0;
-            for (uint256 j = 1; j < 6; j++) {
-                if (allValues[j] > allValues[maxIndex]) {
-                    maxIndex = j;
-                }
-            }
-            traits[i] = allTraits[maxIndex];
-            values[i] = allValues[maxIndex];
-            allValues[maxIndex] = 0; // Remove from next iteration
-        }
-    }
+
     
-    /// @notice Get agent's response style based on personality
-    /// @param tokenId Agent to analyze
-    /// @return style Response style description
-    /// @return primaryTrait Most dominant trait influencing style
-    function getResponseStyle(uint256 tokenId) 
-        external view override returns (string memory style, string memory primaryTrait) {
-        require(agents[tokenId].owner != address(0), "Agent does not exist");
-        
-        style = responseStyles[tokenId];
-        PersonalityTraits memory personality = agentPersonalities[tokenId];
-        
-        // Find primary trait
-        uint8 maxValue = 0;
-        if (personality.creativity > maxValue) {
-            maxValue = personality.creativity;
-            primaryTrait = "creativity";
-        }
-        if (personality.analytical > maxValue) {
-            maxValue = personality.analytical;
-            primaryTrait = "analytical";
-        }
-        if (personality.empathy > maxValue) {
-            maxValue = personality.empathy;
-            primaryTrait = "empathy";
-        }
-        if (personality.intuition > maxValue) {
-            maxValue = personality.intuition;
-            primaryTrait = "intuition";
-        }
-        if (personality.resilience > maxValue) {
-            maxValue = personality.resilience;
-            primaryTrait = "resilience";
-        }
-        if (personality.curiosity > maxValue) {
-            primaryTrait = "curiosity";
-        }
-    }
+
     
     // ... [Continue with remaining interface functions and internal helpers]
     
@@ -643,68 +554,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         emit MilestoneUnlocked(tokenId, milestone, traitValue);
     }
     
-    /// @notice Calculate trait variance for rarity scoring
-    /// @param traits Personality traits
-    /// @return variance Trait variance score
-    function _calculateTraitVariance(PersonalityTraits memory traits) internal pure returns (uint256 variance) {
-        uint256[6] memory values = [
-            uint256(traits.creativity),
-            uint256(traits.analytical),
-            uint256(traits.empathy),
-            uint256(traits.intuition),
-            uint256(traits.resilience),
-            uint256(traits.curiosity)
-        ];
-        
-        // Calculate mean
-        uint256 sum = 0;
-        for (uint256 i = 0; i < 6; i++) {
-            sum += values[i];
-        }
-        uint256 mean = sum / 6;
-        
-        // Calculate variance
-        uint256 varianceSum = 0;
-        for (uint256 i = 0; i < 6; i++) {
-            uint256 diff = values[i] > mean ? values[i] - mean : mean - values[i];
-            varianceSum += diff * diff;
-        }
-        variance = varianceSum / 6;
-    }
-    
-    /// @notice Count dominant traits (>80) for rarity scoring
-    /// @param traits Personality traits
-    /// @return count Number of dominant traits
-    function _countDominantTraits(PersonalityTraits memory traits) internal pure returns (uint256 count) {
-        if (traits.creativity > 80) count++;
-        if (traits.analytical > 80) count++;
-        if (traits.empathy > 80) count++;
-        if (traits.intuition > 80) count++;
-        if (traits.resilience > 80) count++;
-        if (traits.curiosity > 80) count++;
-    }
-    
-    /// @notice Calculate balance penalty for rarity scoring
-    /// @param traits Personality traits
-    /// @return penalty Balance penalty score
-    function _calculateBalancePenalty(PersonalityTraits memory traits) internal pure returns (uint256 penalty) {
-        bool isBalanced = traits.creativity >= 40 && traits.creativity <= 60 &&
-                         traits.analytical >= 40 && traits.analytical <= 60 &&
-                         traits.empathy >= 40 && traits.empathy <= 60 &&
-                         traits.intuition >= 40 && traits.intuition <= 60 &&
-                         traits.resilience >= 40 && traits.resilience <= 60 &&
-                         traits.curiosity >= 40 && traits.curiosity <= 60;
-        
-        return isBalanced ? 200 : 0; // Penalty for being too balanced
-    }
-    
-    /// @notice Calculate absolute difference between two uint8 values
-    /// @param a First value
-    /// @param b Second value
-    /// @return diff Absolute difference
-    function _absDiff(uint8 a, uint8 b) internal pure returns (uint256 diff) {
-        return a > b ? a - b : b - a;
-    }
+
     
     // Missing interface functions
     
@@ -746,18 +596,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         return (m.achieved, m.achievedAt);
     }
     
-    /// @notice Get multiple agents' personality summaries
-    /// @param tokenIds Array of agent IDs
-    /// @return summaries Array of personality summaries
-    function getPersonalitySummaries(uint256[] calldata tokenIds) 
-        external view override returns (PersonalityTraits[] memory summaries) {
-        summaries = new PersonalityTraits[](tokenIds.length);
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            if (agents[tokenIds[i]].owner != address(0)) {
-                summaries[i] = agentPersonalities[tokenIds[i]];
-            }
-        }
-    }
+
     
     /// @notice Get trait value by name
     /// @param tokenId Agent ID
@@ -783,55 +622,21 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     /// @param tokenId Agent to transfer
     function transfer(address to, uint256 tokenId, bytes[] calldata /* proofs */) external override onlyOwnerOrAdmin(tokenId) {
         require(to != address(0), "Cannot transfer to zero address");
+        require(ownerToTokenId[to] == 0, "Recipient already has an agent");
         
         address from = agents[tokenId].owner;
+        
+        // Update owner mappings
+        ownerToTokenId[from] = 0; // Remove from old owner
+        ownerToTokenId[to] = tokenId; // Add to new owner
+        
         agents[tokenId].owner = to;
         agents[tokenId].lastUpdated = block.timestamp;
         
         emit Transferred(tokenId, from, to);
     }
     
-    /// @notice Clone agent with personality preservation
-    /// @param to Address to clone agent for
-    /// @param tokenId Agent to clone
-    /// @return newTokenId The cloned agent token ID
-    function clone(address to, uint256 tokenId, bytes[] calldata /* proofs */) 
-        external payable override nonReentrant whenNotPaused onlyOwnerOrAdmin(tokenId) returns (uint256 newTokenId) {
-        require(to != address(0), "Cannot clone to zero address");
-        require(totalAgents < MAX_AGENTS, "Maximum agents limit reached");
-        require(msg.value >= MINTING_FEE, "Insufficient payment for cloning");
-        
-        // Create cloned agent with preserved personality
-        newTokenId = nextTokenId++;
-        agents[newTokenId] = agents[tokenId]; // Copy all data
-        agents[newTokenId].owner = to;
-        agents[newTokenId].createdAt = block.timestamp;
-        agents[newTokenId].lastUpdated = block.timestamp;
-        agents[newTokenId].dreamCount = 0; // Reset for new owner
-        agents[newTokenId].conversationCount = 0;
-        agents[newTokenId].totalEvolutions = 0;
-        
-        // Preserve personality but reset evolution tracking
-        agentPersonalities[newTokenId] = agentPersonalities[tokenId];
-        agentPersonalities[newTokenId].lastDreamDate = 0; // Allow immediate dreams
-        
-        totalAgents++;
-        totalFeesCollected += MINTING_FEE;
-        
-        // Handle payment
-        (bool success, ) = treasury.call{value: MINTING_FEE}("");
-        require(success, "Treasury payment failed");
-        
-        if (msg.value > MINTING_FEE) {
-            (bool refundSuccess, ) = msg.sender.call{value: msg.value - MINTING_FEE}("");
-            require(refundSuccess, "Refund failed");
-        }
-        
-        emit Cloned(tokenId, newTokenId, msg.sender, to);
-        // Emit standard Minted for clone
-        emit Minted(newTokenId, msg.sender, to, agents[tokenId].dataHashes, agents[tokenId].dataDescriptions);
-        emit FeePaid(newTokenId, msg.sender, MINTING_FEE);
-    }
+
     
     // Standard ERC-7857 functions
     function ownerOf(uint256 tokenId) external view override returns (address) {
@@ -849,28 +654,12 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         emit AuthorizedUsage(tokenId, user);
     }
     
-    // Legacy/unused functions
-    function transferPublic(address, uint256) external pure override {
-        revert("Public transfer not implemented");
-    }
+
     
-    function clonePublic(address, uint256) external payable override returns (uint256) {
-        revert("Public clone not implemented");
-    }
+
     
     
-    /// @notice Standard ERC-7857 mint function (use mintAgent instead)
-    /// @param proofs Ownership proofs for initial data
-    /// @param dataDescriptions Data type descriptions  
-    /// @param to Address to mint agent for
-    /// @return tokenId The newly minted agent token ID
-    function mint(
-        bytes[] calldata /* proofs */,
-        string[] calldata /* dataDescriptions */,
-        address /* to */
-    ) external payable override returns (uint256 /* tokenId */) {
-        revert("Use mintAgent(proofs, descriptions, agentName, to) instead");
-    }
+
     
     // Missing ERC-7857 and NFT standard functions
     
@@ -880,40 +669,15 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         return totalAgents;
     }
     
-    /// @notice Get balance of owner
+    /// @notice Get balance of owner (0 or 1 due to one agent limit)
     /// @param owner Address to check
-    /// @return Number of agents owned
+    /// @return Number of agents owned (0 or 1)
     function balanceOf(address owner) external view returns (uint256) {
         require(owner != address(0), "Invalid address");
-        uint256 balance = 0;
-        for (uint256 i = 1; i < nextTokenId; i++) {
-            if (agents[i].owner == owner) {
-                balance++;
-            }
-        }
-        return balance;
+        return ownerToTokenId[owner] > 0 ? 1 : 0;
     }
     
-    /// @notice Get simplified token URI for metadata
-    /// @param tokenId Token to get URI for
-    /// @return Simplified metadata string
-    function tokenURI(uint256 tokenId) external view returns (string memory) {
-        require(agents[tokenId].owner != address(0), "Token does not exist");
-        
-        DreamAgent memory agent = agents[tokenId];
-        PersonalityTraits memory personality = agentPersonalities[tokenId];
-        
-        return string(abi.encodePacked(
-            'data:application/json,{"name":"', agent.agentName, '",',
-            '"description":"Dreamscape AI Agent",',
-            '"attributes":[',
-            '{"trait_type":"Intelligence","value":', _toString(agent.intelligenceLevel), '},',
-            '{"trait_type":"Dreams","value":', _toString(agent.dreamCount), '},',
-            '{"trait_type":"Creativity","value":', _toString(personality.creativity), '},',
-            '{"trait_type":"Empathy","value":', _toString(personality.empathy), '}',
-            ']}'
-        ));
-    }
+
     
     /// @notice Check if contract supports interface
     /// @param interfaceId Interface identifier
@@ -937,6 +701,101 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     /// @return Agent name
     function getAgentName(uint256 tokenId) external view returns (string memory) {
         return agents[tokenId].agentName;
+    }
+    
+    /// @notice Get owner's agent token ID
+    /// @param owner Address to check
+    /// @return tokenId Agent token ID (0 if no agent)
+    function getOwnerTokenId(address owner) external view returns (uint256) {
+        return ownerToTokenId[owner];
+    }
+    
+    /// @notice Get caller's agent token ID
+    /// @return tokenId Agent token ID (0 if no agent)
+    function getUserTokenId() external view returns (uint256) {
+        return ownerToTokenId[msg.sender];
+    }
+    
+    /// @notice Complete agent information structure
+    struct AgentInfo {
+        uint256 tokenId;
+        address owner;
+        string agentName;
+        uint256 createdAt;
+        uint256 lastUpdated;
+        uint256 intelligenceLevel;
+        uint256 dreamCount;
+        uint256 conversationCount;
+        bool personalityInitialized;
+        uint256 totalEvolutions;
+        uint256 lastEvolutionDate;
+        PersonalityTraits personality;
+    }
+    
+    /// @notice Get complete agent information by token ID
+    /// @param tokenId Agent to query
+    /// @return info Complete agent information
+    function getAgentInfo(uint256 tokenId) external view returns (AgentInfo memory info) {
+        require(agents[tokenId].owner != address(0), "Agent does not exist");
+        
+        DreamAgent memory agent = agents[tokenId];
+        PersonalityTraits memory personality = agentPersonalities[tokenId];
+        
+        info = AgentInfo({
+            tokenId: tokenId,
+            owner: agent.owner,
+            agentName: agent.agentName,
+            createdAt: agent.createdAt,
+            lastUpdated: agent.lastUpdated,
+            intelligenceLevel: agent.intelligenceLevel,
+            dreamCount: agent.dreamCount,
+            conversationCount: agent.conversationCount,
+            personalityInitialized: agent.personalityInitialized,
+            totalEvolutions: agent.totalEvolutions,
+            lastEvolutionDate: agent.lastEvolutionDate,
+            personality: personality
+        });
+    }
+    
+    /// @notice Get owner's agent complete information
+    /// @param owner Address to check
+    /// @return info Complete agent information (or empty if no agent)
+    function getOwnerAgent(address owner) external view returns (AgentInfo memory info) {
+        uint256 tokenId = ownerToTokenId[owner];
+        if (tokenId == 0) {
+            // Return empty struct if no agent
+            return AgentInfo({
+                tokenId: 0,
+                owner: address(0),
+                agentName: "",
+                createdAt: 0,
+                lastUpdated: 0,
+                intelligenceLevel: 0,
+                dreamCount: 0,
+                conversationCount: 0,
+                personalityInitialized: false,
+                totalEvolutions: 0,
+                lastEvolutionDate: 0,
+                personality: PersonalityTraits({
+                    creativity: 0,
+                    analytical: 0,
+                    empathy: 0,
+                    intuition: 0,
+                    resilience: 0,
+                    curiosity: 0,
+                    dominantMood: "",
+                    lastDreamDate: 0
+                })
+            });
+        }
+        
+        return this.getAgentInfo(tokenId);
+    }
+    
+    /// @notice Get caller's agent complete information
+    /// @return info Complete agent information (or empty if no agent)
+    function getUserAgent() external view returns (AgentInfo memory info) {
+        return this.getOwnerAgent(msg.sender);
     }
     
     // Emergency controls
@@ -969,7 +828,14 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     /// @dev Only ADMIN_ROLE can use this in emergencies
     function emergencyTransfer(uint256 tokenId, address to) external onlyRole(ADMIN_ROLE) {
         require(to != address(0), "Cannot transfer to zero address");
+        require(ownerToTokenId[to] == 0, "Recipient already has an agent");
+        
         address from = agents[tokenId].owner;
+        
+        // Update owner mappings
+        ownerToTokenId[from] = 0; // Remove from old owner
+        ownerToTokenId[to] = tokenId; // Add to new owner
+        
         agents[tokenId].owner = to;
         agents[tokenId].lastUpdated = block.timestamp;
         emit Transferred(tokenId, from, to);
@@ -991,28 +857,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         return false;
     }
     
-    /// @notice Convert uint to string
-    /// @param value Number to convert
-    /// @return String representation
-    function _toString(uint256 value) internal pure returns (string memory) {
-        if (value == 0) return "0";
-        
-        uint256 temp = value;
-        uint256 digits;
-        while (temp != 0) {
-            digits++;
-            temp /= 10;
-        }
-        
-        bytes memory buffer = new bytes(digits);
-        while (value != 0) {
-            digits -= 1;
-            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
-            value /= 10;
-        }
-        
-        return string(buffer);
-    }
+
     
     // Base64 encoding removed to reduce contract size
 } 

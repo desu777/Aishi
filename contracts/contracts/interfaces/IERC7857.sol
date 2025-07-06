@@ -42,16 +42,7 @@ interface IERC7857 {
     /// @return The address of the verifier contract
     function verifier() external view returns (IERC7857DataVerifier);
 
-    /// @notice Mint new functional NFT with functional data ownership proof
-    /// @param _proofs Proof of data ownership
-    /// @param _dataDescriptions Descriptions of the data
-    /// @return _tokenId The ID of the newly minted token
-    /// @param _to The address to mint the token for, if _to is not set, the token will be minted for the caller
-    function mint(
-        bytes[] calldata _proofs,
-        string[] calldata _dataDescriptions,
-        address _to
-    ) external payable returns (uint256 _tokenId);
+
 
     /// @notice Transfer data with ownership
     /// @param _to Address to transfer data to
@@ -63,30 +54,11 @@ interface IERC7857 {
         bytes[] calldata _proofs
     ) external;
 
-    /// @notice Clone data
-    /// @param _to Address to clone data to
-    /// @param _tokenId The token to clone data for
-    /// @param _proofs Proofs of data available for _to
-    /// @return _newTokenId The ID of the newly cloned token
-    function clone(
-        address _to,
-        uint256 _tokenId,
-        bytes[] calldata _proofs
-    ) external payable returns (uint256 _newTokenId);
 
-    /// @notice Transfer public data with ownership
-    /// @param _to Address to transfer data to
-    /// @param _tokenId The token to transfer data for
-    function transferPublic(address _to, uint256 _tokenId) external;
 
-    /// @notice Clone public data
-    /// @param _to Address to clone data to
-    /// @param _tokenId The token to clone data for
-    /// @return _newTokenId The ID of the newly cloned token
-    function clonePublic(
-        address _to,
-        uint256 _tokenId
-    ) external payable returns (uint256 _newTokenId);
+
+
+
 
     /// @notice Add authorized user to group
     /// @param _tokenId The token to add to group

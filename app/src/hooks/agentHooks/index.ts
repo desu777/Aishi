@@ -4,8 +4,8 @@
  */
 
 export { useAgentMint } from './useAgentMint';
+export { useAgentRead } from './useAgentRead';
 
 // Future exports:
-// export { useAgentRead } from './useAgentRead';
 // export { useAgentDream } from './useAgentDream';
 // export { useAgentConversation } from './useAgentConversation'; 

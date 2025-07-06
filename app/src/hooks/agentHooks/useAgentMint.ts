@@ -9,8 +9,8 @@ import contractData from '../../abi/frontend-contracts.json';
 
 // Contract configuration imported from JSON
 const contractConfig = {
-  address: contractData.galileo.DreamAgentNFTv2.address as `0x${string}`,
-  abi: contractData.galileo.DreamAgentNFTv2.abi,
+  address: contractData.galileo.DreamscapeAgent.address as `0x${string}`,
+  abi: contractData.galileo.DreamscapeAgent.abi,
 } as const;
 
 // Types from ABI

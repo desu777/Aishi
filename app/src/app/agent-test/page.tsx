@@ -5,7 +5,8 @@ import Layout from '../../components/layout/Layout';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
 import { useAgentMint } from '../../hooks/agentHooks';
-import { Brain, Sparkles, CheckCircle, AlertCircle, Loader2, Zap } from 'lucide-react';
+import AgentInfo from '../../components/agent/AgentInfo';
+import { Brain, Sparkles, CheckCircle, AlertCircle, Loader2, Zap, Info } from 'lucide-react';
 
 export default function AgentTest() {
   const { theme, debugLog } = useTheme();
@@ -34,6 +35,7 @@ export default function AgentTest() {
   
   // Local state
   const [agentName, setAgentName] = useState('');
+  const [mode, setMode] = useState<'mint' | 'info'>('mint');
   const [lastMintedAgent, setLastMintedAgent] = useState<{
     name: string;
     txHash: string;
@@ -197,7 +199,75 @@ export default function AgentTest() {
 
         {isConnected && isCorrectNetwork && (
           <>
-            {/* Mint Agent Section */}
+            {/* Mode Toggle */}
+            <div style={{
+              backgroundColor: theme.bg.card,
+              border: `1px solid ${theme.border}`,
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{
+                color: theme.text.primary,
+                marginBottom: '15px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <Zap size={20} />
+                Mode Selection
+              </h3>
+              
+              <div style={{
+                display: 'flex',
+                gap: '10px'
+              }}>
+                <button
+                  onClick={() => setMode('mint')}
+                  style={{
+                    backgroundColor: mode === 'mint' ? theme.accent.primary : theme.bg.panel,
+                    color: mode === 'mint' ? 'white' : theme.text.primary,
+                    border: `1px solid ${mode === 'mint' ? theme.accent.primary : theme.border}`,
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Sparkles size={16} />
+                  Mint Agent
+                </button>
+                
+                <button
+                  onClick={() => setMode('info')}
+                  style={{
+                    backgroundColor: mode === 'info' ? theme.accent.primary : theme.bg.panel,
+                    color: mode === 'info' ? 'white' : theme.text.primary,
+                    border: `1px solid ${mode === 'info' ? theme.accent.primary : theme.border}`,
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Info size={16} />
+                  Agent Info
+                </button>
+              </div>
+            </div>
+
+            {/* Conditional Content Based on Mode */}
+            {mode === 'mint' && (
+              <>
+                {/* Mint Agent Section */}
             <div style={{
               backgroundColor: theme.bg.card,
               border: `1px solid ${theme.border}`,
@@ -424,6 +494,13 @@ export default function AgentTest() {
                   </div>
                 </div>
               </div>
+            )}
+              </>
+            )}
+
+            {/* Agent Info Mode */}
+            {mode === 'info' && (
+              <AgentInfo />
             )}
           </>
         )}

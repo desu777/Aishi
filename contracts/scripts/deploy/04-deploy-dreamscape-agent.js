@@ -5,7 +5,7 @@ const path = require("path");
 // Debug logging helper
 const debugLog = (message, data = null) => {
   if (process.env.DREAMSCAPE_TEST === 'true') {
-    console.log(`[🔮 DEPLOY V2] ${message}`, data || '');
+    console.log(`[🚀 DEPLOY AGENT] ${message}`, data || '');
   }
 };
 
@@ -102,7 +102,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy, get } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  console.log("🧠 Deploying DreamAgentNFTv2 with Enhanced Personality System...");
+  console.log("🚀 Deploying DreamscapeAgent - Optimized iNFT Contract...");
   console.log("Network:", network.name);
   console.log("Deployer:", deployer);
 
@@ -118,23 +118,23 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     console.warn("⚠️  TREASURY_ADDRESS not set in .env, using deployer address as treasury");
   }
   
-  debugLog('Starting DreamAgentNFTv2 deployment with personality system', { 
+  debugLog('Starting DreamscapeAgent deployment', { 
     network: network.name, 
     deployer,
     verifier: verifierDeployment.address,
     treasury: treasuryAddress
   });
 
-  const dreamAgentNFTv2Deployment = await deploy("DreamAgentNFTv2", {
+  const dreamscapeAgentDeployment = await deploy("DreamscapeAgent", {
     from: deployer,
     args: [verifierDeployment.address, treasuryAddress],
     log: true,
     waitConfirmations: network.name === "galileo" ? 2 : 1,
   });
 
-  console.log("✅ DreamAgentNFTv2 deployed to:", dreamAgentNFTv2Deployment.address);
+  console.log("✅ DreamscapeAgent deployed to:", dreamscapeAgentDeployment.address);
 
-  // Initialize contract to get enhanced info
+  // Initialize contract to get info
   const ethers = require("ethers");
   const provider = new ethers.JsonRpcProvider(
     network.name === "galileo" 
@@ -143,25 +143,25 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   );
   
   const wallet = new ethers.Wallet(process.env.WALLET_PRIVATE_KEY, provider);
-  const dreamAgentNFTv2 = new ethers.Contract(
-    dreamAgentNFTv2Deployment.address,
-    dreamAgentNFTv2Deployment.abi,
+  const dreamscapeAgent = new ethers.Contract(
+    dreamscapeAgentDeployment.address,
+    dreamscapeAgentDeployment.abi,
     wallet
   );
 
-  // Get contract info including personality features
+  // Get contract info
   try {
     const [name, symbol, totalAgents, maxAgents, mintingFee, treasury, verifierAddress] = await Promise.all([
-      dreamAgentNFTv2.name(),
-      dreamAgentNFTv2.symbol(),
-      dreamAgentNFTv2.totalAgents(),
-      dreamAgentNFTv2.MAX_AGENTS(),
-      dreamAgentNFTv2.MINTING_FEE(),
-      dreamAgentNFTv2.treasury(),
-      dreamAgentNFTv2.verifier()
+      dreamscapeAgent.name(),
+      dreamscapeAgent.symbol(),
+      dreamscapeAgent.totalAgents(),
+      dreamscapeAgent.MAX_AGENTS(),
+      dreamscapeAgent.MINTING_FEE(),
+      dreamscapeAgent.treasury(),
+      dreamscapeAgent.verifier()
     ]);
     
-    console.log("📊 Enhanced Contract Info:");
+    console.log("📊 Contract Info:");
     console.log(`  Name: ${name}`);
     console.log(`  Symbol: ${symbol}`);
     console.log(`  Total Agents: ${totalAgents}/${maxAgents}`);
@@ -169,7 +169,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     console.log(`  Treasury: ${treasury}`);
     console.log(`  Verifier: ${verifierAddress}`);
     
-    debugLog('DreamAgentNFTv2 contract info with personality system retrieved', {
+    debugLog('DreamscapeAgent contract info retrieved', {
       name,
       symbol,
       totalAgents: totalAgents.toString(),
@@ -180,8 +180,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
       verifier: verifierAddress
     });
     
-    // Save address with enhanced contract info to JSON file
-    saveDeploymentAddress("DreamAgentNFTv2", dreamAgentNFTv2Deployment.address, network.name, {
+    // Save address with contract info to JSON file
+    saveDeploymentAddress("DreamscapeAgent", dreamscapeAgentDeployment.address, network.name, {
       name,
       symbol,
       totalAgents: totalAgents.toString(),
@@ -191,18 +191,17 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
       mintingFeeWei: mintingFee.toString(),
       treasury,
       verifier: verifierAddress,
-      gasUsed: dreamAgentNFTv2Deployment.receipt?.gasUsed?.toString(),
-      abi: dreamAgentNFTv2Deployment.abi, // Add full ABI for frontend
-      hasPersonalitySystem: true,
+      gasUsed: dreamscapeAgentDeployment.receipt?.gasUsed?.toString(),
+      abi: dreamscapeAgentDeployment.abi, // Add full ABI for frontend
+      isOptimized: true,
       features: {
+        oneAgentPerWallet: true,
         dailyDreamEvolution: true,
         personalityTraits: true,
         contextAwareConversations: true,
         personalityMilestones: true,
-        responseStyleEvolution: true,
-        personalityRarity: true,
-        agentCompatibility: true,
-        traitEvolutionHistory: true
+        efficientReads: true,
+        contractSizeOptimized: true
       }
     });
     
@@ -211,19 +210,19 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     debugLog('Failed to retrieve contract info', error.message);
     
     // Save address without extra info
-    saveDeploymentAddress("DreamAgentNFTv2", dreamAgentNFTv2Deployment.address, network.name, {
+    saveDeploymentAddress("DreamscapeAgent", dreamscapeAgentDeployment.address, network.name, {
       treasury: treasuryAddress,
       mintingFeeEther: "0.1",
       mintingFeeWei: "100000000000000000",
-      abi: dreamAgentNFTv2Deployment.abi, // Add ABI even if info retrieval failed
-      hasPersonalitySystem: true,
-      gasUsed: dreamAgentNFTv2Deployment.receipt?.gasUsed?.toString()
+      abi: dreamscapeAgentDeployment.abi, // Add ABI even if info retrieval failed
+      isOptimized: true,
+      gasUsed: dreamscapeAgentDeployment.receipt?.gasUsed?.toString()
     });
   }
   
   // Save to environment
   console.log("📝 Add to .env:");
-  console.log(`DREAM_AGENT_NFT_V2_ADDRESS=${dreamAgentNFTv2Deployment.address}`);
+  console.log(`DREAMSCAPE_AGENT_ADDRESS=${dreamscapeAgentDeployment.address}`);
   console.log(`TREASURY_ADDRESS=${treasuryAddress}`);
   console.log(`SIMPLE_DREAM_VERIFIER_ADDRESS=${verifierDeployment.address}`);
   
@@ -231,53 +230,39 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   console.log(`  📊 deployment-addresses.json - Full deployment info`);
   console.log(`  🎨 frontend-contracts.json - ABI + addresses for frontend`);
   
-  debugLog('DreamAgentNFTv2 deployment completed', {
-    address: dreamAgentNFTv2Deployment.address,
-    treasury: treasuryAddress,
-    gasUsed: dreamAgentNFTv2Deployment.receipt?.gasUsed?.toString()
-  });
+  console.log("\n💡 Optimized Features:");
+  console.log("  ✅ 1 Agent per Wallet (O(1) reads)");
+  console.log("  ✅ Daily dream processing with personality evolution");
+  console.log("  ✅ 6 personality traits system");
+  console.log("  ✅ Context-aware conversations");
+  console.log("  ✅ Personality milestones");
+  console.log("  ✅ Efficient getUserAgent() & getOwnerAgent()");
+  console.log("  ✅ Contract size optimized for mainnet");
   
-  // Enhanced deployment info for personality system
-  console.log("\n🎭 Enhanced Personality System Features:");
-  console.log("  ✅ Daily dream processing with 24h cooldown");
-  console.log("  ✅ 6 personality traits (creativity, analytical, empathy, intuition, resilience, curiosity)");
-  console.log("  ✅ Context-aware conversations (5 types)");
-  console.log("  ✅ Personality milestones and achievements");
-  console.log("  ✅ Response style evolution based on traits");
-  console.log("  ✅ Personality rarity scoring");
-  console.log("  ✅ Agent compatibility calculation");
-  console.log("  ✅ Trait evolution history tracking");
-  console.log("  ✅ Dream and conversation hash storage");
+  console.log("\n🎯 Core Functions:");
+  console.log("  🔮 mintAgent() - Create dream agent (1 per wallet)");
+  console.log("  🌙 processDailyDream() - Evolve personality");
+  console.log("  💬 recordConversation() - Build context");
+  console.log("  📊 getUserAgent() - Get complete agent info");
+  console.log("  🎭 getPersonalityTraits() - Get current traits");
   
-  console.log("\n💰 Enhanced Economic Model:");
-  console.log(`  💎 Minting Cost: 0.1 OG (~$0.01 USD)`);
+  console.log("\n💰 Economic Model:");
+  console.log(`  💎 Minting Cost: 0.1 OG`);
   console.log(`  🏦 Treasury: ${treasuryAddress}`);
   console.log(`  📊 Max Supply: 1000 agents (testnet)`);
-  console.log(`  💰 Revenue Potential: ${1000 * 0.1} OG (if all minted)`);
-  console.log(`  🎯 Value Drivers: Personality uniqueness + evolution history`);
+  console.log(`  🎯 Value: Personality uniqueness + evolution`);
   
-  console.log("\n🔄 Evolution Mechanics:");
-  console.log("  🌙 Dream Processing: Once per day, personality evolves");
-  console.log("  💬 Conversations: No evolution, but builds context");
-  console.log("  🎯 Intelligence: +1 every 3 dreams, +1 every 10 conversations");
-  console.log("  🏆 Milestones: Empathy Master, Creative Genius, Logic Lord, etc.");
-  console.log("  🎨 Response Styles: Empathetic, Creative, Analytical, Intuitive, etc.");
-  
-  debugLog('Enhanced personality features with evolution enabled', {
-    personalityTraits: 6,
-    conversationTypes: 5,
-    milestoneTypes: 6,
-    responseStyles: 8,
-    evolutionMechanics: 'daily_dreams',
-    contextBuilding: true,
-    historyTracking: true
+  debugLog('DreamscapeAgent deployment completed', {
+    address: dreamscapeAgentDeployment.address,
+    treasury: treasuryAddress,
+    gasUsed: dreamscapeAgentDeployment.receipt?.gasUsed?.toString()
   });
   
   // Create frontend-specific contracts file
   await createFrontendContractsFile(network.name, {
-    DreamAgentNFTv2: {
-      address: dreamAgentNFTv2Deployment.address,
-      abi: dreamAgentNFTv2Deployment.abi
+    DreamscapeAgent: {
+      address: dreamscapeAgentDeployment.address,
+      abi: dreamscapeAgentDeployment.abi
     },
     SimpleDreamVerifier: {
       address: verifierDeployment.address,
@@ -286,6 +271,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   });
 };
 
-module.exports.tags = ["DreamAgentNFTv2", "nftv2", "personality"];
+module.exports.tags = ["DreamscapeAgent", "agent", "inft"];
 module.exports.dependencies = ["SimpleDreamVerifier"];
-module.exports.id = "deploy-dream-agent-nftv2"; 
+module.exports.id = "deploy-dreamscape-agent"; 
