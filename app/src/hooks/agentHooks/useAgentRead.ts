@@ -106,6 +106,12 @@ export function useAgentRead() {
     functionName: 'nextTokenId',
   });
 
+  // Get max agents limit
+  const { data: maxAgents, isLoading: maxAgentsLoading } = useReadContract({
+    ...contractConfig,
+    functionName: 'MAX_AGENTS',
+  });
+
   // Get contract info
   const { data: contractName, isLoading: contractNameLoading } = useReadContract({
     ...contractConfig,
@@ -231,6 +237,11 @@ export function useAgentRead() {
   // Use the actual token ID from mapping for display
   const actualUserTokenId = userTokenIdFromMapping || userTokenId;
 
+  // Calculate remaining agents to mint
+  const leftToMint = maxAgents && totalAgents 
+    ? (maxAgents as bigint) - (totalAgents as bigint)
+    : undefined;
+
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
     debugLog('useAgentRead state', {
@@ -239,6 +250,8 @@ export function useAgentRead() {
       userTokenIdFromMapping: userTokenIdFromMapping?.toString(),
       actualUserTokenId: actualUserTokenId?.toString(),
       totalAgents: totalAgents?.toString(),
+      maxAgents: maxAgents?.toString(),
+      leftToMint: leftToMint?.toString(),
       userBalance: userBalance?.toString(),
     });
   }
@@ -256,6 +269,8 @@ export function useAgentRead() {
     totalSupply,
     totalFeesCollected,
     nextTokenId,
+    maxAgents,
+    leftToMint,
     contractName,
     contractSymbol,
 
@@ -264,7 +279,7 @@ export function useAgentRead() {
 
     // Loading states
     isLoading: userAgentLoading || totalAgentsLoading || totalSupplyLoading || userTokenIdLoading,
-    contractLoading: contractNameLoading || contractSymbolLoading,
+    contractLoading: contractNameLoading || contractSymbolLoading || maxAgentsLoading,
 
     // Helper functions for specific queries
     getAgentInfo,

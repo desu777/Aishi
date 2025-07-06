@@ -1,11 +1,88 @@
 'use client';
 
-import { useState } from 'react';
-import { useWriteContract, useAccount, useChainId, useBalance } from 'wagmi';
-import { parseEther } from 'viem';
+import { useState, useEffect } from 'react';
+import { useWriteContract, useAccount, useChainId, useBalance, useWaitForTransactionReceipt } from 'wagmi';
+import { parseEther, decodeEventLog } from 'viem';
 import { useTheme } from '../../contexts/ThemeContext';
 import { galileoTestnet } from '../../config/chains';
 import contractData from '../../abi/frontend-contracts.json';
+
+// Error parsing utility for viem errors
+const parseViemError = (error: any): string => {
+  // Check for contract revert errors
+  if (error?.message?.includes('execution reverted')) {
+    // Extract revert reason with multiple patterns
+    let revertReason = null;
+    
+    // Try different patterns for revert reason extraction
+    const patterns = [
+      /execution reverted: (.+?)(?:\n|$)/,
+      /execution reverted with reason: (.+?)(?:\n|$)/,
+      /revert (.+?)(?:\n|$)/,
+      /reverted with reason string '(.+?)'/,
+      /reverted with custom error '(.+?)'/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = error.message.match(pattern);
+      if (match) {
+        revertReason = match[1].trim();
+        break;
+      }
+    }
+    
+    if (revertReason) {
+      // Map contract errors to user-friendly messages
+      switch (revertReason) {
+        case 'Wallet already has an agent':
+          return 'Your wallet already owns an agent. Each wallet can only mint one agent.';
+        case 'Insufficient payment':
+          return 'Insufficient payment sent. Please ensure you have 0.1 OG for the minting fee.';
+        case 'Agent name too long':
+          return 'Agent name is too long. Please choose a shorter name.';
+        case 'Agent name cannot be empty':
+          return 'Agent name cannot be empty. Please enter a valid name.';
+        case 'Minting is paused':
+          return 'Agent minting is temporarily paused. Please try again later.';
+        case 'Max supply reached':
+          return 'Maximum number of agents has been reached. No more agents can be minted.';
+        default:
+          return `Contract error: ${revertReason}`;
+      }
+    } else {
+      // Fallback if we can't extract the reason
+      return 'Transaction failed due to contract requirements not being met.';
+    }
+  }
+  
+  // Check for user rejection
+  if (error?.message?.includes('User rejected') || error?.name === 'UserRejectedRequestError') {
+    return 'Transaction was rejected by user.';
+  }
+  
+  // Check for insufficient funds
+  if (error?.message?.includes('insufficient funds')) {
+    return 'Insufficient funds in your wallet to complete the transaction.';
+  }
+  
+  // Check for network/connection errors
+  if (error?.message?.includes('network') || error?.message?.includes('connection')) {
+    return 'Network connection error. Please check your internet connection and try again.';
+  }
+  
+  // Check for gas estimation errors
+  if (error?.message?.includes('gas')) {
+    return 'Gas estimation failed. The transaction may fail or network may be congested.';
+  }
+  
+  // Check for timeout errors
+  if (error?.message?.includes('timeout')) {
+    return 'Transaction timeout. Please try again or increase gas price.';
+  }
+  
+  // Default fallback
+  return error?.message || 'An unexpected error occurred during minting.';
+};
 
 // Contract configuration imported from JSON
 const contractConfig = {
@@ -26,6 +103,7 @@ interface MintState {
   error: string;
   tokenId: bigint | null;
   txHash: string;
+  isWaitingForReceipt: boolean;
 }
 
 /**
@@ -46,11 +124,102 @@ export function useAgentMint() {
     isLoading: false,
     error: '',
     tokenId: null,
-    txHash: ''
+    txHash: '',
+    isWaitingForReceipt: false
   });
 
   // Check if on correct network (0G Galileo Testnet)
   const isCorrectNetwork = chainId === parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '16601');
+
+  // Wait for transaction receipt
+  const { data: receipt, isLoading: isReceiptLoading, error: receiptError } = useWaitForTransactionReceipt({
+    hash: state.txHash as `0x${string}`,
+    query: {
+      enabled: !!state.txHash && !state.tokenId,
+    },
+  });
+
+  // Process receipt when available
+  useEffect(() => {
+    if (receipt && !state.tokenId) {
+      try {
+        // Find Minted event in logs
+        const mintedEvent = receipt.logs.find(log => {
+          try {
+            const decoded = decodeEventLog({
+              abi: contractConfig.abi,
+              data: log.data,
+              topics: log.topics,
+            });
+            return decoded.eventName === 'Minted';
+          } catch {
+            return false;
+          }
+        });
+
+        if (mintedEvent) {
+          const decoded = decodeEventLog({
+            abi: contractConfig.abi,
+            data: mintedEvent.data,
+            topics: mintedEvent.topics,
+          });
+          
+          const tokenId = (decoded.args as any)._tokenId as bigint;
+          
+          setState(prev => ({
+            ...prev,
+            tokenId: tokenId,
+            isLoading: false,
+            isWaitingForReceipt: false,
+            error: ''
+          }));
+          
+          debugLog('Agent minted successfully', { 
+            tokenId: tokenId.toString(), 
+            txHash: state.txHash 
+          });
+        } else {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            isWaitingForReceipt: false,
+            error: 'Minted event not found in transaction receipt'
+          }));
+        }
+      } catch (error: any) {
+        const errorMessage = parseViemError(error);
+        debugLog('Error parsing receipt', { 
+          error: errorMessage, 
+          originalError: error.message,
+          errorType: error.name || 'Unknown'
+        });
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          isWaitingForReceipt: false,
+          error: errorMessage
+        }));
+      }
+    }
+  }, [receipt, state.tokenId, state.txHash]);
+
+  // Handle receipt error
+  useEffect(() => {
+    if (receiptError) {
+      const errorMessage = parseViemError(receiptError);
+      debugLog('Receipt error', { 
+        error: errorMessage, 
+        originalError: receiptError.message,
+        errorType: receiptError.name || 'Unknown'
+      });
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        isWaitingForReceipt: false,
+        error: errorMessage
+      }));
+    }
+  }, [receiptError]);
 
   // Reset mint state
   const resetMint = () => {
@@ -58,7 +227,8 @@ export function useAgentMint() {
       isLoading: false,
       error: '',
       tokenId: null,
-      txHash: ''
+      txHash: '',
+      isWaitingForReceipt: false
     });
     debugLog('Mint state reset');
   };
@@ -96,15 +266,14 @@ export function useAgentMint() {
       isLoading: true, 
       error: '',
       tokenId: null,
-      txHash: ''
+      txHash: '',
+      isWaitingForReceipt: false
     }));
 
     try {
       debugLog('Starting agent mint', { agentName, address });
 
       // Call mintAgent function on contract
-      // Function signature: mintAgent(bytes[] proofs, string[] descriptions, string agentName, address to)
-      // Contract requires MINTING_FEE = 0.1 OG
       const txHash = await writeContractAsync({
         ...contractConfig,
         functionName: 'mintAgent',
@@ -119,31 +288,35 @@ export function useAgentMint() {
         ]
       });
 
-      debugLog('Mint transaction sent', { txHash, agentName });
+      debugLog('Mint transaction sent, waiting for receipt...', { txHash, agentName });
 
       setState(prev => ({
         ...prev,
         isLoading: false,
+        isWaitingForReceipt: true,
         txHash: txHash
       }));
 
-      // Note: We don't get tokenId directly from writeContract
-      // We would need to wait for transaction receipt and parse events
-      // For now, just return success
       return {
         success: true,
         txHash: txHash
       };
 
     } catch (error: any) {
-      const errorMessage = error.message || 'Mint transaction failed';
+      const errorMessage = parseViemError(error);
+      
       setState(prev => ({
         ...prev,
         isLoading: false,
+        isWaitingForReceipt: false,
         error: errorMessage
       }));
 
-      debugLog('Mint transaction failed', { error: errorMessage });
+      debugLog('Mint transaction failed', { 
+        error: errorMessage, 
+        originalError: error?.message || error,
+        errorType: error?.name || 'Unknown'
+      });
 
       return {
         success: false,
@@ -161,6 +334,7 @@ export function useAgentMint() {
   return {
     // State
     isLoading: state.isLoading || isPending,
+    isWaitingForReceipt: state.isWaitingForReceipt || isReceiptLoading,
     error: state.error,
     tokenId: state.tokenId,
     txHash: state.txHash,

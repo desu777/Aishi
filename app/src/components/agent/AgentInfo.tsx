@@ -17,6 +17,8 @@ export default function AgentInfo() {
     totalSupply,
     totalFeesCollected,
     nextTokenId,
+    maxAgents,
+    leftToMint,
     contractName,
     contractSymbol,
     userBalance,
@@ -409,6 +411,21 @@ export default function AgentInfo() {
               {formatBigInt(totalAgents as bigint)}
             </div>
             <div style={{ fontSize: '12px', color: theme.text.secondary }}>Total Agents</div>
+          </div>
+          
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '15px',
+            backgroundColor: theme.bg.panel,
+            borderRadius: '8px'
+          }}>
+            <Sparkles size={24} style={{ color: theme.accent.primary, marginBottom: '10px' }} />
+            <div style={{ fontSize: '24px', fontWeight: '600', color: theme.text.primary }}>
+              {leftToMint ? formatBigInt(leftToMint) : 'N/A'}
+            </div>
+            <div style={{ fontSize: '12px', color: theme.text.secondary }}>Left to Mint</div>
           </div>
           
           <div style={{

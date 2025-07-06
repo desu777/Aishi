@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
@@ -22,8 +22,10 @@ export default function AgentTest() {
   const {
     mintAgent,
     isLoading,
+    isWaitingForReceipt,
     error,
     txHash,
+    tokenId,
     resetMint,
     getTransactionUrl,
     isWalletConnected,
@@ -55,15 +57,23 @@ export default function AgentTest() {
     const result = await mintAgent(agentName.trim());
     
     if (result.success && result.txHash) {
-      setLastMintedAgent({
-        name: agentName.trim(),
-        txHash: result.txHash,
-        timestamp: Date.now()
-      });
-      setAgentName(''); // Clear input
-      debugLog('Agent minted successfully', result);
+      // Only clear input when transaction is sent, not when confirmed
+      setAgentName(''); 
+      debugLog('Agent transaction sent', result);
     }
   };
+
+  // Update lastMintedAgent when tokenId is confirmed
+  useEffect(() => {
+    if (tokenId && txHash) {
+      setLastMintedAgent({
+        name: '', // We don't store the name anymore since input was cleared
+        txHash: txHash,
+        timestamp: Date.now()
+      });
+      debugLog('Agent minted and confirmed', { tokenId: tokenId.toString() });
+    }
+  }, [tokenId, txHash, debugLog]);
 
   return (
     <Layout>
@@ -353,17 +363,17 @@ export default function AgentTest() {
                 }}>
                   <button
                     onClick={handleMintAgent}
-                    disabled={isLoading || !agentName.trim() || !hasCurrentBalance}
+                    disabled={isLoading || isWaitingForReceipt || !agentName.trim() || !hasCurrentBalance}
                     style={{
                       backgroundColor: theme.accent.primary,
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
                       padding: '12px 24px',
-                      cursor: isLoading || !agentName.trim() || !hasCurrentBalance ? 'not-allowed' : 'pointer',
+                      cursor: isLoading || isWaitingForReceipt || !agentName.trim() || !hasCurrentBalance ? 'not-allowed' : 'pointer',
                       fontSize: '14px',
                       fontWeight: '600',
-                      opacity: isLoading || !agentName.trim() || !hasCurrentBalance ? 0.7 : 1,
+                      opacity: isLoading || isWaitingForReceipt || !agentName.trim() || !hasCurrentBalance ? 0.7 : 1,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px'
@@ -372,7 +382,12 @@ export default function AgentTest() {
                     {isLoading ? (
                       <>
                         <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                        Minting...
+                        Sending Transaction...
+                      </>
+                    ) : isWaitingForReceipt ? (
+                      <>
+                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        Waiting for Confirmation...
                       </>
                     ) : (
                       <>
@@ -408,19 +423,29 @@ export default function AgentTest() {
                     padding: '15px',
                     backgroundColor: theme.bg.panel,
                     borderRadius: '8px',
-                    border: `1px solid ${theme.accent.primary}33`
+                    border: `1px solid ${tokenId ? '#44ff44' : theme.accent.primary}33`
                   }}>
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      color: '#44ff44',
+                      color: tokenId ? '#44ff44' : theme.accent.primary,
                       fontSize: '14px',
                       fontWeight: '600'
                     }}>
-                      <CheckCircle size={16} />
-                      Agent Minted Successfully!
+                      {tokenId ? <CheckCircle size={16} /> : <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
+                      {tokenId ? 'Agent Minted Successfully!' : 'Transaction Sent - Waiting for Confirmation...'}
                     </div>
+                    
+                    {tokenId && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: theme.text.primary,
+                        marginTop: '5px'
+                      }}>
+                        <strong>Token ID:</strong> #{tokenId.toString()}
+                      </div>
+                    )}
                     
                     <div style={{
                       fontSize: '12px',
