@@ -5,6 +5,7 @@ import Layout from '../../components/layout/Layout';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
 import { useAgentMint } from '../../hooks/agentHooks';
+import { useAgentDream } from '../../hooks/agentHooks';
 import AgentInfo from '../../components/agent/AgentInfo';
 import DreamInput from '../../components/agent/DreamInput';
 import { Brain, Sparkles, CheckCircle, AlertCircle, Loader2, Zap, Info, Moon } from 'lucide-react';
@@ -35,6 +36,15 @@ export default function AgentTest() {
     hasCurrentBalance,
     currentBalance
   } = useAgentMint();
+  
+  // Agent dream hook for testing
+  const {
+    testContractCall,
+    checkCanProcessDreamToday,
+    hasAgent: dreamHasAgent,
+    userTokenId: dreamUserTokenId,
+    userAgent: dreamUserAgent
+  } = useAgentDream();
   
   // Local state
   const [agentName, setAgentName] = useState('');
@@ -552,7 +562,154 @@ export default function AgentTest() {
 
             {/* Dream Analysis Mode */}
             {mode === 'dream' && (
-              <DreamInput />
+              <>
+                {/* Direct Contract Test Button */}
+                <div style={{
+                  backgroundColor: theme.bg.card,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: '12px',
+                  padding: '20px',
+                  marginBottom: '20px'
+                }}>
+                  <h3 style={{
+                    color: theme.text.primary,
+                    marginBottom: '15px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <Zap size={20} />
+                    Direct Contract Test
+                  </h3>
+                  
+                  <div style={{
+                    fontSize: '14px',
+                    color: theme.text.secondary,
+                    marginBottom: '15px',
+                    padding: '10px',
+                    backgroundColor: theme.bg.panel,
+                    borderRadius: '6px',
+                    border: `1px solid ${theme.border}`
+                  }}>
+                    🧪 Test direct contract call with mock data to see what errors occur
+                  </div>
+
+                  {/* Agent Info Display */}
+                  {dreamHasAgent && dreamUserAgent && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: theme.text.secondary,
+                      marginBottom: '15px',
+                      padding: '10px',
+                      backgroundColor: theme.bg.panel,
+                      borderRadius: '6px',
+                      border: `1px solid ${theme.border}`
+                    }}>
+                      <div><strong>Agent:</strong> {dreamUserAgent.agentName}</div>
+                      <div><strong>Token ID:</strong> #{dreamUserTokenId?.toString()}</div>
+                      <div><strong>Dreams Processed:</strong> {dreamUserAgent.dreamCount?.toString()}</div>
+                      <div><strong>Intelligence Level:</strong> {dreamUserAgent.intelligenceLevel?.toString()}</div>
+                      <div><strong>Personality Initialized:</strong> {dreamUserAgent.personalityInitialized ? 'Yes' : 'No'}</div>
+                    </div>
+                  )}
+
+                  <div style={{
+                    display: 'flex',
+                    gap: '10px',
+                    flexWrap: 'wrap',
+                    marginBottom: '15px'
+                  }}>
+                    <button
+                      onClick={async () => {
+                        try {
+                          debugLog('Testing canProcessDreamToday check...');
+                          const canProcess = await checkCanProcessDreamToday();
+                          debugLog('canProcessDreamToday result:', { canProcess });
+                          alert(`Can process dream today: ${canProcess}`);
+                        } catch (error: any) {
+                          debugLog('canProcessDreamToday check failed:', error);
+                          alert(`Check failed: ${error.message}`);
+                        }
+                      }}
+                      disabled={!dreamHasAgent || !dreamUserTokenId}
+                      style={{
+                        backgroundColor: theme.accent.secondary,
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '12px 20px',
+                        cursor: !dreamHasAgent || !dreamUserTokenId ? 'not-allowed' : 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        opacity: !dreamHasAgent || !dreamUserTokenId ? 0.7 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <CheckCircle size={16} />
+                      Check Dream Status
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        try {
+                          debugLog('Testing direct contract call...');
+                          const txHash = await testContractCall({
+                            dreamHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+                            analysisHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+                            impact: {
+                              creativityChange: 2,
+                              analyticalChange: 1,
+                              empathyChange: 1,
+                              intuitionChange: 1,
+                              resilienceChange: 1,
+                              curiosityChange: 1,
+                              moodShift: 'contemplative',
+                              evolutionWeight: 5
+                            }
+                          });
+                          debugLog('Contract call succeeded!', { txHash });
+                          alert(`Contract call succeeded! TX: ${txHash}`);
+                        } catch (error: any) {
+                          debugLog('Contract call failed:', error);
+                          alert(`Contract call failed: ${error.message}`);
+                        }
+                      }}
+                      disabled={!dreamHasAgent || !dreamUserTokenId}
+                      style={{
+                        backgroundColor: theme.accent.primary,
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '12px 24px',
+                        cursor: !dreamHasAgent || !dreamUserTokenId ? 'not-allowed' : 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        opacity: !dreamHasAgent || !dreamUserTokenId ? 0.7 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Zap size={16} />
+                      Test Contract Call
+                    </button>
+                  </div>
+                  
+                  {(!dreamHasAgent || !dreamUserTokenId) && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: theme.text.secondary,
+                      marginTop: '10px'
+                    }}>
+                      ⚠️ You need to mint an agent first to test contract calls
+                    </div>
+                  )}
+                </div>
+                
+                <DreamInput />
+              </>
             )}
           </>
         )}

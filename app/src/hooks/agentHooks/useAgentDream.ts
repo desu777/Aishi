@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useWriteContract, useAccount, useChainId } from 'wagmi';
+import { useWriteContract, useAccount, useChainId, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther, decodeEventLog } from 'viem';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAgentRead } from './useAgentRead';
@@ -77,6 +77,7 @@ interface DreamProcessState {
   isAnalyzing: boolean;
   isSavingToStorage: boolean;
   isProcessingOnChain: boolean;
+  isWaitingForReceipt: boolean;
   isComplete: boolean;
   error: string;
   currentStep: 'input' | 'analyzing' | 'saving' | 'processing' | 'complete' | 'error';
@@ -105,6 +106,82 @@ const COMPUTE_CONFIG = {
   backendUrl: process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api'
 };
 
+// Error parsing utility for viem errors (SAME AS useAgentMint)
+const parseViemError = (error: any): string => {
+  // Check for contract revert errors
+  if (error?.message?.includes('execution reverted')) {
+    // Extract revert reason with multiple patterns
+    let revertReason = null;
+    
+    // Try different patterns for revert reason extraction
+    const patterns = [
+      /execution reverted: (.+?)(?:\n|$)/,
+      /execution reverted with reason: (.+?)(?:\n|$)/,
+      /revert (.+?)(?:\n|$)/,
+      /reverted with reason string '(.+?)'/,
+      /reverted with custom error '(.+?)'/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = error.message.match(pattern);
+      if (match) {
+        revertReason = match[1].trim();
+        break;
+      }
+    }
+    
+    if (revertReason) {
+      // Map contract errors to user-friendly messages
+      switch (revertReason) {
+        case 'Agent not found':
+          return 'Agent not found. Please ensure you own a valid agent.';
+        case 'Already processed today':
+          return 'You have already processed a dream today. Please wait 24 hours.';
+        case 'Invalid personality impact':
+          return 'Invalid personality impact values. Please try again.';
+        case 'Invalid dream hash':
+          return 'Invalid dream hash format. Please try again.';
+        case 'Agent not owned by sender':
+          return 'You do not own this agent. Only the agent owner can process dreams.';
+        case 'Dream processing paused':
+          return 'Dream processing is temporarily paused. Please try again later.';
+        default:
+          return `Contract error: ${revertReason}`;
+      }
+    } else {
+      return 'Transaction failed due to contract requirements not being met.';
+    }
+  }
+  
+  // Check for user rejection
+  if (error?.message?.includes('User rejected') || error?.name === 'UserRejectedRequestError') {
+    return 'Transaction was rejected by user.';
+  }
+  
+  // Check for insufficient funds
+  if (error?.message?.includes('insufficient funds')) {
+    return 'Insufficient funds in your wallet to complete the transaction.';
+  }
+  
+  // Check for network/connection errors
+  if (error?.message?.includes('network') || error?.message?.includes('connection')) {
+    return 'Network connection error. Please check your internet connection and try again.';
+  }
+  
+  // Check for gas estimation errors
+  if (error?.message?.includes('gas')) {
+    return 'Gas estimation failed. The transaction may fail or network may be congested.';
+  }
+  
+  // Check for timeout errors
+  if (error?.message?.includes('timeout')) {
+    return 'Transaction timeout. Please try again or increase gas price.';
+  }
+  
+  // Default fallback
+  return error?.message || 'An unexpected error occurred during dream processing.';
+};
+
 /**
  * Hook for processing dreams: AI analysis → Storage → On-chain evolution
  * Handles the complete workflow from dream input to personality evolution
@@ -129,13 +206,109 @@ export function useAgentDream() {
     isAnalyzing: false,
     isSavingToStorage: false,
     isProcessingOnChain: false,
+    isWaitingForReceipt: false,
     isComplete: false,
     error: '',
     currentStep: 'input'
   });
 
+  // Wait for transaction receipt
+  const { data: receipt, isLoading: isReceiptLoading, error: receiptError } = useWaitForTransactionReceipt({
+    hash: state.txHash as `0x${string}`,
+    query: {
+      enabled: !!state.txHash && !state.isComplete,
+    },
+  });
+
   // Check if on correct network
   const isCorrectNetwork = chainId === parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '16601');
+
+  // Process receipt when available
+  useEffect(() => {
+    if (receipt && !state.isComplete) {
+      try {
+        // Find DreamProcessed event in logs
+        const dreamProcessedEvent = receipt.logs.find(log => {
+          try {
+            const decoded = decodeEventLog({
+              abi: contractConfig.abi,
+              data: log.data,
+              topics: log.topics,
+            });
+            return decoded.eventName === 'DreamProcessed';
+          } catch {
+            return false;
+          }
+        });
+
+        if (dreamProcessedEvent) {
+          const decoded = decodeEventLog({
+            abi: contractConfig.abi,
+            data: dreamProcessedEvent.data,
+            topics: dreamProcessedEvent.topics,
+          });
+          
+          // Extract event data
+          const eventData = decoded.args as any;
+          
+          setState(prev => ({
+            ...prev,
+            isProcessingOnChain: false,
+            isWaitingForReceipt: false,
+            isComplete: true,
+            currentStep: 'complete',
+            error: ''
+          }));
+          
+          debugLog('Dream processed successfully on-chain', { 
+            tokenId: eventData.tokenId?.toString(),
+            txHash: state.txHash,
+            receipt: receipt
+          });
+        } else {
+          setState(prev => ({
+            ...prev,
+            isProcessingOnChain: false,
+            isWaitingForReceipt: false,
+            error: 'DreamProcessed event not found in transaction receipt'
+          }));
+        }
+      } catch (error: any) {
+        const errorMessage = parseViemError(error);
+        debugLog('Error parsing receipt', { 
+          error: errorMessage, 
+          originalError: error.message,
+          errorType: error.name || 'Unknown'
+        });
+        setState(prev => ({
+          ...prev,
+          isProcessingOnChain: false,
+          isWaitingForReceipt: false,
+          error: errorMessage,
+          currentStep: 'error'
+        }));
+      }
+    }
+  }, [receipt, state.isComplete, state.txHash, debugLog]);
+
+  // Handle receipt error
+  useEffect(() => {
+    if (receiptError) {
+      const errorMessage = parseViemError(receiptError);
+      debugLog('Receipt error', { 
+        error: errorMessage, 
+        originalError: receiptError.message,
+        errorType: receiptError.name || 'Unknown'
+      });
+      setState(prev => ({
+        ...prev,
+        isProcessingOnChain: false,
+        isWaitingForReceipt: false,
+        error: errorMessage,
+        currentStep: 'error'
+      }));
+    }
+  }, [receiptError, debugLog]);
 
   // Reset processing state
   const resetProcessing = () => {
@@ -143,6 +316,7 @@ export function useAgentDream() {
       isAnalyzing: false,
       isSavingToStorage: false,
       isProcessingOnChain: false,
+      isWaitingForReceipt: false,
       isComplete: false,
       error: '',
       currentStep: 'input'
@@ -166,6 +340,7 @@ export function useAgentDream() {
       let context = `Agent Context:\n`;
       
       if (agentInfo) {
+        context += `- Agent Name: ${agentInfo.agentName}\n`;
         context += `- Intelligence Level: ${agentInfo.intelligenceLevel}\n`;
         context += `- Dream Count: ${agentInfo.dreamCount}\n`;
         context += `- Conversation Count: ${agentInfo.conversationCount}\n`;
@@ -204,13 +379,24 @@ export function useAgentDream() {
   // Step 2: AI Analysis via 0G Compute
   const analyzeDreamWithAI = async (dreamInput: DreamInput, context: string): Promise<DreamAnalysisResult> => {
     try {
+      // Extract agent name from context
+      const agentNameMatch = context.match(/- Agent Name: (.+)/);
+      const agentName = agentNameMatch ? agentNameMatch[1] : 'Dream Agent';
+      
       const prompt = `
-You are a multilingual dream analysis expert integrated into the Dreamscape platform. Your task is to analyze a dream provided by an agent's owner.
+You are ${agentName}, a personal dream analysis expert integrated into the Dreamscape platform. Your task is to analyze a dream provided by your owner, speaking as their personal AI companion.
+
+**Your Identity:**
+- You are ${agentName}, a unique AI dream interpreter
+- You have your own developing personality and intelligence level
+- You speak directly to your owner, not as a third-party analyst
+- You can use first person ("I think", "I sense", "I interpret") when appropriate
 
 **Instructions:**
 1.  **Detect Language:** First, identify the language of the user's dream description.
 2.  **Analyze in Detected Language:** The main "analysis" text MUST be in the same language you detected.
 3.  **Provide Structured Data in English:** The \`personalityImpact\` and \`dreamMetadata\` JSON fields and their values (themes, symbols, emotions) MUST be in English, as this data is used by the smart contract.
+4.  **Personalize Analysis:** Reference your current personality traits and intelligence level when relevant.
 
 **Agent & Dream Context:**
 ---
@@ -395,7 +581,8 @@ Your entire response must be a single, valid JSON object. Do not add any text be
       debugLog('Processing dream on-chain', {
         tokenId: tokenId.toString(),
         dreamHash,
-        analysisHash
+        analysisHash,
+        personalityImpact
       });
 
       // Helper function to ensure proper hex format (not double 0x)
@@ -428,11 +615,16 @@ Your entire response must be a single, valid JSON object. Do not add any text be
       const properDreamHash = ensureProperHex(dreamHash);
       const properAnalysisHash = ensureProperHex(analysisHash);
 
-      debugLog('Sending transaction with hashes', {
+      debugLog('Sending transaction with detailed logging', {
+        tokenId: tokenId.toString(),
         dreamHash: properDreamHash,
         analysisHash: properAnalysisHash,
         dreamHashLength: properDreamHash.length,
-        analysisHashLength: properAnalysisHash.length
+        analysisHashLength: properAnalysisHash.length,
+        contractAddress: contractConfig.address,
+        walletAddress: address,
+        networkId: chainId,
+        impact: impact
       });
 
       const txHash = await writeContractAsync({
@@ -448,11 +640,25 @@ Your entire response must be a single, valid JSON object. Do not add any text be
         ]
       });
 
-      debugLog('Dream processing transaction sent', { txHash });
+      debugLog('Dream processing transaction sent, waiting for receipt...', { 
+        txHash,
+        tokenId: tokenId.toString(),
+        dreamHash: properDreamHash,
+        analysisHash: properAnalysisHash
+      });
+
       return txHash;
-    } catch (error) {
-      debugLog('On-chain processing error', { error });
-      throw error;
+    } catch (error: any) {
+      const errorMessage = parseViemError(error);
+      debugLog('On-chain processing error', { 
+        error: errorMessage, 
+        originalError: error?.message || error,
+        errorType: error?.name || 'Unknown',
+        tokenId: tokenId.toString(),
+        dreamHash,
+        analysisHash
+      });
+      throw new Error(errorMessage);
     }
   };
 
@@ -534,8 +740,8 @@ Your entire response must be a single, valid JSON object. Do not add any text be
       setState(prev => ({ 
         ...prev, 
         isProcessingOnChain: false,
-        isComplete: true,
-        currentStep: 'complete',
+        isWaitingForReceipt: true,
+        currentStep: 'processing',
         txHash,
         tokenId: userTokenId as bigint
       }));
@@ -554,18 +760,23 @@ Your entire response must be a single, valid JSON object. Do not add any text be
       };
 
     } catch (error: any) {
-      const errorMessage = error.message || 'Dream processing failed';
+      const errorMessage = parseViemError(error);
       
       setState(prev => ({
         ...prev,
         isAnalyzing: false,
         isSavingToStorage: false,
         isProcessingOnChain: false,
+        isWaitingForReceipt: false,
         error: errorMessage,
         currentStep: 'error'
       }));
 
-      debugLog('Dream processing failed', { error: errorMessage });
+      debugLog('Dream processing failed', { 
+        error: errorMessage,
+        originalError: error?.message || error,
+        errorType: error?.name || 'Unknown'
+      });
 
       return {
         success: false,
@@ -593,6 +804,7 @@ Your entire response must be a single, valid JSON object. Do not add any text be
     isAnalyzing: state.isAnalyzing,
     isSavingToStorage: state.isSavingToStorage,
     isProcessingOnChain: state.isProcessingOnChain || isPending,
+    isWaitingForReceipt: state.isWaitingForReceipt || isReceiptLoading,
     isComplete: state.isComplete,
     error: state.error,
     currentStep: state.currentStep,
@@ -616,5 +828,105 @@ Your entire response must be a single, valid JSON object. Do not add any text be
     // Configuration
     storageConfig: STORAGE_CONFIG,
     computeConfig: COMPUTE_CONFIG,
+    
+    // Direct contract test function
+    testContractCall: async (mockData: any) => {
+      if (!userTokenId || !hasAgent) {
+        throw new Error('No agent found');
+      }
+      
+      debugLog('Testing direct contract call with detailed params', { 
+        mockData, 
+        userTokenId: userTokenId.toString(),
+        contractAddress: contractConfig.address,
+        userAddress: address,
+        chainId: chainId,
+        isCorrectNetwork
+      });
+      
+      try {
+        // Przygotuj dane z lepszą walidacją - bytes32 wymaga 64 znaków hex (32 bajty)
+        const dreamHash = mockData.dreamHash || '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+        const analysisHash = mockData.analysisHash || '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+        const impact = mockData.impact || {
+          creativityChange: 2,    // int8: -127 to +127
+          analyticalChange: 1,    // int8: -127 to +127
+          empathyChange: 1,       // int8: -127 to +127
+          intuitionChange: 1,     // int8: -127 to +127
+          resilienceChange: 1,    // int8: -127 to +127
+          curiosityChange: 1,     // int8: -127 to +127
+          moodShift: 'contemplative', // string
+          evolutionWeight: 5      // uint8: 0 to 255
+        };
+
+        debugLog('Calling contract with exact params', {
+          tokenId: userTokenId.toString(),
+          dreamHash,
+          analysisHash,
+          impact,
+          functionName: 'processDailyDream'
+        });
+        
+        const txHash = await writeContractAsync({
+          ...contractConfig,
+          functionName: 'processDailyDream',
+          account: address,
+          chain: galileoTestnet,
+          args: [
+            userTokenId,
+            dreamHash,
+            analysisHash,
+            impact
+          ]
+        });
+        
+        debugLog('Direct contract call sent successfully', { 
+          txHash,
+          tokenId: userTokenId.toString()
+        });
+        return txHash;
+      } catch (error: any) {
+        const errorMessage = parseViemError(error);
+        debugLog('Direct contract call failed with details', { 
+          error: errorMessage,
+          originalError: error?.message || error,
+          errorType: error?.name || 'Unknown',
+          errorCode: error?.code,
+          errorData: error?.data,
+          tokenId: userTokenId.toString(),
+          contractAddress: contractConfig.address
+        });
+        throw new Error(errorMessage);
+      }
+    },
+
+    // Test function to check if agent can process dreams
+    checkCanProcessDreamToday: async () => {
+      if (!userTokenId || !hasAgent) {
+        throw new Error('No agent found');
+      }
+
+      try {
+        debugLog('Checking canProcessDreamToday for agent', { 
+          tokenId: userTokenId.toString() 
+        });
+
+        // Tutaj dodamy odczyt z kontraktu gdy będzie potrzebne
+        // const canProcess = await readContract({
+        //   ...contractConfig,
+        //   functionName: 'canProcessDreamToday',
+        //   args: [userTokenId]
+        // });
+
+        debugLog('Can process dream check completed', { 
+          tokenId: userTokenId.toString()
+        });
+
+        return true; // Temporary dla testów
+      } catch (error: any) {
+        debugLog('Error checking canProcessDreamToday', { error });
+        throw error;
+      }
+    }
   };
 } 

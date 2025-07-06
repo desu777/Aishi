@@ -16,6 +16,7 @@ export default function DreamInput({ className }: DreamInputProps) {
     isAnalyzing,
     isSavingToStorage,
     isProcessingOnChain,
+    isWaitingForReceipt,
     isComplete,
     error,
     currentStep,
@@ -93,7 +94,7 @@ export default function DreamInput({ className }: DreamInputProps) {
   };
 
   // Loading state
-  const isLoading = isAnalyzing || isSavingToStorage || isProcessingOnChain;
+  const isLoading = isAnalyzing || isSavingToStorage || isProcessingOnChain || isWaitingForReceipt;
 
   return (
     <div className={className}>
@@ -360,7 +361,7 @@ export default function DreamInput({ className }: DreamInputProps) {
                 ) : currentStep === 'processing' ? (
                   <>
                     <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                    Processing On-Chain...
+                    {isWaitingForReceipt ? 'Waiting for Confirmation...' : 'Processing On-Chain...'}
                   </>
                 ) : (
                   <>
@@ -490,26 +491,27 @@ export default function DreamInput({ className }: DreamInputProps) {
               padding: '12px',
               backgroundColor: theme.bg.panel,
               borderRadius: '8px',
-              border: `1px solid ${isProcessingOnChain ? theme.accent.primary : theme.border}`
+              border: `1px solid ${isProcessingOnChain || isWaitingForReceipt ? theme.accent.primary : theme.border}`
             }}>
-              {isProcessingOnChain ? (
+              {isProcessingOnChain || isWaitingForReceipt ? (
                 <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: theme.accent.primary }} />
-              ) : txHash ? (
+              ) : isComplete && txHash ? (
                 <CheckCircle size={16} style={{ color: '#44ff44' }} />
               ) : (
                 <Zap size={16} style={{ color: theme.text.secondary }} />
               )}
               <div>
                 <div style={{ 
-                  color: isProcessingOnChain || txHash ? theme.accent.primary : theme.text.secondary,
+                  color: isProcessingOnChain || isWaitingForReceipt || isComplete ? theme.accent.primary : theme.text.secondary,
                   fontWeight: '600',
                   fontSize: '14px'
                 }}>
                   3. Process On-Chain
                 </div>
                 <div style={{ fontSize: '12px', color: theme.text.secondary }}>
-                  {isProcessingOnChain ? 'Processing personality evolution...' : 
-                   txHash ? 'Transaction confirmed' : 'Waiting...'}
+                  {isProcessingOnChain ? 'Sending transaction...' : 
+                   isWaitingForReceipt ? 'Waiting for confirmation...' :
+                   isComplete && txHash ? 'Transaction confirmed' : 'Waiting...'}
                 </div>
               </div>
             </div>

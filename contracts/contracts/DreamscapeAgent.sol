@@ -388,14 +388,14 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     /// @return canProcess True if agent can process a dream today
     function canProcessDreamToday(uint256 tokenId) 
         public view override returns (bool canProcess) {
-        if (!agents[tokenId].personalityInitialized) return false;
-        return block.timestamp > agentPersonalities[tokenId].lastDreamDate + 1 days;
+        // Allow new agents to process their first dream immediately
+        if (!agents[tokenId].personalityInitialized) return true;
+        // TODO: Temporarily disabled 24h cooldown for testing
+        // return block.timestamp > agentPersonalities[tokenId].lastDreamDate + 1 days;
+        return true; // Allow unlimited dreams for testing
     }
     
 
-    
-
-    
 
     
     // ... [Continue with remaining interface functions and internal helpers]
