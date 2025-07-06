@@ -4,11 +4,14 @@ pragma solidity ^0.8.20;
 import "./interfaces/IERC7857.sol";
 import "./interfaces/IERC7857DataVerifier.sol";
 import "./interfaces/IPersonalityEvolution.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title DreamAgentNFTv2 - Enhanced Personality Evolution iNFTs
 /// @notice Advanced dream agents that develop unique personalities based on user dreams
 /// @dev Implements ERC-7857 with comprehensive personality evolution system
-contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
+contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, AccessControl, Pausable {
     
     // Data types for dream agents (from v1)
     string constant DREAM_PATTERNS = "dream_patterns";
@@ -24,6 +27,31 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
     
     // Treasury address for collecting fees
     address public immutable treasury;
+    
+    // Access control roles
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    
+    // Access control modifiers
+    modifier onlyOwnerOrAuthorized(uint256 tokenId) {
+        require(
+            agents[tokenId].owner == msg.sender || 
+            hasRole(ADMIN_ROLE, msg.sender) ||
+            _isAuthorizedUser(tokenId, msg.sender),
+            "Unauthorized access"
+        );
+        _;
+    }
+    
+    modifier onlyOwnerOrAdmin(uint256 tokenId) {
+        require(
+            agents[tokenId].owner == msg.sender || 
+            hasRole(ADMIN_ROLE, msg.sender),
+            "Not agent owner or admin"
+        );
+        _;
+    }
     
     /// @notice Enhanced Dream Agent structure with personality system
     struct DreamAgent {
@@ -107,6 +135,12 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
         require(_treasury != address(0), "Treasury cannot be zero address");
         verifier = IERC7857DataVerifier(_verifier);
         treasury = _treasury;
+        
+        // Initialize access control
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
+        _grantRole(VERIFIER_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
     }
     
     /// @notice Mint new dream agent with initial personality
@@ -122,7 +156,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
         string memory agentName,
         address to,
         PersonalityTraits calldata initialPersonality
-    ) external payable returns (uint256 tokenId) {
+    ) external payable nonReentrant whenNotPaused returns (uint256 tokenId) {
         require(to != address(0), "Invalid address");
         require(descriptions.length == proofs.length, "Length mismatch");
         require(totalAgents < MAX_AGENTS, "Max limit reached");
@@ -202,8 +236,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
         bytes32 dreamHash,
         bytes32 dreamAnalysisHash,
         PersonalityImpact calldata impact
-    ) external override {
-        require(agents[tokenId].owner == msg.sender, "Not agent owner");
+    ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
         require(agents[tokenId].personalityInitialized, "Personality not initialized");
         require(canProcessDreamToday(tokenId), "Daily dream already processed");
         
@@ -269,8 +302,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
         uint256 tokenId,
         bytes32 conversationHash,
         ContextType contextType
-    ) external override {
-        require(agents[tokenId].owner == msg.sender, "Not agent owner");
+    ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
         require(agents[tokenId].personalityInitialized, "Personality not initialized");
         
         // Store conversation hash
@@ -853,9 +885,8 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
     /// @notice Transfer agent with personality preservation
     /// @param to New owner address
     /// @param tokenId Agent to transfer
-    function transfer(address to, uint256 tokenId, bytes[] calldata /* proofs */) external override {
+    function transfer(address to, uint256 tokenId, bytes[] calldata /* proofs */) external override onlyOwnerOrAdmin(tokenId) {
         require(to != address(0), "Cannot transfer to zero address");
-        require(agents[tokenId].owner == msg.sender, "Not agent owner");
         
         address from = agents[tokenId].owner;
         agents[tokenId].owner = to;
@@ -869,9 +900,8 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
     /// @param tokenId Agent to clone
     /// @return newTokenId The cloned agent token ID
     function clone(address to, uint256 tokenId, bytes[] calldata /* proofs */) 
-        external payable override returns (uint256 newTokenId) {
+        external payable override nonReentrant whenNotPaused onlyOwnerOrAdmin(tokenId) returns (uint256 newTokenId) {
         require(to != address(0), "Cannot clone to zero address");
-        require(agents[tokenId].owner == msg.sender, "Not agent owner");
         require(totalAgents < MAX_AGENTS, "Maximum agents limit reached");
         require(msg.value >= MINTING_FEE, "Insufficient payment for cloning");
         
@@ -916,8 +946,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
         return agents[tokenId].authorizedUsers;
     }
     
-    function authorizeUsage(uint256 tokenId, address user) external override {
-        require(agents[tokenId].owner == msg.sender, "Not agent owner");
+    function authorizeUsage(uint256 tokenId, address user) external override onlyOwnerOrAdmin(tokenId) {
         require(user != address(0), "Cannot authorize zero address");
         
         agents[tokenId].authorizedUsers.push(user);
@@ -983,10 +1012,11 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
     /// @notice Check if contract supports interface
     /// @param interfaceId Interface identifier
     /// @return True if supported
-    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == 0x01ffc9a7 || // ERC165
                interfaceId == 0x80ac58cd || // ERC721
-               interfaceId == 0x5b5e139f;   // ERC721Metadata
+               interfaceId == 0x5b5e139f || // ERC721Metadata
+               super.supportsInterface(interfaceId); // AccessControl interfaces
     }
     
     /// @notice Get agent's creation timestamp
@@ -1003,7 +1033,57 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution {
         return agents[tokenId].agentName;
     }
     
+    // Emergency controls
+    
+    /// @notice Pause contract operations
+    /// @dev Only accounts with PAUSER_ROLE can pause
+    function pause() external onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+    
+    /// @notice Unpause contract operations
+    /// @dev Only accounts with PAUSER_ROLE can unpause
+    function unpause() external onlyRole(PAUSER_ROLE) {
+        _unpause();
+    }
+    
+    /// @notice Emergency admin function to authorize user
+    /// @param tokenId Agent to authorize user for
+    /// @param user User to authorize
+    /// @dev Only ADMIN_ROLE can use this in emergencies
+    function emergencyAuthorizeUser(uint256 tokenId, address user) external onlyRole(ADMIN_ROLE) {
+        require(user != address(0), "Cannot authorize zero address");
+        agents[tokenId].authorizedUsers.push(user);
+        emit AuthorizedUsage(tokenId, user);
+    }
+    
+    /// @notice Emergency admin function to transfer agent
+    /// @param tokenId Agent to transfer
+    /// @param to New owner
+    /// @dev Only ADMIN_ROLE can use this in emergencies
+    function emergencyTransfer(uint256 tokenId, address to) external onlyRole(ADMIN_ROLE) {
+        require(to != address(0), "Cannot transfer to zero address");
+        address from = agents[tokenId].owner;
+        agents[tokenId].owner = to;
+        agents[tokenId].lastUpdated = block.timestamp;
+        emit Transferred(tokenId, from, to);
+    }
+    
     // Helper functions removed to reduce contract size
+    
+    /// @notice Check if user is authorized to use agent
+    /// @param tokenId Agent to check
+    /// @param user User to check
+    /// @return True if user is authorized
+    function _isAuthorizedUser(uint256 tokenId, address user) internal view returns (bool) {
+        address[] memory authorizedUsers = agents[tokenId].authorizedUsers;
+        for (uint256 i = 0; i < authorizedUsers.length; i++) {
+            if (authorizedUsers[i] == user) {
+                return true;
+            }
+        }
+        return false;
+    }
     
     /// @notice Convert uint to string
     /// @param value Number to convert

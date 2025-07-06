@@ -8,6 +8,7 @@ node_modules/
 build/
 dist/
 client/
+contracts/build/
 
 # Test coverage
 coverage/
