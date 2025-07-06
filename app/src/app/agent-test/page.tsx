@@ -6,7 +6,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
 import { useAgentMint } from '../../hooks/agentHooks';
 import AgentInfo from '../../components/agent/AgentInfo';
-import { Brain, Sparkles, CheckCircle, AlertCircle, Loader2, Zap, Info } from 'lucide-react';
+import DreamInput from '../../components/agent/DreamInput';
+import { Brain, Sparkles, CheckCircle, AlertCircle, Loader2, Zap, Info, Moon } from 'lucide-react';
 
 export default function AgentTest() {
   const { theme, debugLog } = useTheme();
@@ -37,7 +38,7 @@ export default function AgentTest() {
   
   // Local state
   const [agentName, setAgentName] = useState('');
-  const [mode, setMode] = useState<'mint' | 'info'>('mint');
+  const [mode, setMode] = useState<'mint' | 'info' | 'dream'>('mint');
   const [lastMintedAgent, setLastMintedAgent] = useState<{
     name: string;
     txHash: string;
@@ -230,7 +231,8 @@ export default function AgentTest() {
               
               <div style={{
                 display: 'flex',
-                gap: '10px'
+                gap: '10px',
+                flexWrap: 'wrap'
               }}>
                 <button
                   onClick={() => setMode('mint')}
@@ -270,6 +272,26 @@ export default function AgentTest() {
                 >
                   <Info size={16} />
                   Agent Info
+                </button>
+                
+                <button
+                  onClick={() => setMode('dream')}
+                  style={{
+                    backgroundColor: mode === 'dream' ? theme.accent.primary : theme.bg.panel,
+                    color: mode === 'dream' ? 'white' : theme.text.primary,
+                    border: `1px solid ${mode === 'dream' ? theme.accent.primary : theme.border}`,
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Moon size={16} />
+                  Dream Analysis
                 </button>
               </div>
             </div>
@@ -526,6 +548,11 @@ export default function AgentTest() {
             {/* Agent Info Mode */}
             {mode === 'info' && (
               <AgentInfo />
+            )}
+
+            {/* Dream Analysis Mode */}
+            {mode === 'dream' && (
+              <DreamInput />
             )}
           </>
         )}

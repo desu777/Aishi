@@ -5,6 +5,7 @@
 
 export { useAgentMint } from './useAgentMint';
 export { useAgentRead } from './useAgentRead';
+export { useAgentDream } from './useAgentDream';
 
 // Future exports:
 // export { useAgentDream } from './useAgentDream';
