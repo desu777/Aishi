@@ -80,13 +80,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         uint8 traitValue;
     }
     
-    /// @notice Trait evolution history entry
-    struct TraitEvolution {
-        uint256 timestamp;
-        uint8 oldValue;
-        uint8 newValue;
-        bytes32 dreamHash;  // Dream that caused the change
-    }
+
     
     // Contract state
     mapping(uint256 => DreamAgent) public agents;
@@ -104,9 +98,6 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     // Milestone tracking
     mapping(uint256 => mapping(string => MilestoneData)) public milestones;
     
-    // Trait evolution history
-    mapping(uint256 => mapping(string => TraitEvolution[])) public traitHistory;
-    
     // Response style mappings
     mapping(uint256 => string) public responseStyles;
     
@@ -120,7 +111,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     // Enhanced events from IPersonalityEvolution (already defined there)
     
     // Additional v2-specific events
-    event AgentPersonalityInitialized(uint256 indexed tokenId, PersonalityTraits initialTraits);
+    event PersonalityActivated(uint256 indexed tokenId, PersonalityTraits newPersonality, uint256 dreamsSoFar);
     event MilestoneUnlocked(uint256 indexed tokenId, string milestone, uint8 traitValue);
     event ResponseStyleUpdated(uint256 indexed tokenId, string oldStyle, string newStyle);
     
@@ -143,19 +134,17 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         _grantRole(PAUSER_ROLE, msg.sender);
     }
     
-    /// @notice Mint new dream agent with initial personality
+    /// @notice Mint new dream agent (starts as blank slate)
     /// @param proofs Ownership proofs for initial data
     /// @param descriptions Data type descriptions
     /// @param agentName User-given name for the agent
     /// @param to Address to mint agent for
-    /// @param initialPersonality Starting personality traits
     /// @return tokenId The newly minted agent token ID
-    function mintWithPersonality(
+    function mintAgent(
         bytes[] calldata proofs,
         string[] calldata descriptions,
         string memory agentName,
-        address to,
-        PersonalityTraits calldata initialPersonality
+        address to
     ) external payable nonReentrant whenNotPaused returns (uint256 tokenId) {
         require(to != address(0), "Invalid address");
         require(descriptions.length == proofs.length, "Length mismatch");
@@ -163,9 +152,6 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         require(bytes(agentName).length > 0 && bytes(agentName).length <= 32, "Invalid name");
         require(!nameExists[agentName], "Name exists");
         require(msg.value >= MINTING_FEE, "Insufficient payment");
-        
-        // Validate initial personality traits
-        _validatePersonalityTraits(initialPersonality);
         
         // Verify proofs
         PreimageProofOutput[] memory proofOutputs = verifier.verifyPreimage(proofs);
@@ -192,18 +178,26 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
             intelligenceLevel: 1,
             dreamCount: 0,
             conversationCount: 0,
-            personalityInitialized: true,
+            personalityInitialized: false, // Agent starts as blank slate
             totalEvolutions: 0,
             lastEvolutionDate: block.timestamp,
             achievedMilestones: new string[](0)
         });
         
-        // Initialize personality
-        agentPersonalities[tokenId] = initialPersonality;
-        agentPersonalities[tokenId].lastDreamDate = 0; // Allow immediate first dream
+        // Initialize neutral personality (blank slate)
+        agentPersonalities[tokenId] = PersonalityTraits({
+            creativity: 50,
+            analytical: 50,
+            empathy: 50,
+            intuition: 50,
+            resilience: 50,
+            curiosity: 50,
+            dominantMood: "neutral",
+            lastDreamDate: 0 // Allow immediate first dream
+        });
         
-        // Set initial response style
-        responseStyles[tokenId] = _determineResponseStyle(initialPersonality);
+        // Set neutral response style
+        responseStyles[tokenId] = "neutral";
         
         totalAgents++;
         totalFeesCollected += MINTING_FEE;
@@ -220,24 +214,22 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         
         // Emit standard ERC-7857 Minted event defined in interface
         emit Minted(tokenId, msg.sender, to, dataHashes, descriptions);
-        emit AgentPersonalityInitialized(tokenId, initialPersonality);
         emit FeePaid(tokenId, msg.sender, MINTING_FEE);
         
         return tokenId;
     }
     
-    /// @notice Process daily dream and evolve agent personality
+    /// @notice Process daily dream and evolve agent personality (every 5th dream)
     /// @param tokenId Agent to evolve
     /// @param dreamHash 0G Storage hash of encrypted dream data
     /// @param dreamAnalysisHash 0G Storage hash of AI analysis
-    /// @param impact Personality changes from dream analysis
+    /// @param impact Personality changes from dream analysis (only used every 5th dream)
     function processDailyDream(
         uint256 tokenId,
         bytes32 dreamHash,
         bytes32 dreamAnalysisHash,
         PersonalityImpact calldata impact
     ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
-        require(agents[tokenId].personalityInitialized, "Personality not initialized");
         require(canProcessDreamToday(tokenId), "Daily dream already processed");
         
         // Validate impact values
@@ -247,27 +239,62 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         dreamHashes[tokenId].push(dreamHash);
         dreamAnalysisHashes[tokenId].push(dreamAnalysisHash);
         
-        // Apply personality evolution
-        PersonalityTraits storage personality = agentPersonalities[tokenId];
-        PersonalityTraits memory oldPersonality = personality;
-        
-        // Update traits with bounds checking and history tracking
-        personality.creativity = _updateTraitWithHistory(tokenId, "creativity", personality.creativity, impact.creativityChange, dreamHash);
-        personality.analytical = _updateTraitWithHistory(tokenId, "analytical", personality.analytical, impact.analyticalChange, dreamHash);
-        personality.empathy = _updateTraitWithHistory(tokenId, "empathy", personality.empathy, impact.empathyChange, dreamHash);
-        personality.intuition = _updateTraitWithHistory(tokenId, "intuition", personality.intuition, impact.intuitionChange, dreamHash);
-        personality.resilience = _updateTraitWithHistory(tokenId, "resilience", personality.resilience, impact.resilienceChange, dreamHash);
-        personality.curiosity = _updateTraitWithHistory(tokenId, "curiosity", personality.curiosity, impact.curiosityChange, dreamHash);
-        
-        // Update mood and timestamp
-        personality.dominantMood = impact.moodShift;
-        personality.lastDreamDate = block.timestamp;
-        
         // Update agent metadata
         agents[tokenId].dreamCount++;
-        agents[tokenId].totalEvolutions++;
-        agents[tokenId].lastEvolutionDate = block.timestamp;
         agents[tokenId].lastUpdated = block.timestamp;
+        
+        // Update timestamp for cooldown
+        PersonalityTraits storage personality = agentPersonalities[tokenId];
+        personality.lastDreamDate = block.timestamp;
+        
+        // Check if it's time for personality evolution (every 5th dream)
+        bool shouldEvolve = agents[tokenId].dreamCount % 5 == 0;
+        
+        if (shouldEvolve) {
+            // Validate impact for evolution
+            _validatePersonalityImpact(impact);
+            
+            // Apply personality evolution
+            PersonalityTraits memory oldPersonality = personality;
+            
+            // Update traits with bounds checking
+            personality.creativity = _updateTrait(personality.creativity, impact.creativityChange);
+            personality.analytical = _updateTrait(personality.analytical, impact.analyticalChange);
+            personality.empathy = _updateTrait(personality.empathy, impact.empathyChange);
+            personality.intuition = _updateTrait(personality.intuition, impact.intuitionChange);
+            personality.resilience = _updateTrait(personality.resilience, impact.resilienceChange);
+            personality.curiosity = _updateTrait(personality.curiosity, impact.curiosityChange);
+            
+            // Update mood
+            personality.dominantMood = impact.moodShift;
+            
+            // Mark personality as initialized after first evolution
+            if (!agents[tokenId].personalityInitialized) {
+                agents[tokenId].personalityInitialized = true;
+                emit PersonalityActivated(tokenId, personality, agents[tokenId].dreamCount);
+            }
+            
+            // Update evolution metadata
+            agents[tokenId].totalEvolutions++;
+            agents[tokenId].lastEvolutionDate = block.timestamp;
+            
+            // Check for personality milestones
+            _checkPersonalityMilestones(tokenId, oldPersonality, personality);
+            
+            // Update response style if needed
+            string memory newStyle = _determineResponseStyle(personality);
+            if (keccak256(bytes(responseStyles[tokenId])) != keccak256(bytes(newStyle))) {
+                string memory oldStyle = responseStyles[tokenId];
+                responseStyles[tokenId] = newStyle;
+                emit ResponseStyleUpdated(tokenId, oldStyle, newStyle);
+                
+                // Emit response style evolution
+                string[] memory dominantTraits = _getDominantTraitNames(tokenId);
+                emit ResponseStyleEvolved(tokenId, newStyle, dominantTraits);
+            }
+            
+            emit PersonalityEvolved(tokenId, dreamHash, personality, impact);
+        }
         
         // Intelligence evolution (every 3 dreams)
         if (agents[tokenId].dreamCount % 3 == 0) {
@@ -275,22 +302,6 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
             emit AgentEvolved(tokenId, agents[tokenId].intelligenceLevel - 1, agents[tokenId].intelligenceLevel);
         }
         
-        // Check for personality milestones
-        _checkPersonalityMilestones(tokenId, oldPersonality, personality);
-        
-        // Update response style if needed
-        string memory newStyle = _determineResponseStyle(personality);
-        if (keccak256(bytes(responseStyles[tokenId])) != keccak256(bytes(newStyle))) {
-            string memory oldStyle = responseStyles[tokenId];
-            responseStyles[tokenId] = newStyle;
-            emit ResponseStyleUpdated(tokenId, oldStyle, newStyle);
-            
-            // Emit response style evolution
-            string[] memory dominantTraits = _getDominantTraitNames(tokenId);
-            emit ResponseStyleEvolved(tokenId, newStyle, dominantTraits);
-        }
-        
-        emit PersonalityEvolved(tokenId, dreamHash, personality, impact);
         emit DreamProcessed(tokenId, dreamHash, agents[tokenId].intelligenceLevel);
     }
     
@@ -303,7 +314,6 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         bytes32 conversationHash,
         ContextType contextType
     ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
-        require(agents[tokenId].personalityInitialized, "Personality not initialized");
         
         // Store conversation hash
         conversationHashes[tokenId].push(conversationHash);
@@ -321,10 +331,10 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     
     /// @notice Get agent's current personality traits
     /// @param tokenId Agent to query
-    /// @return traits Current personality traits
+    /// @return traits Current personality traits (neutral if not evolved yet)
     function getPersonalityTraits(uint256 tokenId) 
         external view override returns (PersonalityTraits memory traits) {
-        require(agents[tokenId].personalityInitialized, "Personality not initialized");
+        require(agents[tokenId].owner != address(0), "Agent does not exist");
         return agentPersonalities[tokenId];
     }
     
@@ -382,7 +392,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     /// @return rarityScore Rarity score based on trait distribution
     function calculatePersonalityRarity(uint256 tokenId) 
         external view override returns (uint256 rarityScore) {
-        require(agents[tokenId].personalityInitialized, "Personality not initialized");
+        require(agents[tokenId].owner != address(0), "Agent does not exist");
         
         PersonalityTraits memory traits = agentPersonalities[tokenId];
         
@@ -407,7 +417,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     /// @return values Array of corresponding trait values
     function getDominantTraits(uint256 tokenId) 
         external view override returns (string[] memory traits, uint8[] memory values) {
-        require(agents[tokenId].personalityInitialized, "Personality not initialized");
+        require(agents[tokenId].owner != address(0), "Agent does not exist");
         
         PersonalityTraits memory personality = agentPersonalities[tokenId];
         
@@ -445,7 +455,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     /// @return primaryTrait Most dominant trait influencing style
     function getResponseStyle(uint256 tokenId) 
         external view override returns (string memory style, string memory primaryTrait) {
-        require(agents[tokenId].personalityInitialized, "Personality not initialized");
+        require(agents[tokenId].owner != address(0), "Agent does not exist");
         
         style = responseStyles[tokenId];
         PersonalityTraits memory personality = agentPersonalities[tokenId];
@@ -477,36 +487,6 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         }
     }
     
-    /// @notice Calculate compatibility between two agents
-    /// @param agentA First agent
-    /// @param agentB Second agent
-    /// @return compatibilityScore Compatibility score (0-100)
-    function calculateCompatibility(uint256 agentA, uint256 agentB) 
-        external view override returns (uint256 compatibilityScore) {
-        require(agents[agentA].personalityInitialized && agents[agentB].personalityInitialized, "Personalities not initialized");
-        
-        PersonalityTraits memory traitsA = agentPersonalities[agentA];
-        PersonalityTraits memory traitsB = agentPersonalities[agentB];
-        
-        // Calculate trait similarities (inverted differences)
-        uint256 creativityCompat = 100 - _absDiff(traitsA.creativity, traitsB.creativity);
-        uint256 analyticalCompat = 100 - _absDiff(traitsA.analytical, traitsB.analytical);
-        uint256 empathyCompat = 100 - _absDiff(traitsA.empathy, traitsB.empathy);
-        uint256 intuitionCompat = 100 - _absDiff(traitsA.intuition, traitsB.intuition);
-        uint256 resilienceCompat = 100 - _absDiff(traitsA.resilience, traitsB.resilience);
-        uint256 curiosityCompat = 100 - _absDiff(traitsA.curiosity, traitsB.curiosity);
-        
-        // Weighted average (empathy and creativity more important for compatibility)
-        compatibilityScore = (
-            creativityCompat * 20 +
-            analyticalCompat * 15 +
-            empathyCompat * 25 +
-            intuitionCompat * 15 +
-            resilienceCompat * 10 +
-            curiosityCompat * 15
-        ) / 100;
-    }
-    
     // ... [Continue with remaining interface functions and internal helpers]
     
     // Internal helper functions
@@ -536,20 +516,11 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         require(bytes(impact.moodShift).length > 0, "Empty mood");
     }
     
-    /// @notice Update trait with bounds checking and history tracking
-    /// @param tokenId Agent being updated
-    /// @param traitName Name of trait being updated
+    /// @notice Update trait with bounds checking
     /// @param currentValue Current trait value
     /// @param change Change amount
-    /// @param dreamHash Dream that caused the change
     /// @return newValue Updated trait value
-    function _updateTraitWithHistory(
-        uint256 tokenId,
-        string memory traitName,
-        uint8 currentValue,
-        int8 change,
-        bytes32 dreamHash
-    ) internal returns (uint8 newValue) {
+    function _updateTrait(uint8 currentValue, int8 change) internal pure returns (uint8 newValue) {
         // Convert to int256 for safe arithmetic
         int256 temp = int256(uint256(currentValue)) + int256(change);
         
@@ -557,16 +528,6 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         if (temp < 0) temp = 0;
         if (temp > 100) temp = 100;
         newValue = uint8(uint256(temp));
-        
-        // Record history if value changed
-        if (newValue != currentValue) {
-            traitHistory[tokenId][traitName].push(TraitEvolution({
-                timestamp: block.timestamp,
-                oldValue: currentValue,
-                newValue: newValue,
-                dreamHash: dreamHash
-            }));
-        }
     }
     
     /// @notice Determine response style based on personality traits
@@ -758,7 +719,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
             uint256 evolutionRate,
             uint256 lastEvolution
         ) {
-        require(agents[tokenId].personalityInitialized, "Personality not initialized");
+        require(agents[tokenId].owner != address(0), "Agent does not exist");
         
         totalEvolutions = agents[tokenId].totalEvolutions;
         lastEvolution = agents[tokenId].lastEvolutionDate;
@@ -772,27 +733,7 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         }
     }
     
-    /// @notice Get trait evolution history
-    /// @param tokenId Agent to analyze
-    /// @param traitName Trait to track
-    /// @param limit Maximum history entries (0 = all)
-    /// @return timestamps Array of evolution timestamps
-    /// @return values Array of trait values at each timestamp
-    function getTraitEvolution(uint256 tokenId, string calldata traitName, uint256 limit) 
-        external view override returns (uint256[] memory timestamps, uint8[] memory values) {
-        TraitEvolution[] storage history = traitHistory[tokenId][traitName];
-        
-        uint256 length = limit == 0 || limit > history.length ? history.length : limit;
-        timestamps = new uint256[](length);
-        values = new uint8[](length);
-        
-        // Return most recent entries
-        uint256 startIndex = history.length > length ? history.length - length : 0;
-        for (uint256 i = 0; i < length; i++) {
-            timestamps[i] = history[startIndex + i].timestamp;
-            values[i] = history[startIndex + i].newValue;
-        }
-    }
+
     
     /// @notice Check if agent has reached specific personality milestone
     /// @param tokenId Agent to check
@@ -812,54 +753,9 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         external view override returns (PersonalityTraits[] memory summaries) {
         summaries = new PersonalityTraits[](tokenIds.length);
         for (uint256 i = 0; i < tokenIds.length; i++) {
-            if (agents[tokenIds[i]].personalityInitialized) {
+            if (agents[tokenIds[i]].owner != address(0)) {
                 summaries[i] = agentPersonalities[tokenIds[i]];
             }
-        }
-    }
-    
-    /// @notice Find agents with specific trait ranges
-    /// @param traitName Trait to filter by
-    /// @param minValue Minimum trait value (inclusive)
-    /// @param maxValue Maximum trait value (inclusive)
-    /// @param offset Pagination offset
-    /// @param limit Maximum results to return
-    /// @return tokenIds Array of matching agent IDs
-    function findAgentsByTrait(
-        string calldata traitName,
-        uint8 minValue,
-        uint8 maxValue,
-        uint256 offset,
-        uint256 limit
-    ) external view override returns (uint256[] memory tokenIds) {
-        require(minValue <= maxValue, "Invalid range");
-        
-        // This would need optimization for large datasets
-        uint256[] memory matches = new uint256[](totalAgents);
-        uint256 matchCount = 0;
-        
-        for (uint256 i = 1; i <= nextTokenId - 1; i++) {
-            if (!agents[i].personalityInitialized) continue;
-            
-            uint8 traitValue = _getTraitValue(i, traitName);
-            if (traitValue >= minValue && traitValue <= maxValue) {
-                matches[matchCount] = i;
-                matchCount++;
-            }
-        }
-        
-        // Apply pagination
-        uint256 startIndex = offset;
-        uint256 endIndex = startIndex + limit;
-        if (endIndex > matchCount) endIndex = matchCount;
-        
-        if (startIndex >= matchCount) {
-            return new uint256[](0);
-        }
-        
-        tokenIds = new uint256[](endIndex - startIndex);
-        for (uint256 i = 0; i < endIndex - startIndex; i++) {
-            tokenIds[i] = matches[startIndex + i];
         }
     }
     
@@ -962,8 +858,18 @@ contract DreamAgentNFTv2 is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         revert("Public clone not implemented");
     }
     
-    function mint(bytes[] calldata, string[] calldata, address) external payable returns (uint256) {
-        revert("Use mintWithPersonality instead");
+    
+    /// @notice Standard ERC-7857 mint function (use mintAgent instead)
+    /// @param proofs Ownership proofs for initial data
+    /// @param dataDescriptions Data type descriptions  
+    /// @param to Address to mint agent for
+    /// @return tokenId The newly minted agent token ID
+    function mint(
+        bytes[] calldata /* proofs */,
+        string[] calldata /* dataDescriptions */,
+        address /* to */
+    ) external payable override returns (uint256 /* tokenId */) {
+        revert("Use mintAgent(proofs, descriptions, agentName, to) instead");
     }
     
     // Missing ERC-7857 and NFT standard functions

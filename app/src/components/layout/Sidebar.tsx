@@ -1,7 +1,7 @@
 'use client';
 
 import React, { CSSProperties } from 'react';
-import { Home, Upload, X, User, ChevronLeft, ChevronRight, Brain } from 'lucide-react';
+import { Home, Upload, X, User, ChevronLeft, ChevronRight, Brain, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '../../contexts/ThemeContext';
 import SidebarItem from './SidebarItem';
@@ -178,6 +178,15 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
             icon={<Brain size={18} />} 
             label="Compute Test" 
             to="/compute"
+            isCollapsed={isCollapsed}
+            onClick={isMobile ? onClose : undefined}
+          />
+        )}
+        {isDreamTest && (
+          <SidebarItem 
+            icon={<Sparkles size={18} />} 
+            label="Agent Test" 
+            to="/agent-test"
             isCollapsed={isCollapsed}
             onClick={isMobile ? onClose : undefined}
           />

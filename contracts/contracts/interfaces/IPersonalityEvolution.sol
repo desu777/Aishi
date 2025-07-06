@@ -144,13 +144,6 @@ interface IPersonalityEvolution {
     function getResponseStyle(uint256 tokenId) 
         external view returns (string memory style, string memory primaryTrait);
     
-    /// @notice Calculate compatibility between two agents
-    /// @param agentA First agent
-    /// @param agentB Second agent
-    /// @return compatibilityScore Compatibility score (0-100)
-    function calculateCompatibility(uint256 agentA, uint256 agentB) 
-        external view returns (uint256 compatibilityScore);
-    
     // Advanced Analytics
     
     /// @notice Get personality evolution statistics
@@ -165,14 +158,7 @@ interface IPersonalityEvolution {
             uint256 lastEvolution
         );
     
-    /// @notice Get trait evolution history
-    /// @param tokenId Agent to analyze
-    /// @param traitName Trait to track ("creativity", "empathy", etc.)
-    /// @param limit Maximum history entries (0 = all)
-    /// @return timestamps Array of evolution timestamps
-    /// @return values Array of trait values at each timestamp
-    function getTraitEvolution(uint256 tokenId, string calldata traitName, uint256 limit) 
-        external view returns (uint256[] memory timestamps, uint8[] memory values);
+
     
     /// @notice Check if agent has reached specific personality milestone
     /// @param tokenId Agent to check
@@ -189,19 +175,4 @@ interface IPersonalityEvolution {
     /// @return summaries Array of personality summaries
     function getPersonalitySummaries(uint256[] calldata tokenIds) 
         external view returns (PersonalityTraits[] memory summaries);
-    
-    /// @notice Find agents with specific trait ranges
-    /// @param traitName Trait to filter by
-    /// @param minValue Minimum trait value (inclusive)
-    /// @param maxValue Maximum trait value (inclusive)
-    /// @param offset Pagination offset
-    /// @param limit Maximum results to return
-    /// @return tokenIds Array of matching agent IDs
-    function findAgentsByTrait(
-        string calldata traitName,
-        uint8 minValue,
-        uint8 maxValue,
-        uint256 offset,
-        uint256 limit
-    ) external view returns (uint256[] memory tokenIds);
 } 
