@@ -6,10 +6,18 @@ import virtualBrokers from './virtualBrokers';
 // Load environment variables
 dotenv.config();
 
-// Official 0G providers from test-compute.ts
-const OFFICIAL_PROVIDERS = {
-  'llama-3.3-70b-instruct': '0xf07240Efa67755B5311bc75784a061eDB47165Dd',
-  'deepseek-r1-70b': '0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3'
+// Constants
+const DEFAULT_MODEL = "llama-3.3-70b-instruct";
+const PROVIDER_TIMEOUT = 30000; // 30 seconds
+const BALANCE_EXPIRATION = 5 * 60 * 1000; // 5 minutes
+const MIN_BALANCE_THRESHOLD = 0.0001;
+const MIN_PROFIT_MARGIN = 0.00001;
+const MAX_PROFIT_MARGIN = 0.0005;
+
+// Official 0G providers
+const OFFICIAL_PROVIDERS: Record<string, string> = {
+  "llama-3.3-70b-instruct": "0xf07240Efa67755B5311bc75784a061eDB47165Dd",
+  "deepseek-r1-70b": "0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3",
 };
 
 export interface AIRequest {
@@ -191,6 +199,11 @@ export class AIService {
         console.log(`🔒 Verification Status: ${isValid ? 'Valid ✅' : 'Invalid ❌'}`);
       }
 
+      this.log(`Estimated cost from provider: ${estimatedCost} OG`);
+
+      // Fee is now the direct estimated cost
+      const fee = estimatedCost;
+
       return {
         response: aiResponse,
         model: actualModel,
@@ -277,6 +290,15 @@ export class AIService {
     this.availableServices = [];
     this.acknowledgedProviders.clear();
     await masterWallet.cleanup();
+  }
+
+  private log(message: string, data?: any) {
+    console.log(`[AI SERVICE] ${message}`, data || "");
+  }
+
+  async getBalance(walletAddress: string): Promise<any> {
+    const balance = await masterWallet.getWalletInfo();
+    return { balance };
   }
 }
 

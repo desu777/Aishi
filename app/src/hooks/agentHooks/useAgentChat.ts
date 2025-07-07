@@ -70,7 +70,10 @@ export function useAgentChat() {
     isWaitingForReceipt: false,
     isComplete: false,
     error: '',
-    currentStep: 'input'
+    currentStep: 'input',
+    // 🆕 Lokalna sesja konwersacji
+    localConversationHistory: [],
+    sessionStartTime: new Date().toISOString()
   });
 
   // Wait for transaction receipt
@@ -116,7 +119,7 @@ export function useAgentChat() {
             blockNumber: receipt.blockNumber,
             gasUsed: receipt.gasUsed?.toString()
           });
-
+          
           setState(prev => ({
             ...prev,
             isRecordingOnChain: false,
@@ -184,9 +187,25 @@ export function useAgentChat() {
       isWaitingForReceipt: false,
       isComplete: false,
       error: '',
-      currentStep: 'input'
+      currentStep: 'input',
+      // 🆕 Lokalna sesja konwersacji - zachowaj historię!
+      localConversationHistory: state.localConversationHistory,
+      sessionStartTime: state.sessionStartTime
     });
     debugLog('Chat processing state reset');
+  };
+
+  // 🆕 Nowa funkcja: Wyczyść całą sesję (nowa sesja chatu)
+  const clearSessionHistory = () => {
+    testLog('🗑️ Clearing session history - starting new session');
+    setState(prev => ({
+      ...prev,
+      localConversationHistory: [],
+      sessionStartTime: new Date().toISOString(),
+      error: '',
+      currentStep: 'input'
+    }));
+    debugLog('Session history cleared - new session started');
   };
 
   // Step 4: Record conversation on-chain
@@ -409,8 +428,14 @@ export function useAgentChat() {
       }));
 
       testLog('🧠 Building chat context...');
+      
+      // 🆕 Sprawdź czy to pierwsza wiadomość w sesji
+      const isFirstMessageInSession = state.localConversationHistory.length === 0;
+      
       const context = await buildChatContext(
         userAgent as AgentInfo | undefined,
+        state.localConversationHistory,
+        isFirstMessageInSession,
         conversationHashesData as string[] | undefined,
         dreamHashesData as string[] | undefined,
         downloadFile,
@@ -459,7 +484,9 @@ export function useAgentChat() {
         isProcessingWithAI: false,
         lastConversation: conversationResult,
         currentStep: 'complete',
-        isComplete: true
+        isComplete: true,
+        // 🆕 Dodaj konwersację do lokalnej historii sesji
+        localConversationHistory: [...prev.localConversationHistory, conversationResult]
       }));
 
       testLog('🎉 Conversation completed successfully!', {
@@ -527,12 +554,17 @@ export function useAgentChat() {
     // Main Actions
     sendMessage,
     resetChat,
+    clearSessionHistory,
     saveCurrentConversation,
 
     // Agent context
     hasAgent,
     userAgent,
     userTokenId,
+    
+    // 🆕 Session info
+    localConversationHistory: state.localConversationHistory,
+    sessionStartTime: state.sessionStartTime,
     
     // Configuration
     storageConfig: STORAGE_CONFIG,

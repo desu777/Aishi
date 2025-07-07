@@ -15,10 +15,12 @@ import { STORAGE_CONFIG, COMPUTE_CONFIG } from '../config/agentChatConfig';
 
 /**
  * Step 1: Build chat context from agent personality + history
- * Pobiera dane agenta, historię konwersacji i snów aby stworzyć kontekst dla AI
+ * NOWA ARCHITEKTURA: Używa lokalnej sesji + historii z blockchain tylko przy pierwszej wiadomości
  */
 export const buildChatContext = async (
   agentInfo: AgentInfo | undefined,
+  localConversationHistory: ConversationResult[],
+  isFirstMessageInSession: boolean,
   conversationHashes: string[] | undefined,
   dreamHashes: string[] | undefined,
   downloadFile: (hash: string) => Promise<{ success: boolean; data?: ArrayBuffer; error?: string }>,
@@ -27,14 +29,16 @@ export const buildChatContext = async (
   try {
     debugLog('Building chat context', { 
       hasAgentInfo: !!agentInfo,
-      conversationCount: conversationHashes?.length || 0,
-      dreamCount: dreamHashes?.length || 0
+      isFirstMessageInSession,
+      localHistoryCount: localConversationHistory.length,
+      blockchainConversationCount: conversationHashes?.length || 0,
+      blockchainDreamCount: dreamHashes?.length || 0
     });
 
     let context = `You are an AI dream agent having a conversation with your owner.\n\n`;
     
+    // ZAWSZE: Dodaj personality agenta
     if (agentInfo) {
-      // KLUCZOWE: Pobieramy nazwę agenta i personality traits z kontraktu
       context += `Your Identity:\n`;
       context += `- Your Name: ${agentInfo.agentName}\n`;
       context += `- Intelligence Level: ${agentInfo.intelligenceLevel}\n`;
@@ -55,61 +59,86 @@ export const buildChatContext = async (
       }
     }
 
-    // Add conversation history context if available (pobieraj 2 ostatnie)
-    if (conversationHashes && conversationHashes.length > 0) {
-      context += `\nRecent Conversations:\n`;
+    // 🆕 NOWA LOGIKA: Wybierz źródło historii
+    if (localConversationHistory.length > 0) {
+      // 💬 Użyj lokalnej historii sesji (szybka!)
+      context += `\nCurrent Session Conversation:\n`;
       
-      // Pobierz ostatnie 2 konwersacje (nie wszystkie 5, żeby nie przeciążyć)
-      const recentConversations = conversationHashes.slice(-2);
+      // Dodaj ostatnie 8 wiadomości z lokalnej sesji (jeśli jest więcej)
+      const recentLocal = localConversationHistory.slice(-8);
       
-      for (const hash of recentConversations) {
-        try {
-          const result = await downloadFile(hash);
-          
-          if (result.success && result.data) {
-            const jsonString = new TextDecoder().decode(result.data);
-            const conversationData = JSON.parse(jsonString);
+      for (const conversation of recentLocal) {
+        context += `- User: "${conversation.userMessage}"\n`;
+        context += `  ${agentInfo?.agentName || 'Agent'}: "${conversation.aiResponse}"\n`;
+      }
+      
+      debugLog('Using local session history', {
+        totalLocalMessages: localConversationHistory.length,
+        usedInContext: recentLocal.length
+      });
+      
+    } else if (isFirstMessageInSession) {
+      // 🔗 Pierwsza wiadomość: Pobierz historię z blockchain (tylko raz!)
+      debugLog('First message in session - loading blockchain history');
+      
+      if (conversationHashes && conversationHashes.length > 0) {
+        context += `\nRecent Previous Conversations:\n`;
+        
+        // Pobierz ostatnie 2 konwersacje z blockchain
+        const recentConversations = conversationHashes.slice(-2);
+        
+        for (const hash of recentConversations) {
+          try {
+            const result = await downloadFile(hash);
             
-            context += `- User: "${conversationData.userMessage}"\n`;
-            context += `  Agent: "${conversationData.aiResponse}"\n`;
-          } else {
-            debugLog('Failed to download conversation', { hash, error: result.error });
+            if (result.success && result.data) {
+              const jsonString = new TextDecoder().decode(result.data);
+              const conversationData = JSON.parse(jsonString);
+              
+              context += `- User: "${conversationData.userMessage}"\n`;
+              context += `  Agent: "${conversationData.aiResponse}"\n`;
+            } else {
+              debugLog('Failed to download conversation', { hash, error: result.error });
+            }
+          } catch (error) {
+            debugLog('Error downloading conversation', { hash, error });
           }
-        } catch (error) {
-          debugLog('Error downloading conversation', { hash, error });
         }
       }
-    }
 
-    // Add dream history context if available (pobieraj treści snów)
-    if (dreamHashes && dreamHashes.length > 0) {
-      context += `\nRecent Dreams:\n`;
-      
-      for (const hash of dreamHashes) {
-        try {
-          const result = await downloadFile(hash);
-          
-          if (result.success && result.data) {
-            const jsonString = new TextDecoder().decode(result.data);
-            const dreamData = JSON.parse(jsonString);
+      // Add dream history context if available (tylko przy pierwszej wiadomości)
+      if (dreamHashes && dreamHashes.length > 0) {
+        context += `\nRecent Dreams:\n`;
+        
+        // Pobierz ostatnie 2 sny (nie wszystkie)
+        const recentDreams = dreamHashes.slice(-2);
+        
+        for (const hash of recentDreams) {
+          try {
+            const result = await downloadFile(hash);
             
-            // Dodaj skrócone informacje o śnie
-            const dreamText = typeof dreamData.dreamText === 'string' ? dreamData.dreamText : JSON.stringify(dreamData.dreamText || '');
-            const analysis = typeof dreamData.analysis === 'string' ? dreamData.analysis : JSON.stringify(dreamData.analysis || '');
-            
-            context += `- Dream: "${dreamText.substring(0, 100)}..."\n`;
-            context += `  Analysis: "${analysis.substring(0, 150)}..."\n`;
-          } else {
-            debugLog('Failed to download dream', { hash, error: result.error });
+            if (result.success && result.data) {
+              const jsonString = new TextDecoder().decode(result.data);
+              const dreamData = JSON.parse(jsonString);
+              
+              // Dodaj skrócone informacje o śnie
+              const dreamText = typeof dreamData.dreamText === 'string' ? dreamData.dreamText : JSON.stringify(dreamData.dreamText || '');
+              const analysis = typeof dreamData.analysis === 'string' ? dreamData.analysis : JSON.stringify(dreamData.analysis || '');
+              
+              context += `- Dream: "${dreamText.substring(0, 100)}..."\n`;
+              context += `  Analysis: "${analysis.substring(0, 150)}..."\n`;
+            } else {
+              debugLog('Failed to download dream', { hash, error: result.error });
+            }
+          } catch (error) {
+            debugLog('Error downloading dream', { hash, error });
           }
-        } catch (error) {
-          debugLog('Error downloading dream', { hash, error });
         }
       }
-    }
 
-    if (!conversationHashes?.length && !dreamHashes?.length) {
-      context += `\nThis is your first conversation with your owner. Introduce yourself!\n`;
+      if (!conversationHashes?.length && !dreamHashes?.length) {
+        context += `\nThis is your first conversation with your owner. Introduce yourself!\n`;
+      }
     }
 
     debugLog('Chat context built', { 

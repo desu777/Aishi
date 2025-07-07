@@ -55,6 +55,9 @@ export interface ChatState {
   lastConversation?: ConversationResult;
   storageHash?: string;
   txHash?: string;
+  // 🆕 Lokalna sesja konwersacji
+  localConversationHistory: ConversationResult[];
+  sessionStartTime: string;
 }
 
 // Context types from contract ABI
