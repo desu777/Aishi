@@ -2,6 +2,22 @@
  * Types and interfaces for Agent Chat functionality
  */
 
+// Language detection types
+export interface LanguageDetectionResult {
+  /** Kod języka ISO 639-1 */
+  language: string;
+  /** Nazwa języka */
+  languageName: string;
+  /** Pewność wykrycia (0-1) */
+  confidence: number;
+  /** Czy język jest obsługiwany przez aplikację */
+  isSupported: boolean;
+  /** Czy użyto fallback na język domyślny */
+  usedFallback: boolean;
+  /** Oryginalny tekst który był analizowany */
+  originalText: string;
+}
+
 // Core agent types
 export interface AgentInfo {
   tokenId: bigint;
@@ -40,6 +56,8 @@ export interface ConversationResult {
   aiResponse: string;
   contextType: ContextType;
   timestamp: string;
+  /** Wynik wykrywania języka wiadomości użytkownika */
+  languageDetection?: LanguageDetectionResult;
 }
 
 // Chat state management

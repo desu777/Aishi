@@ -9,15 +9,19 @@ import { getProvider, getSigner } from '../../../lib/0g/fees';
 import { 
   AgentInfo, 
   ConversationResult, 
-  ContextType 
+  ContextType,
+  LanguageDetectionResult 
 } from '../types/agentChatTypes';
 import { STORAGE_CONFIG, COMPUTE_CONFIG } from '../config/agentChatConfig';
+import { detectLanguage, getLanguageInstruction, logLanguageDetection } from '../utils/languageDetection';
 
 /**
- * Step 1: Build chat context from agent personality + history
+ * Step 1: Build chat context from agent personality + history + language detection
  * NOWA ARCHITEKTURA: Używa lokalnej sesji + historii z blockchain tylko przy pierwszej wiadomości
+ * 🆕 DODANO: Wykrywanie języka użytkownika i dodanie instrukcji AI
  */
 export const buildChatContext = async (
+  userMessage: string,
   agentInfo: AgentInfo | undefined,
   localConversationHistory: ConversationResult[],
   isFirstMessageInSession: boolean,
@@ -25,7 +29,7 @@ export const buildChatContext = async (
   dreamHashes: string[] | undefined,
   downloadFile: (hash: string) => Promise<{ success: boolean; data?: ArrayBuffer; error?: string }>,
   debugLog: (message: string, data?: any) => void
-): Promise<string> => {
+): Promise<{ context: string; languageDetection: LanguageDetectionResult }> => {
   try {
     debugLog('Building chat context', { 
       hasAgentInfo: !!agentInfo,
@@ -35,7 +39,15 @@ export const buildChatContext = async (
       blockchainDreamCount: dreamHashes?.length || 0
     });
 
+    // 🆕 STEP 1: Wykrywanie języka wiadomości użytkownika
+    const languageDetection = detectLanguage(userMessage);
+    logLanguageDetection(languageDetection, debugLog);
+
     let context = `You are an AI dream agent having a conversation with your owner.\n\n`;
+    
+    // 🆕 STEP 2: Dodanie instrukcji językowej dla AI
+    const languageInstruction = getLanguageInstruction(languageDetection.language);
+    context += `${languageInstruction}\n\n`;
     
     // ZAWSZE: Dodaj personality agenta
     if (agentInfo) {
@@ -144,12 +156,24 @@ export const buildChatContext = async (
     debugLog('Chat context built', { 
       contextLength: context.length,
       hasPersonality: !!agentInfo?.personality,
-      agentName: agentInfo?.agentName
+      agentName: agentInfo?.agentName,
+      detectedLanguage: languageDetection.language,
+      languageConfidence: languageDetection.confidence
     });
-    return context;
+    
+    return { context, languageDetection };
   } catch (error) {
     debugLog('Error building chat context', { error });
-    return 'You are an AI dream agent having a conversation. Unable to load previous context.\n';
+    
+    // Fallback z podstawowym wykrywaniem języka
+    const fallbackLanguageDetection = detectLanguage(userMessage || '');
+    const fallbackContext = 'You are an AI dream agent having a conversation. Unable to load previous context.\n' + 
+                           getLanguageInstruction(fallbackLanguageDetection.language) + '\n\n';
+    
+    return { 
+      context: fallbackContext, 
+      languageDetection: fallbackLanguageDetection 
+    };
   }
 };
 

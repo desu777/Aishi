@@ -432,7 +432,9 @@ export function useAgentChat() {
       // 🆕 Sprawdź czy to pierwsza wiadomość w sesji
       const isFirstMessageInSession = state.localConversationHistory.length === 0;
       
-      const context = await buildChatContext(
+      // 🆕 Wykrywanie języka i budowanie kontekstu
+      const { context, languageDetection } = await buildChatContext(
+        userMessage,
         userAgent as AgentInfo | undefined,
         state.localConversationHistory,
         isFirstMessageInSession,
@@ -446,7 +448,10 @@ export function useAgentChat() {
         contextLength: context.length,
         promptPreview: context.substring(0, 300) + (context.length > 300 ? '...' : ''),
         conversationHistoryCount: Array.isArray(conversationHashesData) ? conversationHashesData.length : 0,
-        dreamHistoryCount: Array.isArray(dreamHashesData) ? dreamHashesData.length : 0
+        dreamHistoryCount: Array.isArray(dreamHashesData) ? dreamHashesData.length : 0,
+        detectedLanguage: languageDetection.language,
+        languageConfidence: languageDetection.confidence,
+        usedLanguageFallback: languageDetection.usedFallback
       });
 
       // Step 2: AI Response
@@ -476,7 +481,9 @@ export function useAgentChat() {
         userMessage,
         aiResponse,
         contextType: detectedContextType,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        // 🆕 Dodaj informacje o wykrytym języku
+        languageDetection
       };
 
       setState(prev => ({ 
