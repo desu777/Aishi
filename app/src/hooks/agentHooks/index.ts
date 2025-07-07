@@ -6,6 +6,7 @@
 export { useAgentMint } from './useAgentMint';
 export { useAgentRead } from './useAgentRead';
 export { useAgentDream } from './useAgentDream';
+export { useAgentChat } from './useAgentChat';
 
 // Future exports:
 // export { useAgentDream } from './useAgentDream';

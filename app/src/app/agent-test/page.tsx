@@ -8,7 +8,8 @@ import { useAgentMint } from '../../hooks/agentHooks';
 import { useAgentDream } from '../../hooks/agentHooks';
 import AgentInfo from '../../components/agent/AgentInfo';
 import DreamInput from '../../components/agent/DreamInput';
-import { Brain, Sparkles, CheckCircle, AlertCircle, Loader2, Zap, Info, Moon } from 'lucide-react';
+import AgentChat from '../../components/agent/AgentChat';
+import { Brain, Sparkles, CheckCircle, AlertCircle, Loader2, Zap, Info, Moon, MessageCircle } from 'lucide-react';
 
 export default function AgentTest() {
   const { theme, debugLog } = useTheme();
@@ -48,7 +49,7 @@ export default function AgentTest() {
   
   // Local state
   const [agentName, setAgentName] = useState('');
-  const [mode, setMode] = useState<'mint' | 'info' | 'dream'>('mint');
+  const [mode, setMode] = useState<'mint' | 'info' | 'dream' | 'chat'>('mint');
   const [lastMintedAgent, setLastMintedAgent] = useState<{
     name: string;
     txHash: string;
@@ -302,6 +303,26 @@ export default function AgentTest() {
                 >
                   <Moon size={16} />
                   Dream Analysis
+                </button>
+                
+                <button
+                  onClick={() => setMode('chat')}
+                  style={{
+                    backgroundColor: mode === 'chat' ? theme.accent.primary : theme.bg.panel,
+                    color: mode === 'chat' ? 'white' : theme.text.primary,
+                    border: `1px solid ${mode === 'chat' ? theme.accent.primary : theme.border}`,
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <MessageCircle size={16} />
+                  Agent Chat
                 </button>
               </div>
             </div>
@@ -710,6 +731,11 @@ export default function AgentTest() {
                 
                 <DreamInput />
               </>
+            )}
+
+            {/* Agent Chat Mode */}
+            {mode === 'chat' && (
+              <AgentChat />
             )}
           </>
         )}
