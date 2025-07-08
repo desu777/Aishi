@@ -80,7 +80,24 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         uint8 traitValue;
     }
     
-
+    /// @notice Hierarchical Memory System Structure
+    struct AgentMemory {
+        bytes32 memoryCoreHash;           // Main personality & yearly summaries
+        bytes32 currentDreamDailyHash;    // Current month dreams (append-only)
+        bytes32 currentConvDailyHash;     // Current month conversations
+        bytes32 lastDreamMonthlyHash;     // Last consolidated dream month
+        bytes32 lastConvMonthlyHash;      // Last consolidated conversation month
+        uint256 lastConsolidation;        // Timestamp of last consolidation
+        uint8 currentMonth;               // Current month (1-12)
+        uint16 currentYear;               // Current year
+    }
+    
+    /// @notice Memory Consolidation Reward System
+    struct ConsolidationReward {
+        uint256 intelligenceBonus;        // Bonus intelligence for consolidating
+        string specialMilestone;          // Special milestone unlocked
+        bool yearlyReflection;            // Whether yearly reflection is available
+    }
     
     // Contract state
     mapping(uint256 => DreamAgent) public agents;
@@ -97,6 +114,11 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     mapping(uint256 => bytes32[]) public dreamHashes;
     mapping(uint256 => bytes32[]) public conversationHashes;
     mapping(uint256 => bytes32[]) public dreamAnalysisHashes;
+    
+    // NEW: Hierarchical Memory System
+    mapping(uint256 => AgentMemory) public agentMemories;
+    mapping(uint256 => ConsolidationReward) public pendingRewards;
+    mapping(uint256 => uint256) public consolidationStreak; // Consecutive monthly consolidations
     
     // Milestone tracking
     mapping(uint256 => mapping(string => MilestoneData)) public milestones;
@@ -117,6 +139,13 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
     event PersonalityActivated(uint256 indexed tokenId, PersonalityTraits newPersonality, uint256 dreamsSoFar);
     event MilestoneUnlocked(uint256 indexed tokenId, string milestone, uint8 traitValue);
     event ResponseStyleUpdated(uint256 indexed tokenId, string oldStyle, string newStyle);
+    
+    // NEW: Memory System Events
+    event MemoryUpdated(uint256 indexed tokenId, string memoryType, bytes32 newHash, bytes32 oldHash);
+    event ConsolidationNeeded(uint256 indexed tokenId, uint8 month, uint16 year, string consolidationType);
+    event ConsolidationCompleted(uint256 indexed tokenId, string period, uint256 intelligenceBonus, string specialReward);
+    event YearlyReflectionAvailable(uint256 indexed tokenId, uint16 year);
+    event MemoryMilestone(uint256 indexed tokenId, string achievement, uint256 totalMemories);
     
     // Unique contract event (not in IERC7857)
     event FeePaid(uint256 indexed tokenId, address indexed payer, uint256 amount);
@@ -204,6 +233,18 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         // Set neutral response style
         responseStyles[tokenId] = "neutral";
         
+        // Initialize memory system
+        agentMemories[tokenId] = AgentMemory({
+            memoryCoreHash: bytes32(0),
+            currentDreamDailyHash: bytes32(0),
+            currentConvDailyHash: bytes32(0),
+            lastDreamMonthlyHash: bytes32(0),
+            lastConvMonthlyHash: bytes32(0),
+            lastConsolidation: block.timestamp,
+            currentMonth: uint8((block.timestamp / 30 days) % 12) + 1,
+            currentYear: uint16(2024 + (block.timestamp / 365 days))
+        });
+        
         totalAgents++;
         totalFeesCollected += MINTING_FEE;
         
@@ -224,6 +265,133 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         return tokenId;
     }
     
+    /// @notice Update agent's memory with new daily dream file hash
+    /// @param tokenId Agent to update
+    /// @param newDailyHash New hash of daily dream file (append-only)
+    function updateDreamMemory(uint256 tokenId, bytes32 newDailyHash) 
+        external whenNotPaused onlyOwnerOrAuthorized(tokenId) {
+        AgentMemory storage memory_ = agentMemories[tokenId];
+        bytes32 oldHash = memory_.currentDreamDailyHash;
+        memory_.currentDreamDailyHash = newDailyHash;
+        
+        emit MemoryUpdated(tokenId, "dream_daily", newDailyHash, oldHash);
+        
+        // Check if month changed
+        _checkMonthChange(tokenId);
+    }
+    
+    /// @notice Update agent's memory with new daily conversation file hash
+    /// @param tokenId Agent to update
+    /// @param newDailyHash New hash of daily conversation file (append-only)
+    function updateConversationMemory(uint256 tokenId, bytes32 newDailyHash) 
+        external whenNotPaused onlyOwnerOrAuthorized(tokenId) {
+        AgentMemory storage memory_ = agentMemories[tokenId];
+        bytes32 oldHash = memory_.currentConvDailyHash;
+        memory_.currentConvDailyHash = newDailyHash;
+        
+        emit MemoryUpdated(tokenId, "conversation_daily", newDailyHash, oldHash);
+        
+        // Check if month changed
+        _checkMonthChange(tokenId);
+    }
+    
+    /// @notice Consolidate monthly memories (user-triggered)
+    /// @param tokenId Agent to consolidate
+    /// @param dreamMonthlyHash Hash of consolidated dream month
+    /// @param convMonthlyHash Hash of consolidated conversation month
+    /// @param month Month being consolidated
+    /// @param year Year being consolidated
+    function consolidateMonth(
+        uint256 tokenId,
+        bytes32 dreamMonthlyHash,
+        bytes32 convMonthlyHash,
+        uint8 month,
+        uint16 year
+    ) external whenNotPaused onlyOwnerOrAuthorized(tokenId) {
+        require(month >= 1 && month <= 12, "Invalid month");
+        require(year >= 2024 && year <= 2100, "Invalid year");
+        
+        AgentMemory storage memory_ = agentMemories[tokenId];
+        
+        // Verify it's time to consolidate
+        require(
+            (memory_.currentMonth != month || memory_.currentYear != year),
+            "Cannot consolidate current month"
+        );
+        
+        // Update monthly hashes
+        memory_.lastDreamMonthlyHash = dreamMonthlyHash;
+        memory_.lastConvMonthlyHash = convMonthlyHash;
+        memory_.lastConsolidation = block.timestamp;
+        
+        // Increase consolidation streak
+        consolidationStreak[tokenId]++;
+        
+        // Calculate rewards
+        uint256 intelligenceBonus = _calculateConsolidationBonus(tokenId);
+        agents[tokenId].intelligenceLevel += intelligenceBonus;
+        
+        // Check for special milestones
+        string memory specialReward = _checkConsolidationMilestones(tokenId);
+        
+        emit ConsolidationCompleted(tokenId, _formatPeriod(month, year), intelligenceBonus, specialReward);
+        emit AgentEvolved(tokenId, agents[tokenId].intelligenceLevel - intelligenceBonus, agents[tokenId].intelligenceLevel);
+        
+        // Check if yearly reflection is available
+        if (month == 12) {
+            pendingRewards[tokenId].yearlyReflection = true;
+            emit YearlyReflectionAvailable(tokenId, year);
+        }
+    }
+    
+    /// @notice Update memory core with yearly reflection
+    /// @param tokenId Agent to update
+    /// @param newMemoryCoreHash New memory core hash with yearly summary
+    function updateMemoryCore(uint256 tokenId, bytes32 newMemoryCoreHash) 
+        external whenNotPaused onlyOwnerOrAuthorized(tokenId) {
+        AgentMemory storage memory_ = agentMemories[tokenId];
+        bytes32 oldHash = memory_.memoryCoreHash;
+        memory_.memoryCoreHash = newMemoryCoreHash;
+        
+        // Reset yearly reflection flag
+        if (pendingRewards[tokenId].yearlyReflection) {
+            pendingRewards[tokenId].yearlyReflection = false;
+            
+            // Bonus for yearly reflection
+            agents[tokenId].intelligenceLevel += 5;
+            emit AgentEvolved(tokenId, agents[tokenId].intelligenceLevel - 5, agents[tokenId].intelligenceLevel);
+        }
+        
+        emit MemoryUpdated(tokenId, "memory_core", newMemoryCoreHash, oldHash);
+    }
+    
+    /// @notice Get accessible memory based on intelligence level
+    /// @param tokenId Agent to query
+    /// @return monthsAccessible Number of months the agent can remember
+    /// @return memoryDepth Description of memory depth
+    function getMemoryAccess(uint256 tokenId) 
+        external view returns (uint256 monthsAccessible, string memory memoryDepth) {
+        uint256 level = agents[tokenId].intelligenceLevel;
+        
+        if (level >= 60) {
+            return (60, "Complete Memory Archive (5 years)");
+        } else if (level >= 48) {
+            return (48, "Extended Memory (4 years)");
+        } else if (level >= 36) {
+            return (36, "Deep Memory (3 years)");
+        } else if (level >= 24) {
+            return (24, "Long-term Memory (2 years)");
+        } else if (level >= 12) {
+            return (12, "Annual Memory (1 year)");
+        } else if (level >= 6) {
+            return (6, "Half-year Memory");
+        } else if (level >= 3) {
+            return (3, "Quarterly Memory");
+        } else {
+            return (1, "Current Month Only");
+        }
+    }
+    
     /// @notice Process daily dream and evolve agent personality (every 5th dream)
     /// @param tokenId Agent to evolve
     /// @param dreamHash 0G Storage hash of encrypted dream data
@@ -240,9 +408,12 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         // Validate impact values
         _validatePersonalityImpact(impact);
         
-        // Store dream and analysis hashes
+        // Store dream and analysis hashes (for backwards compatibility)
         dreamHashes[tokenId].push(dreamHash);
         dreamAnalysisHashes[tokenId].push(dreamAnalysisHash);
+        
+        // Note: The actual dream content should be appended to the daily file
+        // This function now focuses on personality evolution only
         
         // Update agent metadata
         agents[tokenId].dreamCount++;
@@ -394,11 +565,6 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         // return block.timestamp > agentPersonalities[tokenId].lastDreamDate + 1 days;
         return true; // Allow unlimited dreams for testing
     }
-    
-
-
-    
-    // ... [Continue with remaining interface functions and internal helpers]
     
     // Internal helper functions
     
@@ -554,8 +720,6 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         emit MilestoneUnlocked(tokenId, milestone, traitValue);
     }
     
-
-    
     // Missing interface functions
     
     /// @notice Get personality evolution statistics
@@ -583,8 +747,6 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         }
     }
     
-
-    
     /// @notice Check if agent has reached specific personality milestone
     /// @param tokenId Agent to check
     /// @param milestone Milestone to check
@@ -595,8 +757,6 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         MilestoneData memory m = milestones[tokenId][milestone];
         return (m.achieved, m.achievedAt);
     }
-    
-
     
     /// @notice Get trait value by name
     /// @param tokenId Agent ID
@@ -636,8 +796,6 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         emit Transferred(tokenId, from, to);
     }
     
-
-    
     // Standard ERC-7857 functions
     function ownerOf(uint256 tokenId) external view override returns (address) {
         return agents[tokenId].owner;
@@ -654,13 +812,6 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         emit AuthorizedUsage(tokenId, user);
     }
     
-
-    
-
-    
-    
-
-    
     // Missing ERC-7857 and NFT standard functions
     
     /// @notice Get total supply of agents
@@ -676,8 +827,6 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         require(owner != address(0), "Invalid address");
         return ownerToTokenId[owner] > 0 ? 1 : 0;
     }
-    
-
     
     /// @notice Check if contract supports interface
     /// @param interfaceId Interface identifier
@@ -857,7 +1006,176 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         return false;
     }
     
-
+    /// @notice Check if month has changed and emit consolidation event
+    /// @param tokenId Agent to check
+    function _checkMonthChange(uint256 tokenId) internal {
+        AgentMemory storage memory_ = agentMemories[tokenId];
+        
+        uint8 currentMonth = uint8((block.timestamp / 30 days) % 12) + 1;
+        uint16 currentYear = uint16(2024 + (block.timestamp / 365 days));
+        
+        if (memory_.currentMonth == 0) {
+            // Initialize for new agent
+            memory_.currentMonth = currentMonth;
+            memory_.currentYear = currentYear;
+            return;
+        }
+        
+        if (memory_.currentMonth != currentMonth || memory_.currentYear != currentYear) {
+            // Month changed - emit consolidation needed event
+            emit ConsolidationNeeded(tokenId, memory_.currentMonth, memory_.currentYear, "monthly");
+            
+            // Update current month/year
+            memory_.currentMonth = currentMonth;
+            memory_.currentYear = currentYear;
+            
+            // Reset daily hashes for new month
+            memory_.currentDreamDailyHash = bytes32(0);
+            memory_.currentConvDailyHash = bytes32(0);
+            
+            // Break consolidation streak if not consolidated within 7 days
+            if (block.timestamp > memory_.lastConsolidation + 37 days) {
+                consolidationStreak[tokenId] = 0;
+            }
+        }
+    }
+    
+    /// @notice Calculate consolidation bonus based on streak and timing
+    /// @param tokenId Agent to calculate bonus for
+    /// @return bonus Intelligence bonus amount
+    function _calculateConsolidationBonus(uint256 tokenId) internal view returns (uint256 bonus) {
+        uint256 streak = consolidationStreak[tokenId];
+        
+        // Base bonus
+        bonus = 2;
+        
+        // Streak bonus (up to +5)
+        if (streak >= 12) {
+            bonus += 5; // Full year streak!
+        } else if (streak >= 6) {
+            bonus += 3; // Half year streak
+        } else if (streak >= 3) {
+            bonus += 1; // Quarter streak
+        }
+        
+        // Early bird bonus (consolidated within 3 days)
+        AgentMemory memory memory_ = agentMemories[tokenId];
+        if (block.timestamp <= memory_.lastConsolidation + 3 days) {
+            bonus += 1;
+        }
+        
+        return bonus;
+    }
+    
+    /// @notice Check for special consolidation milestones
+    /// @param tokenId Agent to check
+    /// @return milestone Special milestone achieved (if any)
+    function _checkConsolidationMilestones(uint256 tokenId) internal returns (string memory milestone) {
+        uint256 streak = consolidationStreak[tokenId];
+        
+        if (streak == 3) {
+            _unlockMilestone(tokenId, "memory_keeper", 3);
+            return "Memory Keeper - 3 month streak!";
+        } else if (streak == 6) {
+            _unlockMilestone(tokenId, "memory_guardian", 6);
+            return "Memory Guardian - 6 month streak!";
+        } else if (streak == 12) {
+            _unlockMilestone(tokenId, "memory_master", 12);
+            return "Memory Master - Full year streak!";
+        } else if (streak == 24) {
+            _unlockMilestone(tokenId, "eternal_memory", 24);
+            return "Eternal Memory - 2 year streak!";
+        }
+        
+        // Check total memories milestone
+        uint256 totalMemories = agents[tokenId].dreamCount + agents[tokenId].conversationCount;
+        if (totalMemories == 100) {
+            emit MemoryMilestone(tokenId, "Century of Memories", 100);
+            return "Century of Memories - 100 total interactions!";
+        } else if (totalMemories == 365) {
+            emit MemoryMilestone(tokenId, "Year of Memories", 365);
+            return "Year of Memories - 365 total interactions!";
+        } else if (totalMemories == 1000) {
+            emit MemoryMilestone(tokenId, "Memory Millennial", 1000);
+            return "Memory Millennial - 1000 total interactions!";
+        }
+        
+        return "";
+    }
+    
+    /// @notice Format period string
+    /// @param month Month number
+    /// @param year Year number
+    /// @return period Formatted period string
+    function _formatPeriod(uint8 month, uint16 year) internal pure returns (string memory) {
+        string[12] memory monthNames = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+        
+        return string(abi.encodePacked(monthNames[month - 1], " ", _uint2str(year)));
+    }
+    
+    /// @notice Convert uint to string
+    /// @param _i Unsigned integer to convert
+    /// @return _uintAsString String representation
+    function _uint2str(uint256 _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint256 j = _i;
+        uint256 len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint256 k = len;
+        while (_i != 0) {
+            k = k - 1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
+    }
+    
+    /// @notice Get agent's complete memory structure
+    /// @param tokenId Agent to query
+    /// @return memory Complete memory structure
+    function getAgentMemory(uint256 tokenId) external view returns (AgentMemory memory) {
+        return agentMemories[tokenId];
+    }
+    
+    /// @notice Check consolidation status and get rewards
+    /// @param tokenId Agent to check
+    /// @return needsConsolidation Whether consolidation is needed
+    /// @return potentialBonus Potential intelligence bonus
+    /// @return currentStreak Current consolidation streak
+    /// @return daysUntilLoseStreak Days until streak is lost
+    function getConsolidationStatus(uint256 tokenId) external view returns (
+        bool needsConsolidation,
+        uint256 potentialBonus,
+        uint256 currentStreak,
+        uint256 daysUntilLoseStreak
+    ) {
+        AgentMemory memory memory_ = agentMemories[tokenId];
+        
+        uint8 currentMonth = uint8((block.timestamp / 30 days) % 12) + 1;
+        uint16 currentYear = uint16(2024 + (block.timestamp / 365 days));
+        
+        needsConsolidation = (memory_.currentMonth != currentMonth || memory_.currentYear != currentYear);
+        potentialBonus = _calculateConsolidationBonus(tokenId);
+        currentStreak = consolidationStreak[tokenId];
+        
+        if (memory_.lastConsolidation > 0) {
+            uint256 daysSinceLastConsolidation = (block.timestamp - memory_.lastConsolidation) / 1 days;
+            daysUntilLoseStreak = daysSinceLastConsolidation >= 37 ? 0 : 37 - daysSinceLastConsolidation;
+        } else {
+            daysUntilLoseStreak = 37;
+        }
+    }
     
     // Base64 encoding removed to reduce contract size
 } 
