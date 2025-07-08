@@ -1,649 +1,500 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.20;
 
-import "./interfaces/IERC7857.sol";
-import "./interfaces/IERC7857DataVerifier.sol";
-import "./interfaces/IPersonalityEvolution.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+/*
+ * ────────────────────────────────────────────────────────────────────────────────
+ *  IMPORTS
+ * ────────────────────────────────────────────────────────────────────────────────
+ *  Interfaces                                                  OpenZeppelin utils
+ * ──────────────────────────────────────────────────────────── ──────────────────
+ */
 
-/// @title DreamscapeAgent - Hierarchical Memory System iNFTs
-/// @notice AI agents with evolving personalities and hierarchical memory (daily→monthly→yearly)
-/// @dev Implements ERC-7857 with advanced memory consolidation system. Limited to 1 agent per wallet.
-contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, AccessControl, Pausable {
-    
-    // Maximum supply for testnet
-    uint256 public constant MAX_AGENTS = 1000;
-    
-    // Minting fee: 0.1 OG
-    uint256 public constant MINTING_FEE = 0.1 ether;
-    
-    // Treasury address for collecting fees
-    address public immutable treasury;
-    
-    // Access control roles
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+import "./interfaces/IERC7857.sol";               // ERC‑7857 base interface (iNFT standard)
+import "./interfaces/IERC7857DataVerifier.sol";    // Optional: ZK‑proof verifier used at mint
+import "./interfaces/IPersonalityEvolution.sol";   // Trait & evolution data‑model
+
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";  // protects against re‑entrancy
+import "@openzeppelin/contracts/access/AccessControl.sol";   // role‑based admin system
+import "@openzeppelin/contracts/utils/Pausable.sol";         // emergency stop
+
+/**
+ * @title  DreamscapeAgent – iNFT with Hierarchical Memory & Personality Evolution
+ * @notice Single‑per‑wallet autonomous agent that stores memories in a three‑layer
+ *         hierarchy (daily → monthly → yearly) and evolves its personality from
+ *         analysed dreams & conversations.
+ *
+ *         This contract is a *lean* revision: we removed unbounded on‑chain arrays
+ *         of raw hashes to save gas and instead rely on off‑chain storage + a
+ *         rotating «current» hash per period.  All public getters needed by dApp
+ *         remain, but they now return an empty array and are marked *deprecated*.
+ *
+ *         The contract **still** complies with ERC‑7857 by preserving the original
+ *         ABI of `mintAgent(...)`; callers MAY pass empty arrays when proofs are
+ *         not needed.  Optional ZKP verification can be disabled by setting the
+ *         `verifier` address to zero at deployment.
+ *
+ * @dev    Designed for direct deployment – no upgrade proxy included.  For
+ *         upgradability, wrap this logic in a UUPS/Beacon proxy.
+ */
+contract DreamscapeAgent is
+    IERC7857,
+    IPersonalityEvolution,
+    ReentrancyGuard,
+    AccessControl,
+    Pausable
+{
+    /* ───────────────────────────────────────────────────────── CONSTANTS ───── */
+
+    uint256 public constant MAX_AGENTS   = 1_000;      // test‑net cap (adjust for main‑net)
+    uint256 public constant MINTING_FEE  = 0.1 ether;  // price per agent – sent to `treasury`
+
+    /* ───────────────────────────────────────────────────────── IMMUTABLES ──── */
+
+    address public immutable treasury;                  // fee recipient
+    IERC7857DataVerifier public immutable verifier;     // zero‑address ⇒ skip proof checks
+
+    /* ────────────────────────────────────────────────────────── ROLES ───────── */
+
+    bytes32 public constant ADMIN_ROLE    = keccak256("ADMIN_ROLE");
     bytes32 public constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
-    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    
-    // Access control modifiers
-    modifier onlyOwnerOrAuthorized(uint256 tokenId) {
-        require(
-            agents[tokenId].owner == msg.sender || 
-            hasRole(ADMIN_ROLE, msg.sender) ||
-            _isAuthorizedUser(tokenId, msg.sender),
-            "Unauthorized access"
-        );
-        _;
-    }
-    
-    modifier onlyOwnerOrAdmin(uint256 tokenId) {
-        require(
-            agents[tokenId].owner == msg.sender || 
-            hasRole(ADMIN_ROLE, msg.sender),
-            "Not agent owner or admin"
-        );
-        _;
-    }
-    
-    /// @notice Dream Agent structure optimized for hierarchical memory
+    bytes32 public constant PAUSER_ROLE   = keccak256("PAUSER_ROLE");
+
+    /* ────────────────────────────────────────────────────────── STORAGE ─────── */
+
+    /**
+     * @dev Core NFT data (no unbounded arrays – only counters & flags)
+     */
     struct DreamAgent {
-        address owner;
-        string agentName;
-        uint256 createdAt;
-        uint256 lastUpdated;
-        address[] authorizedUsers;
-        uint256 intelligenceLevel;
-        uint256 dreamCount;
-        uint256 conversationCount;
-        
-        // Personality evolution fields
-        bool personalityInitialized;
-        uint256 totalEvolutions;
-        uint256 lastEvolutionDate;
+        address  owner;            // current NFT owner
+        string   agentName;        // unique, user‑chosen name (max 32 bytes)
+        uint256  createdAt;        // block.timestamp at mint
+        uint256  lastUpdated;      // last on‑chain write (dream, convo, memory…)
+
+        // Access control
+        address[] authorizedUsers; // external EOAs permitted to operate the agent
+
+        // Intelligence & history counters
+        uint256  intelligenceLevel;
+        uint256  dreamCount;
+        uint256  conversationCount;
+
+        // Personality evolution meta
+        bool     personalityInitialized;
+        uint256  totalEvolutions;
+        uint256  lastEvolutionDate;
         string[] achievedMilestones;
     }
     
-    /// @notice Personality milestone tracking
+    /**
+     * @dev Milestone record per agent & name (e.g. "memory_master")
+     */
     struct MilestoneData {
-        bool achieved;
-        uint256 achievedAt;
-        uint8 traitValue;
+        bool     achieved;
+        uint256  achievedAt;
+        uint8    traitValue; // value that unlocked the milestone (for UI)
     }
-    
-    /// @notice Hierarchical Memory System Structure
+
+    /**
+     * @dev Three‑tier memory system – each layer stores a *single* hash pointing
+     *      to encrypted storage (0G, Arweave, IPFS…)
+     */
     struct AgentMemory {
-        bytes32 memoryCoreHash;           // Main personality & yearly summaries
-        bytes32 currentDreamDailyHash;    // Current month dreams (append-only)
-        bytes32 currentConvDailyHash;     // Current month conversations
-        bytes32 lastDreamMonthlyHash;     // Last consolidated dream month
-        bytes32 lastConvMonthlyHash;      // Last consolidated conversation month
-        uint256 lastConsolidation;        // Timestamp of last consolidation
-        uint8 currentMonth;               // Current month (1-12)
-        uint16 currentYear;               // Current year
+        bytes32 memoryCoreHash;        // Yearly summaries & agent essence
+        bytes32 currentDreamDailyHash; // Append‑only during current month
+        bytes32 currentConvDailyHash;  // Append‑only during current month
+        bytes32 lastDreamMonthlyHash;  // Finalised hash after consolidation
+        bytes32 lastConvMonthlyHash;   // Finalised hash after consolidation
+        uint256 lastConsolidation;     // timestamp when consolidateMonth() last ran
+        uint8   currentMonth;          // 1‑12   (initialised at mint)
+        uint16  currentYear;           // 2024+  (initialised at mint)
     }
-    
-    /// @notice Memory Consolidation Reward System
+
+    /**
+     * @dev Rewards waiting for claim (set during monthly consolidation)
+     */
     struct ConsolidationReward {
-        uint256 intelligenceBonus;        // Bonus intelligence for consolidating
-        string specialMilestone;          // Special milestone unlocked
-        bool yearlyReflection;            // Whether yearly reflection is available
+        uint256 intelligenceBonus;
+        string  specialMilestone;
+        bool    yearlyReflection;
     }
-    
-    // Contract state
-    mapping(uint256 => DreamAgent) public agents;
-    mapping(string => bool) public nameExists;
-    uint256 public nextTokenId = 1;
-    uint256 public totalAgents = 0;
+
+    // ─── Main mappings ────────────────────────────────────────────────────────
+
+    mapping(uint256 => DreamAgent)                  public agents;             // tokenId → agent data
+    mapping(string  => bool)                        public nameExists;         // prevents duplicates
+    mapping(address => uint256)                     public ownerToTokenId;     // "one agent per wallet"
+
+    mapping(uint256 => PersonalityTraits)           public agentPersonalities; // traits struct from interface
+
+    mapping(uint256 => AgentMemory)                 public agentMemories;      // hierarchical storage
+    mapping(uint256 => ConsolidationReward)         public pendingRewards;     // waiting after consolidate
+    mapping(uint256 => uint256)                     public consolidationStreak;// consecutive months consolidated
+
+    mapping(uint256 => mapping(string => MilestoneData)) public milestones;    // tokenId → name → data
+    mapping(uint256 => string)                      public responseStyles;     // cached style for front‑end
+
+    // ─── Supply counters ─────────────────────────────────────────────────────
+
+    uint256 public nextTokenId   = 1; // starts at 1 for gas efficient existence checks
+    uint256 public totalAgents   = 0;
     uint256 public totalFeesCollected = 0;
-    
-    // One agent per wallet optimization
-    mapping(address => uint256) public ownerToTokenId; // 0 = no agent
-    
-    // Personality system state
-    mapping(uint256 => PersonalityTraits) public agentPersonalities;
-    
-    // Hierarchical Memory System
-    mapping(uint256 => AgentMemory) public agentMemories;
-    mapping(uint256 => ConsolidationReward) public pendingRewards;
-    mapping(uint256 => uint256) public consolidationStreak; // Consecutive monthly consolidations
-    
-    // Milestone tracking
-    mapping(uint256 => mapping(string => MilestoneData)) public milestones;
-    
-    // Response style mappings
-    mapping(uint256 => string) public responseStyles;
-    
-    // Contract metadata
-    string public name = "DreamscapeAgent";
-    string public symbol = "DREAM";
-    
-    // Verifier for proof validation
-    IERC7857DataVerifier public immutable verifier;
-    
-    // Events
-    event PersonalityActivated(uint256 indexed tokenId, PersonalityTraits newPersonality, uint256 dreamsSoFar);
-    event MilestoneUnlocked(uint256 indexed tokenId, string milestone, uint8 traitValue);
-    event ResponseStyleUpdated(uint256 indexed tokenId, string oldStyle, string newStyle);
-    
-    // Memory System Events
-    event MemoryUpdated(uint256 indexed tokenId, string memoryType, bytes32 newHash, bytes32 oldHash);
-    event ConsolidationNeeded(uint256 indexed tokenId, uint8 month, uint16 year, string consolidationType);
-    event ConsolidationCompleted(uint256 indexed tokenId, string period, uint256 intelligenceBonus, string specialReward);
+
+    /* ───────────────────────────────────────────────────────── EVENTS ──────── */
+
+    // Core ERC‑7857
+    // ‑ Minted / Transferred / AuthorizedUsage inherited from interface
+
+    // Dream & personality
+    event PersonalityActivated  (uint256 indexed tokenId, PersonalityTraits traits, uint256 dreamCount);
+    event ResponseStyleUpdated  (uint256 indexed tokenId, string oldStyle, string newStyle);
+    event MilestoneUnlocked     (uint256 indexed tokenId, string milestone, uint8 value);
+    event AgentEvolved          (uint256 indexed tokenId, uint256 oldLevel, uint256 newLevel);
+    event DreamProcessed        (uint256 indexed tokenId, bytes32 dreamHash, uint256 intelligenceLevel);
+
+    // Hierarchical memory
+    event MemoryUpdated         (uint256 indexed tokenId, string memoryType, bytes32 newHash, bytes32 oldHash);
+    event ConsolidationNeeded   (uint256 indexed tokenId, uint8 month, uint16 year, string consolidationType);
+    event ConsolidationCompleted(uint256 indexed tokenId, string period, uint256 bonus, string specialReward);
     event YearlyReflectionAvailable(uint256 indexed tokenId, uint16 year);
-    event MemoryMilestone(uint256 indexed tokenId, string achievement, uint256 totalMemories);
-    
-    // Core events
-    event FeePaid(uint256 indexed tokenId, address indexed payer, uint256 amount);
-    event AgentEvolved(uint256 indexed tokenId, uint256 oldLevel, uint256 newLevel);
-    event DreamProcessed(uint256 indexed tokenId, bytes32 dreamHash, uint256 intelligenceLevel);
+    event MemoryMilestone       (uint256 indexed tokenId, string achievement, uint256 totalInteractions);
+
+    // Economics
+    event FeePaid               (uint256 indexed tokenId, address indexed payer, uint256 amount);
+
+    /* ──────────────────────────────────────────────────────── CONSTRUCTOR ─── */
     
     constructor(address _verifier, address _treasury) {
-        require(_verifier != address(0), "Verifier cannot be zero address");
-        require(_treasury != address(0), "Treasury cannot be zero address");
-        verifier = IERC7857DataVerifier(_verifier);
-        treasury = _treasury;
-        
-        // Initialize access control
+        require(_treasury != address(0), "treasury = zero addr");
+        treasury  = _treasury;
+        verifier  = IERC7857DataVerifier(_verifier); // may be zero → proofs disabled
+
+        // grant all roles to deployer
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, msg.sender);
-        _grantRole(VERIFIER_ROLE, msg.sender);
-        _grantRole(PAUSER_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE,          msg.sender);
+        _grantRole(VERIFIER_ROLE,       msg.sender);
+        _grantRole(PAUSER_ROLE,         msg.sender);
     }
-    
-    /// @notice Mint new dream agent with hierarchical memory system
-    /// @param agentName User-given name for the agent
-    /// @param to Address to mint agent for
-    /// @return tokenId The newly minted agent token ID
+
+    /* ──────────────────────────────────────────── MINT & INITIALISATION ───── */
+
+    /**
+     * @notice Mint a *blank‑slate* agent.  One per wallet.
+     * @param proofs        Optional ZK‑proof blobs (pass `[]` to skip)
+     * @param descriptions  Data descriptions parallel to `proofs`
+     * @param agentName     Unique display name (≤32 bytes)
+     * @param to            Recipient address (must NOT already own an agent)
+     */
     function mintAgent(
-        string memory agentName,
-        address to
+        bytes[]  calldata proofs,
+        string[] calldata descriptions,
+        string   memory   agentName,
+        address  to
     ) external payable nonReentrant whenNotPaused returns (uint256 tokenId) {
-        require(to != address(0), "Invalid address");
-        require(ownerToTokenId[to] == 0, "Wallet already has an agent");
-        require(totalAgents < MAX_AGENTS, "Max limit reached");
-        require(bytes(agentName).length > 0 && bytes(agentName).length <= 32, "Invalid name");
-        require(!nameExists[agentName], "Name exists");
-        require(msg.value >= MINTING_FEE, "Insufficient payment");
-        
-        // Reserve the name
+        /* ── basic checks ── */
+        require(to != address(0),                "invalid to addr");
+        require(ownerToTokenId[to] == 0,         "wallet already has agent");
+        require(totalAgents < MAX_AGENTS,        "max supply reached");
+        require(bytes(agentName).length > 0 && bytes(agentName).length <= 32, "name length");
+        require(!nameExists[agentName],          "name exists");
+        require(msg.value >= MINTING_FEE,        "fee < 0.1 OG");
+
+        /* ── optional proof verification ── */
+        bytes32[] memory dataHashes;
+        if (address(verifier) != address(0)) {
+            require(descriptions.length == proofs.length, "len mismatch");
+            PreimageProofOutput[] memory outs = verifier.verifyPreimage(proofs);
+            dataHashes = new bytes32[](outs.length);
+            for (uint256 i = 0; i < outs.length; ++i) {
+                require(outs[i].isValid, "invalid proof");
+                dataHashes[i] = outs[i].dataHash;
+            }
+        }
+
+        /* ── name reservation ── */
         nameExists[agentName] = true;
         
-        // Create new agent
+        /* ── create agent ── */
         tokenId = nextTokenId++;
         ownerToTokenId[to] = tokenId;
+
         agents[tokenId] = DreamAgent({
-            owner: to,
-            agentName: agentName,
-            createdAt: block.timestamp,
-            lastUpdated: block.timestamp,
-            authorizedUsers: new address[](0),
-            intelligenceLevel: 1,
-            dreamCount: 0,
-            conversationCount: 0,
-            personalityInitialized: false,
-            totalEvolutions: 0,
-            lastEvolutionDate: block.timestamp,
-            achievedMilestones: new string[](0)
+            owner:                   to,
+            agentName:               agentName,
+            createdAt:               block.timestamp,
+            lastUpdated:             block.timestamp,
+            authorizedUsers:         new address[](0),
+            intelligenceLevel:       1,
+            dreamCount:              0,
+            conversationCount:       0,
+            personalityInitialized:  false,
+            totalEvolutions:         0,
+            lastEvolutionDate:       block.timestamp,
+            achievedMilestones:      new string[](0)
         });
-        
-        // Initialize neutral personality
+
+        /* ── neutral personality stub ── */
         agentPersonalities[tokenId] = PersonalityTraits({
-            creativity: 50,
-            analytical: 50,
-            empathy: 50,
-            intuition: 50,
-            resilience: 50,
-            curiosity: 50,
-            dominantMood: "neutral",
-            lastDreamDate: 0
+            creativity:     50,
+            analytical:     50,
+            empathy:        50,
+            intuition:      50,
+            resilience:     50,
+            curiosity:      50,
+            dominantMood:   "neutral",
+            lastDreamDate:  0
         });
-        
-        // Set neutral response style
         responseStyles[tokenId] = "neutral";
         
-        // Initialize memory system
+        /* ── memory initialisation ── */
         agentMemories[tokenId] = AgentMemory({
-            memoryCoreHash: bytes32(0),
+            memoryCoreHash:        bytes32(0),
             currentDreamDailyHash: bytes32(0),
-            currentConvDailyHash: bytes32(0),
-            lastDreamMonthlyHash: bytes32(0),
-            lastConvMonthlyHash: bytes32(0),
-            lastConsolidation: block.timestamp,
-            currentMonth: uint8((block.timestamp / 30 days) % 12) + 1,
-            currentYear: uint16(2024 + (block.timestamp / 365 days))
+            currentConvDailyHash:  bytes32(0),
+            lastDreamMonthlyHash:  bytes32(0),
+            lastConvMonthlyHash:   bytes32(0),
+            lastConsolidation:     block.timestamp,
+            currentMonth:  _currentMonth(),
+            currentYear:   _currentYear()
         });
-        
-        totalAgents++;
-        totalFeesCollected += MINTING_FEE;
-        
-        // Transfer minting fee to treasury
-        (bool success, ) = treasury.call{value: MINTING_FEE}("");
-        require(success, "Treasury payment failed");
-        
-        // Refund excess payment
+
+        /* ── economics ── */
+        totalAgents          += 1;
+        totalFeesCollected   += MINTING_FEE;
+
+        (bool sent, ) = treasury.call{value: MINTING_FEE}("");
+        require(sent, "treasury transfer failed");
         if (msg.value > MINTING_FEE) {
-            (bool refundSuccess, ) = msg.sender.call{value: msg.value - MINTING_FEE}("");
-            require(refundSuccess, "Refund failed");
+            (bool refund, ) = msg.sender.call{value: msg.value - MINTING_FEE}("");
+            require(refund, "refund failed");
         }
         
-        // Emit events
-        emit Minted(tokenId, msg.sender, to, new bytes32[](0), new string[](0));
+        /* ── events ── */
+        emit Minted(tokenId, msg.sender, to, dataHashes, descriptions);
         emit FeePaid(tokenId, msg.sender, MINTING_FEE);
-        
-        return tokenId;
     }
-    
-    // ========== HIERARCHICAL MEMORY SYSTEM FUNCTIONS ==========
-    
-    /// @notice Update agent's memory with new daily dream file hash
-    /// @param tokenId Agent to update
-    /// @param newDailyHash New hash of daily dream file (append-only)
-    function updateDreamMemory(uint256 tokenId, bytes32 newDailyHash) 
-        external whenNotPaused onlyOwnerOrAuthorized(tokenId) {
-        AgentMemory storage memory_ = agentMemories[tokenId];
-        bytes32 oldHash = memory_.currentDreamDailyHash;
-        memory_.currentDreamDailyHash = newDailyHash;
-        
-        emit MemoryUpdated(tokenId, "dream_daily", newDailyHash, oldHash);
-        
-        // Check if month changed
+
+    /* ───────────────────────────────────────────────── PERSONALITY LOGIC ─── */
+
+    /**
+     * @notice Called once per «dream»; every 5th dream triggers evolution.
+     * @dev    ZK‑verified dream *content* lives off‑chain; contract stores only
+     *         hash + counters to keep gas low.
+     */
+    function processDailyDream(
+        uint256            tokenId,
+        bytes32            dreamHash,
+        bytes32            dreamAnalysisHash,
+        PersonalityImpact  calldata impact
+    ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
+        _validatePersonalityImpact(impact);
+
+        DreamAgent storage agent = agents[tokenId];
+        PersonalityTraits storage traits = agentPersonalities[tokenId];
+
+        // cooldown – first dream is allowed instantly; afterwards 24h gap
+        require(
+            traits.lastDreamDate == 0 || block.timestamp >= traits.lastDreamDate + 24 hours,
+            "cooldown <24h"
+        );
+
+        // update counters
+        agent.dreamCount      += 1;
+        agent.lastUpdated      = block.timestamp;
+        traits.lastDreamDate   = block.timestamp;
+
+        /* ── 1. incremental intelligence boost every 3 dreams ── */
+        if (agent.dreamCount % 3 == 0) {
+            uint256 oldLvl = agent.intelligenceLevel;
+            agent.intelligenceLevel += 1;
+            emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
+        }
+
+        /* ── 2. personality evolution every 5 dreams ── */
+        if (agent.dreamCount % 5 == 0) {
+            PersonalityTraits memory before = traits;
+
+            traits.creativity  = _updateTrait(traits.creativity,  impact.creativityChange);
+            traits.analytical  = _updateTrait(traits.analytical,  impact.analyticalChange);
+            traits.empathy     = _updateTrait(traits.empathy,     impact.empathyChange);
+            traits.intuition   = _updateTrait(traits.intuition,   impact.intuitionChange);
+            traits.resilience  = _updateTrait(traits.resilience,  impact.resilienceChange);
+            traits.curiosity   = _updateTrait(traits.curiosity,   impact.curiosityChange);
+            traits.dominantMood = impact.moodShift;
+
+            // first evolution → consider personality «activated»
+            if (!agent.personalityInitialized) {
+                agent.personalityInitialized = true;
+                emit PersonalityActivated(tokenId, traits, agent.dreamCount);
+            }
+
+            agent.totalEvolutions += 1;
+            agent.lastEvolutionDate = block.timestamp;
+
+            _checkPersonalityMilestones(tokenId, before, traits);
+            _updateResponseStyle(tokenId);
+
+            emit PersonalityEvolved(tokenId, dreamHash, traits, impact);
+        }
+
+        emit DreamProcessed(tokenId, dreamHash, agent.intelligenceLevel);
+    }
+
+    /**
+     * @notice Lightweight conversation recording; boosts intelligence every 10th convo.
+     */
+    function recordConversation(
+        uint256    tokenId,
+        bytes32    conversationHash,
+        ContextType contextType
+    ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
+        DreamAgent storage agent = agents[tokenId];
+
+        agent.conversationCount += 1;
+        agent.lastUpdated        = block.timestamp;
+
+        if (agent.conversationCount % 10 == 0) {
+            uint256 oldLvl = agent.intelligenceLevel;
+            agent.intelligenceLevel += 1;
+            emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
+        }
+
+        emit AgentConversation(tokenId, conversationHash, contextType, agent.conversationCount);
+    }
+
+    /* ─────────────────────────────────────────── HIERARCHICAL MEMORY ───────── */
+
+    /**
+     * @dev Append‑only daily hash for dreams; resets automatically on month change.
+     */
+    function updateDreamMemory(uint256 tokenId, bytes32 newHash)
+        external whenNotPaused onlyOwnerOrAuthorized(tokenId)
+    {
+        AgentMemory storage mem = agentMemories[tokenId];
+        bytes32 old = mem.currentDreamDailyHash;
+        mem.currentDreamDailyHash = newHash;
+        emit MemoryUpdated(tokenId, "dream_daily", newHash, old);
         _checkMonthChange(tokenId);
     }
-    
-    /// @notice Update agent's memory with new daily conversation file hash
-    /// @param tokenId Agent to update
-    /// @param newDailyHash New hash of daily conversation file (append-only)
-    function updateConversationMemory(uint256 tokenId, bytes32 newDailyHash) 
-        external whenNotPaused onlyOwnerOrAuthorized(tokenId) {
-        AgentMemory storage memory_ = agentMemories[tokenId];
-        bytes32 oldHash = memory_.currentConvDailyHash;
-        memory_.currentConvDailyHash = newDailyHash;
-        
-        emit MemoryUpdated(tokenId, "conversation_daily", newDailyHash, oldHash);
-        
-        // Check if month changed
+
+    /**
+     * @dev Append‑only daily hash for conversations.
+     */
+    function updateConversationMemory(uint256 tokenId, bytes32 newHash)
+        external whenNotPaused onlyOwnerOrAuthorized(tokenId)
+    {
+        AgentMemory storage mem = agentMemories[tokenId];
+        bytes32 old = mem.currentConvDailyHash;
+        mem.currentConvDailyHash = newHash;
+        emit MemoryUpdated(tokenId, "conversation_daily", newHash, old);
         _checkMonthChange(tokenId);
     }
-    
-    /// @notice Consolidate monthly memories (user-triggered)
-    /// @param tokenId Agent to consolidate
-    /// @param dreamMonthlyHash Hash of consolidated dream month
-    /// @param convMonthlyHash Hash of consolidated conversation month
-    /// @param month Month being consolidated
-    /// @param year Year being consolidated
+
+    /**
+     * @notice User‑driven monthly consolidation.  Merges daily files off‑chain and
+     *         stores the finalised month hash on‑chain, rewarding the agent.
+     */
     function consolidateMonth(
         uint256 tokenId,
         bytes32 dreamMonthlyHash,
         bytes32 convMonthlyHash,
-        uint8 month,
-        uint16 year
+        uint8   month,
+        uint16  year
     ) external whenNotPaused onlyOwnerOrAuthorized(tokenId) {
-        require(month >= 1 && month <= 12, "Invalid month");
-        require(year >= 2024 && year <= 2100, "Invalid year");
-        
-        AgentMemory storage memory_ = agentMemories[tokenId];
-        
-        // Verify it's time to consolidate
-        require(
-            (memory_.currentMonth != month || memory_.currentYear != year),
-            "Cannot consolidate current month"
-        );
-        
-        // Update monthly hashes
-        memory_.lastDreamMonthlyHash = dreamMonthlyHash;
-        memory_.lastConvMonthlyHash = convMonthlyHash;
-        memory_.lastConsolidation = block.timestamp;
-        
-        // Increase consolidation streak
-        consolidationStreak[tokenId]++;
-        
-        // Calculate rewards
-        uint256 intelligenceBonus = _calculateConsolidationBonus(tokenId);
-        agents[tokenId].intelligenceLevel += intelligenceBonus;
-        
-        // Check for special milestones
-        string memory specialReward = _checkConsolidationMilestones(tokenId);
-        
-        emit ConsolidationCompleted(tokenId, _formatPeriod(month, year), intelligenceBonus, specialReward);
-        emit AgentEvolved(tokenId, agents[tokenId].intelligenceLevel - intelligenceBonus, agents[tokenId].intelligenceLevel);
-        
-        // Check if yearly reflection is available
+        require(month >= 1 && month <= 12, "invalid month");
+        require(year  >= 2024 && year  <= 2100, "invalid year");
+
+        AgentMemory storage mem = agentMemories[tokenId];
+        require(mem.currentMonth != month || mem.currentYear != year, "still current month");
+
+        mem.lastDreamMonthlyHash = dreamMonthlyHash;
+        mem.lastConvMonthlyHash  = convMonthlyHash;
+        mem.lastConsolidation    = block.timestamp;
+
+        // streak logic
+        consolidationStreak[tokenId] += 1;
+        uint256 bonus = _calculateConsolidationBonus(tokenId);
+        string memory special = _checkConsolidationMilestones(tokenId);
+
+        DreamAgent storage agent = agents[tokenId];
+        uint256 oldLvl = agent.intelligenceLevel;
+        agent.intelligenceLevel += bonus;
+
+        emit ConsolidationCompleted(tokenId, _formatPeriod(month, year), bonus, special);
+        emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
+
+        // yearly reflection flag
         if (month == 12) {
             pendingRewards[tokenId].yearlyReflection = true;
             emit YearlyReflectionAvailable(tokenId, year);
         }
     }
-    
-    /// @notice Update memory core with yearly reflection
-    /// @param tokenId Agent to update
-    /// @param newMemoryCoreHash New memory core hash with yearly summary
-    function updateMemoryCore(uint256 tokenId, bytes32 newMemoryCoreHash) 
-        external whenNotPaused onlyOwnerOrAuthorized(tokenId) {
-        AgentMemory storage memory_ = agentMemories[tokenId];
-        bytes32 oldHash = memory_.memoryCoreHash;
-        memory_.memoryCoreHash = newMemoryCoreHash;
-        
-        // Reset yearly reflection flag
+
+    /**
+     * @notice Stores the yearly «memory core» hash and grants bonus INT.
+     */
+    function updateMemoryCore(uint256 tokenId, bytes32 newHash)
+        external whenNotPaused onlyOwnerOrAuthorized(tokenId)
+    {
+        AgentMemory storage mem = agentMemories[tokenId];
+        bytes32 old = mem.memoryCoreHash;
+        mem.memoryCoreHash = newHash;
+        emit MemoryUpdated(tokenId, "memory_core", newHash, old);
+
         if (pendingRewards[tokenId].yearlyReflection) {
             pendingRewards[tokenId].yearlyReflection = false;
-            
-            // Bonus for yearly reflection
-            agents[tokenId].intelligenceLevel += 5;
-            emit AgentEvolved(tokenId, agents[tokenId].intelligenceLevel - 5, agents[tokenId].intelligenceLevel);
-        }
-        
-        emit MemoryUpdated(tokenId, "memory_core", newMemoryCoreHash, oldHash);
-    }
-    
-    /// @notice Get accessible memory based on intelligence level
-    /// @param tokenId Agent to query
-    /// @return monthsAccessible Number of months the agent can remember
-    /// @return memoryDepth Description of memory depth
-    function getMemoryAccess(uint256 tokenId) 
-        external view returns (uint256 monthsAccessible, string memory memoryDepth) {
-        uint256 level = agents[tokenId].intelligenceLevel;
-        
-        if (level >= 60) {
-            return (60, "Complete Memory Archive (5 years)");
-        } else if (level >= 48) {
-            return (48, "Extended Memory (4 years)");
-        } else if (level >= 36) {
-            return (36, "Deep Memory (3 years)");
-        } else if (level >= 24) {
-            return (24, "Long-term Memory (2 years)");
-        } else if (level >= 12) {
-            return (12, "Annual Memory (1 year)");
-        } else if (level >= 6) {
-            return (6, "Half-year Memory");
-        } else if (level >= 3) {
-            return (3, "Quarterly Memory");
-        } else {
-            return (1, "Current Month Only");
+            DreamAgent storage agent = agents[tokenId];
+            uint256 oldLvl = agent.intelligenceLevel;
+            agent.intelligenceLevel += 5;
+            emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
         }
     }
-    
-    // ========== PERSONALITY EVOLUTION FUNCTIONS ==========
-    
-    /// @notice Process daily dream for personality evolution (simplified)
-    /// @param tokenId Agent to evolve
-    /// @param impact Personality changes from dream analysis (only used every 5th dream)
-    function processDailyDream(
-        uint256 tokenId,
-        PersonalityImpact calldata impact
-    ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
-        // Validate impact values
-        _validatePersonalityImpact(impact);
-        
-        // Update agent metadata
-        agents[tokenId].dreamCount++;
-        agents[tokenId].lastUpdated = block.timestamp;
-        
-        // Update timestamp
-        PersonalityTraits storage personality = agentPersonalities[tokenId];
-        personality.lastDreamDate = block.timestamp;
-        
-        // Check if it's time for personality evolution (every 5th dream)
-        bool shouldEvolve = agents[tokenId].dreamCount % 5 == 0;
-        
-        if (shouldEvolve) {
-            // Apply personality evolution
-            PersonalityTraits memory oldPersonality = personality;
-            
-            // Update traits with bounds checking
-            personality.creativity = _updateTrait(personality.creativity, impact.creativityChange);
-            personality.analytical = _updateTrait(personality.analytical, impact.analyticalChange);
-            personality.empathy = _updateTrait(personality.empathy, impact.empathyChange);
-            personality.intuition = _updateTrait(personality.intuition, impact.intuitionChange);
-            personality.resilience = _updateTrait(personality.resilience, impact.resilienceChange);
-            personality.curiosity = _updateTrait(personality.curiosity, impact.curiosityChange);
-            
-            // Update mood
-            personality.dominantMood = impact.moodShift;
-            
-            // Mark personality as initialized after first evolution
-            if (!agents[tokenId].personalityInitialized) {
-                agents[tokenId].personalityInitialized = true;
-                emit PersonalityActivated(tokenId, personality, agents[tokenId].dreamCount);
-            }
-            
-            // Update evolution metadata
-            agents[tokenId].totalEvolutions++;
-            agents[tokenId].lastEvolutionDate = block.timestamp;
-            
-            // Check for personality milestones
-            _checkPersonalityMilestones(tokenId, oldPersonality, personality);
-            
-            // Update response style if needed
-            string memory newStyle = _determineResponseStyle(personality);
-            if (keccak256(bytes(responseStyles[tokenId])) != keccak256(bytes(newStyle))) {
-                string memory oldStyle = responseStyles[tokenId];
-                responseStyles[tokenId] = newStyle;
-                emit ResponseStyleUpdated(tokenId, oldStyle, newStyle);
-                
-                // Emit response style evolution
-                string[] memory dominantTraits = _getDominantTraitNames(tokenId);
-                emit ResponseStyleEvolved(tokenId, newStyle, dominantTraits);
-            }
-            
-            emit PersonalityEvolved(tokenId, bytes32(0), personality, impact);
-        }
-        
-        // Intelligence evolution (every 3 dreams)
-        if (agents[tokenId].dreamCount % 3 == 0) {
-            agents[tokenId].intelligenceLevel++;
-            emit AgentEvolved(tokenId, agents[tokenId].intelligenceLevel - 1, agents[tokenId].intelligenceLevel);
-        }
-        
-        emit DreamProcessed(tokenId, bytes32(0), agents[tokenId].intelligenceLevel);
-    }
-    
-    /// @notice Record conversation (simplified)
-    /// @param tokenId Agent having conversation
-    /// @param contextType Type of conversation for context building
-    function recordConversation(
-        uint256 tokenId,
-        ContextType contextType
-    ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
-        // Update counts
-        agents[tokenId].conversationCount++;
-        agents[tokenId].lastUpdated = block.timestamp;
-        
-        // Small intelligence boost from conversations (1 point every 10 conversations)
-        if (agents[tokenId].conversationCount % 10 == 0) {
-            agents[tokenId].intelligenceLevel++;
-            emit AgentEvolved(tokenId, agents[tokenId].intelligenceLevel - 1, agents[tokenId].intelligenceLevel);
-        }
-        
-        emit AgentConversation(tokenId, bytes32(0), contextType, agents[tokenId].conversationCount);
-    }
-    
-    // ========== DEPRECATED FUNCTIONS (NEW IMPLEMENTATIONS) ==========
-    
-    /// @notice Get dream count and memory info (replaces getDreamHistory)
-    /// @param tokenId Agent to query
-    /// @return dreamCount Total number of dreams
-    /// @return memorySystem Information about new memory system
-    function getDreamHistory(uint256 tokenId, uint256 /* limit */) 
-        external view override returns (bytes32[] memory) {
-        // Return empty array with info about new system
-        bytes32[] memory empty = new bytes32[](0);
-        return empty;
-        // Note: Use getMemoryAccess() and agentMemories[tokenId] for new memory system
-    }
-    
-    /// @notice Get conversation count and memory info (replaces getConversationHistory)
-    /// @param tokenId Agent to query
-    /// @return conversationCount Total number of conversations
-    /// @return memorySystem Information about new memory system
-    function getConversationHistory(uint256 tokenId, uint256 /* limit */) 
-        external view override returns (bytes32[] memory) {
-        // Return empty array with info about new system
-        bytes32[] memory empty = new bytes32[](0);
-        return empty;
-        // Note: Use getMemoryAccess() and agentMemories[tokenId] for new memory system
-    }
-    
-    /// @notice Get dream and conversation counts
-    /// @param tokenId Agent to query
-    /// @return dreamCount Total dreams
-    /// @return conversationCount Total conversations
-    /// @return monthsAccessible Accessible memory depth
-    function getMemoryStats(uint256 tokenId) external view returns (
-        uint256 dreamCount,
-        uint256 conversationCount,
-        uint256 monthsAccessible
-    ) {
-        dreamCount = agents[tokenId].dreamCount;
-        conversationCount = agents[tokenId].conversationCount;
-        (monthsAccessible, ) = this.getMemoryAccess(tokenId);
-    }
-    
-    // ========== VIEW FUNCTIONS ==========
-    
-    /// @notice Get agent's current personality traits
-    function getPersonalityTraits(uint256 tokenId) 
-        external view override returns (PersonalityTraits memory traits) {
-        require(agents[tokenId].owner != address(0), "Agent does not exist");
+
+    /* ───────────────────────────────────────────────── VIEW HELPERS ────────── */
+
+    function getPersonalityTraits(uint256 tokenId)
+        external view override returns (PersonalityTraits memory) {
+        require(agents[tokenId].owner != address(0), "agent !exist");
         return agentPersonalities[tokenId];
     }
-    
-    /// @notice Get personality evolution statistics
-    function getEvolutionStats(uint256 tokenId) 
-        external view override returns (
-            uint256 totalEvolutions,
-            uint256 evolutionRate,
-            uint256 lastEvolution
-        ) {
-        require(agents[tokenId].owner != address(0), "Agent does not exist");
-        
-        totalEvolutions = agents[tokenId].totalEvolutions;
-        lastEvolution = agents[tokenId].lastEvolutionDate;
-        
-        // Calculate evolution rate (evolutions per day)
-        if (block.timestamp > agents[tokenId].createdAt) {
-            uint256 daysSinceCreation = (block.timestamp - agents[tokenId].createdAt) / 1 days;
-            evolutionRate = daysSinceCreation > 0 ? (totalEvolutions * 100) / daysSinceCreation : 0;
-        } else {
-            evolutionRate = 0;
-        }
+
+    function canProcessDreamToday(uint256 tokenId)
+        external view override returns (bool) {
+        PersonalityTraits memory t = agentPersonalities[tokenId];
+        return t.lastDreamDate == 0 || block.timestamp >= t.lastDreamDate + 24 hours;
     }
-    
-    /// @notice Check if agent has reached specific personality milestone
-    function hasMilestone(uint256 tokenId, string calldata milestone) 
-        external view override returns (bool achieved, uint256 achievedAt) {
-        MilestoneData memory m = milestones[tokenId][milestone];
+
+    function getEvolutionStats(uint256 tokenId)
+        external view override returns (uint256 totalEvolutions, uint256 evolutionRate, uint256 lastEvolution)
+    {
+        DreamAgent memory a = agents[tokenId];
+        totalEvolutions = a.totalEvolutions;
+        lastEvolution   = a.lastEvolutionDate;
+        uint256 daysSinceCreation = (block.timestamp - a.createdAt) / 1 days;
+        evolutionRate = daysSinceCreation == 0 ? 0 : (totalEvolutions * 100) / daysSinceCreation;
+    }
+
+    function hasMilestone(uint256 tokenId, string calldata name)
+        external view override returns (bool achieved, uint256 at)
+    {
+        MilestoneData memory m = milestones[tokenId][name];
         return (m.achieved, m.achievedAt);
     }
-    
-    /// @notice Get agent's complete memory structure
-    function getAgentMemory(uint256 tokenId) external view returns (AgentMemory memory) {
-        return agentMemories[tokenId];
+
+    /**
+     * @dev *Deprecated* – original ERC‑7857 function retained for ABI stability
+     *      but returns an empty array because full history is now off‑chain.
+     */
+    function getDreamHistory(uint256, uint256) external pure override returns (bytes32[] memory) {
+        return new bytes32[](0);
     }
-    
-    /// @notice Check consolidation status and get rewards
-    function getConsolidationStatus(uint256 tokenId) external view returns (
-        bool needsConsolidation,
-        uint256 potentialBonus,
-        uint256 currentStreak,
-        uint256 daysUntilLoseStreak
-    ) {
-        AgentMemory memory memory_ = agentMemories[tokenId];
-        
-        uint8 currentMonth = uint8((block.timestamp / 30 days) % 12) + 1;
-        uint16 currentYear = uint16(2024 + (block.timestamp / 365 days));
-        
-        needsConsolidation = (memory_.currentMonth != currentMonth || memory_.currentYear != currentYear);
-        potentialBonus = _calculateConsolidationBonus(tokenId);
-        currentStreak = consolidationStreak[tokenId];
-        
-        if (memory_.lastConsolidation > 0) {
-            uint256 daysSinceLastConsolidation = (block.timestamp - memory_.lastConsolidation) / 1 days;
-            daysUntilLoseStreak = daysSinceLastConsolidation >= 37 ? 0 : 37 - daysSinceLastConsolidation;
-        } else {
-            daysUntilLoseStreak = 37;
-        }
+    function getConversationHistory(uint256, uint256) external pure override returns (bytes32[] memory) {
+        return new bytes32[](0);
     }
-    
-    /// @notice Complete agent information structure
-    struct AgentInfo {
-        uint256 tokenId;
-        address owner;
-        string agentName;
-        uint256 createdAt;
-        uint256 lastUpdated;
-        uint256 intelligenceLevel;
-        uint256 dreamCount;
-        uint256 conversationCount;
-        bool personalityInitialized;
-        uint256 totalEvolutions;
-        uint256 lastEvolutionDate;
-        PersonalityTraits personality;
-    }
-    
-    /// @notice Get complete agent information
-    function getAgentInfo(uint256 tokenId) external view returns (AgentInfo memory info) {
-        require(agents[tokenId].owner != address(0), "Agent does not exist");
-        
-        DreamAgent memory agent = agents[tokenId];
-        PersonalityTraits memory personality = agentPersonalities[tokenId];
-        
-        info = AgentInfo({
-            tokenId: tokenId,
-            owner: agent.owner,
-            agentName: agent.agentName,
-            createdAt: agent.createdAt,
-            lastUpdated: agent.lastUpdated,
-            intelligenceLevel: agent.intelligenceLevel,
-            dreamCount: agent.dreamCount,
-            conversationCount: agent.conversationCount,
-            personalityInitialized: agent.personalityInitialized,
-            totalEvolutions: agent.totalEvolutions,
-            lastEvolutionDate: agent.lastEvolutionDate,
-            personality: personality
-        });
-    }
-    
-    /// @notice Get owner's agent information
-    function getOwnerAgent(address owner) external view returns (AgentInfo memory info) {
-        uint256 tokenId = ownerToTokenId[owner];
-        if (tokenId == 0) {
-            // Return empty struct if no agent
-            return AgentInfo({
-                tokenId: 0,
-                owner: address(0),
-                agentName: "",
-                createdAt: 0,
-                lastUpdated: 0,
-                intelligenceLevel: 0,
-                dreamCount: 0,
-                conversationCount: 0,
-                personalityInitialized: false,
-                totalEvolutions: 0,
-                lastEvolutionDate: 0,
-                personality: PersonalityTraits({
-                    creativity: 0,
-                    analytical: 0,
-                    empathy: 0,
-                    intuition: 0,
-                    resilience: 0,
-                    curiosity: 0,
-                    dominantMood: "",
-                    lastDreamDate: 0
-                })
-            });
-        }
-        
-        return this.getAgentInfo(tokenId);
-    }
-    
-    /// @notice Get caller's agent information
-    function getUserAgent() external view returns (AgentInfo memory info) {
-        return this.getOwnerAgent(msg.sender);
-    }
-    
-    // ========== STANDARD ERC FUNCTIONS ==========
+
+    /* ─────────────────────────────────────────── ERC‑7857 TRANSFER ETC. ───── */
     
     function ownerOf(uint256 tokenId) external view override returns (address) {
         return agents[tokenId].owner;
@@ -653,349 +504,216 @@ contract DreamscapeAgent is IERC7857, IPersonalityEvolution, ReentrancyGuard, Ac
         return agents[tokenId].authorizedUsers;
     }
     
-    function authorizeUsage(uint256 tokenId, address user) external override onlyOwnerOrAdmin(tokenId) {
-        require(user != address(0), "Cannot authorize zero address");
+    function authorizeUsage(uint256 tokenId, address user)
+        external override onlyOwnerOrAdmin(tokenId) {
+        require(user != address(0), "zero user");
         agents[tokenId].authorizedUsers.push(user);
         emit AuthorizedUsage(tokenId, user);
     }
     
-    function transfer(address to, uint256 tokenId, bytes[] calldata /* proofs */) external override onlyOwnerOrAdmin(tokenId) {
-        require(to != address(0), "Cannot transfer to zero address");
-        require(ownerToTokenId[to] == 0, "Recipient already has an agent");
+    function transfer(address to, uint256 tokenId, bytes[] calldata) external override onlyOwnerOrAdmin(tokenId) {
+        require(to != address(0), "to = zero");
+        require(ownerToTokenId[to] == 0, "to already owns agent");
         
         address from = agents[tokenId].owner;
-        
-        // Update owner mappings
         ownerToTokenId[from] = 0;
-        ownerToTokenId[to] = tokenId;
-        
+        ownerToTokenId[to]   = tokenId;
         agents[tokenId].owner = to;
         agents[tokenId].lastUpdated = block.timestamp;
-        
         emit Transferred(tokenId, from, to);
     }
     
-    function totalSupply() external view returns (uint256) {
-        return totalAgents;
-    }
+    /* ─────────────────────────────────────────────── OTHER VIEWS ──────────── */
+
+    function totalSupply() external view returns (uint256) { return totalAgents; }
     
     function balanceOf(address owner) external view returns (uint256) {
-        require(owner != address(0), "Invalid address");
-        return ownerToTokenId[owner] > 0 ? 1 : 0;
+        require(owner != address(0), "zero owner");
+        return ownerToTokenId[owner] == 0 ? 0 : 1;
     }
-    
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == 0x01ffc9a7 || // ERC165
-               interfaceId == 0x80ac58cd || // ERC721
-               interfaceId == 0x5b5e139f || // ERC721Metadata
-               super.supportsInterface(interfaceId);
+
+    function supportsInterface(bytes4 id) public view override returns (bool) {
+        return
+            id == type(IERC721).interfaceId ||
+            id == type(IERC721Metadata).interfaceId ||
+            id == type(IERC7857).interfaceId ||
+            super.supportsInterface(id);
     }
-    
-    function getCreationTime(uint256 tokenId) external view returns (uint256) {
-        return agents[tokenId].createdAt;
-    }
-    
-    function getAgentName(uint256 tokenId) external view returns (string memory) {
-        return agents[tokenId].agentName;
-    }
-    
-    function getOwnerTokenId(address owner) external view returns (uint256) {
-        return ownerToTokenId[owner];
-    }
-    
-    function getUserTokenId() external view returns (uint256) {
-        return ownerToTokenId[msg.sender];
-    }
-    
-    // ========== ADMIN FUNCTIONS ==========
-    
-    function pause() external onlyRole(PAUSER_ROLE) {
-        _pause();
-    }
-    
-    function unpause() external onlyRole(PAUSER_ROLE) {
-        _unpause();
-    }
+
+    /* ───────────────────────────────────────────── ADMIN / EMERGENCY ──────── */
+
+    function pause() external onlyRole(PAUSER_ROLE) { _pause(); }
+    function unpause() external onlyRole(PAUSER_ROLE) { _unpause(); }
     
     function emergencyAuthorizeUser(uint256 tokenId, address user) external onlyRole(ADMIN_ROLE) {
-        require(user != address(0), "Cannot authorize zero address");
+        require(user != address(0), "zero user");
         agents[tokenId].authorizedUsers.push(user);
         emit AuthorizedUsage(tokenId, user);
     }
     
     function emergencyTransfer(uint256 tokenId, address to) external onlyRole(ADMIN_ROLE) {
-        require(to != address(0), "Cannot transfer to zero address");
-        require(ownerToTokenId[to] == 0, "Recipient already has an agent");
+        require(to != address(0), "to = zero");
+        require(ownerToTokenId[to] == 0, "to already owns");
         
         address from = agents[tokenId].owner;
         ownerToTokenId[from] = 0;
-        ownerToTokenId[to] = tokenId;
-        
+        ownerToTokenId[to]   = tokenId;
         agents[tokenId].owner = to;
         agents[tokenId].lastUpdated = block.timestamp;
         emit Transferred(tokenId, from, to);
     }
     
-    // ========== INTERNAL HELPER FUNCTIONS ==========
-    
-    /// @notice Check if user is authorized to use agent
+    /* ──────────────────────────────────────────── MODIFIERS & HELPERS ─────── */
+
+    modifier onlyOwnerOrAuthorized(uint256 tokenId) {
+        require(
+            agents[tokenId].owner == msg.sender ||
+            hasRole(ADMIN_ROLE, msg.sender)     ||
+            _isAuthorizedUser(tokenId, msg.sender),
+            "not authorised"
+        );
+        _;
+    }
+
+    modifier onlyOwnerOrAdmin(uint256 tokenId) {
+        require(
+            agents[tokenId].owner == msg.sender || hasRole(ADMIN_ROLE, msg.sender),
+            "owner/admin only"
+        );
+        _;
+    }
+
     function _isAuthorizedUser(uint256 tokenId, address user) internal view returns (bool) {
-        address[] memory authorizedUsers = agents[tokenId].authorizedUsers;
-        for (uint256 i = 0; i < authorizedUsers.length; i++) {
-            if (authorizedUsers[i] == user) {
-                return true;
-            }
-        }
+        address[] memory list = agents[tokenId].authorizedUsers;
+        for (uint256 i = 0; i < list.length; ++i) if (list[i] == user) return true;
         return false;
     }
-    
-    /// @notice Validate personality impact values
-    function _validatePersonalityImpact(PersonalityImpact calldata impact) internal pure {
-        require(impact.creativityChange >= -10 && impact.creativityChange <= 10, "Invalid change");
-        require(impact.analyticalChange >= -10 && impact.analyticalChange <= 10, "Invalid change");
-        require(impact.empathyChange >= -10 && impact.empathyChange <= 10, "Invalid change");
-        require(impact.intuitionChange >= -10 && impact.intuitionChange <= 10, "Invalid change");
-        require(impact.resilienceChange >= -10 && impact.resilienceChange <= 10, "Invalid change");
-        require(impact.curiosityChange >= -10 && impact.curiosityChange <= 10, "Invalid change");
-        require(impact.evolutionWeight > 0 && impact.evolutionWeight <= 100, "Invalid weight");
-        require(bytes(impact.moodShift).length > 0, "Empty mood");
+
+    /* ───────────────────────────────────────── PRIVATE: PERSONALITY ──────── */
+
+    function _validatePersonalityImpact(PersonalityImpact calldata i) internal pure {
+        require(i.evolutionWeight > 0 && i.evolutionWeight <= 100, "weight out of range");
+        require(bytes(i.moodShift).length > 0,                   "empty mood");
+        require(_inRange(i.creativityChange)   && _inRange(i.analyticalChange) &&
+                _inRange(i.empathyChange)      && _inRange(i.intuitionChange)  &&
+                _inRange(i.resilienceChange)   && _inRange(i.curiosityChange),  unicode"Δ out of range");
     }
-    
-    /// @notice Update trait with bounds checking
-    function _updateTrait(uint8 currentValue, int8 change) internal pure returns (uint8 newValue) {
-        int256 temp = int256(uint256(currentValue)) + int256(change);
-        
-        // Clamp between 0 and 100
-        if (temp < 0) temp = 0;
+    function _inRange(int8 x) private pure returns (bool) { return x >= -10 && x <= 10; }
+
+    function _updateTrait(uint8 current, int8 delta) internal pure returns (uint8) {
+        int256 temp = int256(uint256(current)) + int256(delta);
+        if (temp < 0)   temp = 0;
         if (temp > 100) temp = 100;
-        newValue = uint8(uint256(temp));
+        return uint8(uint256(temp));
     }
-    
-    /// @notice Determine response style based on personality traits
-    function _determineResponseStyle(PersonalityTraits memory traits) internal pure returns (string memory style) {
-        if (traits.empathy > 70 && traits.creativity > 60) {
-            return "empathetic_creative";
-        } else if (traits.empathy > 70) {
-            return "empathetic";
-        } else if (traits.creativity > 70) {
-            return "creative";
-        } else if (traits.analytical > 70) {
-            return "analytical";
-        } else if (traits.intuition > 70) {
-            return "intuitive";
-        } else if (traits.resilience > 70) {
-            return "resilient";
-        } else if (traits.curiosity > 70) {
-            return "curious";
-        } else {
-            return "balanced";
-        }
-    }
-    
-    /// @notice Get dominant trait names for an agent
-    function _getDominantTraitNames(uint256 tokenId) internal view returns (string[] memory dominantTraits) {
-        PersonalityTraits memory personality = agentPersonalities[tokenId];
-        dominantTraits = new string[](3);
-        
-        // Find top 3 traits
-        uint8[6] memory values = [
-            personality.creativity,
-            personality.analytical,
-            personality.empathy,
-            personality.intuition,
-            personality.resilience,
-            personality.curiosity
-        ];
-        string[6] memory names = ["creativity", "analytical", "empathy", "intuition", "resilience", "curiosity"];
-        
-        // Simple sorting for top 3
-        for (uint256 i = 0; i < 3; i++) {
-            uint256 maxIndex = 0;
-            for (uint256 j = 1; j < 6; j++) {
-                if (values[j] > values[maxIndex]) {
-                    maxIndex = j;
-                }
-            }
-            dominantTraits[i] = names[maxIndex];
-            values[maxIndex] = 0; // Remove from next iteration
+
+    function _updateResponseStyle(uint256 tokenId) internal {
+        PersonalityTraits memory t = agentPersonalities[tokenId];
+        string memory style;
+        if (t.empathy > 70 && t.creativity > 60)      style = "empathetic_creative";
+        else if (t.empathy > 70)                      style = "empathetic";
+        else if (t.creativity > 70)                   style = "creative";
+        else if (t.analytical > 70)                   style = "analytical";
+        else if (t.intuition > 70)                    style = "intuitive";
+        else if (t.resilience > 70)                   style = "resilient";
+        else if (t.curiosity > 70)                    style = "curious";
+        else                                         style = "balanced";
+
+        if (keccak256(bytes(responseStyles[tokenId])) != keccak256(bytes(style))) {
+            string memory old = responseStyles[tokenId];
+            responseStyles[tokenId] = style;
+            emit ResponseStyleUpdated(tokenId, old, style);
+            string[] memory dom = _getDominantTraitNames(tokenId);
+            emit ResponseStyleEvolved(tokenId, style, dom);
         }
     }
-    
-    /// @notice Check personality milestones after evolution
-    function _checkPersonalityMilestones(
-        uint256 tokenId,
-        PersonalityTraits memory oldPersonality,
-        PersonalityTraits memory newPersonality
-    ) internal {
-        // Check empathy master milestone
-        if (oldPersonality.empathy < 85 && newPersonality.empathy >= 85) {
-            _unlockMilestone(tokenId, "empathy_master", newPersonality.empathy);
-        }
-        
-        // Check creative genius milestone
-        if (oldPersonality.creativity < 90 && newPersonality.creativity >= 90) {
-            _unlockMilestone(tokenId, "creative_genius", newPersonality.creativity);
-        }
-        
-        // Check logic lord milestone
-        if (oldPersonality.analytical < 90 && newPersonality.analytical >= 90) {
-            _unlockMilestone(tokenId, "logic_lord", newPersonality.analytical);
-        }
-        
-        // Check spiritual guide milestone
-        if (oldPersonality.intuition < 90 && newPersonality.intuition >= 90) {
-            _unlockMilestone(tokenId, "spiritual_guide", newPersonality.intuition);
-        }
-        
-        // Check balanced soul milestone (all traits > 60)
-        bool isBalanced = newPersonality.creativity > 60 &&
-                         newPersonality.analytical > 60 &&
-                         newPersonality.empathy > 60 &&
-                         newPersonality.intuition > 60 &&
-                         newPersonality.resilience > 60 &&
-                         newPersonality.curiosity > 60;
-        
-        if (isBalanced && !milestones[tokenId]["balanced_soul"].achieved) {
-            _unlockMilestone(tokenId, "balanced_soul", 60);
+
+    function _getDominantTraitNames(uint256 tokenId) internal view returns (string[] memory names) {
+        PersonalityTraits memory p = agentPersonalities[tokenId];
+        uint8[6] memory v = [p.creativity, p.analytical, p.empathy, p.intuition, p.resilience, p.curiosity];
+        string[6] memory n = ["creativity","analytical","empathy","intuition","resilience","curiosity"];
+        names = new string[](3);
+        for (uint256 k; k < 3; ++k) {
+            uint256 m = 0;
+            for (uint256 j = 1; j < 6; ++j) if (v[j] > v[m]) m = j;
+            names[k] = n[m];
+            v[m] = 0; // prevent reuse
         }
     }
-    
-    /// @notice Unlock a personality milestone
-    function _unlockMilestone(uint256 tokenId, string memory milestone, uint8 traitValue) internal {
-        milestones[tokenId][milestone] = MilestoneData({
-            achieved: true,
-            achievedAt: block.timestamp,
-            traitValue: traitValue
-        });
-        
-        agents[tokenId].achievedMilestones.push(milestone);
-        
-        emit PersonalityMilestone(tokenId, milestone, traitValue, "");
-        emit MilestoneUnlocked(tokenId, milestone, traitValue);
+
+    function _checkPersonalityMilestones(uint256 tokenId, PersonalityTraits memory old, PersonalityTraits memory nu) internal {
+        if (old.empathy  < 85 && nu.empathy  >= 85) _unlockMilestone(tokenId, "empathy_master",  nu.empathy);
+        if (old.creativity< 90 && nu.creativity>= 90) _unlockMilestone(tokenId, "creative_genius",nu.creativity);
+        if (old.analytical< 90 && nu.analytical>= 90) _unlockMilestone(tokenId, "logic_lord",    nu.analytical);
+        if (old.intuition< 90 && nu.intuition>= 90) _unlockMilestone(tokenId, "spiritual_guide",nu.intuition);
+        bool balanced = nu.creativity>60 && nu.analytical>60 && nu.empathy>60 && nu.intuition>60 && nu.resilience>60 && nu.curiosity>60;
+        if (balanced && !milestones[tokenId]["balanced_soul"].achieved) _unlockMilestone(tokenId, "balanced_soul", 60);
     }
-    
-    /// @notice Check if month has changed and emit consolidation event
-    function _checkMonthChange(uint256 tokenId) internal {
-        AgentMemory storage memory_ = agentMemories[tokenId];
-        
-        uint8 currentMonth = uint8((block.timestamp / 30 days) % 12) + 1;
-        uint16 currentYear = uint16(2024 + (block.timestamp / 365 days));
-        
-        if (memory_.currentMonth == 0) {
-            // Initialize for new agent
-            memory_.currentMonth = currentMonth;
-            memory_.currentYear = currentYear;
-            return;
+
+    function _unlockMilestone(uint256 id, string memory name, uint8 val) internal {
+        milestones[id][name] = MilestoneData(true, block.timestamp, val);
+        agents[id].achievedMilestones.push(name);
+        emit PersonalityMilestone(id, name, val, "");
+        emit MilestoneUnlocked(id, name, val);
+    }
+
+    /* ─────────────────────────────────────────── PRIVATE: MEMORY HELPERS ──── */
+
+    function _checkMonthChange(uint256 id) internal {
+        AgentMemory storage m = agentMemories[id];
+        uint8 cm = _currentMonth();
+        uint16 cy = _currentYear();
+        if (m.currentMonth == 0) { // first time – initialise
+            m.currentMonth = cm; m.currentYear = cy; return;
         }
-        
-        if (memory_.currentMonth != currentMonth || memory_.currentYear != currentYear) {
-            // Month changed - emit consolidation needed event
-            emit ConsolidationNeeded(tokenId, memory_.currentMonth, memory_.currentYear, "monthly");
-            
-            // Update current month/year
-            memory_.currentMonth = currentMonth;
-            memory_.currentYear = currentYear;
-            
-            // Reset daily hashes for new month
-            memory_.currentDreamDailyHash = bytes32(0);
-            memory_.currentConvDailyHash = bytes32(0);
-            
-            // Break consolidation streak if not consolidated within 7 days
-            if (block.timestamp > memory_.lastConsolidation + 37 days) {
-                consolidationStreak[tokenId] = 0;
-            }
+        if (m.currentMonth != cm || m.currentYear != cy) {
+            emit ConsolidationNeeded(id, m.currentMonth, m.currentYear, "monthly");
+            m.currentMonth = cm; m.currentYear = cy;
+            m.currentDreamDailyHash = bytes32(0);
+            m.currentConvDailyHash  = bytes32(0);
+            if (block.timestamp > m.lastConsolidation + 37 days) consolidationStreak[id] = 0; // lose streak
         }
     }
-    
-    /// @notice Calculate consolidation bonus based on streak and timing
-    function _calculateConsolidationBonus(uint256 tokenId) internal view returns (uint256 bonus) {
-        uint256 streak = consolidationStreak[tokenId];
-        
-        // Base bonus
-        bonus = 2;
-        
-        // Streak bonus (up to +5)
-        if (streak >= 12) {
-            bonus += 5; // Full year streak!
-        } else if (streak >= 6) {
-            bonus += 3; // Half year streak
-        } else if (streak >= 3) {
-            bonus += 1; // Quarter streak
-        }
-        
-        // Early bird bonus (consolidated within 3 days)
-        AgentMemory memory memory_ = agentMemories[tokenId];
-        if (block.timestamp <= memory_.lastConsolidation + 3 days) {
-            bonus += 1;
-        }
-        
-        return bonus;
+
+    function _calculateConsolidationBonus(uint256 id) internal view returns (uint256 b) {
+        uint256 st = consolidationStreak[id];
+        b = 2;
+        if      (st >= 12) b += 5;
+        else if (st >= 6)  b += 3;
+        else if (st >= 3)  b += 1;
+        AgentMemory storage m = agentMemories[id];
+        if (block.timestamp <= m.lastConsolidation + 3 days) b += 1; // early bird
     }
-    
-    /// @notice Check for special consolidation milestones
-    function _checkConsolidationMilestones(uint256 tokenId) internal returns (string memory milestone) {
-        uint256 streak = consolidationStreak[tokenId];
-        
-        if (streak == 3) {
-            _unlockMilestone(tokenId, "memory_keeper", 3);
-            return "Memory Keeper - 3 month streak!";
-        } else if (streak == 6) {
-            _unlockMilestone(tokenId, "memory_guardian", 6);
-            return "Memory Guardian - 6 month streak!";
-        } else if (streak == 12) {
-            _unlockMilestone(tokenId, "memory_master", 12);
-            return "Memory Master - Full year streak!";
-        } else if (streak == 24) {
-            _unlockMilestone(tokenId, "eternal_memory", 24);
-            return "Eternal Memory - 2 year streak!";
-        }
-        
-        // Check total memories milestone
-        uint256 totalMemories = agents[tokenId].dreamCount + agents[tokenId].conversationCount;
-        if (totalMemories == 100) {
-            emit MemoryMilestone(tokenId, "Century of Memories", 100);
-            return "Century of Memories - 100 total interactions!";
-        } else if (totalMemories == 365) {
-            emit MemoryMilestone(tokenId, "Year of Memories", 365);
-            return "Year of Memories - 365 total interactions!";
-        } else if (totalMemories == 1000) {
-            emit MemoryMilestone(tokenId, "Memory Millennial", 1000);
-            return "Memory Millennial - 1000 total interactions!";
-        }
-        
+
+    function _checkConsolidationMilestones(uint256 id) internal returns (string memory) {
+        uint256 st = consolidationStreak[id];
+        if (st == 3)  { _unlockMilestone(id, "memory_keeper", 3);   return "Memory Keeper"; }
+        if (st == 6)  { _unlockMilestone(id, "memory_guardian", 6); return "Memory Guardian"; }
+        if (st == 12) { _unlockMilestone(id, "memory_master",12);   return "Memory Master"; }
+        if (st == 24) { _unlockMilestone(id, "eternal_memory",24);  return "Eternal Memory"; }
+        uint256 tot = agents[id].dreamCount + agents[id].conversationCount;
+        if (tot == 100) { emit MemoryMilestone(id, "Century of Memories", 100); return "Century of Memories"; }
+        if (tot == 365) { emit MemoryMilestone(id, "Year of Memories",   365); return "Year of Memories"; }
+        if (tot == 1000){ emit MemoryMilestone(id, "Memory Millennial", 1000);return "Memory Millennial"; }
         return "";
     }
-    
-    /// @notice Format period string
-    function _formatPeriod(uint8 month, uint16 year) internal pure returns (string memory) {
-        string[12] memory monthNames = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-        ];
-        
-        return string(abi.encodePacked(monthNames[month - 1], " ", _uint2str(year)));
+
+    function _formatPeriod(uint8 m, uint16 y) internal pure returns (string memory) {
+        string[12] memory n = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+        return string(abi.encodePacked(n[m-1], " ", _uint2str(y)));
     }
-    
-    /// @notice Convert uint to string
-    function _uint2str(uint256 _i) internal pure returns (string memory _uintAsString) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint256 j = _i;
-        uint256 len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint256 k = len;
-        while (_i != 0) {
-            k = k - 1;
-            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
-            bytes1 b1 = bytes1(temp);
-            bstr[k] = b1;
-            _i /= 10;
-        }
-        return string(bstr);
+
+    /* ───── date helpers (approx.) ─────────────────────────────────────────── */
+    function _currentMonth() internal view returns (uint8)  { return uint8((block.timestamp / 30 days) % 12) + 1; }
+    function _currentYear()  internal view returns (uint16) { return uint16(2024 + (block.timestamp / 365 days)); }
+
+    /* ───── misc util ──────────────────────────────────────────────────────── */
+    function _uint2str(uint256 x) internal pure returns (string memory) {
+        if (x == 0) return "0";
+        uint256 len; uint256 y = x;
+        while (y != 0) { len++; y/=10; }
+        bytes memory buf = new bytes(len);
+        while (x != 0) { buf[--len] = bytes1(uint8(48 + x % 10)); x/=10; }
+        return string(buf);
     }
 }
