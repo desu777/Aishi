@@ -267,13 +267,13 @@ contract DreamscapeAgent is
 
     /**
      * @notice Called once per «dream»; every 5th dream triggers evolution.
+     *         Also updates hierarchical memory with dream hash.
      * @dev    ZK‑verified dream *content* lives off‑chain; contract stores only
      *         hash + counters to keep gas low.
      */
     function processDailyDream(
         uint256            tokenId,
         bytes32            dreamHash,
-        bytes32            dreamAnalysisHash,
         PersonalityImpact  calldata impact
     ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
         _validatePersonalityImpact(impact);
@@ -292,14 +292,21 @@ contract DreamscapeAgent is
         agent.lastUpdated      = block.timestamp;
         traits.lastDreamDate   = block.timestamp;
 
-        /* ── 1. incremental intelligence boost every 3 dreams ── */
+        /* ── 1. update hierarchical memory ── */
+        AgentMemory storage mem = agentMemories[tokenId];
+        bytes32 old = mem.currentDreamDailyHash;
+        mem.currentDreamDailyHash = dreamHash;
+        emit MemoryUpdated(tokenId, "dream_daily", dreamHash, old);
+        _checkMonthChange(tokenId);
+
+        /* ── 2. incremental intelligence boost every 3 dreams ── */
         if (agent.dreamCount % 3 == 0) {
             uint256 oldLvl = agent.intelligenceLevel;
             agent.intelligenceLevel += 1;
             emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
         }
 
-        /* ── 2. personality evolution every 5 dreams ── */
+        /* ── 3. personality evolution every 5 dreams ── */
         if (agent.dreamCount % 5 == 0) {
             PersonalityTraits memory before = traits;
 
@@ -331,6 +338,7 @@ contract DreamscapeAgent is
 
     /**
      * @notice Lightweight conversation recording; boosts intelligence every 10th convo.
+     *         Also updates hierarchical memory with conversation hash.
      */
     function recordConversation(
         uint256    tokenId,
@@ -342,6 +350,14 @@ contract DreamscapeAgent is
         agent.conversationCount += 1;
         agent.lastUpdated        = block.timestamp;
 
+        /* ── 1. update hierarchical memory ── */
+        AgentMemory storage mem = agentMemories[tokenId];
+        bytes32 old = mem.currentConvDailyHash;
+        mem.currentConvDailyHash = conversationHash;
+        emit MemoryUpdated(tokenId, "conversation_daily", conversationHash, old);
+        _checkMonthChange(tokenId);
+
+        /* ── 2. intelligence boost every 10th conversation ── */
         if (agent.conversationCount % 10 == 0) {
             uint256 oldLvl = agent.intelligenceLevel;
             agent.intelligenceLevel += 1;
@@ -353,31 +369,7 @@ contract DreamscapeAgent is
 
     /* ─────────────────────────────────────────── HIERARCHICAL MEMORY ───────── */
 
-    /**
-     * @dev Append‑only daily hash for dreams; resets automatically on month change.
-     */
-    function updateDreamMemory(uint256 tokenId, bytes32 newHash)
-        external whenNotPaused onlyOwnerOrAuthorized(tokenId)
-    {
-        AgentMemory storage mem = agentMemories[tokenId];
-        bytes32 old = mem.currentDreamDailyHash;
-        mem.currentDreamDailyHash = newHash;
-        emit MemoryUpdated(tokenId, "dream_daily", newHash, old);
-        _checkMonthChange(tokenId);
-    }
 
-    /**
-     * @dev Append‑only daily hash for conversations.
-     */
-    function updateConversationMemory(uint256 tokenId, bytes32 newHash)
-        external whenNotPaused onlyOwnerOrAuthorized(tokenId)
-    {
-        AgentMemory storage mem = agentMemories[tokenId];
-        bytes32 old = mem.currentConvDailyHash;
-        mem.currentConvDailyHash = newHash;
-        emit MemoryUpdated(tokenId, "conversation_daily", newHash, old);
-        _checkMonthChange(tokenId);
-    }
 
     /**
      * @notice User‑driven monthly consolidation.  Merges daily files off‑chain and

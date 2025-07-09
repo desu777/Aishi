@@ -92,12 +92,10 @@ interface IPersonalityEvolution {
     /// @notice Process daily dream and evolve agent personality
     /// @param tokenId Agent to evolve
     /// @param dreamHash 0G Storage hash of encrypted dream data
-    /// @param dreamAnalysisHash 0G Storage hash of AI analysis
     /// @param impact Personality changes from dream analysis
     function processDailyDream(
         uint256 tokenId,
         bytes32 dreamHash,
-        bytes32 dreamAnalysisHash,
         PersonalityImpact calldata impact
     ) external;
     
