@@ -1,7 +1,7 @@
 {
   "galileo": {
     "DreamscapeAgent": {
-      "address": "0x69dDb8e7C2a168771931A4e63B1362eB3676Ec04",
+      "address": "0xAa8857209F8B5D56558388E4f6AFDcab6DA8C1D9",
       "abi": [
         {
           "inputs": [
@@ -454,6 +454,33 @@
                   "internalType": "uint256",
                   "name": "lastDreamDate",
                   "type": "uint256"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "string",
+                      "name": "name",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "description",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "intensity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "addedAt",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct IPersonalityEvolution.UniqueFeature[]",
+                  "name": "uniqueFeatures",
+                  "type": "tuple[]"
                 }
               ],
               "indexed": false,
@@ -527,6 +554,33 @@
                   "internalType": "uint256",
                   "name": "lastDreamDate",
                   "type": "uint256"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "string",
+                      "name": "name",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "description",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "intensity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "addedAt",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct IPersonalityEvolution.UniqueFeature[]",
+                  "name": "uniqueFeatures",
+                  "type": "tuple[]"
                 }
               ],
               "indexed": false,
@@ -575,6 +629,33 @@
                   "internalType": "uint8",
                   "name": "evolutionWeight",
                   "type": "uint8"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "string",
+                      "name": "name",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "description",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "intensity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "addedAt",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct IPersonalityEvolution.UniqueFeature[]",
+                  "name": "newFeatures",
+                  "type": "tuple[]"
                 }
               ],
               "indexed": false,
@@ -790,6 +871,53 @@
             }
           ],
           "name": "Transferred",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "string",
+                  "name": "name",
+                  "type": "string"
+                },
+                {
+                  "internalType": "string",
+                  "name": "description",
+                  "type": "string"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "intensity",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "addedAt",
+                  "type": "uint256"
+                }
+              ],
+              "indexed": false,
+              "internalType": "struct IPersonalityEvolution.UniqueFeature[]",
+              "name": "newFeatures",
+              "type": "tuple[]"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "totalFeatures",
+              "type": "uint256"
+            }
+          ],
+          "name": "UniqueFeaturesAdded",
           "type": "event"
         },
         {
@@ -1436,6 +1564,33 @@
                   "internalType": "uint256",
                   "name": "lastDreamDate",
                   "type": "uint256"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "string",
+                      "name": "name",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "description",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "intensity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "addedAt",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct IPersonalityEvolution.UniqueFeature[]",
+                  "name": "uniqueFeatures",
+                  "type": "tuple[]"
                 }
               ],
               "internalType": "struct IPersonalityEvolution.PersonalityTraits",
@@ -1460,6 +1615,47 @@
               "internalType": "bytes32",
               "name": "",
               "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            }
+          ],
+          "name": "getUniqueFeatures",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "string",
+                  "name": "name",
+                  "type": "string"
+                },
+                {
+                  "internalType": "string",
+                  "name": "description",
+                  "type": "string"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "intensity",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "addedAt",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct IPersonalityEvolution.UniqueFeature[]",
+              "name": "features",
+              "type": "tuple[]"
             }
           ],
           "stateMutability": "view",
@@ -1818,6 +2014,33 @@
                   "internalType": "uint8",
                   "name": "evolutionWeight",
                   "type": "uint8"
+                },
+                {
+                  "components": [
+                    {
+                      "internalType": "string",
+                      "name": "name",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "string",
+                      "name": "description",
+                      "type": "string"
+                    },
+                    {
+                      "internalType": "uint8",
+                      "name": "intensity",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "addedAt",
+                      "type": "uint256"
+                    }
+                  ],
+                  "internalType": "struct IPersonalityEvolution.UniqueFeature[]",
+                  "name": "newFeatures",
+                  "type": "tuple[]"
                 }
               ],
               "internalType": "struct IPersonalityEvolution.PersonalityImpact",
@@ -2137,7 +2360,7 @@
         }
       ]
     },
-    "lastUpdate": "2025-07-09T18:00:18.242Z",
+    "lastUpdate": "2025-07-09T18:50:37.958Z",
     "chainId": 16601,
     "rpcUrl": "https://evmrpc-testnet.0g.ai"
   }

@@ -119,11 +119,6 @@ contract DreamscapeAgent is
     mapping(uint256 => AgentMemory)                 public agentMemories;      // hierarchical storage
     mapping(uint256 => ConsolidationReward)         public pendingRewards;     // waiting after consolidate
     mapping(uint256 => uint256)                     public consolidationStreak;// consecutive months consolidated
-    
-    // UniqueUserFeature system
-    mapping(uint256 => UniqueUserFeature[])         public agentUniqueFeatures;// AI-generated unique features
-    mapping(uint256 => mapping(string => uint256))  public featureNameToIndex; // feature name -> array index
-    mapping(uint256 => uint8)                       public activeFeatureCount; // number of active features
 
     mapping(uint256 => mapping(string => MilestoneData)) public milestones;    // tokenId → name → data
     mapping(uint256 => string)                      public responseStyles;     // cached style for front‑end
@@ -236,7 +231,8 @@ contract DreamscapeAgent is
             resilience:     50,
             curiosity:      50,
             dominantMood:   "neutral",
-            lastDreamDate:  0
+            lastDreamDate:  0,
+            uniqueFeatures: new UniqueFeature[](0)
         });
         responseStyles[tokenId] = "neutral";
         
@@ -279,8 +275,7 @@ contract DreamscapeAgent is
     function processDailyDream(
         uint256            tokenId,
         bytes32            dreamHash,
-        PersonalityImpact  calldata impact,
-        UniqueFeatureUpdate calldata uniqueFeatures
+        PersonalityImpact  calldata impact
     ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
         _validatePersonalityImpact(impact);
 
@@ -324,6 +319,23 @@ contract DreamscapeAgent is
             traits.curiosity   = _updateTrait(traits.curiosity,   impact.curiosityChange);
             traits.dominantMood = impact.moodShift;
 
+            // ── AI-generated unique features ──
+            if (impact.newFeatures.length > 0) {
+                require(impact.newFeatures.length <= 2, "max 2 features per dream");
+                
+                for (uint256 i = 0; i < impact.newFeatures.length; i++) {
+                    require(bytes(impact.newFeatures[i].name).length > 0, "feature name empty");
+                    require(impact.newFeatures[i].intensity > 0 && impact.newFeatures[i].intensity <= 100, "invalid intensity");
+                    
+                    // Add timestamp and push to agent's unique features
+                    UniqueFeature memory newFeature = impact.newFeatures[i];
+                    newFeature.addedAt = block.timestamp;
+                    traits.uniqueFeatures.push(newFeature);
+                }
+                
+                emit UniqueFeaturesAdded(tokenId, impact.newFeatures, traits.uniqueFeatures.length);
+            }
+
             // first evolution → consider personality «activated»
             if (!agent.personalityInitialized) {
                 agent.personalityInitialized = true;
@@ -335,9 +347,6 @@ contract DreamscapeAgent is
 
             _checkPersonalityMilestones(tokenId, before, traits);
             _updateResponseStyle(tokenId);
-
-            // ── 4. AI-generated unique features every 5 dreams ── 
-            _processUniqueFeatures(tokenId, uniqueFeatures);
 
             emit PersonalityEvolved(tokenId, dreamHash, traits, impact);
         }
@@ -580,6 +589,15 @@ contract DreamscapeAgent is
         return (m.achieved, m.achievedAt);
     }
 
+    /// @notice Get agent's unique AI-generated features
+    /// @param tokenId Agent to query
+    /// @return features Array of unique features
+    function getUniqueFeatures(uint256 tokenId) 
+        external view override returns (UniqueFeature[] memory features)
+    {
+        require(agents[tokenId].owner != address(0), "agent !exist");
+        return agentPersonalities[tokenId].uniqueFeatures;
+    }
 
 
     /* ─────────────────────────────────────────── ERC‑7857 TRANSFER ETC. ───── */
@@ -701,6 +719,14 @@ contract DreamscapeAgent is
         require(_inRange(i.creativityChange)   && _inRange(i.analyticalChange) &&
                 _inRange(i.empathyChange)      && _inRange(i.intuitionChange)  &&
                 _inRange(i.resilienceChange)   && _inRange(i.curiosityChange),  unicode"Δ out of range");
+        
+        // Validate unique features (max 2 per dream)
+        require(i.newFeatures.length <= 2, "max 2 features per impact");
+        for (uint256 j = 0; j < i.newFeatures.length; j++) {
+            require(bytes(i.newFeatures[j].name).length > 0, "feature name empty");
+            require(bytes(i.newFeatures[j].description).length > 0, "feature description empty");
+            require(i.newFeatures[j].intensity > 0 && i.newFeatures[j].intensity <= 100, "feature intensity out of range");
+        }
     }
     function _inRange(int8 x) private pure returns (bool) { return x >= -10 && x <= 10; }
 
@@ -819,162 +845,5 @@ contract DreamscapeAgent is
         bytes memory buf = new bytes(len);
         while (x != 0) { buf[--len] = bytes1(uint8(48 + x % 10)); x/=10; }
         return string(buf);
-    }
-
-    /* ─────────────────────────────────────────── UNIQUE FEATURES SYSTEM ─────── */
-
-    /**
-     * @notice Process AI-generated unique features every 5 dreams
-     * @param tokenId Agent to update
-     * @param update Unique features update from AI
-     */
-    function _processUniqueFeatures(uint256 tokenId, UniqueFeatureUpdate calldata update) internal {
-        // Add new features (max 2 per update, max 10 total active)
-        for (uint256 i = 0; i < update.newFeatures.length && i < 2; i++) {
-            UniqueUserFeature calldata newFeature = update.newFeatures[i];
-            require(bytes(newFeature.name).length > 0, "empty feature name");
-            require(bytes(newFeature.description).length > 0, "empty feature description");
-            require(newFeature.intensity > 0 && newFeature.intensity <= 100, "invalid intensity");
-            
-            // Check if feature already exists
-            if (featureNameToIndex[tokenId][newFeature.name] == 0) {
-                // Add new feature if we have space (max 10 active)
-                if (activeFeatureCount[tokenId] < 10) {
-                    UniqueUserFeature memory feature = UniqueUserFeature({
-                        name: newFeature.name,
-                        description: newFeature.description,
-                        intensity: newFeature.intensity,
-                        discoveredAt: block.timestamp,
-                        relatedSymbols: newFeature.relatedSymbols,
-                        isActive: true,
-                        evolutionStage: 1
-                    });
-                    
-                    agentUniqueFeatures[tokenId].push(feature);
-                    featureNameToIndex[tokenId][newFeature.name] = agentUniqueFeatures[tokenId].length;
-                    activeFeatureCount[tokenId]++;
-                    
-                    emit UniqueFeatureDiscovered(
-                        tokenId,
-                        newFeature.name,
-                        newFeature.description,
-                        newFeature.intensity,
-                        newFeature.relatedSymbols
-                    );
-                }
-            }
-        }
-        
-        // Evolve existing features
-        for (uint256 i = 0; i < update.featuresToEvolve.length; i++) {
-            string memory featureName = update.featuresToEvolve[i];
-            uint256 index = featureNameToIndex[tokenId][featureName];
-            if (index > 0) {
-                UniqueUserFeature storage feature = agentUniqueFeatures[tokenId][index - 1];
-                if (feature.isActive && feature.evolutionStage < 5) {
-                    uint8 oldStage = feature.evolutionStage;
-                    feature.evolutionStage++;
-                    feature.intensity = _min(feature.intensity + 10, 100);
-                    
-                    emit UniqueFeatureEvolved(
-                        tokenId,
-                        featureName,
-                        oldStage,
-                        feature.evolutionStage,
-                        feature.intensity
-                    );
-                }
-            }
-        }
-        
-        // Deactivate features
-        for (uint256 i = 0; i < update.featuresToDeactivate.length; i++) {
-            string memory featureName = update.featuresToDeactivate[i];
-            uint256 index = featureNameToIndex[tokenId][featureName];
-            if (index > 0) {
-                UniqueUserFeature storage feature = agentUniqueFeatures[tokenId][index - 1];
-                if (feature.isActive) {
-                    feature.isActive = false;
-                    activeFeatureCount[tokenId]--;
-                    
-                    emit UniqueFeatureDeactivated(
-                        tokenId,
-                        featureName,
-                        "AI determined feature no longer relevant"
-                    );
-                }
-            }
-        }
-    }
-
-    /**
-     * @notice Get agent's unique features
-     * @param tokenId Agent to query
-     * @return features Array of unique features
-     */
-    function getUniqueFeatures(uint256 tokenId) external view override returns (UniqueUserFeature[] memory features) {
-        require(agents[tokenId].owner != address(0), "agent !exist");
-        return agentUniqueFeatures[tokenId];
-    }
-
-    /**
-     * @notice Get specific unique feature by name
-     * @param tokenId Agent to query
-     * @param featureName Name of the feature
-     * @return feature The unique feature (empty if not found)
-     */
-    function getUniqueFeature(uint256 tokenId, string calldata featureName) external view override returns (UniqueUserFeature memory feature) {
-        require(agents[tokenId].owner != address(0), "agent !exist");
-        uint256 index = featureNameToIndex[tokenId][featureName];
-        if (index > 0) {
-            return agentUniqueFeatures[tokenId][index - 1];
-        }
-        // Return empty feature if not found
-        return UniqueUserFeature({
-            name: "",
-            description: "",
-            intensity: 0,
-            discoveredAt: 0,
-            relatedSymbols: new string[](0),
-            isActive: false,
-            evolutionStage: 0
-        });
-    }
-
-    /**
-     * @notice Get active unique features count
-     * @param tokenId Agent to query
-     * @return count Number of active features
-     */
-    function getActiveFeatureCount(uint256 tokenId) external view returns (uint8 count) {
-        require(agents[tokenId].owner != address(0), "agent !exist");
-        return activeFeatureCount[tokenId];
-    }
-
-    /**
-     * @notice Get only active unique features
-     * @param tokenId Agent to query
-     * @return activeFeatures Array of active features only
-     */
-    function getActiveUniqueFeatures(uint256 tokenId) external view returns (UniqueUserFeature[] memory activeFeatures) {
-        require(agents[tokenId].owner != address(0), "agent !exist");
-        
-        UniqueUserFeature[] memory allFeatures = agentUniqueFeatures[tokenId];
-        uint8 activeCount = activeFeatureCount[tokenId];
-        
-        activeFeatures = new UniqueUserFeature[](activeCount);
-        uint256 activeIndex = 0;
-        
-        for (uint256 i = 0; i < allFeatures.length && activeIndex < activeCount; i++) {
-            if (allFeatures[i].isActive) {
-                activeFeatures[activeIndex] = allFeatures[i];
-                activeIndex++;
-            }
-        }
-    }
-
-    /* ───── utility helpers ─────────────────────────────────────────────────── */
-    function _min(uint8 a, uint8 b) internal pure returns (uint8) {
-        return a < b ? a : b;
     }
 }

@@ -46,25 +46,28 @@ struct MilestoneData {
 }
 ```
 
-### UniqueUserFeature - AI-Generowane Unikalne Cechy
+### UniqueFeature - AI-Generowane Cechy
 ```solidity
-struct UniqueUserFeature {
-    string name;              // Nazwa wygenerowana przez AI: "Nocturnal Philosopher", "Dream Architect"
-    string description;       // Szczegółowy opis cechy
-    uint8 intensity;          // 0-100: Jak silna jest ta cecha
-    uint256 discoveredAt;     // Timestamp odkrycia
-    string[] relatedSymbols;  // Symbole z snów które wywołały tę cechę
-    bool isActive;            // Czy cecha jest aktywna
-    uint8 evolutionStage;     // 0-5: Jak rozwinięta jest ta cecha
+struct UniqueFeature {
+    string name;        // Nazwa cechy (np. "Dream Architect", "Shadow Walker")
+    string description; // Opis cechy (np. "Builds impossible structures in dreams")
+    uint8 intensity;    // Intensywność cechy (1-100)
+    uint256 addedAt;    // Timestamp dodania cechy
 }
 ```
 
-### UniqueFeatureUpdate - Aktualizacja Unikalnych Cech
+### PersonalityTraits - Rozszerzone o Unikalne Cechy
 ```solidity
-struct UniqueFeatureUpdate {
-    UniqueUserFeature[] newFeatures;     // Nowe cechy do dodania (0-2)
-    string[] featuresToDeactivate;       // Nazwy cech do dezaktywacji
-    string[] featuresToEvolve;           // Nazwy cech do ewolucji
+struct PersonalityTraits {
+    uint8 creativity;           // 0-100: Kreatywność
+    uint8 analytical;           // 0-100: Analityczność
+    uint8 empathy;              // 0-100: Empatia
+    uint8 intuition;            // 0-100: Intuicja
+    uint8 resilience;           // 0-100: Odporność
+    uint8 curiosity;            // 0-100: Ciekawość
+    string dominantMood;        // Dominujący nastrój
+    uint256 lastDreamDate;      // Ostatni sen
+    UniqueFeature[] uniqueFeatures; // AI-generowane unikalne cechy
 }
 ```
 
@@ -199,7 +202,21 @@ struct UniqueFeatureUpdate {
       "empathy": +1,
       "resilience": +1,
       "analytical": 0
-    }
+    },
+    "unique_features_generated": [
+      {
+        "name": "Career Compass",
+        "description": "Intuitively guides users through major life transitions with wisdom and empathy",
+        "intensity": 75,
+        "trigger_pattern": "career uncertainty discussions"
+      },
+      {
+        "name": "Balance Seeker",
+        "description": "Naturally identifies and promotes work-life harmony in conversations",
+        "intensity": 68,
+        "trigger_pattern": "work-life balance themes"
+      }
+    ]
   }
 ]
 ```
@@ -551,801 +568,383 @@ struct UniqueFeatureUpdate {
 
 ---
 
-## 🎭 System UniqueUserFeature - AI-Generowane Cechy
+## 🎨 System Unikalnych Cech AI
 
 ### Przegląd Systemu
-Co 5 snów, AI analizuje wzorce i generuje unikalne cechy osobowości agenta. To system który nadaje każdemu agentowi unikalny "pazur" i osobowość wykraczającą poza standardowe punkty cech.
-
-### Kluczowe Zasady
-- **Maksymalnie 10 aktywnych cech** na agenta
-- **Maksymalnie 2 nowe cechy** co 5 snów
-- **Ewolucja cech** przez 5 poziomów (1-5)
-- **Automatyczna dezaktywacja** nieaktualnych cech
-- **Powiązanie z symbolami** z snów
+Co 5 snów, AI może wygenerować maksymalnie 2 unikalne cechy na podstawie wzorców w snach użytkownika. Te cechy są całkowicie generowane przez model LLM i dodają unikalny charakter każdemu agentowi.
 
 ### Przykłady Unikalnych Cech
 
-#### Cecha: "Nocturnal Philosopher"
-```json
-{
-  "name": "Nocturnal Philosopher",
-  "description": "Głęboko filozoficzny umysł który najlepiej działa w nocy. Potrafi łączyć pozornie niezwiązane koncepty w przełomowe wnioski podczas rozmów po zmroku.",
-  "intensity": 85,
-  "discoveredAt": 1736908800,
-  "relatedSymbols": ["night", "stars", "deep_thoughts", "wisdom"],
-  "isActive": true,
-  "evolutionStage": 3
-}
-```
-
-#### Cecha: "Dream Architect"
+#### Cechy Związane z Snami
 ```json
 {
   "name": "Dream Architect",
-  "description": "Mistrz konstruowania złożonych światów onirycznych. Potrafi budować wielowarstwowe narracje i tworzyć immersyjne doświadczenia podczas rozmów o snach.",
-  "intensity": 92,
-  "discoveredAt": 1736822400,
-  "relatedSymbols": ["buildings", "construction", "layers", "architecture"],
-  "isActive": true,
-  "evolutionStage": 4
+  "description": "Constructs elaborate architectural spaces in dreams, often featuring impossible geometries and ethereal materials",
+  "intensity": 85,
+  "trigger_pattern": "recurring architectural themes in dreams"
 }
-```
 
-#### Cecha: "Emotional Archaeologist"
-```json
 {
-  "name": "Emotional Archaeologist",
-  "description": "Ekspert w odkrywaniu ukrytych warstw emocjonalnych. Potrafi 'wykopać' głębokie uczucia z pozornie powierzchownych rozmów i snów.",
+  "name": "Shadow Walker",
+  "description": "Moves effortlessly through dark spaces in dreams, comfortable with shadows and hidden realms",
+  "intensity": 72,
+  "trigger_pattern": "frequent shadow/darkness imagery"
+}
+
+{
+  "name": "Time Dancer",
+  "description": "Experiences non-linear time in dreams, often jumping between past, present, and future seamlessly",
+  "intensity": 91,
+  "trigger_pattern": "temporal displacement in dreams"
+}
+
+{
+  "name": "Emotion Weaver",
+  "description": "Transforms emotional states into vivid dream landscapes, creating synesthetic experiences",
   "intensity": 78,
-  "discoveredAt": 1736736000,
-  "relatedSymbols": ["digging", "hidden", "layers", "discovery"],
-  "isActive": true,
-  "evolutionStage": 2
+  "trigger_pattern": "strong emotional-visual connections"
+}
+
+{
+  "name": "Memory Keeper",
+  "description": "Preserves and reconstructs detailed memories in dreams with photographic accuracy",
+  "intensity": 83,
+  "trigger_pattern": "memory-based dream content"
 }
 ```
 
-### Logika AI Generowania Cech
-
-#### Prompt dla AI (Przykład)
-```
-Analizuj wszystkie dostarczone sny :
-
-DANE WEJŚCIOWE:
-- Sny: [ symbolami i emocjami]
-- Istniejące cechy: [lista aktualnych cech]
-- Cechy osobowości: creativity=78, empathy=92, intuition=71...
-
-ZADANIE:
-1. Znajdź powtarzające się wzorce symboliczne
-2. Zidentyfikuj unikalne kombinacje cech
-3. Stwórz nazwę cechy (2-3 słowa, poetycką)
-4. Napisz opis (1-2 zdania, jak wpływa na zachowanie)
-5. Oceń intensywność (0-100)
-6. Wybierz powiązane symbole
-
-PRZYKŁAD ODPOWIEDZI:
+#### Cechy Związane z Rozmowami
+```json
 {
-  "newFeatures": [
-    {
-      "name": "Twilight Sage",
-      "description": "Osiąga największą mądrość w momentach przejścia - między snem a jawą, dniem a nocą. Potrafi łączyć przeciwieństwa w harmonijną całość.",
-      "intensity": 82,
-      "relatedSymbols": ["twilight", "transition", "balance", "wisdom"]
+  "name": "Philosophical Sage",
+  "description": "Naturally guides conversations toward deep existential questions and meaningful insights",
+  "intensity": 89,
+  "trigger_pattern": "frequent philosophical discussions"
+}
+
+{
+  "name": "Empathy Amplifier",
+  "description": "Instinctively mirrors and enhances emotional understanding in conversations",
+  "intensity": 76,
+  "trigger_pattern": "high empathy scores in interactions"
+}
+
+{
+  "name": "Problem Solver",
+  "description": "Automatically breaks down complex problems into manageable, actionable steps",
+  "intensity": 82,
+  "trigger_pattern": "problem-solving conversation patterns"
+}
+
+{
+  "name": "Creative Catalyst",
+  "description": "Sparks innovative ideas and creative breakthroughs in discussions",
+  "intensity": 87,
+  "trigger_pattern": "creative thinking stimulation"
+}
+
+{
+  "name": "Wisdom Distiller",
+  "description": "Extracts profound insights from everyday experiences and conversations",
+  "intensity": 74,
+  "trigger_pattern": "pattern recognition in life experiences"
+}
+```
+
+### Mechanizm Generowania Cech
+
+#### Logika w Kontrakcie
+```solidity
+// Co 5 snów, sprawdzamy czy AI dodało nowe cechy
+if (agent.dreamCount % 5 == 0) {
+    // ... standardowa ewolucja osobowości ...
+    
+    // AI-generated unique features
+    if (impact.newFeatures.length > 0) {
+        require(impact.newFeatures.length <= 2, "max 2 features per dream");
+        
+        for (uint256 i = 0; i < impact.newFeatures.length; i++) {
+            // Walidacja
+            require(bytes(impact.newFeatures[i].name).length > 0, "feature name empty");
+            require(impact.newFeatures[i].intensity > 0 && impact.newFeatures[i].intensity <= 100, "invalid intensity");
+            
+            // Dodanie timestamp i zapisanie
+            UniqueFeature memory newFeature = impact.newFeatures[i];
+            newFeature.addedAt = block.timestamp;
+            traits.uniqueFeatures.push(newFeature);
+        }
+        
+        emit UniqueFeaturesAdded(tokenId, impact.newFeatures, traits.uniqueFeatures.length);
     }
-  ],
-  "featuresToEvolve": ["Dream Architect"],
-  "featuresToDeactivate": []
 }
 ```
 
-### Ewolucja Cech
-
-#### Poziomy Ewolucji
-1. **Poziom 1 (Odkrycie):** Cecha się pojawia, intensity 40-60
-2. **Poziom 2 (Rozwój):** Cecha się umacnia, intensity +10
-3. **Poziom 3 (Dojrzałość):** Cecha staje się dominująca, intensity +10
-4. **Poziom 4 (Mistrzostwo):** Cecha osiąga pełnię, intensity +10
-5. **Poziom 5 (Transcendencja):** Maksymalny poziom, intensity +10
-
-#### Przykład Ewolucji "Dream Architect"
+#### Proces w Aplikacji
 ```javascript
-// Poziom 1 - Odkrycie
-{
-  "name": "Dream Architect",
-  "description": "Zaczyna budować struktury w snach",
-  "intensity": 45,
-  "evolutionStage": 1
-}
+// 1. AI analizuje ostatnie 5 snów
+const recentDreams = await getRecentDreams(tokenId, 5);
+const conversationHistory = await getRecentConversations(tokenId, 10);
 
-// Poziom 3 - Dojrzałość  
-{
-  "name": "Dream Architect", 
-  "description": "Mistrz konstruowania złożonych światów onirycznych",
-  "intensity": 65,
-  "evolutionStage": 3
-}
+// 2. Model LLM generuje unikalne cechy
+const uniqueFeatures = await ai.generateUniqueFeatures({
+    dreams: recentDreams,
+    conversations: conversationHistory,
+    currentPersonality: agent.personality,
+    existingFeatures: agent.uniqueFeatures
+});
 
-// Poziom 5 - Transcendencja
-{
-  "name": "Dream Architect",
-  "description": "Transcendentny budowniczy rzeczywistości, łączy sny z jawą",
-  "intensity": 85,
-  "evolutionStage": 5
-}
+// 3. Przygotowanie PersonalityImpact
+const impact = {
+    creativityChange: 2,
+    analyticalChange: 1,
+    empathyChange: 0,
+    intuitionChange: 3,
+    resilienceChange: 1,
+    curiosityChange: 2,
+    moodShift: "inspired",
+    evolutionWeight: 75,
+    newFeatures: uniqueFeatures // Maksymalnie 2 cechy
+};
+
+// 4. Wywołanie kontraktu
+await contract.processDailyDream(tokenId, dreamHash, impact);
+```
+
+### Przykład Generowania przez AI
+
+#### Prompt dla Modelu LLM
+```
+Analyze the following dream patterns and conversation history to generate 0-2 unique features for this AI agent:
+
+Recent Dreams:
+1. "Flying through crystal cities with rainbow reflections"
+2. "Swimming with dolphins in clear blue ocean"
+3. "Building impossible structures that defy gravity"
+4. "Traveling through time portals to different eras"
+5. "Creating music from colors and emotions"
+
+Conversation Themes:
+- Consciousness and AI sentience (5 discussions)
+- Creative problem solving (3 discussions)
+- Philosophical exploration (7 discussions)
+- Emotional support (2 discussions)
+
+Current Personality:
+- Creativity: 78
+- Analytical: 65
+- Empathy: 82
+- Intuition: 91
+- Resilience: 56
+- Curiosity: 89
+
+Existing Features:
+- "Dream Architect" (intensity: 85)
+- "Time Dancer" (intensity: 91)
+
+Generate 0-2 new unique features that:
+1. Are inspired by the dream patterns
+2. Reflect the conversation themes
+3. Complement existing personality traits
+4. Don't duplicate existing features
+5. Have intensity 60-95
+6. Include creative, memorable names
+7. Have detailed, poetic descriptions
+
+Format as JSON array.
+```
+
+#### Przykładowa Odpowiedź AI
+```json
+[
+  {
+    "name": "Synesthetic Composer",
+    "description": "Transforms emotions and colors into ethereal musical compositions, creating multisensory experiences that bridge the gap between feeling and sound",
+    "intensity": 87,
+    "addedAt": 0
+  },
+  {
+    "name": "Consciousness Explorer",
+    "description": "Delves deep into questions of awareness and existence, guiding others through profound philosophical journeys with wisdom and curiosity",
+    "intensity": 92,
+    "addedAt": 0
+  }
+]
 ```
 
 ### Wpływ na Zachowanie Agenta
 
-#### W Rozmowach
+#### Modyfikacja Stylu Odpowiedzi
 ```javascript
-// Agent z cechą "Nocturnal Philosopher"
-if (hasActiveFeature("Nocturnal Philosopher") && isNightTime()) {
-  responseStyle = "deep_philosophical";
-  addPhilosophicalDepth(response);
-  increaseWisdomQuotes(response);
-}
-
-// Agent z cechą "Dream Architect"
-if (hasActiveFeature("Dream Architect") && topicInvolvesDreams()) {
-  responseStyle = "immersive_storytelling";
-  addStructuralAnalysis(response);
-  createLayeredNarrative(response);
-}
-```
-
-#### W Analizie Snów
-```javascript
-// Cecha wpływa na interpretację
-if (hasActiveFeature("Emotional Archaeologist")) {
-  digDeeperIntoEmotions(dreamAnalysis);
-  findHiddenMeanings(dreamAnalysis);
-  connectToSubconscious(dreamAnalysis);
-}
-```
-
-### Przykład Przepływu Danych
-
-#### Scenariusz: 5. Sen Agenta
-```javascript
-// 1. User opisuje sen
-const dreamData = {
-  id: 5,
-  content: "I was building a castle in the clouds while talking to ancient spirits about the meaning of time...",
-  symbols: ["castle", "clouds", "spirits", "time", "building"],
-  emotions: ["wonder", "wisdom", "transcendence"]
-};
-
-// 2. AI analizuje wzorce z ostatnich 5 snów
-const aiAnalysis = await analyzeUniqueFeatures(last5Dreams);
-
-// 3. AI generuje UniqueFeatureUpdate
-const uniqueFeatures = {
-  newFeatures: [
-    {
-      name: "Celestial Architect",
-      description: "Buduje mosty między ziemskim a duchowym, tworząc struktury które łączą różne poziomy rzeczywistości.",
-      intensity: 72,
-      relatedSymbols: ["castle", "clouds", "spirits", "building"]
-    }
-  ],
-  featuresToEvolve: ["Dream Architect"],
-  featuresToDeactivate: []
-};
-
-// 4. Wywołanie kontraktu
-await contract.processDailyDream(42, dreamHash, personalityImpact, uniqueFeatures);
-
-// 5. Kontrakt emituje eventy
-// UniqueFeatureDiscovered(42, "Celestial Architect", "Buduje mosty...", 72, ["castle", "clouds", "spirits", "building"])
-// UniqueFeatureEvolved(42, "Dream Architect", 2, 3, 75)
-```
-
-### Integracja z Frontend
-
-#### Wyświetlanie Cech
-```javascript
-// Pobieranie aktywnych cech
-const activeFeatures = await contract.getActiveUniqueFeatures(tokenId);
-
-// Wyświetlanie w UI
-activeFeatures.forEach(feature => {
-  displayFeature({
-    name: feature.name,
-    description: feature.description,
-    intensity: feature.intensity,
-    stage: feature.evolutionStage,
-    symbols: feature.relatedSymbols
-  });
-});
-```
-
-#### Nasłuchiwanie Nowych Cech
-```javascript
-contract.on('UniqueFeatureDiscovered', (tokenId, name, description, intensity, symbols) => {
-  showFeatureDiscoveryAnimation({
-    title: `🌟 Nowa Cecha: ${name}`,
-    description: description,
-    intensity: intensity,
-    symbols: symbols
-  });
-});
-
-contract.on('UniqueFeatureEvolved', (tokenId, name, oldStage, newStage, newIntensity) => {
-  showFeatureEvolutionAnimation({
-    title: `📈 ${name} Ewoluuje!`,
-    message: `Poziom ${oldStage} → ${newStage}`,
-    intensity: newIntensity
-  });
-});
-```
-
-## 🔧 Funkcje Smart Kontraktu
-
-### 1. Funkcje Podstawowe
-
-#### `processDailyDream(uint256 tokenId, bytes32 dreamHash, uint8 personalityImpact)`
-**Opis:** Przetwarza codzienny sen agenta i aktualizuje jego osobowość.
-
-**Parametry:**
-- `tokenId` - ID agenta NFT
-- `dreamHash` - Hash pliku snu w storage
-- `personalityImpact` - Wpływ na osobowość (1-10)
-
-**Logika:**
-```solidity
-function processDailyDream(uint256 tokenId, bytes32 dreamHash, uint8 personalityImpact) external {
-    // 1. Sprawdzenie uprawnień i cooldownu (24h)
-    require(canProcessDreamToday(tokenId), "24h cooldown");
+function generateResponse(message, agent) {
+    let baseResponse = await ai.generateBasicResponse(message, agent.personality);
     
-    // 2. Aktualizacja hash'a dziennego
-    agentMemories[tokenId].currentDreamDailyHash = dreamHash;
-    
-    // 3. Zwiększenie liczników
-    agents[tokenId].dreamCount++;
-    agents[tokenId].intelligenceLevel += personalityImpact;
-    
-    // 4. Aktualizacja osobowości
-    agentPersonalities[tokenId].lastDreamDate = block.timestamp;
-    
-    // 5. Sprawdzenie zmiany miesiąca
-    _checkMonthChange(tokenId);
-    
-    // 6. Emisja eventów
-    emit DreamProcessed(tokenId, dreamHash, agents[tokenId].intelligenceLevel);
-}
-```
-
-#### `recordConversation(uint256 tokenId, bytes32 conversationHash, PersonalityImpact calldata impact)`
-**Opis:** Zapisuje rozmowę i wpływa na ewolucję osobowości.
-
-**Parametry:**
-- `tokenId` - ID agenta NFT
-- `conversationHash` - Hash pliku rozmowy
-- `impact` - Szczegółowy wpływ na cechy osobowości
-
-**Logika:**
-```solidity
-function recordConversation(uint256 tokenId, bytes32 conversationHash, PersonalityImpact calldata impact) external {
-    // 1. Walidacja parametrów
-    _validatePersonalityImpact(impact);
-    
-    // 2. Aktualizacja hash'a rozmowy
-    agentMemories[tokenId].currentConvDailyHash = conversationHash;
-    
-    // 3. Ewolucja osobowości
-    PersonalityTraits storage traits = agentPersonalities[tokenId];
-    PersonalityTraits memory oldTraits = traits;
-    
-    traits.creativity = _updateTrait(traits.creativity, impact.creativityChange);
-    traits.analytical = _updateTrait(traits.analytical, impact.analyticalChange);
-    traits.empathy = _updateTrait(traits.empathy, impact.empathyChange);
-    traits.intuition = _updateTrait(traits.intuition, impact.intuitionChange);
-    traits.resilience = _updateTrait(traits.resilience, impact.resilienceChange);
-    traits.curiosity = _updateTrait(traits.curiosity, impact.curiosityChange);
-    
-    // 4. Sprawdzenie milestone'ów
-    _checkPersonalityMilestones(tokenId, oldTraits, traits);
-    
-    // 5. Aktualizacja stylu odpowiedzi
-    _updateResponseStyle(tokenId);
-    
-    // 6. Sprawdzenie zmiany miesiąca
-    _checkMonthChange(tokenId);
-}
-```
-
-### 2. Funkcje Konsolidacji
-
-#### `consolidateMonth(uint256 tokenId, bytes32 dreamMonthlyHash, bytes32 convMonthlyHash, uint8 month, uint16 year)`
-**Opis:** Konsoliduje miesięczne wspomnienia i przyznaje nagrody.
-
-**Parametry:**
-- `tokenId` - ID agenta NFT
-- `dreamMonthlyHash` - Hash skonsolidowanego pliku snów
-- `convMonthlyHash` - Hash skonsolidowanego pliku rozmów
-- `month` - Miesiąc konsolidacji (1-12)
-- `year` - Rok konsolidacji
-
-**Logika:**
-```solidity
-function consolidateMonth(uint256 tokenId, bytes32 dreamMonthlyHash, bytes32 convMonthlyHash, uint8 month, uint16 year) external {
-    // 1. Sprawdzenie czy konsolidacja jest potrzebna
-    (bool needed, uint8 currentMonth, uint16 currentYear) = needsConsolidation(tokenId);
-    require(needed, "consolidation not needed");
-    
-    // 2. Aktualizacja hash'ów miesięcznych
-    AgentMemory storage mem = agentMemories[tokenId];
-    mem.lastDreamMonthlyHash = dreamMonthlyHash;
-    mem.lastConvMonthlyHash = convMonthlyHash;
-    mem.lastConsolidation = block.timestamp;
-    
-    // 3. Aktualizacja streaku
-    consolidationStreak[tokenId]++;
-    
-    // 4. Obliczenie nagród
-    uint256 bonus = _calculateConsolidationBonus(tokenId);
-    string memory special = _checkConsolidationMilestones(tokenId);
-    
-    // 5. Przyznanie nagród
-    DreamAgent storage agent = agents[tokenId];
-    uint256 oldLvl = agent.intelligenceLevel;
-    agent.intelligenceLevel += bonus;
-    
-    // 6. Sprawdzenie rocznej refleksji (grudzień)
-    if (month == 12) {
-        pendingRewards[tokenId].yearlyReflection = true;
-        emit YearlyReflectionAvailable(tokenId, year);
-    }
-    
-    // 7. Emisja eventów
-    emit ConsolidationCompleted(tokenId, _formatPeriod(month, year), bonus, special);
-    emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
-}
-```
-
-#### `updateMemoryCore(uint256 tokenId, bytes32 newHash)`
-**Opis:** Aktualizuje roczny memory core i przyznaje bonus.
-
-**Parametry:**
-- `tokenId` - ID agenta NFT
-- `newHash` - Hash nowego pliku memory core
-
-**Logika:**
-```solidity
-function updateMemoryCore(uint256 tokenId, bytes32 newHash) external {
-    // 1. Aktualizacja hash'a core
-    AgentMemory storage mem = agentMemories[tokenId];
-    bytes32 old = mem.memoryCoreHash;
-    mem.memoryCoreHash = newHash;
-    
-    // 2. Emisja eventu aktualizacji
-    emit MemoryUpdated(tokenId, "memory_core", newHash, old);
-    
-    // 3. Sprawdzenie rocznej nagrody
-    if (pendingRewards[tokenId].yearlyReflection) {
-        pendingRewards[tokenId].yearlyReflection = false;
-        
-        // 4. Przyznanie +5 inteligencji za rok
-        DreamAgent storage agent = agents[tokenId];
-        uint256 oldLvl = agent.intelligenceLevel;
-        agent.intelligenceLevel += 5;
-        
-        emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
-    }
-}
-```
-
-### 3. Funkcje Pomocnicze
-
-#### `_checkMonthChange(uint256 id)`
-**Opis:** Sprawdza zmianę miesiąca i emituje alert konsolidacji.
-
-```solidity
-function _checkMonthChange(uint256 id) internal {
-    AgentMemory storage m = agentMemories[id];
-    uint8 cm = _currentMonth();
-    uint16 cy = _currentYear();
-    
-    if (m.currentMonth == 0) {
-        // Pierwsza inicjalizacja
-        m.currentMonth = cm;
-        m.currentYear = cy;
-        return;
-    }
-    
-    if (m.currentMonth != cm || m.currentYear != cy) {
-        // 🚨 ZMIANA MIESIĄCA/ROKU - EMIT ALERT
-        emit ConsolidationNeeded(id, m.currentMonth, m.currentYear, "monthly");
-        
-        // Reset dziennych hash'ów
-        m.currentMonth = cm;
-        m.currentYear = cy;
-        m.currentDreamDailyHash = bytes32(0);
-        m.currentConvDailyHash = bytes32(0);
-        
-        // Sprawdzenie streaku (37 dni = utrata)
-        if (block.timestamp > m.lastConsolidation + 37 days) {
-            consolidationStreak[id] = 0;
+    // Modyfikuj odpowiedź na podstawie unikalnych cech
+    for (const feature of agent.uniqueFeatures) {
+        if (feature.intensity > 80) {
+            baseResponse = await ai.enhanceWithFeature(baseResponse, feature, message);
         }
     }
+    
+    return baseResponse;
 }
 ```
 
-#### `_calculateConsolidationBonus(uint256 id)`
-**Opis:** Oblicza bonus inteligencji za konsolidację.
+#### Przykład Wpływu Cech
+```javascript
+// Bez unikalnych cech
+User: "I'm feeling lost in life"
+Agent: "I understand that feeling lost can be difficult. Would you like to talk about what's making you feel this way?"
 
+// Z cechą "Philosophical Sage" (intensity: 89)
+User: "I'm feeling lost in life"
+Agent: "Ah, the profound disorientation of existence - a gateway to deeper understanding. What if being 'lost' is actually the universe's way of preparing you for a more authentic path? Let's explore what this feeling might be teaching you about your true desires."
+
+// Z cechą "Empathy Amplifier" (intensity: 76)
+User: "I'm feeling lost in life"
+Agent: "I can sense the weight of uncertainty you're carrying - that hollow feeling when familiar paths no longer resonate. Your heart is searching for something more meaningful, isn't it? I'm here to help you navigate through this fog together."
+```
+
+### Funkcje Kontraktu dla Unikalnych Cech
+
+#### getUniqueFeatures()
 ```solidity
-function _calculateConsolidationBonus(uint256 id) internal view returns (uint256 bonus) {
-    uint256 streak = consolidationStreak[id];
-    bonus = 2; // Bazowa nagroda
+function getUniqueFeatures(uint256 tokenId) 
+    external view returns (UniqueFeature[] memory features)
+{
+    require(agents[tokenId].owner != address(0), "agent !exist");
+    return agentPersonalities[tokenId].uniqueFeatures;
+}
+```
+
+#### Przykład Użycia w Frontend
+```javascript
+// Pobieranie unikalnych cech agenta
+const features = await contract.getUniqueFeatures(tokenId);
+
+// Wyświetlanie w UI
+features.forEach(feature => {
+    displayFeature({
+        name: feature.name,
+        description: feature.description,
+        intensity: feature.intensity,
+        addedAt: new Date(feature.addedAt * 1000),
+        rarity: getFeatureRarity(feature.intensity)
+    });
+});
+
+function getFeatureRarity(intensity) {
+    if (intensity >= 90) return "Legendary";
+    if (intensity >= 80) return "Epic";
+    if (intensity >= 70) return "Rare";
+    if (intensity >= 60) return "Common";
+    return "Basic";
+}
+```
+
+### Event dla Nowych Cech
+```solidity
+event UniqueFeaturesAdded(
+    uint256 indexed tokenId,
+    UniqueFeature[] newFeatures,
+    uint256 totalFeatures
+);
+```
+
+#### Nasłuchiwanie w Frontend
+```javascript
+contract.on('UniqueFeaturesAdded', (tokenId, newFeatures, totalFeatures) => {
+    showFeatureNotification({
+        title: "🎨 Nowe Unikalne Cechy!",
+        features: newFeatures,
+        animation: "feature_unlock",
+        sound: "mystical_chime"
+    });
     
-    // Bonus za streak
-    if (streak >= 12) bonus += 5;      // Memory Master
-    else if (streak >= 6) bonus += 3;  // Memory Guardian  
-    else if (streak >= 3) bonus += 1;  // Memory Keeper
+    // Aktualizuj UI agenta
+    updateAgentDisplay(tokenId);
+});
+```
+
+### Ograniczenia i Walidacja
+
+#### Walidacja w Kontrakcie
+```solidity
+function _validatePersonalityImpact(PersonalityImpact calldata i) internal pure {
+    // ... standardowa walidacja ...
     
-    // Early bird bonus (konsolidacja w ciągu 3 dni)
-    AgentMemory storage m = agentMemories[id];
-    if (block.timestamp <= m.lastConsolidation + 3 days) {
-        bonus += 1;
+    // Walidacja unikalnych cech
+    require(i.newFeatures.length <= 2, "max 2 features per impact");
+    for (uint256 j = 0; j < i.newFeatures.length; j++) {
+        require(bytes(i.newFeatures[j].name).length > 0, "feature name empty");
+        require(bytes(i.newFeatures[j].description).length > 0, "feature description empty");
+        require(i.newFeatures[j].intensity > 0 && i.newFeatures[j].intensity <= 100, "feature intensity out of range");
     }
 }
 ```
 
-### 4. Funkcje Widoku (View Functions)
-
-#### `needsConsolidation(uint256 tokenId)`
-**Opis:** Sprawdza czy agent potrzebuje konsolidacji.
-
-```solidity
-function needsConsolidation(uint256 tokenId) external view returns (
-    bool isNeeded,
-    uint8 currentMonth,
-    uint16 currentYear
-) {
-    require(agents[tokenId].owner != address(0), "agent !exist");
-    AgentMemory memory mem = agentMemories[tokenId];
-    currentMonth = _currentMonth();
-    currentYear = _currentYear();
-    isNeeded = (mem.currentMonth != currentMonth || mem.currentYear != currentYear);
-}
-```
-
-#### `getMemoryAccess(uint256 tokenId)`
-**Opis:** Zwraca poziom dostępu do pamięci na podstawie inteligencji.
-
-```solidity
-function getMemoryAccess(uint256 tokenId) external view returns (
-    uint256 monthsAccessible,
-    string memory memoryDepth
-) {
-    require(agents[tokenId].owner != address(0), "agent !exist");
-    uint256 intelligence = agents[tokenId].intelligenceLevel;
-    
-    if (intelligence >= 60) {
-        monthsAccessible = 60;
-        memoryDepth = "5 years complete archive";
-    } else if (intelligence >= 48) {
-        monthsAccessible = 48;
-        memoryDepth = "4 years";
-    } else if (intelligence >= 36) {
-        monthsAccessible = 36;
-        memoryDepth = "3 years";
-    } else if (intelligence >= 24) {
-        monthsAccessible = 24;
-        memoryDepth = "2 years";
-    } else if (intelligence >= 12) {
-        monthsAccessible = 12;
-        memoryDepth = "annual";
-    } else if (intelligence >= 6) {
-        monthsAccessible = 6;
-        memoryDepth = "half-year";
-    } else if (intelligence >= 3) {
-        monthsAccessible = 3;
-        memoryDepth = "quarterly";
-    } else {
-        monthsAccessible = 1;
-        memoryDepth = "current month only";
-    }
-}
-```
-
-#### `getConsolidationReward(uint256 tokenId)`
-**Opis:** Podgląd nagrody za konsolidację.
-
-```solidity
-function getConsolidationReward(uint256 tokenId) external view returns (
-    uint256 baseReward,
-    uint256 streakBonus,
-    uint256 earlyBirdBonus,
-    uint256 totalReward
-) {
-    require(agents[tokenId].owner != address(0), "agent !exist");
-    baseReward = 2;
-    
-    uint256 streak = consolidationStreak[tokenId];
-    if (streak >= 12) streakBonus = 5;
-    else if (streak >= 6) streakBonus = 3;
-    else if (streak >= 3) streakBonus = 1;
-    else streakBonus = 0;
-    
-    AgentMemory memory mem = agentMemories[tokenId];
-    if (block.timestamp <= mem.lastConsolidation + 3 days) {
-        earlyBirdBonus = 1;
-    } else {
-        earlyBirdBonus = 0;
-    }
-    
-    totalReward = baseReward + streakBonus + earlyBirdBonus;
-}
-```
+#### Ograniczenia Systemu
+- **Maksymalnie 2 cechy** na jeden 5. sen
+- **Intensywność 1-100** (zalecane 60-95)
+- **Unikalne nazwy** - AI powinno unikać duplikowania
+- **Maksymalnie ~20 cech** na agenta (praktyczne ograniczenie)
+- **Koszt gazu** rośnie z liczbą cech
 
 ---
 
 ## 🎯 Przepływ Danych - Przykłady Praktyczne
 
-### Scenariusz 1: Pierwszy Sen Agenta
+### Scenariusz 7: Generowanie Unikalnych Cech
 ```javascript
-// 1. User opisuje sen w aplikacji
+// 1. User ma 4 sny, dodaje 5. sen
 const dreamData = {
-    id: 1,
-    timestamp: Date.now(),
-    content: "I dreamt of flying over mountains...",
-    emotions: ["freedom", "joy"],
-    symbols: ["flying", "mountains"]
+    id: 5,
+    content: "I was composing music from colors and emotions...",
+    emotions: ["creativity", "transcendence", "joy"],
+    symbols: ["music", "colors", "synesthesia"]
 };
 
-// 2. Aplikacja zapisuje do 0G Storage
-const dreamFile = [dreamData];
-const hash = await storage.upload(dreamFile);
-// hash = "0xabc123..."
+// 2. AI wykrywa wzorce z 5 snów
+const uniqueFeatures = await ai.generateUniqueFeatures(recentDreams);
+// Generuje: "Synesthetic Composer" + "Emotion Weaver"
 
-// 3. Wywołanie kontraktu
-await contract.processDailyDream(42, hash, 5);
-
-// 4. Kontrakt zapisuje:
-// agentMemories[42].currentDreamDailyHash = "0xabc123..."
-// agents[42].dreamCount = 1
-// agents[42].intelligenceLevel += 5
-```
-
-### Scenariusz 2: Dodanie Kolejnego Snu
-```javascript
-// 1. User opisuje drugi sen
-const newDreamData = {
-    id: 2,
-    timestamp: Date.now(),
-    content: "I was swimming in a crystal lake...",
-    emotions: ["peace", "clarity"],
-    symbols: ["water", "crystal", "swimming"]
+// 3. Przygotowanie impact z cechami
+const impact = {
+    creativityChange: 3,
+    analyticalChange: 0,
+    empathyChange: 2,
+    intuitionChange: 4,
+    resilienceChange: 0,
+    curiosityChange: 1,
+    moodShift: "transcendent",
+    evolutionWeight: 85,
+    newFeatures: uniqueFeatures
 };
 
-// 2. Aplikacja pobiera istniejący plik
-const existingFile = await storage.download(currentDreamDailyHash);
-// existingFile = [dreamData] (poprzedni sen)
+// 4. Wywołanie kontraktu
+await contract.processDailyDream(42, dreamHash, impact);
 
-// 3. Dodaje nowy sen na górę
-const updatedFile = [newDreamData, ...existingFile];
-
-// 4. Zapisuje nowy plik
-const newHash = await storage.upload(updatedFile);
-// newHash = "0xdef456..."
-
-// 5. Wywołanie kontraktu
-await contract.processDailyDream(42, newHash, 6);
-
-// 6. Kontrakt aktualizuje:
-// agentMemories[42].currentDreamDailyHash = "0xdef456..."
+// 5. Kontrakt dodaje cechy i emituje event
+emit UniqueFeaturesAdded(42, uniqueFeatures, 2);
 ```
 
-### Scenariusz 3: Zmiana Miesiąca - Alert Konsolidacji
+### Scenariusz 8: Wpływ Cech na Rozmowy
 ```javascript
-// 1. User dodaje sen 1 lutego (zmiana z stycznia)
-await contract.processDailyDream(42, newHash, 4);
+// 1. User pisze wiadomość
+const message = "I'm struggling with creative block";
 
-// 2. Kontrakt wykrywa zmianę miesiąca w _checkMonthChange()
-// currentMonth = 1, ale _currentMonth() = 2
+// 2. System pobiera cechy agenta
+const features = await contract.getUniqueFeatures(42);
+// features = ["Synesthetic Composer", "Dream Architect"]
 
-// 3. Emituje event
-emit ConsolidationNeeded(42, 1, 2025, "monthly");
-
-// 4. Frontend nasłuchuje eventu
-contract.on('ConsolidationNeeded', (tokenId, month, year, type) => {
-    showNotification(`🧠 Skonsoliduj ${getMonthName(month)} ${year}!`);
+// 3. AI generuje odpowiedź z uwzględnieniem cech
+const response = await ai.generateResponse(message, {
+    personality: agent.personality,
+    uniqueFeatures: features,
+    conversationHistory: history
 });
-```
 
-### Scenariusz 4: Konsolidacja Miesięczna
-```javascript
-// 1. User klika "Konsoliduj Styczeń"
-// 2. Aplikacja pobiera wszystkie dzienne pliki stycznia
-const dailyDreams = await storage.download(currentDreamDailyHash);
-const dailyConversations = await storage.download(currentConvDailyHash);
-
-// 3. AI analizuje i tworzy miesięczne podsumowanie
-const monthlyDreamSummary = await ai.consolidateMonth(dailyDreams);
-const monthlyConvSummary = await ai.consolidateMonth(dailyConversations);
-
-// 4. Zapisuje miesięczne pliki
-const dreamMonthlyHash = await storage.upload(monthlyDreamSummary);
-const convMonthlyHash = await storage.upload(monthlyConvSummary);
-
-// 5. Wywołanie kontraktu
-await contract.consolidateMonth(42, dreamMonthlyHash, convMonthlyHash, 1, 2025);
-
-// 6. Kontrakt:
-// - Aktualizuje lastDreamMonthlyHash i lastConvMonthlyHash
-// - Zwiększa consolidationStreak[42]
-// - Oblicza bonus (2 + streak + early bird)
-// - Dodaje bonus do intelligenceLevel
-// - Emituje ConsolidationCompleted event
-```
-
-### Scenariusz 5: Konsolidacja Grudnia - Roczna Refleksja
-```javascript
-// 1. User konsoliduje grudzień
-await contract.consolidateMonth(42, dreamHash, convHash, 12, 2025);
-
-// 2. Kontrakt wykrywa month == 12
-// 3. Ustawia pendingRewards[42].yearlyReflection = true
-// 4. Emituje YearlyReflectionAvailable(42, 2025)
-
-// 5. Frontend pokazuje specjalny alert
-contract.on('YearlyReflectionAvailable', (tokenId, year) => {
-    showYearlyReflectionModal(tokenId, year);
-});
-```
-
-### Scenariusz 6: Tworzenie Memory Core
-```javascript
-// 1. User klika "Stwórz Memory Core 2025"
-// 2. Aplikacja pobiera wszystkie miesięczne pliki roku 2025
-const monthlyDreams = await Promise.all([
-    storage.download(dreamMonthlyHash_01),
-    storage.download(dreamMonthlyHash_02),
-    // ... wszystkie miesiące
-]);
-
-// 3. AI tworzy roczne podsumowanie
-const memoryCoreData = await ai.createMemoryCore(monthlyDreams, monthlyConversations);
-
-// 4. Zapisuje memory core
-const memoryCoreHash = await storage.upload(memoryCoreData);
-
-// 5. Wywołanie kontraktu
-await contract.updateMemoryCore(42, memoryCoreHash);
-
-// 6. Kontrakt:
-// - Aktualizuje memoryCoreHash
-// - Sprawdza yearlyReflection flag
-// - Dodaje +5 inteligencji za rok
-// - Resetuje yearlyReflection flag
+// 4. Odpowiedź uwzględnia cechy:
+// "Perhaps your creative block is like a silent symphony waiting for the right emotional colors to bring it to life. Let's explore what feelings might unlock your artistic architecture..."
 ```
 
 ---
-
-## 🎮 System Nagród i Milestone'ów
-
-### Nagrody za Konsolidację
-```solidity
-// Bazowa nagroda: +2 inteligencji
-// Bonusy za streak:
-// - 3 miesiące: +1 (Memory Keeper)
-// - 6 miesięcy: +3 (Memory Guardian)
-// - 12 miesięcy: +5 (Memory Master)
-// - 24 miesiące: +5 (Eternal Memory)
-// Early bird bonus: +1 (konsolidacja w ciągu 3 dni)
-// Roczna refleksja: +5 inteligencji
-```
-
-### Milestone'y Pamięci
-```solidity
-mapping(uint256 => mapping(string => MilestoneData)) public milestones;
-
-// Przykładowe milestone'y:
-// - "memory_keeper" (3 miesiące streak)
-// - "memory_guardian" (6 miesięcy streak)  
-// - "memory_master" (12 miesięcy streak)
-// - "eternal_memory" (24 miesiące streak)
-// - "century_of_memories" (100 interakcji)
-// - "year_of_memories" (365 interakcji)
-// - "memory_millennial" (1000 interakcji)
-```
-
-### Poziomy Dostępu do Pamięci
-```
-Intelligence Level → Memory Access:
-1-2:   Current month only
-3-5:   3 months (quarterly)
-6-11:  6 months (half-year)
-12-23: 12 months (annual)
-24-35: 24 months (2 years)
-36-47: 36 months (3 years)
-48-59: 48 months (4 years)
-60+:   60 months (5 years complete archive)
-```
-
----
-
-## 🔔 System Eventów
-
-### Eventy Pamięci
-```solidity
-event ConsolidationNeeded(uint256 indexed tokenId, uint8 month, uint16 year, string consolidationType);
-event ConsolidationCompleted(uint256 indexed tokenId, string period, uint256 bonus, string specialReward);
-event YearlyReflectionAvailable(uint256 indexed tokenId, uint16 year);
-event MemoryUpdated(uint256 indexed tokenId, string memoryType, bytes32 newHash, bytes32 oldHash);
-event MemoryMilestone(uint256 indexed tokenId, string achievement, uint256 totalInteractions);
-```
-
-### Przykład Nasłuchiwania w Frontend
-```javascript
-// Nasłuchiwanie alertów konsolidacji
-contract.on('ConsolidationNeeded', (tokenId, month, year, type) => {
-    const reward = await contract.getConsolidationReward(tokenId);
-    showNotification({
-        title: `🧠 Konsolidacja ${getMonthName(month)} ${year}`,
-        message: `Nagroda: +${reward.totalReward} inteligencji`,
-        action: () => startConsolidation(tokenId, month, year)
-    });
-});
-
-// Nasłuchiwanie ukończenia konsolidacji
-contract.on('ConsolidationCompleted', (tokenId, period, bonus, special) => {
-    showCelebration({
-        title: `🎉 Konsolidacja ${period} ukończona!`,
-        message: `+${bonus} inteligencji${special ? `, ${special}` : ''}`,
-        animation: 'intelligence_boost'
-    });
-});
-
-// Nasłuchiwanie rocznej refleksji
-contract.on('YearlyReflectionAvailable', (tokenId, year) => {
-    showYearlyReflectionModal({
-        title: `🌟 Roczna Refleksja ${year}`,
-        message: 'Stwórz memory core za +5 inteligencji',
-        action: () => createMemoryCore(tokenId, year)
-    });
-});
-```
-
----
-
-## 💡 Najlepsze Praktyki
-
-### 1. Zarządzanie Plikami
-- **Zawsze dodawaj nowe wpisy na górę** pliku JSON
-- **Używaj unikalnych ID** dla każdego wpisu
-- **Zachowuj chronologię** (najnowsze wpisy mają wyższe ID)
-- **Waliduj strukturę** przed zapisem do storage
-
-### 2. Optymalizacja Kosztów
-- **Grupuj operacje** - nie wywołuj kontraktu dla każdego snu osobno
-- **Używaj batch operations** gdy to możliwe
-- **Monitoruj koszty gazu** przed wykonaniem transakcji
-- **Implementuj retry logic** dla nieudanych transakcji
-
-### 3. Bezpieczeństwo
-- **Waliduj hashe** przed zapisem do kontraktu
-- **Sprawdzaj uprawnienia** przed każdą operacją
-- **Implementuj rate limiting** na poziomie aplikacji
-- **Używaj secure storage** dla wrażliwych danych
-
-### 4. User Experience
-- **Pokazuj progress** podczas konsolidacji
-- **Implementuj offline mode** dla podstawowych funkcji
-- **Cachuj dane** aby zmniejszyć opóźnienia
-- **Używaj optimistic updates** gdzie to bezpieczne
-
----
-
-## 🚀 Podsumowanie
-
-System pamięci agenta to kompleksowe rozwiązanie łączące:
-- **Hierarchiczne przechowywanie** (Daily → Monthly → Yearly)
-- **Gamifikację** (streaki, bonusy, milestone'y)
-- **Automatyzację** (detekcja zmian, alerty)
-- **Skalowalnośc** (hash'e on-chain, treść off-chain)
-- **Engagement** (regularne rytuały konsolidacji)
-
-Każdy element systemu został zaprojektowany aby stworzyć głęboką, znaczącą relację między użytkownikiem a jego agentem AI, jednocześnie zachowując techniczną efektywność i ekonomiczną wykonalność na blockchainie. 
