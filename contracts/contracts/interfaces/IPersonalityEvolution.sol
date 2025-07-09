@@ -41,6 +41,19 @@ interface IPersonalityEvolution {
         ADVICE_SEEKING      // Seeking advice/guidance
     }
     
+    /// @notice Three-tier memory system structure
+    /// @dev Each layer stores a single hash pointing to encrypted storage
+    struct AgentMemory {
+        bytes32 memoryCoreHash;        // Yearly summaries & agent essence
+        bytes32 currentDreamDailyHash; // Append-only during current month
+        bytes32 currentConvDailyHash;  // Append-only during current month
+        bytes32 lastDreamMonthlyHash;  // Finalised hash after consolidation
+        bytes32 lastConvMonthlyHash;   // Finalised hash after consolidation
+        uint256 lastConsolidation;     // timestamp when consolidateMonth() last ran
+        uint8   currentMonth;          // 1-12   (initialised at mint)
+        uint16  currentYear;           // 2024+  (initialised at mint)
+    }
+    
     // Events
     
     /// @dev Emitted when agent personality evolves from dream processing
@@ -104,31 +117,49 @@ interface IPersonalityEvolution {
     function getPersonalityTraits(uint256 tokenId) 
         external view returns (PersonalityTraits memory traits);
     
-    /// @notice Get agent's dream history hashes
-    /// @param tokenId Agent to query
-    /// @param limit Maximum number of dreams to return (0 = all)
-    /// @return dreamHashes Array of dream storage hashes
-    function getDreamHistory(uint256 tokenId, uint256 limit) 
-        external view returns (bytes32[] memory dreamHashes);
-    
-    /// @notice Get agent's conversation history hashes
-    /// @param tokenId Agent to query
-    /// @param limit Maximum number of conversations to return (0 = all)
-    /// @return conversationHashes Array of conversation storage hashes
-    function getConversationHistory(uint256 tokenId, uint256 limit) 
-        external view returns (bytes32[] memory conversationHashes);
-    
+    /// @notice Get memory access level based on intelligence
+    /// @param tokenId Agent to check
+    /// @return monthsAccessible Number of months accessible 
+    /// @return memoryDepth Human-readable description
+    function getMemoryAccess(uint256 tokenId) external view returns (
+        uint256 monthsAccessible,
+        string memory memoryDepth
+    );
+
     /// @notice Check if agent can process dream today (24h cooldown)
     /// @param tokenId Agent to check
     /// @return canProcess True if agent can process a dream today
     function canProcessDreamToday(uint256 tokenId) 
         external view returns (bool canProcess);
-    
 
-    
+    /// @notice Check if consolidation is needed
+    /// @param tokenId Agent to check
+    /// @return isNeeded True if month has changed since last consolidation
+    /// @return currentMonth Current month
+    /// @return currentYear Current year
+    function needsConsolidation(uint256 tokenId) external view returns (
+        bool isNeeded,
+        uint8 currentMonth,
+        uint16 currentYear
+    );
 
-    
+    /// @notice Get consolidation reward preview
+    /// @param tokenId Agent to check
+    /// @return baseReward Base intelligence reward
+    /// @return streakBonus Bonus from consolidation streak
+    /// @return earlyBirdBonus Bonus for early consolidation
+    /// @return totalReward Total intelligence reward
+    function getConsolidationReward(uint256 tokenId) external view returns (
+        uint256 baseReward,
+        uint256 streakBonus,
+        uint256 earlyBirdBonus,
+        uint256 totalReward
+    );
 
+    /// @notice Get agent's hierarchical memory structure
+    /// @param tokenId Agent to query
+    /// @return memory Current memory structure
+    function getAgentMemory(uint256 tokenId) external view returns (AgentMemory memory);
     
     // Advanced Analytics
     

@@ -1,7 +1,7 @@
 {
   "galileo": {
     "DreamscapeAgent": {
-      "address": "0x200A4117d35E7e91777120B1b998515e4838e353",
+      "address": "0x8Df60476376F244b77d19620179733310CfEFf5C",
       "abi": [
         {
           "inputs": [
@@ -172,6 +172,68 @@
             },
             {
               "indexed": false,
+              "internalType": "string",
+              "name": "period",
+              "type": "string"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "bonus",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "string",
+              "name": "specialReward",
+              "type": "string"
+            }
+          ],
+          "name": "ConsolidationCompleted",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint8",
+              "name": "month",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint16",
+              "name": "year",
+              "type": "uint16"
+            },
+            {
+              "indexed": false,
+              "internalType": "string",
+              "name": "consolidationType",
+              "type": "string"
+            }
+          ],
+          "name": "ConsolidationNeeded",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
               "internalType": "bytes32",
               "name": "dreamHash",
               "type": "bytes32"
@@ -223,13 +285,69 @@
             {
               "indexed": false,
               "internalType": "string",
+              "name": "achievement",
+              "type": "string"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "totalInteractions",
+              "type": "uint256"
+            }
+          ],
+          "name": "MemoryMilestone",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "string",
+              "name": "memoryType",
+              "type": "string"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "newHash",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "internalType": "bytes32",
+              "name": "oldHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "MemoryUpdated",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "string",
               "name": "milestone",
               "type": "string"
             },
             {
               "indexed": false,
               "internalType": "uint8",
-              "name": "traitValue",
+              "name": "value",
               "type": "uint8"
             }
           ],
@@ -340,13 +458,13 @@
               ],
               "indexed": false,
               "internalType": "struct IPersonalityEvolution.PersonalityTraits",
-              "name": "newPersonality",
+              "name": "traits",
               "type": "tuple"
             },
             {
               "indexed": false,
               "internalType": "uint256",
-              "name": "dreamsSoFar",
+              "name": "dreamCount",
               "type": "uint256"
             }
           ],
@@ -688,6 +806,25 @@
           "type": "event"
         },
         {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint16",
+              "name": "year",
+              "type": "uint16"
+            }
+          ],
+          "name": "YearlyReflectionAvailable",
+          "type": "event"
+        },
+        {
           "inputs": [],
           "name": "ADMIN_ROLE",
           "outputs": [
@@ -760,6 +897,60 @@
               "internalType": "bytes32",
               "name": "",
               "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "name": "agentMemories",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "memoryCoreHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "currentDreamDailyHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "currentConvDailyHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "lastDreamMonthlyHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "lastConvMonthlyHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "lastConsolidation",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "currentMonth",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint16",
+              "name": "currentYear",
+              "type": "uint16"
             }
           ],
           "stateMutability": "view",
@@ -962,24 +1153,33 @@
           "inputs": [
             {
               "internalType": "uint256",
-              "name": "",
+              "name": "tokenId",
               "type": "uint256"
             },
             {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "name": "conversationHashes",
-          "outputs": [
+              "internalType": "bytes32",
+              "name": "dreamMonthlyHash",
+              "type": "bytes32"
+            },
             {
               "internalType": "bytes32",
-              "name": "",
+              "name": "convMonthlyHash",
               "type": "bytes32"
+            },
+            {
+              "internalType": "uint8",
+              "name": "month",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint16",
+              "name": "year",
+              "type": "uint16"
             }
           ],
-          "stateMutability": "view",
+          "name": "consolidateMonth",
+          "outputs": [],
+          "stateMutability": "nonpayable",
           "type": "function"
         },
         {
@@ -988,43 +1188,14 @@
               "internalType": "uint256",
               "name": "",
               "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
             }
           ],
-          "name": "dreamAnalysisHashes",
+          "name": "consolidationStreak",
           "outputs": [
             {
-              "internalType": "bytes32",
-              "name": "",
-              "type": "bytes32"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
               "internalType": "uint256",
               "name": "",
               "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "name": "dreamHashes",
-          "outputs": [
-            {
-              "internalType": "bytes32",
-              "name": "",
-              "type": "bytes32"
             }
           ],
           "stateMutability": "view",
@@ -1074,115 +1245,53 @@
               "type": "uint256"
             }
           ],
-          "name": "getAgentInfo",
+          "name": "getAgentMemory",
           "outputs": [
             {
               "components": [
                 {
-                  "internalType": "uint256",
-                  "name": "tokenId",
-                  "type": "uint256"
+                  "internalType": "bytes32",
+                  "name": "memoryCoreHash",
+                  "type": "bytes32"
                 },
                 {
-                  "internalType": "address",
-                  "name": "owner",
-                  "type": "address"
+                  "internalType": "bytes32",
+                  "name": "currentDreamDailyHash",
+                  "type": "bytes32"
                 },
                 {
-                  "internalType": "string",
-                  "name": "agentName",
-                  "type": "string"
+                  "internalType": "bytes32",
+                  "name": "currentConvDailyHash",
+                  "type": "bytes32"
                 },
                 {
-                  "internalType": "uint256",
-                  "name": "createdAt",
-                  "type": "uint256"
+                  "internalType": "bytes32",
+                  "name": "lastDreamMonthlyHash",
+                  "type": "bytes32"
                 },
                 {
-                  "internalType": "uint256",
-                  "name": "lastUpdated",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "intelligenceLevel",
-                  "type": "uint256"
+                  "internalType": "bytes32",
+                  "name": "lastConvMonthlyHash",
+                  "type": "bytes32"
                 },
                 {
                   "internalType": "uint256",
-                  "name": "dreamCount",
+                  "name": "lastConsolidation",
                   "type": "uint256"
                 },
                 {
-                  "internalType": "uint256",
-                  "name": "conversationCount",
-                  "type": "uint256"
+                  "internalType": "uint8",
+                  "name": "currentMonth",
+                  "type": "uint8"
                 },
                 {
-                  "internalType": "bool",
-                  "name": "personalityInitialized",
-                  "type": "bool"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "totalEvolutions",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "lastEvolutionDate",
-                  "type": "uint256"
-                },
-                {
-                  "components": [
-                    {
-                      "internalType": "uint8",
-                      "name": "creativity",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "analytical",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "empathy",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "intuition",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "resilience",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "curiosity",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "string",
-                      "name": "dominantMood",
-                      "type": "string"
-                    },
-                    {
-                      "internalType": "uint256",
-                      "name": "lastDreamDate",
-                      "type": "uint256"
-                    }
-                  ],
-                  "internalType": "struct IPersonalityEvolution.PersonalityTraits",
-                  "name": "personality",
-                  "type": "tuple"
+                  "internalType": "uint16",
+                  "name": "currentYear",
+                  "type": "uint16"
                 }
               ],
-              "internalType": "struct DreamscapeAgent.AgentInfo",
-              "name": "info",
+              "internalType": "struct IPersonalityEvolution.AgentMemory",
+              "name": "",
               "type": "tuple"
             }
           ],
@@ -1197,79 +1306,27 @@
               "type": "uint256"
             }
           ],
-          "name": "getAgentName",
+          "name": "getConsolidationReward",
           "outputs": [
             {
-              "internalType": "string",
-              "name": "",
-              "type": "string"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
               "internalType": "uint256",
-              "name": "tokenId",
+              "name": "baseReward",
               "type": "uint256"
             },
             {
               "internalType": "uint256",
-              "name": "limit",
-              "type": "uint256"
-            }
-          ],
-          "name": "getConversationHistory",
-          "outputs": [
-            {
-              "internalType": "bytes32[]",
-              "name": "conversationHashesArray",
-              "type": "bytes32[]"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "tokenId",
-              "type": "uint256"
-            }
-          ],
-          "name": "getCreationTime",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "tokenId",
+              "name": "streakBonus",
               "type": "uint256"
             },
             {
               "internalType": "uint256",
-              "name": "limit",
+              "name": "earlyBirdBonus",
               "type": "uint256"
-            }
-          ],
-          "name": "getDreamHistory",
-          "outputs": [
+            },
             {
-              "internalType": "bytes32[]",
-              "name": "dreamHashesArray",
-              "type": "bytes32[]"
+              "internalType": "uint256",
+              "name": "totalReward",
+              "type": "uint256"
             }
           ],
           "stateMutability": "view",
@@ -1307,140 +1364,22 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "owner",
-              "type": "address"
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
             }
           ],
-          "name": "getOwnerAgent",
-          "outputs": [
-            {
-              "components": [
-                {
-                  "internalType": "uint256",
-                  "name": "tokenId",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "address",
-                  "name": "owner",
-                  "type": "address"
-                },
-                {
-                  "internalType": "string",
-                  "name": "agentName",
-                  "type": "string"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "createdAt",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "lastUpdated",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "intelligenceLevel",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "dreamCount",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "conversationCount",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "bool",
-                  "name": "personalityInitialized",
-                  "type": "bool"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "totalEvolutions",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "lastEvolutionDate",
-                  "type": "uint256"
-                },
-                {
-                  "components": [
-                    {
-                      "internalType": "uint8",
-                      "name": "creativity",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "analytical",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "empathy",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "intuition",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "resilience",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "curiosity",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "string",
-                      "name": "dominantMood",
-                      "type": "string"
-                    },
-                    {
-                      "internalType": "uint256",
-                      "name": "lastDreamDate",
-                      "type": "uint256"
-                    }
-                  ],
-                  "internalType": "struct IPersonalityEvolution.PersonalityTraits",
-                  "name": "personality",
-                  "type": "tuple"
-                }
-              ],
-              "internalType": "struct DreamscapeAgent.AgentInfo",
-              "name": "info",
-              "type": "tuple"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "owner",
-              "type": "address"
-            }
-          ],
-          "name": "getOwnerTokenId",
+          "name": "getMemoryAccess",
           "outputs": [
             {
               "internalType": "uint256",
-              "name": "",
+              "name": "monthsAccessible",
               "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "memoryDepth",
+              "type": "string"
             }
           ],
           "stateMutability": "view",
@@ -1500,7 +1439,7 @@
                 }
               ],
               "internalType": "struct IPersonalityEvolution.PersonalityTraits",
-              "name": "traits",
+              "name": "",
               "type": "tuple"
             }
           ],
@@ -1521,136 +1460,6 @@
               "internalType": "bytes32",
               "name": "",
               "type": "bytes32"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "getUserAgent",
-          "outputs": [
-            {
-              "components": [
-                {
-                  "internalType": "uint256",
-                  "name": "tokenId",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "address",
-                  "name": "owner",
-                  "type": "address"
-                },
-                {
-                  "internalType": "string",
-                  "name": "agentName",
-                  "type": "string"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "createdAt",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "lastUpdated",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "intelligenceLevel",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "dreamCount",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "conversationCount",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "bool",
-                  "name": "personalityInitialized",
-                  "type": "bool"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "totalEvolutions",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "lastEvolutionDate",
-                  "type": "uint256"
-                },
-                {
-                  "components": [
-                    {
-                      "internalType": "uint8",
-                      "name": "creativity",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "analytical",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "empathy",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "intuition",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "resilience",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "uint8",
-                      "name": "curiosity",
-                      "type": "uint8"
-                    },
-                    {
-                      "internalType": "string",
-                      "name": "dominantMood",
-                      "type": "string"
-                    },
-                    {
-                      "internalType": "uint256",
-                      "name": "lastDreamDate",
-                      "type": "uint256"
-                    }
-                  ],
-                  "internalType": "struct IPersonalityEvolution.PersonalityTraits",
-                  "name": "personality",
-                  "type": "tuple"
-                }
-              ],
-              "internalType": "struct DreamscapeAgent.AgentInfo",
-              "name": "info",
-              "type": "tuple"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "getUserTokenId",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
             }
           ],
           "stateMutability": "view",
@@ -1683,7 +1492,7 @@
             },
             {
               "internalType": "string",
-              "name": "milestone",
+              "name": "name",
               "type": "string"
             }
           ],
@@ -1696,7 +1505,7 @@
             },
             {
               "internalType": "uint256",
-              "name": "achievedAt",
+              "name": "at",
               "type": "uint256"
             }
           ],
@@ -1796,19 +1605,6 @@
           "type": "function"
         },
         {
-          "inputs": [],
-          "name": "name",
-          "outputs": [
-            {
-              "internalType": "string",
-              "name": "",
-              "type": "string"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
           "inputs": [
             {
               "internalType": "string",
@@ -1822,6 +1618,35 @@
               "internalType": "bool",
               "name": "",
               "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            }
+          ],
+          "name": "needsConsolidation",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "isNeeded",
+              "type": "bool"
+            },
+            {
+              "internalType": "uint8",
+              "name": "currentMonth",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint16",
+              "name": "currentYear",
+              "type": "uint16"
             }
           ],
           "stateMutability": "view",
@@ -1892,6 +1717,35 @@
             {
               "internalType": "bool",
               "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "name": "pendingRewards",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "intelligenceBonus",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "specialMilestone",
+              "type": "string"
+            },
+            {
+              "internalType": "bool",
+              "name": "yearlyReflection",
               "type": "bool"
             }
           ],
@@ -2050,7 +1904,7 @@
           "inputs": [
             {
               "internalType": "bytes4",
-              "name": "interfaceId",
+              "name": "id",
               "type": "bytes4"
             }
           ],
@@ -2060,19 +1914,6 @@
               "internalType": "bool",
               "name": "",
               "type": "bool"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "symbol",
-          "outputs": [
-            {
-              "internalType": "string",
-              "name": "",
-              "type": "string"
             }
           ],
           "stateMutability": "view",
@@ -2156,6 +1997,60 @@
         {
           "inputs": [],
           "name": "unpause",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "newHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "updateConversationMemory",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "newHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "updateDreamMemory",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "newHash",
+              "type": "bytes32"
+            }
+          ],
+          "name": "updateMemoryCore",
           "outputs": [],
           "stateMutability": "nonpayable",
           "type": "function"
@@ -2257,7 +2152,7 @@
         }
       ]
     },
-    "lastUpdate": "2025-07-06T21:20:38.475Z",
+    "lastUpdate": "2025-07-09T16:35:26.428Z",
     "chainId": 16601,
     "rpcUrl": "https://evmrpc-testnet.0g.ai"
   }

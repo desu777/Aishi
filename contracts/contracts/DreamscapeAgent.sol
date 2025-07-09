@@ -97,20 +97,7 @@ contract DreamscapeAgent is
         uint8    traitValue; // value that unlocked the milestone (for UI)
     }
 
-    /**
-     * @dev Three‑tier memory system – each layer stores a *single* hash pointing
-     *      to encrypted storage (0G, Arweave, IPFS…)
-     */
-    struct AgentMemory {
-        bytes32 memoryCoreHash;        // Yearly summaries & agent essence
-        bytes32 currentDreamDailyHash; // Append‑only during current month
-        bytes32 currentConvDailyHash;  // Append‑only during current month
-        bytes32 lastDreamMonthlyHash;  // Finalised hash after consolidation
-        bytes32 lastConvMonthlyHash;   // Finalised hash after consolidation
-        uint256 lastConsolidation;     // timestamp when consolidateMonth() last ran
-        uint8   currentMonth;          // 1‑12   (initialised at mint)
-        uint16  currentYear;           // 2024+  (initialised at mint)
-    }
+
 
     /**
      * @dev Rewards waiting for claim (set during monthly consolidation)
@@ -460,11 +447,120 @@ contract DreamscapeAgent is
         return agentPersonalities[tokenId];
     }
 
-    function canProcessDreamToday(uint256 tokenId)
-        external view override returns (bool) {
+    /**
+     * @notice Get memory access level based on intelligence
+     * @param tokenId Agent to check
+     * @return monthsAccessible Number of months accessible 
+     * @return memoryDepth Human-readable description
+     */
+    function getMemoryAccess(uint256 tokenId) external view returns (
+        uint256 monthsAccessible,
+        string memory memoryDepth
+    ) {
+        require(agents[tokenId].owner != address(0), "agent !exist");
+        uint256 intelligence = agents[tokenId].intelligenceLevel;
+        
+        if (intelligence >= 60) {
+            monthsAccessible = 60;
+            memoryDepth = "5 years complete archive";
+        } else if (intelligence >= 48) {
+            monthsAccessible = 48;
+            memoryDepth = "4 years";
+        } else if (intelligence >= 36) {
+            monthsAccessible = 36;
+            memoryDepth = "3 years";
+        } else if (intelligence >= 24) {
+            monthsAccessible = 24;
+            memoryDepth = "2 years";
+        } else if (intelligence >= 12) {
+            monthsAccessible = 12;
+            memoryDepth = "annual";
+        } else if (intelligence >= 6) {
+            monthsAccessible = 6;
+            memoryDepth = "half-year";
+        } else if (intelligence >= 3) {
+            monthsAccessible = 3;
+            memoryDepth = "quarterly";
+        } else {
+            monthsAccessible = 1;
+            memoryDepth = "current month only";
+        }
+    }
+
+    /**
+     * @notice Get agent's hierarchical memory structure
+     * @param tokenId Agent to query
+     * @return memory Current memory structure
+     */
+    function getAgentMemory(uint256 tokenId) external view returns (AgentMemory memory) {
+        require(agents[tokenId].owner != address(0), "agent !exist");
+        return agentMemories[tokenId];
+    }
+
+    /**
+     * @notice Check if consolidation is needed
+     * @param tokenId Agent to check
+     * @return isNeeded True if month has changed since last consolidation
+     * @return currentMonth Current month
+     * @return currentYear Current year
+     */
+    function needsConsolidation(uint256 tokenId) external view returns (
+        bool isNeeded,
+        uint8 currentMonth,
+        uint16 currentYear
+    ) {
+        require(agents[tokenId].owner != address(0), "agent !exist");
+        AgentMemory memory mem = agentMemories[tokenId];
+        currentMonth = _currentMonth();
+        currentYear = _currentYear();
+        isNeeded = (mem.currentMonth != currentMonth || mem.currentYear != currentYear);
+    }
+
+    /**
+     * @notice Get consolidation reward preview
+     * @param tokenId Agent to check
+     * @return baseReward Base intelligence reward
+     * @return streakBonus Bonus from consolidation streak
+     * @return earlyBirdBonus Bonus for early consolidation
+     * @return totalReward Total intelligence reward
+     */
+    function getConsolidationReward(uint256 tokenId) external view returns (
+        uint256 baseReward,
+        uint256 streakBonus,
+        uint256 earlyBirdBonus,
+        uint256 totalReward
+    ) {
+        require(agents[tokenId].owner != address(0), "agent !exist");
+        baseReward = 2;
+        
+        uint256 streak = consolidationStreak[tokenId];
+        if (streak >= 12) streakBonus = 5;
+        else if (streak >= 6) streakBonus = 3;
+        else if (streak >= 3) streakBonus = 1;
+        else streakBonus = 0;
+        
+        AgentMemory memory mem = agentMemories[tokenId];
+        if (block.timestamp <= mem.lastConsolidation + 3 days) {
+            earlyBirdBonus = 1;
+        } else {
+            earlyBirdBonus = 0;
+        }
+        
+        totalReward = baseReward + streakBonus + earlyBirdBonus;
+    }
+
+    /**
+     * @notice Check if agent can process dream today (24h cooldown)
+     * @param tokenId Agent to check
+     * @return canProcess True if agent can process a dream today
+     */
+    function canProcessDreamToday(uint256 tokenId) external view returns (bool canProcess) {
+        require(agents[tokenId].owner != address(0), "agent !exist");
         PersonalityTraits memory t = agentPersonalities[tokenId];
         return t.lastDreamDate == 0 || block.timestamp >= t.lastDreamDate + 24 hours;
     }
+
+
 
     function getEvolutionStats(uint256 tokenId)
         external view override returns (uint256 totalEvolutions, uint256 evolutionRate, uint256 lastEvolution)
@@ -483,16 +579,7 @@ contract DreamscapeAgent is
         return (m.achieved, m.achievedAt);
     }
 
-    /**
-     * @dev *Deprecated* – original ERC‑7857 function retained for ABI stability
-     *      but returns an empty array because full history is now off‑chain.
-     */
-    function getDreamHistory(uint256, uint256) external pure override returns (bytes32[] memory) {
-        return new bytes32[](0);
-    }
-    function getConversationHistory(uint256, uint256) external pure override returns (bytes32[] memory) {
-        return new bytes32[](0);
-    }
+
 
     /* ─────────────────────────────────────────── ERC‑7857 TRANSFER ETC. ───── */
     
