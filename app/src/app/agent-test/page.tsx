@@ -6,7 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
 import { useAgentMint } from '../../hooks/agentHooks';
 import { useAgentDream } from '../../hooks/agentHooks';
-import AgentInfo from '../../components/agent/AgentInfo';
+import { AgentInfo } from '../../components/agent/AgentInfo';
 import DreamInput from '../../components/agent/DreamInput';
 import AgentChat from '../../components/agent/AgentChat';
 import { Brain, Sparkles, CheckCircle, AlertCircle, Loader2, Zap, Info, Moon, MessageCircle } from 'lucide-react';

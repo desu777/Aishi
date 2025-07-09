@@ -1,297 +1,114 @@
 'use client';
 
-import { useReadContract, useAccount } from 'wagmi';
-import { Address } from 'viem';
-import { useTheme } from '../../contexts/ThemeContext';
-import { galileoTestnet } from '../../config/chains';
-import contractData from '../../abi/frontend-contracts.json';
+import { useReadContract } from 'wagmi'
+import contractData from '../../abi/frontend-contracts.json'
+import { useWallet } from '../useWallet'
+import { Address } from 'viem'
 
-// Contract configuration
-const contractConfig = {
-  address: contractData.galileo.DreamscapeAgent.address as Address,
-  abi: contractData.galileo.DreamscapeAgent.abi,
-  chainId: galileoTestnet.id,
-} as const;
+export function useAgentRead(tokenId?: number) {
+  const { address } = useWallet()
+  const contractAddress = contractData.galileo.DreamscapeAgent.address as Address
+  const contractAbi = contractData.galileo.DreamscapeAgent.abi
 
-// TypeScript interfaces from ABI
-interface AgentInfo {
-  tokenId: bigint;
-  owner: Address;
-  agentName: string;
-  createdAt: bigint;
-  lastUpdated: bigint;
-  intelligenceLevel: bigint;
-  dreamCount: bigint;
-  conversationCount: bigint;
-  personalityInitialized: boolean;
-  totalEvolutions: bigint;
-  lastEvolutionDate: bigint;
-  personality: PersonalityTraits;
-}
-
-interface PersonalityTraits {
-  creativity: number;
-  analytical: number;
-  empathy: number;
-  intuition: number;
-  resilience: number;
-  curiosity: number;
-  dominantMood: string;
-  lastDreamDate: bigint;
-}
-
-interface EvolutionStats {
-  totalEvolutions: bigint;
-  evolutionRate: bigint;
-  lastEvolution: bigint;
-}
-
-/**
- * Hook for reading Dream Agent data from contract
- * Provides read-only access to agent information, personality traits, and statistics
- */
-export function useAgentRead() {
-  const { debugLog } = useTheme();
-  const { address } = useAccount();
-
-  // Get user's agent info via ownerToTokenId + getAgentInfo
-  const { data: userTokenIdFromMapping } = useReadContract({
-    ...contractConfig,
+  // Pobierz tokenId dla zalogowanego użytkownika
+  const { data: userTokenId, isLoading: tokenIdLoading, error: tokenIdError } = useReadContract({
+    address: contractAddress,
+    abi: contractAbi,
     functionName: 'ownerToTokenId',
-    args: [address as Address],
+    args: address ? [address] : undefined,
+  })
+
+  // Użyj tokenId lub userTokenId jako efectiveTokenId
+  const effectiveTokenId = tokenId || (userTokenId ? Number(userTokenId) : undefined)
+  const shouldLoadData = effectiveTokenId && effectiveTokenId > 0
+
+  // Pobierz dane agenta (zastępuje getAgentInfo)
+  const { data: agentData, isLoading: agentLoading, error: agentError } = useReadContract({
+    address: contractAddress,
+    abi: contractAbi,
+    functionName: 'agents',
+    args: shouldLoadData ? [BigInt(effectiveTokenId)] : undefined,
     query: {
-      enabled: !!address,
+      enabled: shouldLoadData,
     },
-  });
+  })
 
-  const { data: userAgent, isLoading: userAgentLoading, error: userAgentError } = useReadContract({
-    ...contractConfig,
-    functionName: 'getAgentInfo',
-    args: [userTokenIdFromMapping as bigint],
+  // Pobierz cechy osobowości agenta
+  const { data: personalityData, isLoading: personalityLoading, error: personalityError } = useReadContract({
+    address: contractAddress,
+    abi: contractAbi,
+    functionName: 'agentPersonalities',
+    args: shouldLoadData ? [BigInt(effectiveTokenId)] : undefined,
     query: {
-      enabled: !!address && !!userTokenIdFromMapping && (userTokenIdFromMapping as bigint) > BigInt(0),
+      enabled: shouldLoadData,
     },
-  });
+  })
 
-  // Get user's token ID
-  const { data: userTokenId, isLoading: userTokenIdLoading } = useReadContract({
-    ...contractConfig,
-    functionName: 'getUserTokenId',
+  // Pobierz pamięć agenta
+  const { data: memoryData, isLoading: memoryLoading, error: memoryError } = useReadContract({
+    address: contractAddress,
+    abi: contractAbi,
+    functionName: 'getAgentMemory',
+    args: shouldLoadData ? [BigInt(effectiveTokenId)] : undefined,
     query: {
-      enabled: !!address,
+      enabled: shouldLoadData,
     },
-  });
+  })
 
-  // Get total agents count
-  const { data: totalAgents, isLoading: totalAgentsLoading } = useReadContract({
-    ...contractConfig,
-    functionName: 'totalAgents',
-  });
-
-  // Get total supply
-  const { data: totalSupply, isLoading: totalSupplyLoading } = useReadContract({
-    ...contractConfig,
-    functionName: 'totalSupply',
-  });
-
-  // Get total fees collected
-  const { data: totalFeesCollected, isLoading: totalFeesLoading } = useReadContract({
-    ...contractConfig,
-    functionName: 'totalFeesCollected',
-  });
-
-  // Get next token ID
-  const { data: nextTokenId, isLoading: nextTokenIdLoading } = useReadContract({
-    ...contractConfig,
-    functionName: 'nextTokenId',
-  });
-
-  // Get max agents limit
-  const { data: maxAgents, isLoading: maxAgentsLoading } = useReadContract({
-    ...contractConfig,
-    functionName: 'MAX_AGENTS',
-  });
-
-  // Get contract info
-  const { data: contractName, isLoading: contractNameLoading } = useReadContract({
-    ...contractConfig,
-    functionName: 'name',
-  });
-
-  const { data: contractSymbol, isLoading: contractSymbolLoading } = useReadContract({
-    ...contractConfig,
-    functionName: 'symbol',
-  });
-
-  // Get user's balance (number of agents owned)
-  const { data: userBalance, isLoading: userBalanceLoading } = useReadContract({
-    ...contractConfig,
-    functionName: 'balanceOf',
-    args: [address as Address],
-    query: {
-      enabled: !!address,
+  // Kombinuj dane agenta z danymi osobowości
+  const combinedAgentData = agentData && personalityData ? {
+    // Dane podstawowe z agents()
+    owner: agentData[0] as Address,
+    agentName: agentData[1] as string,
+    createdAt: agentData[2] as bigint,
+    lastUpdated: agentData[3] as bigint,
+    intelligenceLevel: agentData[4] as bigint,
+    dreamCount: agentData[5] as bigint,
+    conversationCount: agentData[6] as bigint,
+    personalityInitialized: agentData[7] as boolean,
+    totalEvolutions: agentData[8] as bigint,
+    lastEvolutionDate: agentData[9] as bigint,
+    
+    // Dane osobowości z agentPersonalities()
+    personality: {
+      creativity: personalityData[0] as number,
+      analytical: personalityData[1] as number,
+      empathy: personalityData[2] as number,
+      intuition: personalityData[3] as number,
+      resilience: personalityData[4] as number,
+      curiosity: personalityData[5] as number,
+      dominantMood: personalityData[6] as string,
+      lastDreamDate: personalityData[7] as bigint,
     },
-  });
-
-  // Helper function to get agent info by tokenId
-  const getAgentInfo = (tokenId: bigint) => {
-    const { data, isLoading, error } = useReadContract({
-      ...contractConfig,
-      functionName: 'getAgentInfo',
-      args: [tokenId],
-      query: {
-        enabled: !!tokenId,
-      },
-    });
-
-    return { data, isLoading, error };
-  };
-
-  // Helper function to get personality traits by tokenId
-  const getPersonalityTraits = (tokenId: bigint) => {
-    const { data, isLoading, error } = useReadContract({
-      ...contractConfig,
-      functionName: 'getPersonalityTraits',
-      args: [tokenId],
-      query: {
-        enabled: !!tokenId,
-      },
-    });
-
-    return { data, isLoading, error };
-  };
-
-  // Helper function to get evolution stats by tokenId
-  const getEvolutionStats = (tokenId: bigint) => {
-    const { data, isLoading, error } = useReadContract({
-      ...contractConfig,
-      functionName: 'getEvolutionStats',
-      args: [tokenId],
-      query: {
-        enabled: !!tokenId,
-      },
-    });
-
-    return { data, isLoading, error };
-  };
-
-  // Helper function to get dream history by tokenId
-  const getDreamHistory = (tokenId: bigint, limit: bigint = BigInt(10)) => {
-    const { data, isLoading, error } = useReadContract({
-      ...contractConfig,
-      functionName: 'getDreamHistory',
-      args: [tokenId, limit],
-      query: {
-        enabled: !!tokenId,
-      },
-    });
-
-    return { data, isLoading, error };
-  };
-
-  // Helper function to get conversation history by tokenId
-  const getConversationHistory = (tokenId: bigint, limit: bigint = BigInt(10)) => {
-    const { data, isLoading, error } = useReadContract({
-      ...contractConfig,
-      functionName: 'getConversationHistory',
-      args: [tokenId, limit],
-      query: {
-        enabled: !!tokenId,
-      },
-    });
-
-    return { data, isLoading, error };
-  };
-
-  // Helper function to get owner of token
-  const getOwnerOf = (tokenId: bigint) => {
-    const { data, isLoading, error } = useReadContract({
-      ...contractConfig,
-      functionName: 'ownerOf',
-      args: [tokenId],
-      query: {
-        enabled: !!tokenId,
-      },
-    });
-
-    return { data, isLoading, error };
-  };
-
-  // Helper function to get agent name by tokenId
-  const getAgentName = (tokenId: bigint) => {
-    const { data, isLoading, error } = useReadContract({
-      ...contractConfig,
-      functionName: 'getAgentName',
-      args: [tokenId],
-      query: {
-        enabled: !!tokenId,
-      },
-    });
-
-    return { data, isLoading, error };
-  };
-
-  // Check if user has an agent - use userBalance instead of userTokenId
-  const hasAgent = !userAgentLoading && !userAgentError && userBalance && (userBalance as bigint) > BigInt(0);
-
-  // Use the actual token ID from mapping for display
-  const actualUserTokenId = userTokenIdFromMapping || userTokenId;
-
-  // Calculate remaining agents to mint
-  const leftToMint = maxAgents && totalAgents 
-    ? (maxAgents as bigint) - (totalAgents as bigint)
-    : undefined;
-
-  // Debug logging
-  if (process.env.NODE_ENV === 'development') {
-    debugLog('useAgentRead state', {
-      hasAgent,
-      userTokenId: userTokenId?.toString(),
-      userTokenIdFromMapping: userTokenIdFromMapping?.toString(),
-      actualUserTokenId: actualUserTokenId?.toString(),
-      totalAgents: totalAgents?.toString(),
-      maxAgents: maxAgents?.toString(),
-      leftToMint: leftToMint?.toString(),
-      userBalance: userBalance?.toString(),
-    });
-  }
+    
+    // Dane pamięci z getAgentMemory()
+    memory: memoryData ? {
+      memoryCoreHash: memoryData[0] as `0x${string}`,
+      currentDreamDailyHash: memoryData[1] as `0x${string}`,
+      currentConvDailyHash: memoryData[2] as `0x${string}`,
+      lastDreamMonthlyHash: memoryData[3] as `0x${string}`,
+      lastConvMonthlyHash: memoryData[4] as `0x${string}`,
+      lastConsolidation: memoryData[5] as bigint,
+      currentMonth: memoryData[6] as number,
+      currentYear: memoryData[7] as number,
+    } : undefined
+  } : undefined
 
   return {
-    // User's agent data
-    userAgent: userAgent as AgentInfo | undefined,
-    userTokenId: actualUserTokenId,
-    userAgentLoading,
-    userAgentError,
-    hasAgent,
-
-    // Contract statistics
-    totalAgents,
-    totalSupply,
-    totalFeesCollected,
-    nextTokenId,
-    maxAgents,
-    leftToMint,
-    contractName,
-    contractSymbol,
-
-    // User's balance
-    userBalance,
-
-    // Loading states
-    isLoading: userAgentLoading || totalAgentsLoading || totalSupplyLoading || userTokenIdLoading,
-    contractLoading: contractNameLoading || contractSymbolLoading || maxAgentsLoading,
-
-    // Helper functions for specific queries
-    getAgentInfo,
-    getPersonalityTraits,
-    getEvolutionStats,
-    getDreamHistory,
-    getConversationHistory,
-    getOwnerOf,
-    getAgentName,
-
-    // Contract info
-    contractAddress: contractConfig.address,
-    chainId: contractConfig.chainId,
-  };
+    // Dane agenta
+    agentData: combinedAgentData,
+    isLoading: agentLoading || personalityLoading || memoryLoading,
+    error: agentError || personalityError || memoryError,
+    
+    // TokenId użytkownika
+    userTokenId: userTokenId ? Number(userTokenId) : undefined,
+    isLoadingTokenId: tokenIdLoading,
+    tokenIdError,
+    
+    // Sprawdź czy użytkownik ma agenta
+    hasAgent: userTokenId ? Number(userTokenId) > 0 : false,
+    
+    // Aktualnie używane tokenId
+    effectiveTokenId,
+  }
 } 

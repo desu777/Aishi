@@ -1,464 +1,247 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useAgentRead } from '../../hooks/agentHooks';
+import { useAgentRead } from '../../hooks/agentHooks/useAgentRead';
+import { useWallet } from '../../hooks/useWallet';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Brain, Sparkles, TrendingUp, MessageCircle, Zap, User, Calendar, Hash, DollarSign, Users } from 'lucide-react';
+import { FC, useEffect, useState } from 'react';
 
-export default function AgentInfo() {
-  const { theme } = useTheme();
-  const {
-    userAgent,
-    userTokenId,
-    hasAgent,
-    userAgentLoading,
-    userAgentError,
-    totalAgents,
-    totalSupply,
-    totalFeesCollected,
-    nextTokenId,
-    maxAgents,
-    leftToMint,
-    contractName,
-    contractSymbol,
-    userBalance,
-    isLoading,
-    contractAddress,
-  } = useAgentRead();
+interface AgentInfoProps {
+  tokenId?: number;
+}
 
-  // Format BigInt values for display
-  const formatBigInt = (value: bigint | undefined) => {
-    if (!value) return '0';
-    return value.toString();
-  };
+export const AgentInfo: FC<AgentInfoProps> = ({ tokenId }) => {
+  const { debugLog } = useTheme();
+  const { address } = useWallet();
+  const [personalityAverage, setPersonalityAverage] = useState<number>(0);
+  
+  const { agentData, isLoading, error, userTokenId, hasAgent, effectiveTokenId, isLoadingTokenId } = useAgentRead(tokenId);
 
-  // Format timestamp
-  const formatTimestamp = (timestamp: bigint | undefined) => {
-    if (!timestamp) return 'Never';
-    const date = new Date(Number(timestamp) * 1000);
-    return date.toLocaleString();
-  };
+  // Oblicz średnią osobowości
+  useEffect(() => {
+    if (agentData?.personality) {
+      const traits = [
+        agentData.personality.creativity,
+        agentData.personality.analytical,
+        agentData.personality.empathy,
+        agentData.personality.intuition,
+        agentData.personality.resilience,
+        agentData.personality.curiosity,
+      ];
+      const average = traits.reduce((sum, trait) => sum + trait, 0) / traits.length;
+      setPersonalityAverage(Math.round(average));
+    }
+  }, [agentData]);
 
-  // Calculate personality average
-  const personalityAverage = useMemo(() => {
-    if (!userAgent?.personality) return 0;
-    const traits = [
-      userAgent.personality.creativity,
-      userAgent.personality.analytical,
-      userAgent.personality.empathy,
-      userAgent.personality.intuition,
-      userAgent.personality.resilience,
-      userAgent.personality.curiosity,
-    ];
-    return Math.round(traits.reduce((a, b) => a + b, 0) / traits.length);
-  }, [userAgent]);
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    debugLog('AgentInfo state', {
+      tokenId,
+      hasAgent,
+      userTokenId,
+      effectiveTokenId,
+      isLoading,
+      isLoadingTokenId,
+      agentData: agentData ? {
+        agentName: agentData.agentName,
+        intelligenceLevel: agentData.intelligenceLevel?.toString(),
+        dreamCount: agentData.dreamCount?.toString(),
+        conversationCount: agentData.conversationCount?.toString(),
+        personalityInitialized: agentData.personalityInitialized,
+        dominantMood: agentData.personality?.dominantMood,
+      } : null,
+      error: error?.message || 'No error'
+    });
+  }
 
-  // Get personality color based on value
-  const getPersonalityColor = (value: number) => {
-    if (value >= 80) return '#44ff44';
-    if (value >= 60) return '#ffff44';
-    if (value >= 40) return '#ff8844';
-    return '#ff4444';
-  };
-
-  // Get personality bar width
-  const getPersonalityBarWidth = (value: number) => {
-    return Math.max(5, (value / 100) * 100);
-  };
-
-  if (isLoading) {
+  // Pokaż loading tylko gdy ładujemy tokenId lub dane agenta
+  if (isLoadingTokenId || (hasAgent && isLoading)) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '40px',
-        color: theme.text.secondary
-      }}>
-        <Sparkles size={24} style={{ marginRight: '10px', animation: 'pulse 2s infinite' }} />
-        Loading agent information...
+      <div className="bg-gray-900/50 border border-gray-700/50 rounded-lg p-6">
+        <div className="flex justify-center items-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-3 text-gray-400">Loading agent information...</span>
+        </div>
       </div>
     );
   }
 
-  if (userAgentError) {
+  if (error) {
     return (
-      <div style={{
-        padding: '20px',
-        backgroundColor: theme.bg.card,
-        border: `1px solid #ff4444`,
-        borderRadius: '12px',
-        color: '#ff4444',
-        textAlign: 'center'
-      }}>
-        <p>Error loading agent information:</p>
-        <p style={{ fontSize: '14px', marginTop: '10px' }}>
-          {userAgentError.message}
+      <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4 text-red-400">
+        <p className="font-medium">Error loading agent information:</p>
+        <p className="text-sm mt-1">{error.message}</p>
+        <p className="text-xs mt-2 text-red-300">
+          Debug: tokenId={tokenId}, userTokenId={userTokenId}, effectiveTokenId={effectiveTokenId}
         </p>
+      </div>
+    );
+  }
+
+  if (!address) {
+    return (
+      <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4 text-yellow-400">
+        Please connect your wallet to view agent information.
       </div>
     );
   }
 
   if (!hasAgent) {
     return (
-      <div style={{
-        padding: '40px',
-        backgroundColor: theme.bg.card,
-        border: `1px solid ${theme.border}`,
-        borderRadius: '12px',
-        textAlign: 'center'
-      }}>
-        <Brain size={48} style={{ color: theme.text.secondary, marginBottom: '20px' }} />
-        <h3 style={{ color: theme.text.primary, marginBottom: '10px' }}>No Agent Found</h3>
-        <p style={{ color: theme.text.secondary, fontSize: '14px' }}>
-          You don't have a Dream Agent yet. Mint one to get started!
-        </p>
+      <div className="bg-gray-900/20 border border-gray-500/50 rounded-lg p-4 text-gray-400">
+        You don't have an agent yet. Create one to get started!
       </div>
     );
   }
 
+  if (!agentData) {
+    return (
+      <div className="bg-gray-900/20 border border-gray-500/50 rounded-lg p-4 text-gray-400">
+        {effectiveTokenId ? `Agent with ID ${effectiveTokenId} not found or data not loaded yet.` : 'Agent data not available.'}
+      </div>
+    );
+  }
+
+  // Formatuj daty
+  const formatDate = (timestamp: bigint) => {
+    return new Date(Number(timestamp) * 1000).toLocaleDateString();
+  };
+
+  const formatTime = (timestamp: bigint) => {
+    return new Date(Number(timestamp) * 1000).toLocaleString();
+  };
+
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '20px',
-      maxWidth: '1200px',
-      margin: '0 auto'
-    }}>
-      {/* Agent Basic Info */}
-      <div style={{
-        backgroundColor: theme.bg.card,
-        border: `1px solid ${theme.border}`,
-        borderRadius: '12px',
-        padding: '20px'
-      }}>
-        <h3 style={{
-          color: theme.text.primary,
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <Brain size={20} />
-          Agent Profile
-        </h3>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '20px'
-        }}>
+    <div className="bg-gray-900/50 border border-gray-700/50 rounded-lg p-6 space-y-6">
+      
+      {/* Agent Profile */}
+      <div className="border-b border-gray-700/50 pb-4">
+        <h3 className="text-xl font-bold text-white mb-4">Agent Profile</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label style={{ color: theme.text.secondary, fontSize: '12px' }}>Agent Name</label>
-            <div style={{ 
-              color: theme.text.primary, 
-              fontWeight: '600', 
-              fontSize: '18px',
-              marginTop: '5px'
-            }}>
-              {userAgent?.agentName || 'Unnamed Agent'}
-            </div>
+            <p className="text-gray-400 text-sm">Agent Name</p>
+            <p className="text-white font-medium">{agentData.agentName}</p>
           </div>
-          
           <div>
-            <label style={{ color: theme.text.secondary, fontSize: '12px' }}>Token ID</label>
-            <div style={{ 
-              color: theme.text.primary, 
-              fontWeight: '600',
-              marginTop: '5px'
-            }}>
-              #{formatBigInt(userTokenId as bigint)}
-            </div>
+            <p className="text-gray-400 text-sm">Token ID</p>
+            <p className="text-white font-medium">{effectiveTokenId}</p>
           </div>
-          
           <div>
-            <label style={{ color: theme.text.secondary, fontSize: '12px' }}>Created</label>
-            <div style={{ 
-              color: theme.text.primary, 
-              marginTop: '5px'
-            }}>
-              {formatTimestamp(userAgent?.createdAt)}
-            </div>
+            <p className="text-gray-400 text-sm">Created</p>
+            <p className="text-white font-medium">{formatDate(agentData.createdAt)}</p>
           </div>
-          
           <div>
-            <label style={{ color: theme.text.secondary, fontSize: '12px' }}>Intelligence Level</label>
-            <div style={{ 
-              color: theme.accent.primary, 
-              fontWeight: '600',
-              marginTop: '5px'
-            }}>
-              Level {formatBigInt(userAgent?.intelligenceLevel)}
-            </div>
+            <p className="text-gray-400 text-sm">Last Updated</p>
+            <p className="text-white font-medium">{formatTime(agentData.lastUpdated)}</p>
+          </div>
+          <div>
+            <p className="text-gray-400 text-sm">Intelligence Level</p>
+            <p className="text-white font-medium">{agentData.intelligenceLevel.toString()}</p>
+          </div>
+          <div>
+            <p className="text-gray-400 text-sm">Personality Initialized</p>
+            <p className={`font-medium ${agentData.personalityInitialized ? 'text-green-400' : 'text-red-400'}`}>
+              {agentData.personalityInitialized ? 'Yes' : 'No'}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Agent Statistics */}
-      <div style={{
-        backgroundColor: theme.bg.card,
-        border: `1px solid ${theme.border}`,
-        borderRadius: '12px',
-        padding: '20px'
-      }}>
-        <h3 style={{
-          color: theme.text.primary,
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <TrendingUp size={20} />
-          Agent Statistics
-        </h3>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '20px'
-        }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '15px',
-            backgroundColor: theme.bg.panel,
-            borderRadius: '8px'
-          }}>
-            <Sparkles size={24} style={{ color: theme.accent.primary, marginBottom: '10px' }} />
-            <div style={{ fontSize: '24px', fontWeight: '600', color: theme.text.primary }}>
-              {formatBigInt(userAgent?.dreamCount)}
-            </div>
-            <div style={{ fontSize: '12px', color: theme.text.secondary }}>Dreams</div>
+      <div className="border-b border-gray-700/50 pb-4">
+        <h3 className="text-xl font-bold text-white mb-4">Agent Statistics</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-blue-400">{agentData.dreamCount.toString()}</p>
+            <p className="text-gray-400 text-sm">Dreams</p>
           </div>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '15px',
-            backgroundColor: theme.bg.panel,
-            borderRadius: '8px'
-          }}>
-            <MessageCircle size={24} style={{ color: theme.accent.primary, marginBottom: '10px' }} />
-            <div style={{ fontSize: '24px', fontWeight: '600', color: theme.text.primary }}>
-              {formatBigInt(userAgent?.conversationCount)}
-            </div>
-            <div style={{ fontSize: '12px', color: theme.text.secondary }}>Conversations</div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-green-400">{agentData.conversationCount.toString()}</p>
+            <p className="text-gray-400 text-sm">Conversations</p>
           </div>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '15px',
-            backgroundColor: theme.bg.panel,
-            borderRadius: '8px'
-          }}>
-            <Zap size={24} style={{ color: theme.accent.primary, marginBottom: '10px' }} />
-            <div style={{ fontSize: '24px', fontWeight: '600', color: theme.text.primary }}>
-              {formatBigInt(userAgent?.totalEvolutions)}
-            </div>
-            <div style={{ fontSize: '12px', color: theme.text.secondary }}>Evolutions</div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-purple-400">{agentData.totalEvolutions.toString()}</p>
+            <p className="text-gray-400 text-sm">Evolutions</p>
           </div>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '15px',
-            backgroundColor: theme.bg.panel,
-            borderRadius: '8px'
-          }}>
-            <Brain size={24} style={{ color: theme.accent.primary, marginBottom: '10px' }} />
-            <div style={{ fontSize: '24px', fontWeight: '600', color: theme.text.primary }}>
-              {personalityAverage}%
-            </div>
-            <div style={{ fontSize: '12px', color: theme.text.secondary }}>Personality Avg</div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-orange-400">{personalityAverage}</p>
+            <p className="text-gray-400 text-sm">Personality Avg</p>
           </div>
         </div>
       </div>
 
       {/* Personality Traits */}
-      {userAgent?.personality && (
-        <div style={{
-          backgroundColor: theme.bg.card,
-          border: `1px solid ${theme.border}`,
-          borderRadius: '12px',
-          padding: '20px'
-        }}>
-          <h3 style={{
-            color: theme.text.primary,
-            marginBottom: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
-            <User size={20} />
-            Personality Traits
-          </h3>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '15px'
-          }}>
+      {agentData.personality && (
+        <div className="border-b border-gray-700/50 pb-4">
+          <h3 className="text-xl font-bold text-white mb-4">Personality Traits</h3>
+          <div className="space-y-3">
             {[
-              { name: 'Creativity', value: userAgent.personality.creativity },
-              { name: 'Analytical', value: userAgent.personality.analytical },
-              { name: 'Empathy', value: userAgent.personality.empathy },
-              { name: 'Intuition', value: userAgent.personality.intuition },
-              { name: 'Resilience', value: userAgent.personality.resilience },
-              { name: 'Curiosity', value: userAgent.personality.curiosity },
+              { name: 'Creativity', value: agentData.personality.creativity, color: 'bg-purple-500' },
+              { name: 'Analytical', value: agentData.personality.analytical, color: 'bg-blue-500' },
+              { name: 'Empathy', value: agentData.personality.empathy, color: 'bg-green-500' },
+              { name: 'Intuition', value: agentData.personality.intuition, color: 'bg-yellow-500' },
+              { name: 'Resilience', value: agentData.personality.resilience, color: 'bg-red-500' },
+              { name: 'Curiosity', value: agentData.personality.curiosity, color: 'bg-pink-500' },
             ].map((trait) => (
-              <div key={trait.name} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '15px'
-              }}>
-                <div style={{
-                  minWidth: '80px',
-                  fontSize: '14px',
-                  color: theme.text.secondary,
-                  fontWeight: '500'
-                }}>
-                  {trait.name}
+              <div key={trait.name} className="flex items-center space-x-3">
+                <div className="w-20 text-sm text-gray-400">{trait.name}</div>
+                <div className="flex-1 bg-gray-700 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full ${trait.color}`}
+                    style={{ width: `${trait.value}%` }}
+                  />
                 </div>
-                <div style={{
-                  flex: 1,
-                  height: '8px',
-                  backgroundColor: theme.bg.panel,
-                  borderRadius: '4px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${getPersonalityBarWidth(trait.value)}%`,
-                    backgroundColor: getPersonalityColor(trait.value),
-                    borderRadius: '4px',
-                    transition: 'width 0.3s ease'
-                  }} />
-                </div>
-                <div style={{
-                  minWidth: '35px',
-                  fontSize: '14px',
-                  color: theme.text.primary,
-                  fontWeight: '600'
-                }}>
-                  {trait.value}
-                </div>
+                <div className="w-8 text-sm text-white">{trait.value}</div>
               </div>
             ))}
           </div>
-          
-          <div style={{
-            marginTop: '20px',
-            padding: '15px',
-            backgroundColor: theme.bg.panel,
-            borderRadius: '8px'
-          }}>
-            <div style={{
-              fontSize: '14px',
-              color: theme.text.secondary,
-              marginBottom: '5px'
-            }}>
-              Dominant Mood
+          <div className="mt-4 p-3 bg-gray-800/50 rounded-lg">
+            <p className="text-gray-400 text-sm">Dominant Mood</p>
+            <p className="text-white font-medium">{agentData.personality.dominantMood}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Memory System */}
+      {agentData.memory && (
+        <div className="border-b border-gray-700/50 pb-4">
+          <h3 className="text-xl font-bold text-white mb-4">Memory System</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-gray-400 text-sm">Current Month</p>
+              <p className="text-white font-medium">{agentData.memory.currentMonth}/{agentData.memory.currentYear}</p>
             </div>
-            <div style={{
-              fontSize: '16px',
-              color: theme.text.primary,
-              fontWeight: '600'
-            }}>
-              {userAgent.personality.dominantMood || 'Neutral'}
+            <div>
+              <p className="text-gray-400 text-sm">Last Consolidation</p>
+              <p className="text-white font-medium">
+                {agentData.memory.lastConsolidation > 0 ? formatTime(agentData.memory.lastConsolidation) : 'Never'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Memory Core Hash</p>
+              <p className="text-white font-mono text-xs">{agentData.memory.memoryCoreHash}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Current Dream Hash</p>
+              <p className="text-white font-mono text-xs">{agentData.memory.currentDreamDailyHash}</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Contract Statistics */}
-      <div style={{
-        backgroundColor: theme.bg.card,
-        border: `1px solid ${theme.border}`,
-        borderRadius: '12px',
-        padding: '20px'
-      }}>
-        <h3 style={{
-          color: theme.text.primary,
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <Hash size={20} />
-          Network Statistics
-        </h3>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '20px'
-        }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '15px',
-            backgroundColor: theme.bg.panel,
-            borderRadius: '8px'
-          }}>
-            <Users size={24} style={{ color: theme.accent.primary, marginBottom: '10px' }} />
-            <div style={{ fontSize: '24px', fontWeight: '600', color: theme.text.primary }}>
-              {formatBigInt(totalAgents as bigint)}
-            </div>
-            <div style={{ fontSize: '12px', color: theme.text.secondary }}>Total Agents</div>
+      {/* Network Information */}
+      <div>
+        <h3 className="text-xl font-bold text-white mb-4">Network Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-gray-400 text-sm">Owner</p>
+            <p className="text-white font-mono text-xs">{agentData.owner}</p>
           </div>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '15px',
-            backgroundColor: theme.bg.panel,
-            borderRadius: '8px'
-          }}>
-            <Sparkles size={24} style={{ color: theme.accent.primary, marginBottom: '10px' }} />
-            <div style={{ fontSize: '24px', fontWeight: '600', color: theme.text.primary }}>
-              {leftToMint ? formatBigInt(leftToMint) : 'N/A'}
-            </div>
-            <div style={{ fontSize: '12px', color: theme.text.secondary }}>Left to Mint</div>
-          </div>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '15px',
-            backgroundColor: theme.bg.panel,
-            borderRadius: '8px'
-          }}>
-            <DollarSign size={24} style={{ color: theme.accent.primary, marginBottom: '10px' }} />
-            <div style={{ fontSize: '24px', fontWeight: '600', color: theme.text.primary }}>
-              {formatBigInt(totalFeesCollected as bigint)} OG
-            </div>
-            <div style={{ fontSize: '12px', color: theme.text.secondary }}>Fees Collected</div>
-          </div>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '15px',
-            backgroundColor: theme.bg.panel,
-            borderRadius: '8px'
-          }}>
-            <Hash size={24} style={{ color: theme.accent.primary, marginBottom: '10px' }} />
-            <div style={{ fontSize: '24px', fontWeight: '600', color: theme.text.primary }}>
-              {formatBigInt(nextTokenId as bigint)}
-            </div>
-            <div style={{ fontSize: '12px', color: theme.text.secondary }}>Next Token ID</div>
+          <div>
+            <p className="text-gray-400 text-sm">Network</p>
+            <p className="text-white font-medium">Galileo Testnet</p>
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}; 

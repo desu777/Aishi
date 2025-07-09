@@ -619,6 +619,22 @@ contract DreamscapeAgent is
         return ownerToTokenId[owner] == 0 ? 0 : 1;
     }
 
+    /**
+     * @notice Returns the name of the contract collection
+     * @return The contract name "DreamscapeAgent"
+     */
+    function name() external pure returns (string memory) {
+        return "DreamscapeAgent";
+    }
+
+    /**
+     * @notice Returns the symbol of the contract collection  
+     * @return The contract symbol "DREAM"
+     */
+    function symbol() external pure returns (string memory) {
+        return "DREAM";
+    }
+
     function supportsInterface(bytes4 id) public view override returns (bool) {
         return
             id == type(IERC721).interfaceId ||
