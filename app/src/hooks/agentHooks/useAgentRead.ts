@@ -33,11 +33,11 @@ export function useAgentRead(tokenId?: number) {
     },
   })
 
-  // Pobierz cechy osobowości agenta
-  const { data: personalityData, isLoading: personalityLoading, error: personalityError } = useReadContract({
+  // Pobierz cechy osobowości agenta - NOWA FUNKCJA getPersonalityTraits()
+  const { data: personalityTraits, isLoading: personalityTraitsLoading, error: personalityTraitsError } = useReadContract({
     address: contractAddress,
     abi: contractAbi,
-    functionName: 'agentPersonalities',
+    functionName: 'getPersonalityTraits',
     args: shouldLoadData ? [BigInt(effectiveTokenId)] : undefined,
     query: {
       enabled: shouldLoadData,
@@ -55,8 +55,30 @@ export function useAgentRead(tokenId?: number) {
     },
   })
 
+  // NOWA FUNKCJA: Sprawdź czy można przetwarzać sen dzisiaj
+  const { data: canProcessDreamToday, isLoading: canProcessLoading, error: canProcessError } = useReadContract({
+    address: contractAddress,
+    abi: contractAbi,
+    functionName: 'canProcessDreamToday',
+    args: shouldLoadData ? [BigInt(effectiveTokenId)] : undefined,
+    query: {
+      enabled: shouldLoadData,
+    },
+  })
+
+  // NOWA FUNKCJA: Pobierz dostęp do pamięci
+  const { data: memoryAccess, isLoading: memoryAccessLoading, error: memoryAccessError } = useReadContract({
+    address: contractAddress,
+    abi: contractAbi,
+    functionName: 'getMemoryAccess',
+    args: shouldLoadData ? [BigInt(effectiveTokenId)] : undefined,
+    query: {
+      enabled: shouldLoadData,
+    },
+  })
+
   // Kombinuj dane agenta z danymi osobowości
-  const combinedAgentData = agentData && personalityData ? {
+  const combinedAgentData = agentData && personalityTraits ? {
     // Dane podstawowe z agents()
     owner: agentData[0] as Address,
     agentName: agentData[1] as string,
@@ -69,16 +91,23 @@ export function useAgentRead(tokenId?: number) {
     totalEvolutions: agentData[8] as bigint,
     lastEvolutionDate: agentData[9] as bigint,
     
-    // Dane osobowości z agentPersonalities()
+    // Dane osobowości z getPersonalityTraits() - ZAKTUALIZOWANE
     personality: {
-      creativity: personalityData[0] as number,
-      analytical: personalityData[1] as number,
-      empathy: personalityData[2] as number,
-      intuition: personalityData[3] as number,
-      resilience: personalityData[4] as number,
-      curiosity: personalityData[5] as number,
-      dominantMood: personalityData[6] as string,
-      lastDreamDate: personalityData[7] as bigint,
+      creativity: personalityTraits[0] as number,
+      analytical: personalityTraits[1] as number,
+      empathy: personalityTraits[2] as number,
+      intuition: personalityTraits[3] as number,
+      resilience: personalityTraits[4] as number,
+      curiosity: personalityTraits[5] as number,
+      dominantMood: personalityTraits[6] as string,
+      lastDreamDate: personalityTraits[7] as bigint,
+      // Dodaj unikalne features z getPersonalityTraits()
+      uniqueFeatures: personalityTraits[8] as Array<{
+        name: string;
+        description: string;
+        intensity: number;
+        addedAt: bigint;
+      }>,
     },
     
     // Dane pamięci z getAgentMemory()
@@ -97,8 +126,8 @@ export function useAgentRead(tokenId?: number) {
   return {
     // Dane agenta
     agentData: combinedAgentData,
-    isLoading: agentLoading || personalityLoading || memoryLoading,
-    error: agentError || personalityError || memoryError,
+    isLoading: agentLoading || personalityTraitsLoading || memoryLoading || canProcessLoading || memoryAccessLoading,
+    error: agentError || personalityTraitsError || memoryError || canProcessError || memoryAccessError,
     
     // TokenId użytkownika
     userTokenId: userTokenId ? Number(userTokenId) : undefined,
@@ -110,5 +139,37 @@ export function useAgentRead(tokenId?: number) {
     
     // Aktualnie używane tokenId
     effectiveTokenId,
+
+    // NOWE FUNKCJE - wyeksportowane z hook'a
+    canProcessDreamToday: canProcessDreamToday as boolean,
+    isLoadingCanProcess: canProcessLoading,
+    canProcessError,
+
+    memoryAccess: memoryAccess ? {
+      monthsAccessible: memoryAccess[0] as number,
+      memoryDepth: memoryAccess[1] as string,
+    } : undefined,
+    isLoadingMemoryAccess: memoryAccessLoading,
+    memoryAccessError,
+
+    // Osobowość z nowymi danymi
+    personalityTraits: personalityTraits ? {
+      creativity: personalityTraits[0] as number,
+      analytical: personalityTraits[1] as number,
+      empathy: personalityTraits[2] as number,
+      intuition: personalityTraits[3] as number,
+      resilience: personalityTraits[4] as number,
+      curiosity: personalityTraits[5] as number,
+      dominantMood: personalityTraits[6] as string,
+      lastDreamDate: personalityTraits[7] as bigint,
+      uniqueFeatures: personalityTraits[8] as Array<{
+        name: string;
+        description: string;
+        intensity: number;
+        addedAt: bigint;
+      }>,
+    } : undefined,
+    isLoadingPersonalityTraits: personalityTraitsLoading,
+    personalityTraitsError,
   }
 } 

@@ -192,13 +192,17 @@ export function useAgentDream() {
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
   
-  // Agent read hooks for context
+  // Agent read hooks for context - AKTUALIZACJA KROK 2
   const {
-    userAgent,
+    agentData,
     userTokenId,
     hasAgent,
-    getDreamHistory,
-    getAgentInfo
+    canProcessDreamToday,
+    personalityTraits,
+    memoryAccess,
+    isLoadingCanProcess,
+    isLoadingPersonalityTraits,
+    isLoadingMemoryAccess
   } = useAgentRead();
 
   // Local state for dream processing
@@ -324,55 +328,248 @@ export function useAgentDream() {
     debugLog('Dream processing state reset');
   };
 
-  // Step 1: Build context from agent history and level
-  const buildDreamContext = async (tokenId: bigint): Promise<string> => {
+  // Helper function to fetch previous dreams from 0G Storage
+  const fetchPreviousDreams = async (dreamDailyHash: string): Promise<any[]> => {
     try {
-      debugLog('Building dream context', { tokenId: tokenId.toString() });
+      if (!dreamDailyHash || dreamDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+        return [];
+      }
 
-      // Get agent info for level and personality
-      const { data: agentInfoData } = getAgentInfo(tokenId);
-      const agentInfo = agentInfoData as AgentInfo | undefined;
+      debugLog('Fetching previous dreams from 0G Storage', { dreamDailyHash });
       
-      // Get dream history (last 5 dreams)
-      const { data: dreamHashesData } = getDreamHistory(tokenId, BigInt(5));
-      const dreamHashes = dreamHashesData as string[] | undefined;
+      // Download previous dreams from 0G Storage - naprawiam typ zwracany
+      const [downloadData, downloadError] = await downloadByRootHashAPI(dreamDailyHash, STORAGE_CONFIG.storageRpc);
       
+      if (!downloadError && downloadData) {
+        const dreamsData = JSON.parse(new TextDecoder().decode(downloadData));
+        // If it's an array, return it; if it's single object, wrap in array
+        return Array.isArray(dreamsData) ? dreamsData : [dreamsData];
+      }
+      
+      return [];
+    } catch (error) {
+      debugLog('Error fetching previous dreams', { error, dreamDailyHash });
+      return [];
+    }
+  };
+
+  // Fetch monthly consolidated dreams
+  const fetchMonthlyDreams = async (monthlyHash: string): Promise<any[]> => {
+    try {
+      if (!monthlyHash || monthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+        return [];
+      }
+
+      debugLog('Fetching monthly dreams from 0G Storage', { monthlyHash });
+      
+      const [downloadData, downloadError] = await downloadByRootHashAPI(monthlyHash, STORAGE_CONFIG.storageRpc);
+      
+      if (!downloadError && downloadData) {
+        const monthlyData = JSON.parse(new TextDecoder().decode(downloadData));
+        // Monthly data might have different structure - handle accordingly
+        if (monthlyData.monthlyDreams) {
+          return monthlyData.monthlyDreams;
+        } else if (Array.isArray(monthlyData)) {
+          return monthlyData;
+        } else {
+          return [monthlyData];
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      debugLog('Error fetching monthly dreams', { error, monthlyHash });
+      return [];
+    }
+  };
+
+  // Fetch yearly core memory
+  const fetchCoreMemory = async (coreHash: string): Promise<any> => {
+    try {
+      if (!coreHash || coreHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+        return null;
+      }
+
+      debugLog('Fetching core memory from 0G Storage', { coreHash });
+      
+      const [downloadData, downloadError] = await downloadByRootHashAPI(coreHash, STORAGE_CONFIG.storageRpc);
+      
+      if (!downloadError && downloadData) {
+        const coreData = JSON.parse(new TextDecoder().decode(downloadData));
+        return coreData;
+      }
+      
+      return null;
+    } catch (error) {
+      debugLog('Error fetching core memory', { error, coreHash });
+      return null;
+    }
+  };
+
+  // Step 1: Build context from agent history and level - KROK 2 AKTUALIZACJA
+  const buildDreamContext = async (tokenId: bigint, dreamInput?: string): Promise<string> => {
+    try {
+      debugLog('Building dream context - KROK 2', { tokenId: tokenId.toString(), hasDreamInput: !!dreamInput });
+
+      // SPRAWDZENIE 1: Czy można przetwarzać sen dzisiaj
+      if (!canProcessDreamToday) {
+        throw new Error('Cannot process dream today. Please wait 24 hours since last dream.');
+      }
+
       let context = `Agent Context:\n`;
       
-      if (agentInfo) {
-        context += `- Agent Name: ${agentInfo.agentName}\n`;
-        context += `- Intelligence Level: ${agentInfo.intelligenceLevel}\n`;
-        context += `- Dream Count: ${agentInfo.dreamCount}\n`;
-        context += `- Conversation Count: ${agentInfo.conversationCount}\n`;
-        context += `- Total Evolutions: ${agentInfo.totalEvolutions}\n`;
+      // DANE PODSTAWOWE AGENTA
+      if (agentData) {
+        context += `- Agent Name: ${agentData.agentName}\n`;
+        context += `- Intelligence Level: ${agentData.intelligenceLevel}\n`;
+        context += `- Dream Count: ${agentData.dreamCount}\n`;
+        context += `- Conversation Count: ${agentData.conversationCount}\n`;
+        context += `- Total Evolutions: ${agentData.totalEvolutions}\n`;
+        context += `- Personality Initialized: ${agentData.personalityInitialized}\n`;
+      }
+
+      // DANE OSOBOWOŚCI + UNIKALNE FEATURES
+      if (personalityTraits) {
+        context += `- Current Personality:\n`;
+        context += `  * Creativity: ${personalityTraits.creativity}/100\n`;
+        context += `  * Analytical: ${personalityTraits.analytical}/100\n`;
+        context += `  * Empathy: ${personalityTraits.empathy}/100\n`;
+        context += `  * Intuition: ${personalityTraits.intuition}/100\n`;
+        context += `  * Resilience: ${personalityTraits.resilience}/100\n`;
+        context += `  * Curiosity: ${personalityTraits.curiosity}/100\n`;
+        context += `  * Dominant Mood: ${personalityTraits.dominantMood}\n`;
         
-        if (agentInfo.personality) {
-          context += `- Current Personality:\n`;
-          context += `  * Creativity: ${agentInfo.personality.creativity}/100\n`;
-          context += `  * Analytical: ${agentInfo.personality.analytical}/100\n`;
-          context += `  * Empathy: ${agentInfo.personality.empathy}/100\n`;
-          context += `  * Intuition: ${agentInfo.personality.intuition}/100\n`;
-          context += `  * Resilience: ${agentInfo.personality.resilience}/100\n`;
-          context += `  * Curiosity: ${agentInfo.personality.curiosity}/100\n`;
-          context += `  * Dominant Mood: ${agentInfo.personality.dominantMood}\n`;
+        // UNIKALNE FEATURES
+        if (personalityTraits.uniqueFeatures && personalityTraits.uniqueFeatures.length > 0) {
+          context += `- Unique Features (${personalityTraits.uniqueFeatures.length}):\n`;
+          personalityTraits.uniqueFeatures.forEach(feature => {
+            context += `  * ${feature.name}: ${feature.description} (Intensity: ${feature.intensity})\n`;
+          });
         }
       }
 
-      // Add recent dreams context if available
-      if (dreamHashes && dreamHashes.length > 0) {
-        context += `\nRecent Dreams: ${dreamHashes.length} previous dreams recorded\n`;
-        // Note: In real implementation, we'd fetch and include dream content from storage
-      } else {
-        context += `\nThis is the agent's first dream.\n`;
+      // DOSTĘP DO PAMIĘCI
+      if (memoryAccess) {
+        context += `- Memory Access:\n`;
+        context += `  * Months Accessible: ${memoryAccess.monthsAccessible}\n`;
+        context += `  * Memory Depth: ${memoryAccess.memoryDepth}\n`;
       }
 
-      context += `\nPlease analyze the new dream considering this context.\n`;
+      // HIERARCHICAL MEMORY FETCHING BASED ON INTELLIGENCE LEVEL
+      let allMemories = {
+        daily: [] as any[],
+        monthly: [] as any[],
+        coreMemory: null as any
+      };
+
+      // Get intelligence level and memory access
+      const intelligenceLevel = Number(agentData?.intelligenceLevel || 1);
+      const monthsAccessible = memoryAccess?.monthsAccessible || 1;
+
+      debugLog('Memory access based on intelligence', { 
+        intelligenceLevel, 
+        monthsAccessible,
+        memoryDepth: memoryAccess?.memoryDepth 
+      });
+
+      // LEVEL 1: DAILY DREAMS (always accessible)
+      if (agentData?.memory?.currentDreamDailyHash) {
+        allMemories.daily = await fetchPreviousDreams(agentData.memory.currentDreamDailyHash);
+        debugLog('Fetched daily dreams', { count: allMemories.daily.length });
+      }
+
+      // LEVEL 2: MONTHLY DREAMS (if monthsAccessible >= 1 and has monthly hash)
+      if (monthsAccessible >= 1 && agentData?.memory?.lastDreamMonthlyHash) {
+        allMemories.monthly = await fetchMonthlyDreams(agentData.memory.lastDreamMonthlyHash);
+        debugLog('Fetched monthly dreams', { count: allMemories.monthly.length });
+      }
+
+      // LEVEL 3: CORE MEMORY (if monthsAccessible >= 12 and has core hash)
+      if (monthsAccessible >= 12 && agentData?.memory?.memoryCoreHash) {
+        allMemories.coreMemory = await fetchCoreMemory(agentData.memory.memoryCoreHash);
+        debugLog('Fetched core memory', { hasCore: !!allMemories.coreMemory });
+      }
+
+      // BUILD CONTEXT FROM HIERARCHICAL MEMORIES
+      context += `\n=== MEMORY HIERARCHY (${memoryAccess?.memoryDepth || 'current month only'}) ===\n`;
+
+      // Add daily dreams to context
+      if (allMemories.daily.length > 0) {
+        context += `\nRecent Daily Dreams (${allMemories.daily.length}):\n`;
+        allMemories.daily.slice(-5).forEach((dream, index) => { // Show last 5 daily dreams
+          const dreamData = dream.dreams ? dream.dreams[dream.dreams.length - 1] : dream;
+          context += `${index + 1}. ${dreamData.content || dreamData.dreamText || 'No content'}\n`;
+          if (dreamData.emotions) {
+            context += `   Emotions: ${dreamData.emotions.join(', ')}\n`;
+          }
+          if (dreamData.mood_after_waking) {
+            context += `   Mood after: ${dreamData.mood_after_waking}\n`;
+          }
+          context += `\n`;
+        });
+      }
+
+      // Add monthly summaries to context
+      if (allMemories.monthly.length > 0) {
+        context += `\nMonthly Dream Summaries (${allMemories.monthly.length} months):\n`;
+        allMemories.monthly.slice(-6).forEach((monthData, index) => { // Show last 6 months
+          context += `Month ${index + 1}: ${monthData.summary || monthData.themes?.join(', ') || 'No summary'}\n`;
+          if (monthData.dominantThemes) {
+            context += `   Dominant themes: ${monthData.dominantThemes.join(', ')}\n`;
+          }
+          if (monthData.personalityShift) {
+            context += `   Personality shift: ${monthData.personalityShift}\n`;
+          }
+          context += `\n`;
+        });
+      }
+
+      // Add core memory insights to context
+      if (allMemories.coreMemory) {
+        context += `\nCore Memory Insights:\n`;
+        if (allMemories.coreMemory.yearlyReflection) {
+          context += `- Yearly reflection: ${allMemories.coreMemory.yearlyReflection}\n`;
+        }
+        if (allMemories.coreMemory.personalityEvolution) {
+          context += `- Personality evolution: ${allMemories.coreMemory.personalityEvolution}\n`;
+        }
+        if (allMemories.coreMemory.majorThemes) {
+          context += `- Major themes: ${allMemories.coreMemory.majorThemes.join(', ')}\n`;
+        }
+        context += `\n`;
+      }
+
+      // Add memory access note
+      context += `\nMemory Access Level: ${memoryAccess?.memoryDepth || 'basic'}\n`;
+      context += `Intelligence Level: ${intelligenceLevel}\n`;
       
-      debugLog('Dream context built', { contextLength: context.length });
+      if (allMemories.daily.length === 0 && allMemories.monthly.length === 0 && !allMemories.coreMemory) {
+        context += `\nThis is the agent's first dream - no previous memories available.\n`;
+      }
+
+      // DODANIE AKTUALNEGO SNU DO KONTEKSTU
+      if (dreamInput && dreamInput.trim()) {
+        context += `\n=== CURRENT DREAM TO ANALYZE ===\n`;
+        context += `Dream Description: "${dreamInput.trim()}"\n`;
+        context += `\nPlease analyze this dream considering the above context and personality.\n`;
+      } else {
+        context += `\nContext prepared for dream analysis.\n`;
+      }
+      
+      debugLog('Dream context built - KROK 2', { 
+        contextLength: context.length,
+        dailyDreamsCount: allMemories.daily.length,
+        monthlyDreamsCount: allMemories.monthly.length,
+        hasCoreMemory: !!allMemories.coreMemory,
+        hasPersonalityTraits: !!personalityTraits,
+        hasMemoryAccess: !!memoryAccess,
+        hasDreamInput: !!dreamInput
+      });
+      
       return context;
     } catch (error) {
-      debugLog('Error building dream context', { error });
-      return 'Agent Context: Unable to load previous context.\n';
+      debugLog('Error building dream context - KROK 2', { error });
+      throw error;
     }
   };
 
@@ -507,33 +704,108 @@ Your entire response must be a single, valid JSON object. Do not add any text be
     }
   };
 
-  // Step 3: Save to 0G Storage
+  // Step 3: Save to 0G Storage - KROK 3 APPEND-ONLY PATTERN
   const saveDreamToStorage = async (dreamInput: DreamInput, analysis: DreamAnalysisResult): Promise<string> => {
     try {
-      debugLog('Saving dream to 0G Storage');
+      debugLog('Saving dream to 0G Storage - KROK 3 APPEND-ONLY');
 
-      // Create dream data object
-      const dreamData = {
-        timestamp: new Date().toISOString(),
+      // KROK 3.1: Pobierz istniejący plik daily_dreams (jeśli istnieje)
+      let existingDreams: any[] = [];
+      let currentFileNumber = 0;
+      
+      if (agentData?.memory?.currentDreamDailyHash && 
+          agentData.memory.currentDreamDailyHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+        
+        debugLog('Fetching existing dreams file', { 
+          currentDreamDailyHash: agentData.memory.currentDreamDailyHash 
+        });
+        
+        try {
+          // Pobierz istniejący plik z 0G Storage
+          const [downloadData, downloadError] = await downloadByRootHashAPI(
+            agentData.memory.currentDreamDailyHash, 
+            STORAGE_CONFIG.storageRpc
+          );
+          
+          if (!downloadError && downloadData) {
+            const existingData = JSON.parse(new TextDecoder().decode(downloadData));
+            
+            // Sprawdź czy to array czy single object
+            if (Array.isArray(existingData)) {
+              existingDreams = existingData;
+            } else if (existingData.dreams && Array.isArray(existingData.dreams)) {
+              // Jeśli ma strukturę {dreams: [...]}
+              existingDreams = existingData.dreams;
+            } else {
+              // Jeśli to pojedynczy sen, wrap w array
+              existingDreams = [existingData];
+            }
+            
+            // Wyciągnij numer pliku z metadanych lub policz z długości
+            currentFileNumber = existingData.fileNumber || existingDreams.length;
+            
+            debugLog('Loaded existing dreams', { 
+              existingDreamsCount: existingDreams.length,
+              currentFileNumber 
+            });
+          }
+        } catch (error) {
+          debugLog('Error loading existing dreams (creating new file)', { error });
+          // Nie rzucamy błędu - po prostu tworzymy nowy plik
+        }
+      } else {
+        debugLog('No existing dreams file - creating first daily_dreams file');
+      }
+
+      // KROK 3.2: Utwórz nową esencję snu (max 2 zdania content)
+      const dreamEssence = {
+        id: Date.now(),
+        timestamp: Date.now(),
+        content: dreamInput.dreamText.substring(0, 200), // Max 2 zdania
+        emotions: analysis.dreamMetadata.emotions || [],
+        symbols: analysis.dreamMetadata.symbols || [],
+        intensity: analysis.dreamMetadata.intensity || 5,
+        lucidity_level: dreamInput.lucidDream ? 4 : 1,
+        dream_type: analysis.dreamMetadata.themes?.[0] || 'general',
+        weather_in_dream: 'unknown',
+        characters: ['self'],
+        locations: analysis.dreamMetadata.symbols?.slice(0, 2) || ['unknown'],
+        actions: ['dreaming'],
+        mood_before_sleep: 'unknown',
+        mood_after_waking: analysis.personalityImpact.moodShift || 'no change'
+      };
+
+      // KROK 3.3: Dodaj nową esencję do array
+      const allDreams = [...existingDreams, dreamEssence];
+      const newFileNumber = currentFileNumber + 1;
+
+      // KROK 3.4: Utwórz nowy plik daily_dreams_XX.json
+      const dreamFileData = {
+        fileNumber: newFileNumber,
         agentTokenId: userTokenId?.toString(),
         walletAddress: address,
-        dreamInput,
-        analysis,
-        version: '1.0'
+        totalDreams: allDreams.length,
+        createdAt: new Date().toISOString(),
+        version: '2.0',
+        dreams: allDreams
       };
 
       // Convert to JSON and create file
-      const jsonString = JSON.stringify(dreamData, null, 2);
+      const jsonString = JSON.stringify(dreamFileData, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json' });
-      const file = new File([blob], `dream-${Date.now()}.json`, { type: 'application/json' });
+      const fileName = `daily_dreams_${String(newFileNumber).padStart(2, '0')}.json`;
+      const file = new File([blob], fileName, { type: 'application/json' });
 
-      debugLog('Uploading to 0G Storage', {
+      debugLog('Uploading new dreams file', {
+        fileName,
+        totalDreams: allDreams.length,
+        newFileNumber,
+        fileSize: jsonString.length,
         storageRpc: STORAGE_CONFIG.storageRpc,
-        l1Rpc: STORAGE_CONFIG.l1Rpc,
-        fileSize: jsonString.length
+        l1Rpc: STORAGE_CONFIG.l1Rpc
       });
 
-      // Get provider and signer (SAME AS useStorageUpload)
+      // KROK 3.5: Get provider and signer
       const [provider, providerErr] = await getProvider();
       if (!provider || providerErr) {
         throw new Error(`Provider error: ${providerErr?.message}`);
@@ -544,28 +816,32 @@ Your entire response must be a single, valid JSON object. Do not add any text be
         throw new Error(`Signer error: ${signerErr?.message}`);
       }
 
-      // Upload to 0G Storage with proper ethers signer
+      // KROK 3.6: Upload nowego pliku do 0G Storage
       const uploadResult = await uploadFileComplete(
         file,
         STORAGE_CONFIG.storageRpc,
         STORAGE_CONFIG.l1Rpc,
-        signer // Używamy ethers signer (jak useStorageUpload)
+        signer
       );
 
       if (!uploadResult.success) {
         throw new Error(`Storage upload failed: ${uploadResult.error}`);
       }
 
-      const rootHash = uploadResult.rootHash!;
+      const newRootHash = uploadResult.rootHash!;
       
-      debugLog('Dream saved to storage', { 
-        rootHash,
-        dataSize: jsonString.length 
+      debugLog('Dream saved with append-only pattern - KROK 3', { 
+        newRootHash,
+        fileName,
+        totalDreams: allDreams.length,
+        previousDreamsCount: existingDreams.length,
+        newDreamAdded: true,
+        fileSize: jsonString.length
       });
 
-      return rootHash;
+      return newRootHash;
     } catch (error) {
-      debugLog('Storage save error', { error });
+      debugLog('Storage save error - KROK 3', { error });
       throw error;
     }
   };
@@ -699,7 +975,7 @@ Your entire response must be a single, valid JSON object. Do not add any text be
         error: ''
       }));
 
-      const context = await buildDreamContext(userTokenId as bigint);
+      const context = await buildDreamContext(BigInt(userTokenId));
       const analysis = await analyzeDreamWithAI(dreamInput, context);
 
       setState(prev => ({ 
@@ -731,7 +1007,7 @@ Your entire response must be a single, valid JSON object. Do not add any text be
       }));
 
       const txHash = await processDreamOnChain(
-        userTokenId as bigint,
+        BigInt(userTokenId),
         storageHash,
         storageHash, // Using same hash for both dream and analysis
         analysis.personalityImpact
@@ -743,7 +1019,7 @@ Your entire response must be a single, valid JSON object. Do not add any text be
         isWaitingForReceipt: true,
         currentStep: 'processing',
         txHash,
-        tokenId: userTokenId as bigint
+        tokenId: BigInt(userTokenId)
       }));
 
       debugLog('Dream processing completed successfully', {
@@ -786,7 +1062,7 @@ Your entire response must be a single, valid JSON object. Do not add any text be
   };
 
   // Check if agent can process dream today (from contract)
-  const canProcessDreamToday = async (): Promise<boolean> => {
+  const checkCanProcessDreamToday = async (): Promise<boolean> => {
     if (!userTokenId) return false;
     
     try {
@@ -796,6 +1072,60 @@ Your entire response must be a single, valid JSON object. Do not add any text be
     } catch (error) {
       debugLog('Error checking dream processing eligibility', { error });
       return false;
+    }
+  };
+
+  // Simplified wrapper for DreamAnalysisSection testing
+  const saveDreamToStorageSimple = async (tokenId: number, dreamText: string): Promise<any> => {
+    try {
+      debugLog('saveDreamToStorageSimple called', { tokenId, dreamText: dreamText.substring(0, 50) + '...' });
+      
+      // Create mock DreamInput
+      const dreamInput: DreamInput = {
+        dreamText: dreamText.trim(),
+        emotions: ['unknown'],
+        lucidDream: false
+      };
+
+      // Create mock DreamAnalysisResult with realistic data
+      const mockAnalysis: DreamAnalysisResult = {
+        analysis: `Dream analysis for: ${dreamText.substring(0, 50)}...`,
+        personalityImpact: {
+          creativityChange: Math.floor(Math.random() * 3) - 1, // -1 to 1
+          analyticalChange: Math.floor(Math.random() * 3) - 1,
+          empathyChange: Math.floor(Math.random() * 3) - 1,
+          intuitionChange: Math.floor(Math.random() * 3) - 1,
+          resilienceChange: Math.floor(Math.random() * 3) - 1,
+          curiosityChange: Math.floor(Math.random() * 3) - 1,
+          moodShift: ['contemplative', 'energized', 'calm', 'reflective'][Math.floor(Math.random() * 4)],
+          evolutionWeight: Math.floor(Math.random() * 5) + 1 // 1 to 5
+        },
+        dreamMetadata: {
+          themes: ['test', 'mock'],
+          symbols: ['water', 'sky'],
+          emotions: ['curious', 'peaceful'],
+          intensity: Math.floor(Math.random() * 5) + 1 // 1 to 5
+        }
+      };
+
+      debugLog('Calling original saveDreamToStorage with mock data');
+      
+      // Call the original function
+      const rootHash = await saveDreamToStorage(dreamInput, mockAnalysis);
+      
+      debugLog('saveDreamToStorageSimple completed', { rootHash });
+      
+      return {
+        success: true,
+        rootHash,
+        dreamInput,
+        analysis: mockAnalysis,
+        message: 'Dream saved successfully with mock analysis'
+      };
+      
+    } catch (error) {
+      debugLog('saveDreamToStorageSimple error', { error });
+      throw error;
     }
   };
 
@@ -815,14 +1145,15 @@ Your entire response must be a single, valid JSON object. Do not add any text be
     // Actions
     processDream,
     resetProcessing,
-    canProcessDreamToday,
+    checkCanProcessDreamToday,
 
     // Utility
     buildDreamContext,
+    saveDreamToStorage: saveDreamToStorageSimple,
 
     // Agent context
     hasAgent,
-    userAgent,
+    userAgent: agentData,
     userTokenId,
     
     // Configuration
@@ -897,35 +1228,6 @@ Your entire response must be a single, valid JSON object. Do not add any text be
           contractAddress: contractConfig.address
         });
         throw new Error(errorMessage);
-      }
-    },
-
-    // Test function to check if agent can process dreams
-    checkCanProcessDreamToday: async () => {
-      if (!userTokenId || !hasAgent) {
-        throw new Error('No agent found');
-      }
-
-      try {
-        debugLog('Checking canProcessDreamToday for agent', { 
-          tokenId: userTokenId.toString() 
-        });
-
-        // Tutaj dodamy odczyt z kontraktu gdy będzie potrzebne
-        // const canProcess = await readContract({
-        //   ...contractConfig,
-        //   functionName: 'canProcessDreamToday',
-        //   args: [userTokenId]
-        // });
-
-        debugLog('Can process dream check completed', { 
-          tokenId: userTokenId.toString()
-        });
-
-        return true; // Temporary dla testów
-      } catch (error: any) {
-        debugLog('Error checking canProcessDreamToday', { error });
-        throw error;
       }
     }
   };
