@@ -8,6 +8,7 @@ export { useAgentRead } from './useAgentRead';
 export { useAgentDream } from './useAgentDream';
 export { useAgentChat } from './useAgentChat';
 export { useAgentPrompt } from './useAgentPrompt';
+export { useAgentAI } from './useAgentAI';
 
 // Language detection utilities
 export { 

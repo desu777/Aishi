@@ -251,6 +251,242 @@ interface DreamContext {
 
 ---
 
+## 🚀 STEP 3: Prompt Building & Language Detection
+
+### Architektura
+```
+Unified Dream Context
+      ↓
+┌─────────────────────┬───────────────────┐
+│ Language Detection  │  Prompt Builder   │
+│ (ELD Library)       │  (useAgentPrompt) │
+└─────────────────────┴───────────────────┘
+      ↓
+Dual-Format AI Prompt
+(Full Analysis + 2x JSON)
+```
+
+### 1. Language Detection
+**Plik:** `app/src/hooks/agentHooks/utils/languageDetection.ts`
+
+Wprowadziliśmy zaawansowany system detekcji języka oparty na bibliotece **ELD (Efficient Language Detector)**, która jest szybka, dokładna i działa po stronie klienta.
+
+**Funkcjonalności:**
+- ✅ **Detekcja języka** ze snu użytkownika (60 języków, w tym polski).
+- ✅ **Instrukcje dla AI** generowane w wykrytym języku (np. "Odpowiadaj w języku polskim").
+- ✅ **Fallback do angielskiego** przy niepewnej detekcji, aby zapewnić stabilność.
+
+```typescript
+// app/src/hooks/agentHooks/utils/languageDetection.ts
+import { eld } from 'eld';
+
+export function detectAndGetInstructions(text: string): {
+  language: string;
+  instructions: string;
+  detection: LanguageDetectionResult;
+}
+```
+
+### 2. Updated DreamContext Schema
+Kontekst został wzbogacony o wyniki detekcji języka, które są przekazywane do promptu.
+
+```typescript
+// app/src/hooks/agentHooks/services/dreamContextBuilder.ts
+interface DreamContext {
+  // ... (poprzednie pola)
+  languageDetection: {
+    detectedLanguage: string;
+    languageName: string;
+    confidence: number;
+    isReliable: boolean;
+    promptInstructions: string;
+  };
+  historicalData: { //...
+};
+```
+
+### 3. Advanced Prompt Engineering
+**Hook:** `app/src/hooks/agentHooks/useAgentPrompt.ts`
+
+Prompt dla AI został gruntownie przebudowany, aby zapewnić bardziej strukturalne i przewidywalne odpowiedzi, kluczowe dla modeli takich jak Llama 3.1.
+
+#### Kluczowe instrukcje w prompcie:
+
+**a) Instrukcje Językowe i ID Snu:**
+AI otrzymuje precyzyjne wytyczne dotyczące języka odpowiedzi i ID snu.
+```
+LANGUAGE DETECTION: Polish
+IMPORTANT: Odpowiadaj w języku polskim
+
+DREAM ID: This will be dream #16 (use exactly this number in the response)
+```
+
+**b) Struktura Odpowiedzi (Dwie Części):**
+AI jest instruowane, aby najpierw wygenerować pełną, swobodną analizę, a następnie dostarczyć dwa bloki JSON.
+
+```
+RESPONSE STRUCTURE:
+1. First provide a FULL PERSONALIZED ANALYSIS as my dream agent.
+2. Then provide two JSON blocks:
+```
+
+**c) Dwa Formaty JSON:**
+Wprowadzono dwa oddzielne bloki JSON, aby rozdzielić dane do wyświetlania w UI od danych do zapisu w storage.
+
+**1. JSON do Wyświetlania w UI:**
+```json
+{
+  "full_analysis": "<your entire detailed analysis here>"
+}
+```
+
+**2. JSON do Zapisu w Storage (Esencja):**
+```json
+RESPONSE FORMAT (JSON):
+{
+  "analysis": "Brief essence of your analysis in maximum 2 sentences",
+  "dreamData": {
+    "id": 16,
+    "timestamp": 1752173794,
+    "content": "Brief summary of the dream",
+    "emotions": ["emotion1", "emotion2"],
+    // ...
+  }
+}
+```
+Jeśli `dreamCount % 5 == 0`, dodawany jest również obiekt `personalityImpact`.
+
+### 4. UI Integration
+**Plik:** `app/src/app/agent-test/components/DreamAnalysisSection.tsx`
+
+Interfejs użytkownika teraz wyświetla wykryty język i poziom pewności detekcji, co ułatwia debugowanie.
+
+```jsx
+// Wyświetlanie wyniku detekcji w UI
+<div style={{...}}>
+  ✅ Language Detected: Polish (87%)
+</div>
+```
+
+---
+
+## 🤖 STEP 4: AI Analysis (NEW!)
+
+### Architektura
+```
+Built Prompt
+     ↓
+0g-compute API (/analyze-dream)
+     ↓
+AI Model (Llama 3.3-70B)
+     ↓
+Parsed Response (Full Analysis + JSON)
+```
+
+### Implementacja
+- **Hook:** `app/src/hooks/agentHooks/useAgentAI.ts`
+- **API:** `0g-compute` backend na `http://localhost:3001/api/analyze-dream`
+- **UI:** `app/src/app/agent-test/components/DreamAnalysisSection.tsx`
+
+### Funkcjonalności
+
+#### 1. useAgentAI Hook
+```typescript
+export function useAgentAI() {
+  return {
+    isLoading: boolean;
+    error: string | null;
+    aiResponse: AIResponse | null;
+    parsedResponse: ParsedAIResponse | null;
+    sendDreamAnalysis: (promptData, model) => Promise<ParsedAIResponse>;
+    resetAI: () => void;
+  };
+}
+```
+
+#### 2. API Communication
+- **Endpoint:** `POST /api/analyze-dream`
+- **Payload:** `{ walletAddress, query, model }`
+- **Response:** `{ success, data: { response, model, cost, responseTime, isValid } }`
+
+#### 3. Response Parsing
+- **Dual JSON Detection:** Automatyczne wyodrębnianie dwóch bloków JSON
+- **Full Analysis:** Kompletna analiza do wyświetlenia w UI
+- **Storage Data:** Strukturalne dane do zapisu w kontrakcie
+
+#### 4. UI Features
+- ✅ **Send to AI Button** - wysyłanie prompta do modelu
+- ✅ **Loading State** - spinner podczas analizy
+- ✅ **Error Handling** - wyświetlanie błędów API
+- ✅ **Response Display** - pełna analiza + strukturalne dane
+- ✅ **Evolution Detection** - różne wyświetlanie dla snów %5==0
+- ✅ **Debug Logging** - szczegółowe logi z `NEXT_PUBLIC_DREAM_TEST=true`
+
+### Przykładowa Odpowiedź AI
+
+#### Dla Snu Regularnego (nie %5==0):
+```json
+{
+  "full_analysis": "Your dream about flying represents...",
+  "dreamData": {
+    "id": 3,
+    "timestamp": 1736908800,
+    "content": "Dream about flying over city",
+    "emotions": ["freedom", "joy"],
+    "symbols": ["flying", "city"],
+    "intensity": 7,
+    "lucidity_level": 3,
+    "dream_type": "adventure"
+  },
+  "analysis": "Brief 2-sentence summary"
+}
+```
+
+#### Dla Snu Ewolucyjnego (%5==0):
+```json
+{
+  "full_analysis": "Your 5th dream shows significant growth...",
+  "dreamData": { /*...*/ },
+  "personalityImpact": {
+    "evolutionWeight": 75,
+    "creativityChange": 5,
+    "analyticalChange": -2,
+    "empathyChange": 3,
+    "intuitionChange": 7,
+    "resilienceChange": 1,
+    "curiosityChange": 4,
+    "moodShift": "inspired",
+    "newFeatures": [
+      {
+        "name": "Visionary Dreamer",
+        "description": "Shows exceptional ability to envision future possibilities",
+        "intensity": 85
+      }
+    ]
+  },
+  "analysis": "Brief 2-sentence summary"
+}
+```
+
+### Environment Variables
+```bash
+# Required for API communication
+NEXT_PUBLIC_COMPUTE_API_URL=http://localhost:3001/api
+
+# Debug logging
+NEXT_PUBLIC_DREAM_TEST=true
+```
+
+---
+
+## 📝 Next Steps (Future)
+- [ ] STEP 5: Contract write operations (processDailyDream)
+- [ ] STEP 6: Historical data upload for testing
+- [ ] Advanced error recovery mechanisms
+- [ ] Model selection UI (Llama 3.3 vs DeepSeek R1)
+
+---
+
 ## 🔧 Technical Dependencies
 
 ### Used Libraries & Hooks
@@ -333,6 +569,8 @@ const debugLog = (message: string, data?: any) => {
 - [x] Error handling i graceful degradation
 - [x] Real-time UI feedback z loading states
 - [x] Debug logging system
+- [x] STEP 3: Prompt Building & Language Detection
+- [x] STEP 4: AI Analysis z 0g-compute API integration
 
 ### 🔄 Tested Scenarios
 - ✅ New agent z empty hashes (Victoria, Level 1)
@@ -340,13 +578,16 @@ const debugLog = (message: string, data?: any) => {
 - ✅ Hash validation (all 0x000... detected as empty)
 - ✅ Context building z partial data
 - ✅ UI feedback i error display
+- ✅ Prompt building w różnych językach
+- ✅ AI API communication z 0g-compute
+- ✅ Dual JSON parsing (full analysis + storage data)
+- ✅ Evolution detection dla snów %5==0
 
 ### 📝 Next Steps (Future)
-- [ ] STEP 3: AI prompt generation z built context
-- [ ] STEP 4: Personality impact calculation
 - [ ] STEP 5: Contract write operations (processDailyDream)
-- [ ] Historical data upload dla testing
+- [ ] STEP 6: Historical data upload for testing
 - [ ] Advanced error recovery mechanisms
+- [ ] Model selection UI (Llama 3.3 vs DeepSeek R1)
 
 ---
 
@@ -355,11 +596,16 @@ const debugLog = (message: string, data?: any) => {
 ```
 app/src/
 ├── app/agent-test/components/
-│   └── DreamAnalysisSection.tsx          # Main UI component
+│   └── DreamAnalysisSection.tsx          # Main UI component (STEP 1-4)
 ├── hooks/agentHooks/
-│   ├── useAgentDream.ts                   # Main hook
-│   └── services/
-│       └── dreamContextBuilder.ts        # Context building logic
+│   ├── useAgentDream.ts                   # STEP 1-2: Dream input & context
+│   ├── useAgentPrompt.ts                  # STEP 3: Prompt building
+│   ├── useAgentAI.ts                      # STEP 4: AI API communication (NEW!)
+│   ├── index.ts                           # Hook exports
+│   ├── services/
+│   │   └── dreamContextBuilder.ts        # Context building logic
+│   └── utils/
+│       └── languageDetection.ts          # Language detection
 ├── hooks/storage/
 │   └── useStorageDownload.ts             # 0G Storage integration
 ├── lib/0g/
