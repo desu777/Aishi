@@ -2,9 +2,21 @@
 
 import { Contract } from 'ethers';
 import frontendContracts from '../../../abi/frontend-contracts.json';
+import { 
+  detectAndGetInstructions, 
+  getLanguageName,
+  formatDetectionResult
+} from '../utils/languageDetection';
 
 export interface DreamContext {
   userDream: string;
+  languageDetection: {
+    detectedLanguage: string;
+    languageName: string;
+    confidence: number;
+    isReliable: boolean;
+    promptInstructions: string;
+  };
   agentProfile: {
     name: string;
     intelligenceLevel: number;
@@ -90,16 +102,33 @@ export class DreamContextBuilder {
       const intelligence = Number(agentData.intelligenceLevel);
       const monthsAccessible = Number(memoryAccess.monthsAccessible);
       
-      // 3. Download historical data based on memory access
+      // 3. Detect dream language
+      this.debugLog('Detecting dream language', { dreamText: userDream.substring(0, 100) + '...' });
+      const languageResult = detectAndGetInstructions(userDream);
+      
+      this.debugLog('Language detection completed', {
+        language: languageResult.language,
+        confidence: languageResult.detection.confidence,
+        isReliable: languageResult.detection.isReliable
+      });
+
+      // 4. Download historical data based on memory access
       const historicalData = await this.downloadHistoricalData(
         memoryStructure,
         monthsAccessible,
         downloadFile
       );
 
-      // 4. Build unified context
+      // 5. Build unified context
       const context: DreamContext = {
         userDream,
+        languageDetection: {
+          detectedLanguage: languageResult.language,
+          languageName: getLanguageName(languageResult.language),
+          confidence: languageResult.detection.confidence,
+          isReliable: languageResult.detection.isReliable,
+          promptInstructions: languageResult.instructions
+        },
         agentProfile: {
           name: agentData.agentName,
           intelligenceLevel: intelligence,

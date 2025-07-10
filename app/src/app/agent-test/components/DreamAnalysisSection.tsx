@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { useAgentDream } from '../../../hooks/agentHooks';
-import { Moon, Loader2, AlertCircle, Brain, Database, Users } from 'lucide-react';
+import { useAgentDream, useAgentPrompt } from '../../../hooks/agentHooks';
+import { Moon, Loader2, AlertCircle, Brain, Database, Users, FileText } from 'lucide-react';
 
 interface DreamAnalysisSectionProps {
   hasAgent: boolean;
@@ -23,6 +24,7 @@ export default function DreamAnalysisSection({
     error,
     buildDreamContext 
   } = useAgentDream();
+  const { buildDreamAnalysisPrompt } = useAgentPrompt();
   
   // Debug logs dla development
   const debugLog = (message: string, data?: any) => {
@@ -69,6 +71,25 @@ export default function DreamAnalysisSection({
     
     debugLog('Building context for agent', effectiveTokenId);
     await buildDreamContext(effectiveTokenId);
+  };
+
+  const [builtPrompt, setBuiltPrompt] = useState<string | null>(null);
+  const [promptFormat, setPromptFormat] = useState<any>(null);
+
+  const handleBuildPrompt = () => {
+    if (!builtContext) {
+      debugLog('No built context available');
+      return;
+    }
+    
+    debugLog('Building prompt for agent', { agentName: builtContext.agentProfile.name });
+    const promptResult = buildDreamAnalysisPrompt(builtContext);
+    setBuiltPrompt(promptResult.prompt);
+    setPromptFormat(promptResult.expectedFormat);
+    debugLog('Prompt built successfully', { 
+      promptLength: promptResult.prompt.length, 
+      needsEvolution: promptResult.expectedFormat.needsPersonalityEvolution 
+    });
   };
 
   return (
@@ -260,6 +281,35 @@ export default function DreamAnalysisSection({
               Context Built Successfully
             </h4>
             
+            {/* Language Detection Info */}
+            <div style={{
+              marginBottom: '15px',
+              padding: '12px',
+              backgroundColor: builtContext.languageDetection.isReliable ? '#e8f5e8' : '#fff3cd',
+              borderRadius: '6px',
+              border: `1px solid ${builtContext.languageDetection.isReliable ? '#28a745' : '#ffc107'}`
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: builtContext.languageDetection.isReliable ? '#155724' : '#856404'
+              }}>
+                {builtContext.languageDetection.isReliable ? '✅' : '⚠️'} 
+                Language Detected: {builtContext.languageDetection.languageName}
+              </div>
+              <div style={{
+                fontSize: '12px',
+                color: builtContext.languageDetection.isReliable ? '#155724' : '#856404',
+                marginTop: '4px'
+              }}>
+                Confidence: {Math.round(builtContext.languageDetection.confidence * 100)}% 
+                {!builtContext.languageDetection.isReliable && ' (Fallback to English)'}
+              </div>
+            </div>
+
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -317,6 +367,146 @@ export default function DreamAnalysisSection({
                 <strong>Style:</strong> {builtContext.personality.responseStyle} | 
                 <strong> Mood:</strong> {builtContext.personality.dominantMood}
               </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* STEP 3: Prompt Building */}
+      <div style={{
+        backgroundColor: theme.bg.card,
+        border: `1px solid ${theme.border}`,
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '20px'
+      }}>
+        <h3 style={{
+          color: theme.text.primary,
+          marginBottom: '15px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          <FileText size={20} />
+          STEP 3: Prompt Building
+        </h3>
+        
+        <div style={{
+          fontSize: '14px',
+          color: theme.text.secondary,
+          marginBottom: '15px',
+          padding: '10px',
+          backgroundColor: theme.bg.panel,
+          borderRadius: '6px',
+          border: `1px solid ${theme.border}`
+        }}>
+          📝 Building AI prompt with complete context for personalized dream analysis. Agent will use personality, memory, and historical data.
+        </div>
+
+        {/* Build Prompt Button */}
+        <button
+          onClick={handleBuildPrompt}
+          disabled={!builtContext}
+          style={{
+            backgroundColor: !builtContext ? theme.bg.panel : theme.accent.primary,
+            color: !builtContext ? theme.text.secondary : 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '12px 24px',
+            cursor: !builtContext ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '15px'
+          }}
+        >
+          <FileText size={16} />
+          Build Analysis Prompt
+        </button>
+
+        {/* Prompt Format Info */}
+        {promptFormat && (
+          <div style={{
+            fontSize: '14px',
+            color: theme.text.primary,
+            marginBottom: '15px',
+            padding: '10px',
+            backgroundColor: theme.bg.panel,
+            borderRadius: '6px',
+            border: `1px solid ${theme.border}`
+          }}>
+            <div style={{ fontWeight: '600', marginBottom: '5px' }}>
+              📊 Analysis Format:
+            </div>
+            <div style={{ fontSize: '12px', color: theme.text.secondary }}>
+              • Dream ID: #{promptFormat.dreamId}
+              • {promptFormat.needsPersonalityEvolution ? 
+                  `🧬 Personality Evolution (${promptFormat.dreamId}th dream)` : 
+                  '📝 Regular Analysis'}
+              • {promptFormat.needsPersonalityEvolution ? 
+                  'Will include personality changes & unique features' : 
+                  'Analysis only - no trait changes'}
+            </div>
+          </div>
+        )}
+
+        {/* Built Prompt Display */}
+        {builtPrompt && (
+          <div style={{
+            marginTop: '15px',
+            padding: '15px',
+            backgroundColor: theme.bg.panel,
+            borderRadius: '8px',
+            border: `1px solid ${theme.border}`
+          }}>
+            <h4 style={{
+              color: theme.text.primary,
+              fontSize: '16px',
+              fontWeight: '600',
+              marginBottom: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <FileText size={16} />
+              Generated Prompt Ready
+            </h4>
+            
+            <div style={{
+              fontSize: '12px',
+              color: theme.text.secondary,
+              marginBottom: '10px'
+            }}>
+              Prompt length: {builtPrompt.length} characters
+            </div>
+
+            <textarea
+              value={builtPrompt}
+              readOnly
+              style={{
+                width: '100%',
+                minHeight: '200px',
+                padding: '10px',
+                backgroundColor: theme.bg.card,
+                border: `1px solid ${theme.border}`,
+                borderRadius: '6px',
+                color: theme.text.primary,
+                fontSize: '12px',
+                fontFamily: 'monospace',
+                resize: 'vertical',
+                outline: 'none'
+              }}
+            />
+            
+            <div style={{
+              marginTop: '10px',
+              fontSize: '12px',
+              color: theme.text.secondary,
+              textAlign: 'center'
+            }}>
+              ✅ Ready for AI analysis (STEP 4)
             </div>
           </div>
         )}

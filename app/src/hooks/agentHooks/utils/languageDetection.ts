@@ -1,329 +1,486 @@
-/**
- * Language Detection Utilities
- * Wykrywa język wiadomości użytkownika przy użyciu biblioteki franc
- */
-
-import { franc } from 'franc';
+'use client';
 
 /**
- * Mapa kodów ISO 639-1 na nazwy języków
+ * Language Detection Utility using ELD (Efficient Language Detector)
+ * Detects the language of dream text to optimize AI responses
  */
-export const LANGUAGE_NAMES: Record<string, string> = {
-  'en': 'English',
-  'pl': 'Polish',
-  'es': 'Spanish',
-  'fr': 'French',
-  'de': 'German',
-  'it': 'Italian',
-  'pt': 'Portuguese',
-  'ru': 'Russian',
-  'ja': 'Japanese',
-  'ko': 'Korean',
-  'zh': 'Chinese',
-  'ar': 'Arabic',
-  'hi': 'Hindi',
-  'nl': 'Dutch',
-  'sv': 'Swedish',
-  'da': 'Danish',
-  'no': 'Norwegian',
-  'fi': 'Finnish',
-  'cs': 'Czech',
-  'hu': 'Hungarian',
-  'tr': 'Turkish',
-  'uk': 'Ukrainian',
-  'bg': 'Bulgarian',
-  'hr': 'Croatian',
-  'sk': 'Slovak',
-  'sl': 'Slovenian',
-  'et': 'Estonian',
-  'lv': 'Latvian',
-  'lt': 'Lithuanian',
-  'ro': 'Romanian',
-  'el': 'Greek',
-  'he': 'Hebrew',
-  'th': 'Thai',
-  'vi': 'Vietnamese',
-  'id': 'Indonesian',
-  'ms': 'Malay',
-  'tl': 'Filipino',
-  'ca': 'Catalan',
-  'eu': 'Basque',
-  'ga': 'Irish',
-  'cy': 'Welsh',
-  'mt': 'Maltese',
-  'is': 'Icelandic',
-  'fo': 'Faroese',
-  'gl': 'Galician',
-  'af': 'Afrikaans',
-  'sw': 'Swahili',
-  'zu': 'Zulu',
-  'xh': 'Xhosa',
-  'und': 'Unknown'
-};
 
-/**
- * Języki obsługiwane przez aplikację (priorytetowe)
- */
-export const SUPPORTED_LANGUAGES = [
-  'en', 'pl', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh', 'ar'
-];
+import { eld } from 'eld';
 
-/**
- * Domyślny język aplikacji
- */
-export const DEFAULT_LANGUAGE = 'en';
-
-/**
- * Minimalny próg pewności dla wykrywania języka
- * Poniżej tego progu będzie używany język domyślny
- */
-export const MIN_CONFIDENCE_THRESHOLD = 0.7;
-
-/**
- * Interfejs wyniku wykrywania języka
- */
 export interface LanguageDetectionResult {
-  /** Kod języka ISO 639-1 */
   language: string;
-  /** Nazwa języka */
-  languageName: string;
-  /** Pewność wykrycia (0-1) */
   confidence: number;
-  /** Czy język jest obsługiwany przez aplikację */
-  isSupported: boolean;
-  /** Czy użyto fallback na język domyślny */
-  usedFallback: boolean;
-  /** Oryginalny tekst który był analizowany */
-  originalText: string;
+  isReliable: boolean;
+  allScores: Record<string, number>;
+}
+
+export interface LanguageMapping {
+  [key: string]: {
+    name: string;
+    responseLanguage: string;
+    promptInstruction: string;
+  };
 }
 
 /**
- * Wykrywa język tekstu używając biblioteki franc
- * 
- * @param text - Tekst do analizy
- * @param options - Opcje wykrywania
- * @returns Wynik wykrywania języka
+ * Mapowanie kodu ISO 639-1 na instrukcje dla AI
  */
-export function detectLanguage(
-  text: string,
-  options: {
-    minLength?: number;
-    fallbackLanguage?: string;
-    confidenceThreshold?: number;
-  } = {}
-): LanguageDetectionResult {
-  const {
-    minLength = 10,
-    fallbackLanguage = DEFAULT_LANGUAGE,
-    confidenceThreshold = MIN_CONFIDENCE_THRESHOLD
-  } = options;
-
-  // Walidacja wejściowa
-  if (!text || typeof text !== 'string') {
-    return createFallbackResult(text, fallbackLanguage, 'Empty or invalid text');
+const LANGUAGE_MAPPINGS: LanguageMapping = {
+  'en': {
+    name: 'English',
+    responseLanguage: 'English',
+    promptInstruction: 'Respond in English'
+  },
+  'pl': {
+    name: 'Polish',
+    responseLanguage: 'Polish',
+    promptInstruction: 'Odpowiadaj w języku polskim'
+  },
+  'es': {
+    name: 'Spanish',
+    responseLanguage: 'Spanish',
+    promptInstruction: 'Responde en español'
+  },
+  'fr': {
+    name: 'French',
+    responseLanguage: 'French',
+    promptInstruction: 'Répondez en français'
+  },
+  'de': {
+    name: 'German',
+    responseLanguage: 'German',
+    promptInstruction: 'Antworten Sie auf Deutsch'
+  },
+  'it': {
+    name: 'Italian',
+    responseLanguage: 'Italian',
+    promptInstruction: 'Rispondi in italiano'
+  },
+  'pt': {
+    name: 'Portuguese',
+    responseLanguage: 'Portuguese',
+    promptInstruction: 'Responda em português'
+  },
+  'ru': {
+    name: 'Russian',
+    responseLanguage: 'Russian',
+    promptInstruction: 'Отвечайте на русском языке'
+  },
+  'nl': {
+    name: 'Dutch',
+    responseLanguage: 'Dutch',
+    promptInstruction: 'Reageer in het Nederlands'
+  },
+  'sv': {
+    name: 'Swedish',
+    responseLanguage: 'Swedish',
+    promptInstruction: 'Svara på svenska'
+  },
+  'da': {
+    name: 'Danish',
+    responseLanguage: 'Danish',
+    promptInstruction: 'Svar på dansk'
+  },
+  'no': {
+    name: 'Norwegian',
+    responseLanguage: 'Norwegian',
+    promptInstruction: 'Svar på norsk'
+  },
+  'fi': {
+    name: 'Finnish',
+    responseLanguage: 'Finnish',
+    promptInstruction: 'Vastaa suomeksi'
+  },
+  'cs': {
+    name: 'Czech',
+    responseLanguage: 'Czech',
+    promptInstruction: 'Odpovídejte česky'
+  },
+  'sk': {
+    name: 'Slovak',
+    responseLanguage: 'Slovak',
+    promptInstruction: 'Odpovedajte v slovenčine'
+  },
+  'hu': {
+    name: 'Hungarian',
+    responseLanguage: 'Hungarian',
+    promptInstruction: 'Válaszoljon magyarul'
+  },
+  'ro': {
+    name: 'Romanian',
+    responseLanguage: 'Romanian',
+    promptInstruction: 'Răspundeți în română'
+  },
+  'bg': {
+    name: 'Bulgarian',
+    responseLanguage: 'Bulgarian',
+    promptInstruction: 'Отговорете на български'
+  },
+  'hr': {
+    name: 'Croatian',
+    responseLanguage: 'Croatian',
+    promptInstruction: 'Odgovorite na hrvatskom'
+  },
+  'sl': {
+    name: 'Slovenian',
+    responseLanguage: 'Slovenian',
+    promptInstruction: 'Odgovorite v slovenščini'
+  },
+  'et': {
+    name: 'Estonian',
+    responseLanguage: 'Estonian',
+    promptInstruction: 'Vastake eesti keeles'
+  },
+  'lv': {
+    name: 'Latvian',
+    responseLanguage: 'Latvian',
+    promptInstruction: 'Atbildiet latviešu valodā'
+  },
+  'lt': {
+    name: 'Lithuanian',
+    responseLanguage: 'Lithuanian',
+    promptInstruction: 'Atsakykite lietuviškai'
+  },
+  'uk': {
+    name: 'Ukrainian',
+    responseLanguage: 'Ukrainian',
+    promptInstruction: 'Відповідайте українською'
+  },
+  'be': {
+    name: 'Belarusian',
+    responseLanguage: 'Belarusian',
+    promptInstruction: 'Адказвайце па-беларуску'
+  },
+  'ja': {
+    name: 'Japanese',
+    responseLanguage: 'Japanese',
+    promptInstruction: '日本語で回答してください'
+  },
+  'ko': {
+    name: 'Korean',
+    responseLanguage: 'Korean',
+    promptInstruction: '한국어로 답변해주세요'
+  },
+  'zh': {
+    name: 'Chinese',
+    responseLanguage: 'Chinese',
+    promptInstruction: '请用中文回答'
+  },
+  'ar': {
+    name: 'Arabic',
+    responseLanguage: 'Arabic',
+    promptInstruction: 'أجب باللغة العربية'
+  },
+  'he': {
+    name: 'Hebrew',
+    responseLanguage: 'Hebrew',
+    promptInstruction: 'ענה בעברית'
+  },
+  'hi': {
+    name: 'Hindi',
+    responseLanguage: 'Hindi',
+    promptInstruction: 'हिंदी में जवाब दें'
+  },
+  'th': {
+    name: 'Thai',
+    responseLanguage: 'Thai',
+    promptInstruction: 'ตอบเป็นภาษาไทย'
+  },
+  'vi': {
+    name: 'Vietnamese',
+    responseLanguage: 'Vietnamese',
+    promptInstruction: 'Trả lời bằng tiếng Việt'
+  },
+  'tr': {
+    name: 'Turkish',
+    responseLanguage: 'Turkish',
+    promptInstruction: 'Türkçe cevap verin'
+  },
+  'fa': {
+    name: 'Persian',
+    responseLanguage: 'Persian',
+    promptInstruction: 'به فارسی پاسخ دهید'
+  },
+  'ur': {
+    name: 'Urdu',
+    responseLanguage: 'Urdu',
+    promptInstruction: 'اردو میں جواب دیں'
+  },
+  'bn': {
+    name: 'Bengali',
+    responseLanguage: 'Bengali',
+    promptInstruction: 'বাংলায় উত্তর দিন'
+  },
+  'ta': {
+    name: 'Tamil',
+    responseLanguage: 'Tamil',
+    promptInstruction: 'தமிழில் பதில் சொல்லுங்கள்'
+  },
+  'te': {
+    name: 'Telugu',
+    responseLanguage: 'Telugu',
+    promptInstruction: 'తెలుగులో సమాధానం ఇవ్వండి'
+  },
+  'ml': {
+    name: 'Malayalam',
+    responseLanguage: 'Malayalam',
+    promptInstruction: 'മലയാളത്തിൽ ഉത്തരം നൽകുക'
+  },
+  'kn': {
+    name: 'Kannada',
+    responseLanguage: 'Kannada',
+    promptInstruction: 'ಕನ್ನಡದಲ್ಲಿ ಉತ್ತರಿಸಿ'
+  },
+  'gu': {
+    name: 'Gujarati',
+    responseLanguage: 'Gujarati',
+    promptInstruction: 'ગુજરાતીમાં જવાબ આપો'
+  },
+  'mr': {
+    name: 'Marathi',
+    responseLanguage: 'Marathi',
+    promptInstruction: 'मराठीत उत्तर द्या'
+  },
+  'pa': {
+    name: 'Punjabi',
+    responseLanguage: 'Punjabi',
+    promptInstruction: 'ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ'
+  },
+  'or': {
+    name: 'Odia',
+    responseLanguage: 'Odia',
+    promptInstruction: 'ଓଡ଼ିଆରେ ଉତ୍ତର ଦିଅନ୍ତୁ'
+  },
+  'am': {
+    name: 'Amharic',
+    responseLanguage: 'Amharic',
+    promptInstruction: 'በአማርኛ ይመልሱ'
+  },
+  'yo': {
+    name: 'Yoruba',
+    responseLanguage: 'Yoruba',
+    promptInstruction: 'Dahun ni Yoruba'
+  },
+  'ms': {
+    name: 'Malay',
+    responseLanguage: 'Malay',
+    promptInstruction: 'Jawab dalam bahasa Melayu'
+  },
+  'tl': {
+    name: 'Tagalog',
+    responseLanguage: 'Tagalog',
+    promptInstruction: 'Sumagot sa Tagalog'
+  },
+  'lo': {
+    name: 'Lao',
+    responseLanguage: 'Lao',
+    promptInstruction: 'ຕອບເປັນພາສາລາວ'
+  },
+  'ka': {
+    name: 'Georgian',
+    responseLanguage: 'Georgian',
+    promptInstruction: 'ქართულად უპასუხეთ'
+  },
+  'hy': {
+    name: 'Armenian',
+    responseLanguage: 'Armenian',
+    promptInstruction: 'Պատասխանեք հայերեն'
+  },
+  'az': {
+    name: 'Azerbaijani',
+    responseLanguage: 'Azerbaijani',
+    promptInstruction: 'Azərbaycan dilində cavab verin'
+  },
+  'kk': {
+    name: 'Kazakh',
+    responseLanguage: 'Kazakh',
+    promptInstruction: 'Қазақша жауап беріңіз'
+  },
+  'ku': {
+    name: 'Kurdish',
+    responseLanguage: 'Kurdish',
+    promptInstruction: 'Bi kurdî bersiv bidin'
+  },
+  'is': {
+    name: 'Icelandic',
+    responseLanguage: 'Icelandic',
+    promptInstruction: 'Svaraðu á íslensku'
+  },
+  'eu': {
+    name: 'Basque',
+    responseLanguage: 'Basque',
+    promptInstruction: 'Erantzun euskeraz'
+  },
+  'ca': {
+    name: 'Catalan',
+    responseLanguage: 'Catalan',
+    promptInstruction: 'Respon en català'
+  },
+  'el': {
+    name: 'Greek',
+    responseLanguage: 'Greek',
+    promptInstruction: 'Απαντήστε στα ελληνικά'
+  },
+  'sr': {
+    name: 'Serbian',
+    responseLanguage: 'Serbian',
+    promptInstruction: 'Одговорите на српском'
+  },
+  'mk': {
+    name: 'Macedonian',
+    responseLanguage: 'Macedonian',
+    promptInstruction: 'Одговорете на македонски'
+  },
+  'sq': {
+    name: 'Albanian',
+    responseLanguage: 'Albanian',
+    promptInstruction: 'Përgjigjuni në shqip'
   }
+};
 
-  // Oczyszczenie tekstu
-  const cleanText = text.trim();
-  
-  if (cleanText.length < minLength) {
-    return createFallbackResult(text, fallbackLanguage, 'Text too short');
+/**
+ * Debug logs dla development
+ */
+const debugLog = (message: string, data?: any) => {
+  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+    console.log(`[LanguageDetection] ${message}`, data || '');
   }
+};
+
+/**
+ * Wykrywa język tekstu za pomocą ELD
+ */
+export function detectLanguage(text: string): LanguageDetectionResult {
+  debugLog('Starting language detection for text', { 
+    length: text.length,
+    preview: text.substring(0, 50) + (text.length > 50 ? '...' : '')
+  });
 
   try {
-    // Wykrycie języka z opcjami
-    const detectedLanguage = franc(cleanText, {
-      minLength: minLength,
-      whitelist: SUPPORTED_LANGUAGES.concat(['und']),
-      // Zwiększa dokładność dla krótkich tekstów
-      only: SUPPORTED_LANGUAGES
-    });
-
-    // Jeśli język nie został wykryty lub jest nieznany
-    if (!detectedLanguage || detectedLanguage === 'und') {
-      return createFallbackResult(text, fallbackLanguage, 'Language not detected');
+    // Sanitize text - usuń nadmiarowe spacje i znaki specjalne
+    const cleanText = text.trim().replace(/\s+/g, ' ');
+    
+    if (cleanText.length === 0) {
+      debugLog('Empty text, defaulting to English');
+      return {
+        language: 'en',
+        confidence: 0,
+        isReliable: false,
+        allScores: {}
+      };
     }
 
-    // Konwersja z kodu ISO 639-3 na ISO 639-1 (franc zwraca ISO 639-3)
-    const normalizedLanguage = normalizeLanguageCode(detectedLanguage);
+    // Wykrywanie języka za pomocą ELD
+    const result = eld.detect(cleanText);
+    const scores = result.getScores();
+    const isReliable = result.isReliable();
+    const detectedLanguage = result.language;
     
-    // Sprawdzenie czy język jest obsługiwany
-    const isSupported = SUPPORTED_LANGUAGES.includes(normalizedLanguage);
-    const finalLanguage = isSupported ? normalizedLanguage : fallbackLanguage;
-    
-    // Szacowanie pewności (franc nie zwraca confidence, więc używamy heurystyki)
-    const confidence = estimateConfidence(cleanText, finalLanguage);
-    
-    // Jeśli pewność jest za niska, użyj fallback
-    if (confidence < confidenceThreshold) {
-      return createFallbackResult(text, fallbackLanguage, 'Low confidence');
+    debugLog('Language detection completed', {
+      detectedLanguage,
+      isReliable,
+      confidence: scores[detectedLanguage] || 0,
+      topScores: Object.entries(scores).slice(0, 3)
+    });
+
+    // Fallback do angielskiego jeśli detekcja nie jest niezawodna
+    let finalLanguage = detectedLanguage;
+    let finalConfidence = scores[detectedLanguage] || 0;
+
+    if (!isReliable || finalConfidence < 0.3) {
+      debugLog('Detection not reliable, falling back to English');
+      finalLanguage = 'en';
+      finalConfidence = 0.5; // Średnia pewność dla fallback
     }
 
     return {
       language: finalLanguage,
-      languageName: LANGUAGE_NAMES[finalLanguage] || finalLanguage,
-      confidence,
-      isSupported,
-      usedFallback: !isSupported,
-      originalText: text
+      confidence: finalConfidence,
+      isReliable,
+      allScores: scores
     };
 
   } catch (error) {
-    console.warn('Language detection error:', error);
-    return createFallbackResult(text, fallbackLanguage, 'Detection error');
+    debugLog('Error in language detection', error);
+    
+    // Fallback do angielskiego w przypadku błędu
+    return {
+      language: 'en',
+      confidence: 0,
+      isReliable: false,
+      allScores: {}
+    };
   }
 }
 
 /**
- * Normalizuje kod języka z ISO 639-3 na ISO 639-1
+ * Zwraca instrukcje dla AI na podstawie wykrytego języka
  */
-function normalizeLanguageCode(language: string): string {
-  // Mapa najczęstszych kodów ISO 639-3 na ISO 639-1
-  const codeMap: Record<string, string> = {
-    'eng': 'en',
-    'pol': 'pl',
-    'spa': 'es',
-    'fra': 'fr',
-    'deu': 'de',
-    'ita': 'it',
-    'por': 'pt',
-    'rus': 'ru',
-    'jpn': 'ja',
-    'kor': 'ko',
-    'cmn': 'zh', // Mandarin Chinese
-    'zho': 'zh', // Chinese
-    'ara': 'ar',
-    'hin': 'hi',
-    'nld': 'nl',
-    'swe': 'sv',
-    'dan': 'da',
-    'nor': 'no',
-    'fin': 'fi',
-    'ces': 'cs',
-    'hun': 'hu',
-    'tur': 'tr',
-    'ukr': 'uk'
-  };
+export function getLanguageInstructions(language: string): string {
+  const mapping = LANGUAGE_MAPPINGS[language];
+  
+  if (!mapping) {
+    debugLog(`Unknown language: ${language}, defaulting to English`);
+    return LANGUAGE_MAPPINGS.en.promptInstruction;
+  }
 
-  return codeMap[language] || language;
+  debugLog(`Language instruction for ${language}`, mapping.promptInstruction);
+  return mapping.promptInstruction;
 }
 
 /**
- * Szacuje pewność wykrywania języka na podstawie heurystyk
+ * Zwraca pełną nazwę języka
  */
-function estimateConfidence(text: string, language: string): number {
-  let confidence = 0.8; // Bazowa pewność
-
-  // Długość tekstu - dłuższe teksty = wyższa pewność
-  if (text.length > 100) confidence += 0.1;
-  if (text.length > 300) confidence += 0.05;
-
-  // Obecność charakterystycznych znaków dla języka
-  if (language === 'pl' && /[ąćęłńóśźż]/i.test(text)) confidence += 0.1;
-  if (language === 'es' && /[ñáéíóúü]/i.test(text)) confidence += 0.1;
-  if (language === 'fr' && /[àâäéèêëïîôöùûüÿ]/i.test(text)) confidence += 0.1;
-  if (language === 'de' && /[äöüß]/i.test(text)) confidence += 0.1;
-  if (language === 'zh' && /[\u4e00-\u9fff]/i.test(text)) confidence += 0.15;
-  if (language === 'ja' && /[\u3040-\u309f\u30a0-\u30ff]/i.test(text)) confidence += 0.15;
-  if (language === 'ko' && /[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]/i.test(text)) confidence += 0.15;
-  if (language === 'ar' && /[\u0600-\u06ff]/i.test(text)) confidence += 0.15;
-  if (language === 'ru' && /[а-яё]/i.test(text)) confidence += 0.1;
-
-  // Obecność typowych słów
-  const commonWords = getCommonWords(language);
-  const textLower = text.toLowerCase();
-  const foundWords = commonWords.filter(word => textLower.includes(word)).length;
-  if (foundWords > 0) confidence += Math.min(foundWords * 0.02, 0.1);
-
-  return Math.min(confidence, 1.0);
+export function getLanguageName(language: string): string {
+  const mapping = LANGUAGE_MAPPINGS[language];
+  return mapping?.name || 'Unknown';
 }
 
 /**
- * Zwraca typowe słowa dla danego języka
+ * Sprawdza czy język jest obsługiwany
  */
-function getCommonWords(language: string): string[] {
-  const commonWords: Record<string, string[]> = {
-    'en': ['the', 'and', 'you', 'that', 'was', 'for', 'are', 'with', 'his', 'they'],
-    'pl': ['i', 'w', 'na', 'z', 'to', 'się', 'nie', 'że', 'do', 'jest'],
-    'es': ['el', 'la', 'de', 'que', 'y', 'en', 'un', 'es', 'se', 'no'],
-    'fr': ['le', 'de', 'et', 'à', 'un', 'il', 'être', 'et', 'en', 'avoir'],
-    'de': ['der', 'die', 'und', 'in', 'den', 'von', 'zu', 'das', 'mit', 'sich'],
-    'it': ['il', 'di', 'che', 'e', 'la', 'per', 'una', 'in', 'con', 'da'],
-    'pt': ['de', 'a', 'o', 'que', 'e', 'do', 'da', 'em', 'um', 'para'],
-    'ru': ['в', 'и', 'не', 'на', 'я', 'быть', 'то', 'он', 'с', 'а'],
-    'zh': ['的', '是', '了', '在', '我', '有', '和', '就', '不', '人'],
-    'ja': ['の', 'に', 'は', 'を', 'た', 'が', 'で', 'て', 'と', 'し'],
-    'ko': ['이', '그', '에', '의', '는', '을', '을', '과', '도', '로'],
-    'ar': ['في', 'من', 'إلى', 'على', 'هذا', 'هذه', 'التي', 'الذي', 'كان', 'أن']
-  };
-
-  return commonWords[language] || [];
+export function isLanguageSupported(language: string): boolean {
+  return language in LANGUAGE_MAPPINGS;
 }
 
 /**
- * Tworzy wynik fallback gdy wykrywanie nie powiodło się
+ * Zwraca wszystkie obsługiwane języki
  */
-function createFallbackResult(
-  text: string, 
-  fallbackLanguage: string, 
-  reason: string
-): LanguageDetectionResult {
-  return {
-    language: fallbackLanguage,
-    languageName: LANGUAGE_NAMES[fallbackLanguage] || fallbackLanguage,
-    confidence: 0.5, // Niska pewność przy fallback
-    isSupported: SUPPORTED_LANGUAGES.includes(fallbackLanguage),
-    usedFallback: true,
-    originalText: text
-  };
+export function getSupportedLanguages(): string[] {
+  return Object.keys(LANGUAGE_MAPPINGS);
 }
 
 /**
- * Funkcja pomocnicza do logowania debug
+ * Formatuje wynik detekcji dla UI
  */
-export function logLanguageDetection(
-  result: LanguageDetectionResult,
-  debugLog: (message: string, data?: any) => void
-) {
-  debugLog('🌍 Language Detection Result', {
-    detectedLanguage: result.language,
-    languageName: result.languageName,
-    confidence: result.confidence,
-    isSupported: result.isSupported,
-    usedFallback: result.usedFallback,
-    textLength: result.originalText.length,
-    textPreview: result.originalText.substring(0, 50) + (result.originalText.length > 50 ? '...' : '')
+export function formatDetectionResult(result: LanguageDetectionResult): string {
+  const languageName = getLanguageName(result.language);
+  const confidence = Math.round(result.confidence * 100);
+  const reliability = result.isReliable ? '✅' : '⚠️';
+  
+  return `${reliability} ${languageName} (${confidence}%)`;
+}
+
+/**
+ * Wykrywa język i zwraca gotowe instrukcje do promptu
+ */
+export function detectAndGetInstructions(text: string): {
+  language: string;
+  instructions: string;
+  detection: LanguageDetectionResult;
+} {
+  const detection = detectLanguage(text);
+  const instructions = getLanguageInstructions(detection.language);
+  
+  debugLog('Language detection and instructions ready', {
+    language: detection.language,
+    instructions,
+    isReliable: detection.isReliable
   });
-}
 
-/**
- * Zwraca instrukcję dla AI w odpowiednim języku
- */
-export function getLanguageInstruction(language: string): string {
-  const instructions: Record<string, string> = {
-    'en': 'Please respond in English.',
-    'pl': 'Please respond in Polish (Polski).',
-    'es': 'Please respond in Spanish (Español).',
-    'fr': 'Please respond in French (Français).',
-    'de': 'Please respond in German (Deutsch).',
-    'it': 'Please respond in Italian (Italiano).',
-    'pt': 'Please respond in Portuguese (Português).',
-    'ru': 'Please respond in Russian (Русский).',
-    'ja': 'Please respond in Japanese (日本語).',
-    'ko': 'Please respond in Korean (한국어).',
-    'zh': 'Please respond in Chinese (中文).',
-    'ar': 'Please respond in Arabic (العربية).',
-    'hi': 'Please respond in Hindi (हिंदी).',
-    'nl': 'Please respond in Dutch (Nederlands).',
-    'sv': 'Please respond in Swedish (Svenska).',
-    'da': 'Please respond in Danish (Dansk).',
-    'no': 'Please respond in Norwegian (Norsk).',
-    'fi': 'Please respond in Finnish (Suomi).',
-    'cs': 'Please respond in Czech (Čeština).',
-    'hu': 'Please respond in Hungarian (Magyar).',
-    'tr': 'Please respond in Turkish (Türkçe).',
-    'uk': 'Please respond in Ukrainian (Українська).'
+  return {
+    language: detection.language,
+    instructions,
+    detection
   };
-
-  return instructions[language] || instructions[DEFAULT_LANGUAGE];
 } 
