@@ -580,10 +580,10 @@ contract DreamscapeAgent is
         evolutionRate = daysSinceCreation == 0 ? 0 : (totalEvolutions * 100) / daysSinceCreation;
     }
 
-    function hasMilestone(uint256 tokenId, string calldata name)
+    function hasMilestone(uint256 tokenId, string calldata milestoneName)
         external view override returns (bool achieved, uint256 at)
     {
-        MilestoneData memory m = milestones[tokenId][name];
+        MilestoneData memory m = milestones[tokenId][milestoneName];
         return (m.achieved, m.achievedAt);
     }
 
@@ -778,11 +778,11 @@ contract DreamscapeAgent is
         if (balanced && !milestones[tokenId]["balanced_soul"].achieved) _unlockMilestone(tokenId, "balanced_soul", 60);
     }
 
-    function _unlockMilestone(uint256 id, string memory name, uint8 val) internal {
-        milestones[id][name] = MilestoneData(true, block.timestamp, val);
-        agents[id].achievedMilestones.push(name);
-        emit PersonalityMilestone(id, name, val, "");
-        emit MilestoneUnlocked(id, name, val);
+    function _unlockMilestone(uint256 id, string memory milestoneName, uint8 val) internal {
+        milestones[id][milestoneName] = MilestoneData(true, block.timestamp, val);
+        agents[id].achievedMilestones.push(milestoneName);
+        emit PersonalityMilestone(id, milestoneName, val, "");
+        emit MilestoneUnlocked(id, milestoneName, val);
     }
 
     /* ─────────────────────────────────────────── PRIVATE: MEMORY HELPERS ──── */

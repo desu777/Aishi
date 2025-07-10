@@ -27,7 +27,7 @@
 **Co robi:**
 - Przetwarza codzienny sen agenta
 - Aktualizuje pamięć hierarchiczną
-- Co 5 snów: ewoluuje osobowość
+- Co 5 snów: ewoluuje osobowość (bez inicjalizacji - już aktywna)
 - Co 3 sny: +1 inteligencji
 - Dodaje AI-generowane unikalne cechy (max 2)
 - Sprawdza milestone'y osobowości
@@ -116,7 +116,7 @@
 ### 12. `getEvolutionStats(uint256 tokenId) → (uint256 totalEvolutions, uint256 evolutionRate, uint256 lastEvolution)`
 **Co robi:** Zwraca statystyki ewolucji osobowości
 
-### 13. `hasMilestone(uint256 tokenId, string milestone) → (bool achieved, uint256 at)`
+### 13. `hasMilestone(uint256 tokenId, string milestoneName) → (bool achieved, uint256 at)`
 **Co robi:** Sprawdza czy agent osiągnął konkretny milestone
 
 **Przykład:** `hasMilestone(42, "empathy_master")`
@@ -175,24 +175,26 @@
 
 ### **PRIORYTET 1: Podstawowe Funkcje**
 ```javascript
-// 1. Mint Agent
+// 1. Mint Agent (z natychmiastową inicjalizacją personality)
 const mintAgent = async (agentName, to) => {
-    return await contract.mintAgent([], [], agentName, to, { value: ethers.utils.parseEther("0.1") });
+    const tx = await contract.mintAgent([], [], agentName, to, { value: ethers.utils.parseEther("0.1") });
+    // PersonalityActivated event zostanie emitowane od razu
+    return tx;
 };
 
-// 2. Process Daily Dream
+// 2. Get Personality (dostępna od razu po mincie)
+const getPersonality = async (tokenId) => {
+    return await contract.getPersonalityTraits(tokenId);
+};
+
+// 3. Process Daily Dream (ewolucja, nie inicjalizacja)
 const processDream = async (tokenId, dreamHash, impact) => {
     return await contract.processDailyDream(tokenId, dreamHash, impact);
 };
 
-// 3. Record Conversation
+// 4. Record Conversation
 const recordConversation = async (tokenId, conversationHash, contextType) => {
     return await contract.recordConversation(tokenId, conversationHash, contextType);
-};
-
-// 4. Get Personality
-const getPersonality = async (tokenId) => {
-    return await contract.getPersonalityTraits(tokenId);
 };
 ```
 
@@ -245,8 +247,18 @@ const getEvolutionStats = async (tokenId) => {
 ### **PRIORYTET 4: Event Listeners**
 ```javascript
 // 13. Listen to important events
+
+// PersonalityActivated - emitowane od razu po mincie
+contract.on('PersonalityActivated', (tokenId, traits, dreamCount) => {
+    // Agent gotowy do użytku z aktywną personality
+    console.log(`Agent ${tokenId} personality aktywowana:`, traits);
+    // dreamCount będzie 0 przy mincie
+});
+
+// PersonalityEvolved - ewolucja personality co 5 snów
 contract.on('PersonalityEvolved', (tokenId, dreamHash, newPersonality, impact) => {
-    // Update UI with new personality
+    // Update UI with evolved personality
+    console.log(`Agent ${tokenId} personality ewoluowała:`, newPersonality);
 });
 
 contract.on('ConsolidationNeeded', (tokenId, month, year, type) => {

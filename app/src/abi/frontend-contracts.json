@@ -1,7 +1,7 @@
 {
   "galileo": {
     "DreamscapeAgent": {
-      "address": "0xAa8857209F8B5D56558388E4f6AFDcab6DA8C1D9",
+      "address": "0xc8433d78E6a9BceFA384c6090C53e57FB6b84191",
       "abi": [
         {
           "inputs": [
@@ -1688,7 +1688,7 @@
             },
             {
               "internalType": "string",
-              "name": "name",
+              "name": "milestoneName",
               "type": "string"
             }
           ],
@@ -2360,7 +2360,7 @@
         }
       ]
     },
-    "lastUpdate": "2025-07-09T18:50:37.958Z",
+    "lastUpdate": "2025-07-10T16:00:42.384Z",
     "chainId": 16601,
     "rpcUrl": "https://evmrpc-testnet.0g.ai"
   }

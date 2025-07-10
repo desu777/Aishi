@@ -195,10 +195,10 @@ interface IPersonalityEvolution {
     
     /// @notice Check if agent has reached specific personality milestone
     /// @param tokenId Agent to check
-    /// @param milestone Milestone to check ("empathy_master", "creative_genius", etc.)
+    /// @param milestoneName Milestone to check ("empathy_master", "creative_genius", etc.)
     /// @return achieved True if milestone has been achieved
     /// @return achievedAt Timestamp when milestone was achieved (0 if not achieved)
-    function hasMilestone(uint256 tokenId, string calldata milestone) 
+    function hasMilestone(uint256 tokenId, string calldata milestoneName) 
         external view returns (bool achieved, uint256 achievedAt);
     
     /// @notice Get agent's unique AI-generated features

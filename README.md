@@ -543,7 +543,7 @@ struct MilestoneData {
 
 **Logika:**
 ```solidity
-function processDailyDream(uint256 tokenId, bytes32 dreamHash, uint8 personalityImpact) external {
+function processDailyDream(uint256 tokenId, bytes32 dreamHash, PersonalityImpact calldata impact) external {
     // 1. Sprawdzenie uprawnień i cooldownu (24h)
     require(canProcessDreamToday(tokenId), "24h cooldown");
     
@@ -552,15 +552,25 @@ function processDailyDream(uint256 tokenId, bytes32 dreamHash, uint8 personality
     
     // 3. Zwiększenie liczników
     agents[tokenId].dreamCount++;
-    agents[tokenId].intelligenceLevel += personalityImpact;
     
-    // 4. Aktualizacja osobowości
+    // 4. Bonus inteligencji co 3 sny
+    if (agents[tokenId].dreamCount % 3 == 0) {
+        agents[tokenId].intelligenceLevel += 1;
+    }
+    
+    // 5. Ewolucja personality co 5 snów (już inicjalizowana przy mincie)
+    if (agents[tokenId].dreamCount % 5 == 0) {
+        // Personality evolution logic...
+        emit PersonalityEvolved(tokenId, dreamHash, newTraits, impact);
+    }
+    
+    // 6. Aktualizacja ostatniej daty snu
     agentPersonalities[tokenId].lastDreamDate = block.timestamp;
     
-    // 5. Sprawdzenie zmiany miesiąca
+    // 7. Sprawdzenie zmiany miesiąca
     _checkMonthChange(tokenId);
     
-    // 6. Emisja eventów
+    // 8. Emisja eventów
     emit DreamProcessed(tokenId, dreamHash, agents[tokenId].intelligenceLevel);
 }
 ```
@@ -834,7 +844,26 @@ function getConsolidationReward(uint256 tokenId) external view returns (
 
 ## 🎯 Przepływ Danych - Przykłady Praktyczne
 
-### Scenariusz 1: Pierwszy Sen Agenta
+### Scenariusz 1: Mint Agenta z Natychmiastową Inicjalizacją Personality
+```javascript
+// 1. User tworzy nowego agenta
+const tx = await contract.mintAgent([], [], "MyAgent", userAddress, { 
+    value: ethers.utils.parseEther("0.1") 
+});
+
+// 2. Kontrakt od razu inicjalizuje personality:
+// personalityInitialized = true
+// wszystkie cechy = 50 (neutralne)
+// dominantMood = "neutral"
+// emit PersonalityActivated(tokenId, traits, 0)
+
+// 3. Agent jest gotowy do użytku - można od razu:
+const personality = await contract.getPersonalityTraits(tokenId);
+console.log("Agent gotowy z personality:", personality);
+// creativity: 50, analytical: 50, empathy: 50, etc.
+```
+
+### Scenariusz 2: Pierwszy Sen Agenta
 ```javascript
 // 1. User opisuje sen w aplikacji
 const dreamData = {
@@ -850,16 +879,22 @@ const dreamFile = [dreamData];
 const hash = await storage.upload(dreamFile);
 // hash = "0xabc123..."
 
-// 3. Wywołanie kontraktu
-await contract.processDailyDream(42, hash, 5);
+// 3. Wywołanie kontraktu z PersonalityImpact
+const impact = {
+    creativityChange: 3,
+    analyticalChange: 0,
+    empathyChange: 1,
+    // ... inne zmiany
+};
+await contract.processDailyDream(42, hash, impact);
 
 // 4. Kontrakt zapisuje:
 // agentMemories[42].currentDreamDailyHash = "0xabc123..."
 // agents[42].dreamCount = 1
-// agents[42].intelligenceLevel += 5
+// Bonus inteligencji co 3. sen, ewolucja co 5. sen
 ```
 
-### Scenariusz 2: Dodanie Kolejnego Snu
+### Scenariusz 3: Dodanie Kolejnego Snu
 ```javascript
 // 1. User opisuje drugi sen
 const newDreamData = {
@@ -888,7 +923,7 @@ await contract.processDailyDream(42, newHash, 6);
 // agentMemories[42].currentDreamDailyHash = "0xdef456..."
 ```
 
-### Scenariusz 3: Zmiana Miesiąca - Alert Konsolidacji
+### Scenariusz 4: Zmiana Miesiąca - Alert Konsolidacji
 ```javascript
 // 1. User dodaje sen 1 lutego (zmiana z stycznia)
 await contract.processDailyDream(42, newHash, 4);
@@ -905,7 +940,7 @@ contract.on('ConsolidationNeeded', (tokenId, month, year, type) => {
 });
 ```
 
-### Scenariusz 4: Konsolidacja Miesięczna
+### Scenariusz 5: Konsolidacja Miesięczna
 ```javascript
 // 1. User klika "Konsoliduj Styczeń"
 // 2. Aplikacja pobiera wszystkie dzienne pliki stycznia
@@ -931,7 +966,7 @@ await contract.consolidateMonth(42, dreamMonthlyHash, convMonthlyHash, 1, 2025);
 // - Emituje ConsolidationCompleted event
 ```
 
-### Scenariusz 5: Konsolidacja Grudnia - Roczna Refleksja
+### Scenariusz 6: Konsolidacja Grudnia - Roczna Refleksja
 ```javascript
 // 1. User konsoliduje grudzień
 await contract.consolidateMonth(42, dreamHash, convHash, 12, 2025);
@@ -946,7 +981,7 @@ contract.on('YearlyReflectionAvailable', (tokenId, year) => {
 });
 ```
 
-### Scenariusz 6: Tworzenie Memory Core
+### Scenariusz 7: Tworzenie Memory Core
 ```javascript
 // 1. User klika "Stwórz Memory Core 2025"
 // 2. Aplikacja pobiera wszystkie miesięczne pliki roku 2025
