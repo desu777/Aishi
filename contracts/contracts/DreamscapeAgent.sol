@@ -216,14 +216,14 @@ contract DreamscapeAgent is
             intelligenceLevel:       1,
             dreamCount:              0,
             conversationCount:       0,
-            personalityInitialized:  false,
+            personalityInitialized:  true,  // ✅ Inicjalizujemy od razu
             totalEvolutions:         0,
             lastEvolutionDate:       block.timestamp,
             achievedMilestones:      new string[](0)
         });
 
-        /* ── neutral personality stub ── */
-        agentPersonalities[tokenId] = PersonalityTraits({
+        /* ── initialized personality (neutral starting point) ── */
+        PersonalityTraits memory initialTraits = PersonalityTraits({
             creativity:     50,
             analytical:     50,
             empathy:        50,
@@ -234,7 +234,11 @@ contract DreamscapeAgent is
             lastDreamDate:  0,
             uniqueFeatures: new UniqueFeature[](0)
         });
+        agentPersonalities[tokenId] = initialTraits;
         responseStyles[tokenId] = "neutral";
+        
+        /* ── emit personality activation ── */
+        emit PersonalityActivated(tokenId, initialTraits, 0);
         
         /* ── memory initialisation ── */
         agentMemories[tokenId] = AgentMemory({
@@ -334,12 +338,6 @@ contract DreamscapeAgent is
                 }
                 
                 emit UniqueFeaturesAdded(tokenId, impact.newFeatures, traits.uniqueFeatures.length);
-            }
-
-            // first evolution → consider personality «activated»
-            if (!agent.personalityInitialized) {
-                agent.personalityInitialized = true;
-                emit PersonalityActivated(tokenId, traits, agent.dreamCount);
             }
 
             agent.totalEvolutions += 1;

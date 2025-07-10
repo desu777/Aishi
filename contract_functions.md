@@ -6,7 +6,8 @@
 **Co robi:**
 - Tworzy nowego agenta NFT (jeden na portfel)
 - Pobiera opłatę 0.1 ETH
-- Inicjalizuje neutralną osobowość (wszystkie cechy = 50)
+- **Inicjalizuje i aktywuje osobowość** (wszystkie cechy = 50, personalityInitialized = true)
+- Emituje PersonalityActivated event od razu
 - Tworzy pusty system pamięci
 - Opcjonalnie weryfikuje ZK-proof
 
