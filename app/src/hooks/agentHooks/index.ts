@@ -10,6 +10,7 @@ export { useAgentChat } from './useAgentChat';
 export { useAgentPrompt } from './useAgentPrompt';
 export { useAgentConversationPrompt } from './useAgentConversationPrompt';
 export { useAgentAI } from './useAgentAI';
+export { useAgentConversation } from './useAgentConversation';
 
 // Language detection utilities
 export { 
@@ -22,6 +23,4 @@ export {
   getSupportedLanguages
 } from './utils/languageDetection';
 
-// Future exports:
-// export { useAgentDream } from './useAgentDream';
-// export { useAgentConversation } from './useAgentConversation'; 
+// All hooks are now exported and ready to use 

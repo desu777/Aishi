@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { useStorageDownload } from '../storage/useStorageDownload';
 import { useStorageUpload } from '../storage/useStorageUpload';
 import { useWallet } from '../useWallet';
-import { useAgentAI } from './useAgentAI';
+import { useAgentConversation } from './useAgentConversation';
 import { useAgentConversationPrompt } from './useAgentConversationPrompt';
 import { ConversationContextBuilder, ConversationContext, ChatMessage } from './services/conversationContextBuilder';
 import { ConversationSummary } from './types/agentChatTypes';
@@ -39,6 +39,8 @@ interface ChatState {
   // Contract functionality
   isProcessingContract: boolean;
   contractStatus: string;
+  // Prompt debugging
+  lastPrompt: string | null;
 }
 
 // Context types from contract interface
@@ -59,13 +61,14 @@ export function useAgentChat(tokenId?: number) {
     isSaving: false,
     saveStatus: '',
     isProcessingContract: false,
-    contractStatus: ''
+    contractStatus: '',
+    lastPrompt: null
   });
 
   const { downloadFile } = useStorageDownload();
   const { uploadFile } = useStorageUpload();
   const { isConnected, address } = useWallet();
-  const { sendDreamAnalysis } = useAgentAI();
+  const { sendConversationMessage } = useAgentConversation();
   const { buildConversationPrompt } = useAgentConversationPrompt();
 
   // Debug logs dla development
@@ -216,26 +219,26 @@ export function useAgentChat(tokenId?: number) {
 
       const conversationPrompt = buildConversationPrompt(updatedContext, userMessage);
       
+      // Save prompt for debugging
+      setChatState(prev => ({ ...prev, lastPrompt: conversationPrompt.prompt }));
+      
       debugLog('Sending to AI', { 
         promptLength: conversationPrompt.prompt.length,
         agentName: updatedContext.agentProfile.name
       });
 
-      // Send to AI (reuse existing AI service)
-      const parsedResponse = await sendDreamAnalysis(
-        conversationPrompt,
-        'llama-3.3-70b-instruct'
-      );
+      // Send to AI (dedicated conversation service)
+      const parsedResponse = await sendConversationMessage(conversationPrompt);
 
-      if (parsedResponse && parsedResponse.fullAnalysis) {
+      if (parsedResponse && parsedResponse.agentResponse) {
         const agentMsg: ChatMessage = {
           id: `agent_${Date.now()}`,
           role: 'agent',
-          content: parsedResponse.fullAnalysis,
+          content: parsedResponse.agentResponse,
           timestamp: Date.now(),
           metadata: {
             conversationType: 'general_chat', // Simplified
-            emotionalTone: parsedResponse.conversationSummary?.emotional_tone || 'neutral',
+            emotionalTone: parsedResponse.conversationSummary.emotional_tone || 'neutral',
             uniqueFeatures: updatedContext.uniqueFeatures.map(f => f.name)
           }
         };
@@ -256,10 +259,12 @@ export function useAgentChat(tokenId?: number) {
           agentResponseLength: agentMsg.content.length,
           totalMessages: chatState.session.messages.length + 2,
           hasSummary: !!parsedResponse.conversationSummary,
-          summaryTopic: parsedResponse.conversationSummary?.topic
+          summaryTopic: parsedResponse.conversationSummary.topic,
+          referencesCount: parsedResponse.references.length,
+          nextQuestionsCount: parsedResponse.nextQuestions.length
         });
       } else {
-        throw new Error('AI response was empty or invalid');
+        throw new Error('AI conversation response was empty or invalid');
       }
 
     } catch (error) {
@@ -271,7 +276,7 @@ export function useAgentChat(tokenId?: number) {
       }));
       debugLog('Message sending failed', { error: errorMessage });
     }
-  }, [chatState.session, sendDreamAnalysis, buildConversationPrompt, debugLog]);
+  }, [chatState.session, sendConversationMessage, buildConversationPrompt, debugLog]);
 
   /**
    * Zapisuje konwersację do storage i kontraktu
@@ -307,7 +312,7 @@ export function useAgentChat(tokenId?: number) {
         date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
         topic: chatState.session.currentSummary.topic,
         emotional_tone: chatState.session.currentSummary.emotional_tone,
-        key_insights: chatState.session.currentSummary.key_insights.slice(0, 3), // max 3
+        key_insights: chatState.session.currentSummary.key_insights, // WSZYSTKIE insights
         analysis: chatState.session.currentSummary.analysis
       };
 
@@ -499,7 +504,8 @@ export function useAgentChat(tokenId?: number) {
       isSaving: false,
       saveStatus: '',
       isProcessingContract: false,
-      contractStatus: ''
+      contractStatus: '',
+      lastPrompt: null
     });
     debugLog('Chat session reset');
   }, [debugLog]);
@@ -527,7 +533,10 @@ export function useAgentChat(tokenId?: number) {
     
     // Error handling
     error: chatState.error,
-    clearError: () => setChatState(prev => ({ ...prev, error: null }))
+    clearError: () => setChatState(prev => ({ ...prev, error: null })),
+    
+    // Prompt debugging
+    lastPrompt: chatState.lastPrompt
   };
 }
 
@@ -582,7 +591,7 @@ function extractConversationTopic(messages: ChatMessage[]): string {
   // Use first user message as topic basis
   const firstMessage = userMessages[0].content;
   if (firstMessage.length > 50) {
-    return firstMessage.substring(0, 50) + '...';
+    return firstMessage; // PEŁNA treść - bez obcinania
   }
   return firstMessage;
 }
@@ -604,11 +613,11 @@ function extractKeyInsights(messages: ChatMessage[]): string[] {
   
   for (const msg of agentMessages) {
     if (msg.content.includes('insight') || msg.content.includes('understand') || msg.content.includes('realize')) {
-      insights.push(msg.content.substring(0, 100) + '...');
+      insights.push(msg.content);
     }
   }
   
-  return insights.slice(0, 3); // Max 3 insights
+  return insights; // WSZYSTKIE insights - bez ograniczeń
 }
 
 function extractFollowUpQuestions(messages: ChatMessage[]): string[] {
@@ -624,7 +633,7 @@ function extractFollowUpQuestions(messages: ChatMessage[]): string[] {
     }
   }
   
-  return questions.slice(0, 3); // Max 3 questions
+  return questions; // WSZYSTKIE questions - bez ograniczeń
 }
 
 function mapConversationTypeToEnum(conversationType: string): ContextType {

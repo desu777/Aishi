@@ -27,7 +27,8 @@ export default function AgentChat() {
     userTokenId,
     isConnected,
     isCorrectNetwork,
-    ContextType
+    ContextType,
+    lastPrompt
   } = useAgentChat();
 
   // Local state

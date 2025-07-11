@@ -128,7 +128,7 @@ function buildUniqueFeaturesSection(context: DreamContext): string {
 }
 
 /**
- * Buduje sekcję pamięci i historii - zoptymalizowana z zachowaniem wszystkich danych
+ * Buduje sekcję pamięci i historii - WSZYSTKIE dane z plików
  */
 function buildMemorySection(context: DreamContext): string {
   // Debug log dla development
@@ -146,15 +146,39 @@ function buildMemorySection(context: DreamContext): string {
     monthsAccessible: context.memoryAccess.monthsAccessible
   });
 
-  return `EXPERIENCE: ${context.agentProfile.dreamCount} dreams analyzed | Memory depth: ${context.memoryAccess.memoryDepth}`;
+  let memorySection = `EXPERIENCE: ${context.agentProfile.dreamCount} dreams analyzed | Memory depth: ${context.memoryAccess.memoryDepth}`;
+  
+  // Dodaj wszystkie poprzednie sny
+  if (context.historicalData.dailyDreams.length > 0) {
+    memorySection += `\n\nALL PREVIOUS DREAMS:`;
+    context.historicalData.dailyDreams.forEach(dream => {
+      const dreamDate = dream.date || (dream.timestamp ? new Date(dream.timestamp * 1000).toLocaleDateString('pl-PL') : 'unknown');
+      memorySection += `\nDream #${dream.id} (${dreamDate}): ${dream.emotions?.join(',') || 'neutral'} | ${dream.symbols?.join(',') || 'none'} | "${(dream.ai_analysis || dream.content || 'No analysis')}"`;
+    });
+  }
+  
+  // Dodaj wszystkie miesięczne konsolidacje
+  if (context.historicalData.monthlyConsolidations.length > 0) {
+    memorySection += `\n\nALL MONTHLY CONSOLIDATIONS:`;
+    context.historicalData.monthlyConsolidations.forEach(consolidation => {
+      memorySection += `\n${consolidation.month}/${consolidation.year}: ${consolidation.dominant_themes?.join(', ') || 'mixed themes'} (${consolidation.total_dreams || 0} dreams)`;
+    });
+  }
+  
+  // Dodaj yearly core jeśli istnieje
+  if (context.historicalData.yearlyCore) {
+    memorySection += `\n\nYEARLY CORE: Deep personality patterns and growth from past year`;
+  }
 
   debugLog('Memory section built', {
-    finalTextLength: `EXPERIENCE: ${context.agentProfile.dreamCount} dreams analyzed | Memory depth: ${context.memoryAccess.memoryDepth}`.length,
-    containsPreviousDreams: false,
-    containsMonthlyConsolidations: false,
-    containsYearlyCore: false,
-    previewText: 'Simple experience summary'
+    finalTextLength: memorySection.length,
+    containsPreviousDreams: context.historicalData.dailyDreams.length > 0,
+    containsMonthlyConsolidations: context.historicalData.monthlyConsolidations.length > 0,
+    containsYearlyCore: !!context.historicalData.yearlyCore,
+    previewText: memorySection.substring(0, 200) + '...' // Debug preview only
   });
+
+  return memorySection;
 }
 
 /**

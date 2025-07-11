@@ -334,10 +334,9 @@ export class DreamContextBuilder {
         if (monthlyResult.success && monthlyResult.data) {
           const monthlyData = this.parseJsonData(monthlyResult.data);
           if (monthlyData && Array.isArray(monthlyData)) {
-            // Filter by months accessible and sort by newest first
+            // WSZYSTKIE dane - bez filtrowania
             result.monthlyConsolidations = monthlyData
-              .sort((a, b) => b.consolidation_date - a.consolidation_date)
-              .slice(0, Math.floor(monthsAccessible / 12) || 1);
+              .sort((a, b) => b.consolidation_date - a.consolidation_date);
             this.debugLog('Monthly consolidations loaded', { count: result.monthlyConsolidations.length });
           }
         }

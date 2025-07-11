@@ -333,7 +333,7 @@ export class ConversationContextBuilder {
         if (monthlyResult.success && monthlyResult.data) {
           const monthlyData = this.parseJsonData(monthlyResult.data);
           if (Array.isArray(monthlyData)) {
-            result.monthlyConsolidations = this.filterByNewestIds(monthlyData, monthsAccessible);
+            result.monthlyConsolidations = monthlyData; // WSZYSTKIE dane - bez filtrowania
             this.debugLog('Monthly dream consolidations loaded', { count: result.monthlyConsolidations.length });
           }
         }
@@ -346,7 +346,7 @@ export class ConversationContextBuilder {
         if (monthlyConvResult.success && monthlyConvResult.data) {
           const monthlyConvData = this.parseJsonData(monthlyConvResult.data);
           if (Array.isArray(monthlyConvData)) {
-            result.monthlyConversations = this.filterByNewestIds(monthlyConvData, monthsAccessible);
+            result.monthlyConversations = monthlyConvData; // WSZYSTKIE dane - bez filtrowania
             this.debugLog('Monthly conversation consolidations loaded', { count: result.monthlyConversations.length });
           }
         }

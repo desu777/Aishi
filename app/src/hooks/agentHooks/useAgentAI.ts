@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useWallet } from '../useWallet';
 import { DreamAnalysisPrompt } from './useAgentPrompt';
-import { ConversationAIResponse } from './types/agentChatTypes';
 
 interface AIAnalysisState {
   isLoading: boolean;
@@ -47,13 +46,6 @@ interface ParsedAIResponse {
     }>;
   };
   analysis: string;
-  // New field for conversation summaries
-  conversationSummary?: {
-    topic: string;
-    emotional_tone: string;
-    key_insights: string[];
-    analysis: string;
-  };
 }
 
 export function useAgentAI() {
@@ -86,22 +78,22 @@ export function useAgentAI() {
   };
 
   /**
-   * Sends AI prompt to 0g-compute API (supports both dream analysis and conversation)
+   * Sends dream analysis prompt to 0g-compute API - ONLY FOR DREAMS
    */
   const sendDreamAnalysis = async (
-    promptData: DreamAnalysisPrompt | any
+    promptData: DreamAnalysisPrompt
   ): Promise<ParsedAIResponse | null> => {
     if (!address) {
       const error = 'Wallet not connected';
       setState(prev => ({ ...prev, error }));
-      debugLog('AI analysis failed - wallet not connected');
+      debugLog('Dream analysis failed - wallet not connected');
       return null;
     }
 
     if (!promptData.prompt.trim()) {
       const error = 'Prompt is required';
       setState(prev => ({ ...prev, error }));
-      debugLog('AI analysis failed - no prompt');
+      debugLog('Dream analysis failed - no prompt');
       return null;
     }
 
@@ -114,7 +106,7 @@ export function useAgentAI() {
     }));
 
     try {
-      debugLog('Starting AI analysis', { 
+      debugLog('Starting dream analysis', { 
         walletAddress: address,
         promptLength: promptData.prompt.length,
         needsEvolution: promptData.expectedFormat.needsPersonalityEvolution
@@ -145,7 +137,7 @@ export function useAgentAI() {
       const apiResult = await response.json();
       
       if (!apiResult.success) {
-        throw new Error(apiResult.error || 'AI analysis failed');
+        throw new Error(apiResult.error || 'Dream analysis failed');
       }
 
       const aiResponse: AIResponse = apiResult.data;
@@ -158,11 +150,11 @@ export function useAgentAI() {
         responseLength: aiResponse.response.length
       });
 
-      // Parse AI response (different logic for conversation vs dream analysis)
-      const parsedResponse = parseAIResponse(aiResponse.response, promptData.expectedFormat);
+      // Parse AI response for dream analysis
+      const parsedResponse = parseDreamAnalysisResponse(aiResponse.response, promptData.expectedFormat);
       
       if (!parsedResponse) {
-        throw new Error('Failed to parse AI response');
+        throw new Error('Failed to parse dream analysis response');
       }
 
       setState(prev => ({ 
@@ -172,10 +164,9 @@ export function useAgentAI() {
         parsedResponse
       }));
 
-      debugLog('AI analysis completed successfully', {
+      debugLog('Dream analysis completed successfully', {
         dreamId: parsedResponse.dreamData?.id,
         hasEvolution: !!parsedResponse.personalityImpact,
-        hasConversationSummary: !!parsedResponse.conversationSummary,
         analysisLength: parsedResponse.analysis.length,
         fullAnalysisLength: parsedResponse.fullAnalysis.length
       });
@@ -189,81 +180,29 @@ export function useAgentAI() {
         isLoading: false,
         error: errorMessage
       }));
-      debugLog('AI analysis failed', { error: errorMessage });
+      debugLog('Dream analysis failed', { error: errorMessage });
       return null;
     }
   };
 
   /**
-   * Parses AI response text (supports both conversation and dream analysis)
+   * Parses AI response text for DREAM ANALYSIS ONLY
    */
-  const parseAIResponse = (
+  const parseDreamAnalysisResponse = (
     responseText: string, 
     expectedFormat: any
   ): ParsedAIResponse | null => {
     try {
-      debugLog('Parsing AI response', { 
+      debugLog('Parsing dream analysis response', { 
         responseLength: responseText.length,
-        isConversation: expectedFormat.isConversation,
         needsEvolution: expectedFormat.needsPersonalityEvolution
       });
 
-      // For conversation, parse dual JSON format
-      if (expectedFormat.isConversation) {
-        debugLog('Parsing as conversation response');
-        
-        // Extract JSON blocks for conversation
-        const jsonBlocks = extractJsonBlocks(responseText);
-        
-        if (jsonBlocks.length < 1) {
-          // Fallback to raw response if no JSON found
-          debugLog('No JSON blocks found, using raw response');
-          return {
-            fullAnalysis: responseText,
-            analysis: responseText.substring(0, 200) + '...'
-          };
-        }
-
-        try {
-          // Parse conversation JSON response
-          const conversationData: ConversationAIResponse = JSON.parse(jsonBlocks[0]);
-          
-          if (!conversationData.agent_response || !conversationData.conversation_summary) {
-            debugLog('Missing required fields in conversation JSON');
-            return {
-              fullAnalysis: responseText,
-              analysis: responseText.substring(0, 200) + '...'
-            };
-          }
-
-          const parsedResponse: ParsedAIResponse = {
-            fullAnalysis: conversationData.agent_response,
-            conversationSummary: conversationData.conversation_summary,
-            analysis: conversationData.conversation_summary.analysis
-          };
-
-          debugLog('Conversation response parsed successfully', {
-            responseLength: parsedResponse.fullAnalysis.length,
-            topic: parsedResponse.conversationSummary?.topic,
-            emotionalTone: parsedResponse.conversationSummary?.emotional_tone
-          });
-
-          return parsedResponse;
-
-        } catch (error) {
-          debugLog('Failed to parse conversation JSON, using raw response', error);
-          return {
-            fullAnalysis: responseText,
-            analysis: responseText.substring(0, 200) + '...'
-          };
-        }
-      }
-
-      // For dream analysis, extract JSON blocks (existing logic)
+      // Extract JSON blocks for dream analysis (dual format)
       const jsonBlocks = extractJsonBlocks(responseText);
       
       if (jsonBlocks.length < 2) {
-        debugLog('Not enough JSON blocks found', { found: jsonBlocks.length });
+        debugLog('Not enough JSON blocks found for dream analysis', { found: jsonBlocks.length });
         return null;
       }
 
@@ -297,7 +236,9 @@ export function useAgentAI() {
       return parsedResponse;
 
     } catch (error) {
-      debugLog('Failed to parse AI response', { error: error instanceof Error ? error.message : String(error) });
+      debugLog('Failed to parse dream analysis response', { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
       return null;
     }
   };

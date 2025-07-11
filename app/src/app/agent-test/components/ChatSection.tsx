@@ -19,6 +19,7 @@ export default function ChatSection({
   const { theme } = useTheme();
   const [input, setInput] = useState('');
   const [showIntroduction, setShowIntroduction] = useState(true);
+  const [showPrompt, setShowPrompt] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Agent data from useAgentRead
@@ -42,7 +43,8 @@ export default function ChatSection({
     isProcessingContract,
     contractStatus,
     error,
-    clearError
+    clearError,
+    lastPrompt
   } = useAgentChat(effectiveTokenId);
 
   // Debug logs dla development
@@ -135,6 +137,7 @@ export default function ChatSection({
     resetSession();
     setShowIntroduction(true);
     setInput('');
+    setShowPrompt(false);
   };
 
   // Introduction screen
@@ -315,6 +318,22 @@ export default function ChatSection({
         </div>
         
         <div style={{ display: 'flex', gap: '10px' }}>
+          {lastPrompt && (
+            <button
+              onClick={() => setShowPrompt(!showPrompt)}
+              style={{
+                backgroundColor: showPrompt ? theme.accent.primary : theme.bg.panel,
+                color: showPrompt ? 'white' : theme.text.secondary,
+                border: `1px solid ${theme.border}`,
+                borderRadius: '6px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              {showPrompt ? 'Hide Prompt' : 'Show Prompt'}
+            </button>
+          )}
           <button
             onClick={handleResetChat}
             style={{
@@ -359,6 +378,42 @@ export default function ChatSection({
           >
             ×
           </button>
+        </div>
+      )}
+
+      {/* Prompt Display */}
+      {showPrompt && lastPrompt && (
+        <div style={{
+          backgroundColor: theme.bg.panel,
+          border: `1px solid ${theme.border}`,
+          borderRadius: '8px',
+          padding: '15px',
+          marginBottom: '15px'
+        }}>
+          <div style={{
+            color: theme.text.primary,
+            fontSize: '14px',
+            fontWeight: '600',
+            marginBottom: '10px'
+          }}>
+            Last Conversation Prompt:
+          </div>
+          <textarea
+            value={lastPrompt}
+            readOnly
+            style={{
+              width: '100%',
+              height: '200px',
+              backgroundColor: theme.bg.card,
+              color: theme.text.primary,
+              border: `1px solid ${theme.border}`,
+              borderRadius: '6px',
+              padding: '10px',
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              resize: 'vertical'
+            }}
+          />
         </div>
       )}
 

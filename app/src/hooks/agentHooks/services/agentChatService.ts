@@ -122,8 +122,8 @@ export const buildChatContext = async (
       if (dreamHashes && dreamHashes.length > 0) {
         context += `\nRecent Dreams:\n`;
         
-        // Pobierz ostatnie 2 sny (nie wszystkie)
-        const recentDreams = dreamHashes.slice(-2);
+        // Pobierz WSZYSTKIE sny - bez ograniczeń
+        const recentDreams = dreamHashes;
         
         for (const hash of recentDreams) {
           try {
@@ -137,8 +137,8 @@ export const buildChatContext = async (
               const dreamText = typeof dreamData.dreamText === 'string' ? dreamData.dreamText : JSON.stringify(dreamData.dreamText || '');
               const analysis = typeof dreamData.analysis === 'string' ? dreamData.analysis : JSON.stringify(dreamData.analysis || '');
               
-              context += `- Dream: "${dreamText.substring(0, 100)}..."\n`;
-              context += `  Analysis: "${analysis.substring(0, 150)}..."\n`;
+              context += `- Dream: "${dreamText}"\n`;
+              context += `  Analysis: "${analysis}"\n`;
             } else {
               debugLog('Failed to download dream', { hash, error: result.error });
             }
