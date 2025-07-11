@@ -1,7 +1,89 @@
 {
   "galileo": {
+    "SimpleDreamVerifier": {
+      "address": "0x3102237d06075f2fd8AbeD8e44a2fBE2c0cF1B9A",
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "bytes[]",
+              "name": "proofs",
+              "type": "bytes[]"
+            }
+          ],
+          "name": "verifyPreimage",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "dataHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "isValid",
+                  "type": "bool"
+                }
+              ],
+              "internalType": "struct PreimageProofOutput[]",
+              "name": "outputs",
+              "type": "tuple[]"
+            }
+          ],
+          "stateMutability": "pure",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes[]",
+              "name": "proofs",
+              "type": "bytes[]"
+            }
+          ],
+          "name": "verifyTransferValidity",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "oldDataHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "newDataHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "pubKey",
+                  "type": "bytes"
+                },
+                {
+                  "internalType": "bytes16",
+                  "name": "sealedKey",
+                  "type": "bytes16"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "isValid",
+                  "type": "bool"
+                }
+              ],
+              "internalType": "struct TransferValidityProofOutput[]",
+              "name": "outputs",
+              "type": "tuple[]"
+            }
+          ],
+          "stateMutability": "pure",
+          "type": "function"
+        }
+      ]
+    },
     "DreamscapeAgent": {
-      "address": "0xA7147Ffb491a4b5a91acB6d7Dd4AA2036A909947",
+      "address": "0x4dB468DEBd55Cdc05E88dfcD20AD661Ff8885eAE",
       "abi": [
         {
           "inputs": [
@@ -2278,89 +2360,7 @@
         }
       ]
     },
-    "SimpleDreamVerifier": {
-      "address": "0x3ab9784ac2D04D1f1aAd0B435b61e456d0744cA4",
-      "abi": [
-        {
-          "inputs": [
-            {
-              "internalType": "bytes[]",
-              "name": "proofs",
-              "type": "bytes[]"
-            }
-          ],
-          "name": "verifyPreimage",
-          "outputs": [
-            {
-              "components": [
-                {
-                  "internalType": "bytes32",
-                  "name": "dataHash",
-                  "type": "bytes32"
-                },
-                {
-                  "internalType": "bool",
-                  "name": "isValid",
-                  "type": "bool"
-                }
-              ],
-              "internalType": "struct PreimageProofOutput[]",
-              "name": "outputs",
-              "type": "tuple[]"
-            }
-          ],
-          "stateMutability": "pure",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "bytes[]",
-              "name": "proofs",
-              "type": "bytes[]"
-            }
-          ],
-          "name": "verifyTransferValidity",
-          "outputs": [
-            {
-              "components": [
-                {
-                  "internalType": "bytes32",
-                  "name": "oldDataHash",
-                  "type": "bytes32"
-                },
-                {
-                  "internalType": "bytes32",
-                  "name": "newDataHash",
-                  "type": "bytes32"
-                },
-                {
-                  "internalType": "bytes",
-                  "name": "pubKey",
-                  "type": "bytes"
-                },
-                {
-                  "internalType": "bytes16",
-                  "name": "sealedKey",
-                  "type": "bytes16"
-                },
-                {
-                  "internalType": "bool",
-                  "name": "isValid",
-                  "type": "bool"
-                }
-              ],
-              "internalType": "struct TransferValidityProofOutput[]",
-              "name": "outputs",
-              "type": "tuple[]"
-            }
-          ],
-          "stateMutability": "pure",
-          "type": "function"
-        }
-      ]
-    },
-    "lastUpdate": "2025-07-11T10:16:49.966Z",
+    "lastUpdate": "2025-07-11T12:39:44.324Z",
     "chainId": 16601,
     "rpcUrl": "https://evmrpc-testnet.0g.ai"
   }

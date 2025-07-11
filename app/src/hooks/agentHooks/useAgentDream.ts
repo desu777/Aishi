@@ -28,13 +28,11 @@ interface DreamStorageData {
   analysis: string;
   dreamData: {
     id: number;
-    timestamp: number;
-    content: string;
+    date: string;
     emotions: string[];
     symbols: string[];
     intensity: number;
     lucidity_level: number;
-    dream_type: string;
   };
 }
 
@@ -264,7 +262,7 @@ export function useAgentDream() {
       debugLog('Starting dream storage', { 
         tokenId, 
         dreamId: dreamStorageData.dreamData.id,
-        dreamType: dreamStorageData.dreamData.dream_type 
+        date: dreamStorageData.dreamData.date 
       });
 
       // 1. Get contract instance to read current memory
@@ -322,24 +320,14 @@ export function useAgentDream() {
         debugLog('No existing dreams file, starting fresh array');
       }
 
-      // 4. Create new dream entry (format from agent_memory.md)
+      // 4. Create new dream entry (optimized format)
       const newDreamEntry = {
         id: dreamStorageData.dreamData.id,
-        timestamp: dreamStorageData.dreamData.timestamp,
-        content: dreamStorageData.dreamData.content,
+        date: dreamStorageData.dreamData.date,
         emotions: dreamStorageData.dreamData.emotions,
         symbols: dreamStorageData.dreamData.symbols,
         intensity: dreamStorageData.dreamData.intensity,
         lucidity_level: dreamStorageData.dreamData.lucidity_level,
-        dream_type: dreamStorageData.dreamData.dream_type,
-        // Additional fields from agent_memory.md format
-        weather_in_dream: "unknown",
-        characters: ["self"],
-        locations: ["dream_space"],
-        actions: ["dreaming"],
-        mood_before_sleep: "unknown",
-        mood_after_waking: "unknown",
-        // Add analysis as metadata
         ai_analysis: dreamStorageData.analysis
       };
 
@@ -427,22 +415,22 @@ export function useAgentDream() {
         analysis: parsedAIResponse.analysis,
         dreamData: {
           id: parsedAIResponse.dreamData.id,
-          timestamp: parsedAIResponse.dreamData.timestamp,
-          content: parsedAIResponse.dreamData.content,
+          date: parsedAIResponse.dreamData.date,
           emotions: parsedAIResponse.dreamData.emotions || [],
           symbols: parsedAIResponse.dreamData.symbols || [],
           intensity: parsedAIResponse.dreamData.intensity || 5,
-          lucidity_level: parsedAIResponse.dreamData.lucidity_level || 1,
-          dream_type: parsedAIResponse.dreamData.dream_type || 'unknown'
+          lucidity_level: parsedAIResponse.dreamData.lucidity_level || 1
         }
       };
 
       debugLog('Dream storage data extracted', {
         dreamId: dreamStorageData.dreamData.id,
-        dreamType: dreamStorageData.dreamData.dream_type,
+        date: dreamStorageData.dreamData.date,
         analysisLength: dreamStorageData.analysis.length,
         emotionsCount: dreamStorageData.dreamData.emotions.length,
-        symbolsCount: dreamStorageData.dreamData.symbols.length
+        symbolsCount: dreamStorageData.dreamData.symbols.length,
+        intensity: dreamStorageData.dreamData.intensity,
+        lucidity_level: dreamStorageData.dreamData.lucidity_level
       });
 
       // Save to storage

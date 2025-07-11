@@ -7,6 +7,7 @@ import { useWallet } from '../useWallet';
 import { useAgentAI } from './useAgentAI';
 import { useAgentConversationPrompt } from './useAgentConversationPrompt';
 import { ConversationContextBuilder, ConversationContext, ChatMessage } from './services/conversationContextBuilder';
+import { ConversationSummary } from './types/agentChatTypes';
 import { Contract, ethers } from 'ethers';
 import frontendContracts from '../../abi/frontend-contracts.json';
 import { getProvider, getSigner } from '../../lib/0g/fees';
@@ -18,6 +19,13 @@ interface ChatSession {
   builtContext: ConversationContext | null;
   isActive: boolean;
   lastActivity: number;
+  // New: current conversation summary for saving
+  currentSummary?: {
+    topic: string;
+    emotional_tone: string;
+    key_insights: string[];
+    analysis: string;
+  };
 }
 
 interface ChatState {
@@ -226,8 +234,8 @@ export function useAgentChat(tokenId?: number) {
           content: aiResponse.fullAnalysis,
           timestamp: Date.now(),
           metadata: {
-            conversationType: detectConversationType(userMessage),
-            emotionalTone: detectEmotionalTone(aiResponse.fullAnalysis),
+            conversationType: 'general_chat', // Simplified
+            emotionalTone: aiResponse.conversationSummary?.emotional_tone || 'neutral',
             uniqueFeatures: updatedContext.uniqueFeatures.map(f => f.name)
           }
         };
@@ -237,14 +245,18 @@ export function useAgentChat(tokenId?: number) {
           session: prev.session ? {
             ...prev.session,
             messages: [...prev.session.messages, agentMsg],
-            lastActivity: Date.now()
+            lastActivity: Date.now(),
+            // Update current conversation summary from AI response
+            currentSummary: aiResponse.conversationSummary || prev.session.currentSummary
           } : null,
           isTyping: false
         }));
 
         debugLog('Message sent successfully', {
           agentResponseLength: agentMsg.content.length,
-          totalMessages: chatState.session.messages.length + 2
+          totalMessages: chatState.session.messages.length + 2,
+          hasSummary: !!aiResponse.conversationSummary,
+          summaryTopic: aiResponse.conversationSummary?.topic
         });
       } else {
         throw new Error('AI response was empty or invalid');
@@ -270,40 +282,33 @@ export function useAgentChat(tokenId?: number) {
       return;
     }
 
+    if (!chatState.session.currentSummary) {
+      setChatState(prev => ({ ...prev, error: 'No conversation summary available to save' }));
+      return;
+    }
+
     setChatState(prev => ({ 
       ...prev, 
       isSaving: true, 
-      saveStatus: 'Preparing conversation data...',
+      saveStatus: 'Preparing conversation summary...',
       error: null
     }));
 
     try {
       debugLog('Starting conversation save', {
         sessionId: chatState.session.sessionId,
-        messageCount: chatState.session.messages.length
+        messageCount: chatState.session.messages.length,
+        hasSummary: !!chatState.session.currentSummary
       });
 
-      // 1. Create conversation data
-      const conversationData = {
+      // 1. Create ultra-light conversation data
+      const conversationData: ConversationSummary = {
         id: chatState.session.builtContext.agentProfile.conversationCount + 1,
-        timestamp: Math.floor(Date.now() / 1000),
-        conversation_type: detectConversationType(chatState.session.messages),
-        topic: extractConversationTopic(chatState.session.messages),
-        duration_minutes: calculateDuration(chatState.session.messages),
-        user_mood: 'engaged', // Could be detected from messages
-        agent_response_style: chatState.session.builtContext.personality.responseStyle,
-        messages: chatState.session.messages,
-        key_insights: extractKeyInsights(chatState.session.messages),
-        emotional_tone: detectEmotionalTone(chatState.session.messages),
-        user_satisfaction: 8, // Default - could be user-rated
-        breakthrough_moment: false, // Could be detected
-        follow_up_questions: extractFollowUpQuestions(chatState.session.messages),
-        metadata: {
-          session_id: chatState.session.sessionId,
-          unique_features_used: chatState.session.builtContext.uniqueFeatures.map(f => f.name),
-          intelligence_level: chatState.session.builtContext.agentProfile.intelligenceLevel,
-          memory_depth: chatState.session.builtContext.memoryAccess.memoryDepth
-        }
+        date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+        topic: chatState.session.currentSummary.topic,
+        emotional_tone: chatState.session.currentSummary.emotional_tone,
+        key_insights: chatState.session.currentSummary.key_insights.slice(0, 3), // max 3
+        analysis: chatState.session.currentSummary.analysis
       };
 
       // 2. Save to storage
@@ -313,7 +318,7 @@ export function useAgentChat(tokenId?: number) {
       if (rootHash) {
         // 3. Record in contract
         setChatState(prev => ({ ...prev, saveStatus: 'Recording in contract...' }));
-        await recordConversationInContract(chatState.session.tokenId, rootHash, conversationData.conversation_type);
+        await recordConversationInContract(chatState.session.tokenId, rootHash);
 
         setChatState(prev => ({ 
           ...prev, 
@@ -324,7 +329,8 @@ export function useAgentChat(tokenId?: number) {
         debugLog('Conversation saved successfully', {
           conversationId: conversationData.id,
           rootHash,
-          messageCount: conversationData.messages.length
+          topic: conversationData.topic,
+          emotionalTone: conversationData.emotional_tone
         });
 
         // Clear save status after 3 seconds
@@ -412,9 +418,9 @@ export function useAgentChat(tokenId?: number) {
   /**
    * Zapisuje hash konwersacji w kontrakcie
    */
-  const recordConversationInContract = async (tokenId: number, conversationHash: string, conversationType: string) => {
+  const recordConversationInContract = async (tokenId: number, conversationHash: string) => {
     try {
-      debugLog('Recording conversation in contract', { tokenId, conversationHash, conversationType });
+      debugLog('Recording conversation in contract', { tokenId, conversationHash });
 
       setChatState(prev => ({ 
         ...prev, 
@@ -434,8 +440,8 @@ export function useAgentChat(tokenId?: number) {
       // 3. Convert hash to bytes32
       const hashBytes32 = conversationHash.startsWith('0x') ? conversationHash : `0x${conversationHash}`;
 
-      // 4. Map conversation type to enum
-      const contextType = mapConversationTypeToEnum(conversationType);
+      // 4. Use GENERAL_CHAT for all conversations (simplified)
+      const contextType = ContextType.GENERAL_CHAT;
 
       setChatState(prev => ({ 
         ...prev, 

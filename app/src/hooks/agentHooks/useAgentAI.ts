@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useWallet } from '../useWallet';
 import { DreamAnalysisPrompt } from './useAgentPrompt';
+import { ConversationAIResponse } from './types/agentChatTypes';
 
 interface AIAnalysisState {
   isLoading: boolean;
@@ -22,15 +23,13 @@ interface AIResponse {
 
 interface ParsedAIResponse {
   fullAnalysis: string;
-  dreamData: {
+  dreamData?: {
     id: number;
-    timestamp: number;
-    content: string;
+    date: string;
     emotions: string[];
     symbols: string[];
     intensity: number;
     lucidity_level: number;
-    dream_type: string;
   };
   personalityImpact?: {
     evolutionWeight: number;
@@ -48,6 +47,13 @@ interface ParsedAIResponse {
     }>;
   };
   analysis: string;
+  // New field for conversation summaries
+  conversationSummary?: {
+    topic: string;
+    emotional_tone: string;
+    key_insights: string[];
+    analysis: string;
+  };
 }
 
 export function useAgentAI() {
@@ -170,8 +176,9 @@ export function useAgentAI() {
       }));
 
       debugLog('AI analysis completed successfully', {
-        dreamId: parsedResponse.dreamData.id,
+        dreamId: parsedResponse.dreamData?.id,
         hasEvolution: !!parsedResponse.personalityImpact,
+        hasConversationSummary: !!parsedResponse.conversationSummary,
         analysisLength: parsedResponse.analysis.length,
         fullAnalysisLength: parsedResponse.fullAnalysis.length
       });
@@ -204,30 +211,55 @@ export function useAgentAI() {
         needsEvolution: expectedFormat.needsPersonalityEvolution
       });
 
-      // For conversation, return raw response as fullAnalysis
+      // For conversation, parse dual JSON format
       if (expectedFormat.isConversation) {
         debugLog('Parsing as conversation response');
         
-        const parsedResponse: ParsedAIResponse = {
-          fullAnalysis: responseText,
-          dreamData: {
-            id: 0,
-            timestamp: Date.now(),
-            content: '',
-            emotions: [],
-            symbols: [],
-            intensity: 0,
-            lucidity_level: 0,
-            dream_type: 'conversation'
-          },
-          analysis: responseText.substring(0, 200) + '...' // Short excerpt
-        };
+        // Extract JSON blocks for conversation
+        const jsonBlocks = extractJsonBlocks(responseText);
+        
+        if (jsonBlocks.length < 1) {
+          // Fallback to raw response if no JSON found
+          debugLog('No JSON blocks found, using raw response');
+          return {
+            fullAnalysis: responseText,
+            analysis: responseText.substring(0, 200) + '...'
+          };
+        }
 
-        debugLog('Conversation response parsed successfully', {
-          responseLength: parsedResponse.fullAnalysis.length
-        });
+        try {
+          // Parse conversation JSON response
+          const conversationData: ConversationAIResponse = JSON.parse(jsonBlocks[0]);
+          
+          if (!conversationData.agent_response || !conversationData.conversation_summary) {
+            debugLog('Missing required fields in conversation JSON');
+            return {
+              fullAnalysis: responseText,
+              analysis: responseText.substring(0, 200) + '...'
+            };
+          }
 
-        return parsedResponse;
+          const parsedResponse: ParsedAIResponse = {
+            fullAnalysis: conversationData.agent_response,
+            conversationSummary: conversationData.conversation_summary,
+            analysis: conversationData.conversation_summary.analysis
+          };
+
+          debugLog('Conversation response parsed successfully', {
+            responseLength: parsedResponse.fullAnalysis.length,
+            topic: parsedResponse.conversationSummary?.topic,
+            emotionalTone: parsedResponse.conversationSummary?.emotional_tone
+          });
+
+          return parsedResponse;
+
+        } catch (error) {
+          debugLog('Failed to parse conversation JSON, using raw response', error);
+          return {
+            fullAnalysis: responseText,
+            analysis: responseText.substring(0, 200) + '...'
+          };
+        }
       }
 
       // For dream analysis, extract JSON blocks (existing logic)

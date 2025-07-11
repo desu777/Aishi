@@ -60,6 +60,27 @@ export interface ConversationResult {
   languageDetection?: LanguageDetectionResult;
 }
 
+// New ultra-light conversation summary format
+export interface ConversationSummary {
+  id: number;
+  date: string;
+  topic: string;
+  emotional_tone: string;
+  key_insights: string[]; // max 3
+  analysis: string; // 1-2 sentences
+}
+
+// AI response format for conversations
+export interface ConversationAIResponse {
+  agent_response: string;
+  conversation_summary: {
+    topic: string;
+    emotional_tone: string;
+    key_insights: string[];
+    analysis: string;
+  };
+}
+
 // Chat state management
 export interface ChatState {
   isLoadingContext: boolean;

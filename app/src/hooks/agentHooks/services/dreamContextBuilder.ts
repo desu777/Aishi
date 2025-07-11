@@ -238,8 +238,11 @@ export class DreamContextBuilder {
           hasYearlyCore: !!context.historicalData.yearlyCore,
           dailyDreamsPreview: context.historicalData.dailyDreams.slice(0, 2).map(dream => ({
             id: dream.id,
-            content: dream.content?.substring(0, 50) + '...',
+            date: dream.date || (dream.timestamp ? new Date(dream.timestamp * 1000).toLocaleDateString() : 'unknown'),
             emotions: dream.emotions,
+            symbols: dream.symbols,
+            intensity: dream.intensity,
+            lucidity_level: dream.lucidity_level,
             ai_analysis: dream.ai_analysis?.substring(0, 50) + '...'
           }))
         }

@@ -1,0 +1,9 @@
+{
+    "id": 17,                       // kolejny nr rozmowy
+    "date": "2025-07-11",           // YYYY-MM-DD
+    "conversation_type": "general_chat",
+    "topic": "AI i sny",
+    "emotional_tone": "curious",
+    "key_insights": ["sen to brama do podświadomości"], // max 3
+    "analysis": "Lekka rozmowa o znaczeniu snów; przeważa ciekawość i refleksja."
+  }

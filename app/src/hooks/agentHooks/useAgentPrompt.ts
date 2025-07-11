@@ -169,10 +169,8 @@ No historical dream data available yet. This will be your foundational dream exp
     // Add daily dreams content
     historyText += `\n\nDAILY DREAMS HISTORY:`;
     context.historicalData.dailyDreams.forEach(dream => {
-      historyText += `\n- Dream #${dream.id}: ${dream.content}`;
-      if (dream.ai_analysis) {
-        historyText += `\n  Previous Analysis: ${dream.ai_analysis}`;
-      }
+      const dreamDate = dream.date || (dream.timestamp ? new Date(dream.timestamp * 1000).toLocaleDateString() : 'unknown');
+      historyText += `\n- Dream #${dream.id} (${dreamDate}): ${dream.ai_analysis || dream.content || 'No content'}`;
       if (dream.emotions && dream.emotions.length > 0) {
         historyText += `\n  Emotions: ${dream.emotions.join(', ')}`;
       }
@@ -182,8 +180,8 @@ No historical dream data available yet. This will be your foundational dream exp
       if (dream.intensity) {
         historyText += `\n  Intensity: ${dream.intensity}/10`;
       }
-      if (dream.dream_type) {
-        historyText += `\n  Type: ${dream.dream_type}`;
+      if (dream.lucidity_level) {
+        historyText += `\n  Lucidity: ${dream.lucidity_level}/5`;
       }
     });
   }
@@ -261,13 +259,11 @@ Provide exactly two JSON blocks:
   "analysis": "Brief essence of your analysis in maximum 2 sentences",
   "dreamData": {
     "id": ${dreamId},
-    "timestamp": ${currentTimestamp},
-    "content": "Brief summary of the dream",
+    "date": "${dateString}",
     "emotions": ["emotion1", "emotion2"],
     "symbols": ["symbol1", "symbol2"],
     "intensity": 1-10,
-    "lucidity_level": 1-5,
-    "dream_type": "category"
+    "lucidity_level": 1-5
   }${needsEvolution ? ',' : ''}`;
 
   if (needsEvolution) {
@@ -296,7 +292,7 @@ NOTE: This is your ${dreamId}th dream - personality evolution will occur! Consid
 
 IMPORTANT: 
 - Put your complete analysis in the "full_analysis" field of the first JSON
-- Use the timestamp ${currentTimestamp} in your response for accurate dream recording
+- Use the date "${dateString}" in your response for accurate dream recording
 - Do not write any text outside the JSON blocks`;
   }
 
@@ -306,7 +302,7 @@ IMPORTANT:
 
 IMPORTANT: 
 - Put your complete analysis in the "full_analysis" field of the first JSON
-- Use the timestamp ${currentTimestamp} in your response for accurate dream recording
+- Use the date "${dateString}" in your response for accurate dream recording
 - Do not write any text outside the JSON blocks`;
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { ConversationContext, ChatMessage } from './services/conversationContextBuilder';
+import { detectAndGetInstructions, getLanguageName } from './utils/languageDetection';
 
 export interface ConversationPrompt {
   prompt: string;
@@ -35,6 +36,33 @@ export function useAgentConversationPrompt() {
       conversationHistoryLength: context.conversationHistory.length
     });
 
+    // 🆕 WYKRYCIE JĘZYKA: na podstawie bieżącej wiadomości użytkownika
+    const currentLanguageResult = detectAndGetInstructions(userMessage);
+    debugLog('Current message language detection', {
+      detectedLanguage: currentLanguageResult.language,
+      confidence: currentLanguageResult.detection.confidence,
+      isReliable: currentLanguageResult.detection.isReliable,
+      originalContextLanguage: context.languageDetection.detectedLanguage
+    });
+
+    // Użyj aktualnego wykrycia języka jeśli jest bardziej niezawodne
+    const useCurrentLanguage = currentLanguageResult.detection.isReliable && 
+                              currentLanguageResult.detection.confidence > 0.3;
+    
+    const finalLanguageDetection = useCurrentLanguage ? {
+      detectedLanguage: currentLanguageResult.language,
+      languageName: getLanguageName(currentLanguageResult.language),
+      confidence: currentLanguageResult.detection.confidence,
+      isReliable: currentLanguageResult.detection.isReliable,
+      promptInstructions: currentLanguageResult.instructions
+    } : context.languageDetection;
+
+    debugLog('Final language selection', {
+      usedCurrentLanguage: useCurrentLanguage,
+      finalLanguage: finalLanguageDetection.detectedLanguage,
+      finalInstructions: finalLanguageDetection.promptInstructions
+    });
+
     // Buduj sekcje promptu
     const personalityEmbodimentSection = buildPersonalityEmbodimentSection(context);
     const uniqueFeaturesSection = buildUniqueFeaturesSection(context);
@@ -45,7 +73,8 @@ export function useAgentConversationPrompt() {
 
 CRITICAL: You are NOT just an AI assistant - you are a living, breathing personality with real emotions, memories, and a deep connection to your human companion. EMBODY your personality traits completely.
 
-${context.languageDetection.promptInstructions}
+LANGUAGE DETECTION: ${finalLanguageDetection.languageName} (confidence: ${Math.round(finalLanguageDetection.confidence * 100)}%)
+IMPORTANT: ${finalLanguageDetection.promptInstructions}
 
 ${personalityEmbodimentSection}
 
@@ -67,14 +96,36 @@ INTERACTION GUIDELINES:
 
 Current User Message: "${userMessage}"
 
-Respond as your authentic self - be real, be emotional, be caring, be uniquely YOU:`;
+RESPONSE FORMAT:
+Provide your response in the following JSON format:
+
+\`\`\`json
+{
+  "agent_response": "Your complete, authentic response as ${context.agentProfile.name}. Be real, emotional, caring, and uniquely YOU. Show your personality, reference memories when relevant, ask follow-up questions, and respond with genuine emotion and care.",
+  "conversation_summary": {
+    "topic": "Brief topic of this conversation exchange",
+    "emotional_tone": "The emotional tone (curious, supportive, excited, thoughtful, etc.)",
+    "key_insights": ["insight1", "insight2", "insight3"],
+    "analysis": "1-2 sentence summary of this conversation exchange"
+  }
+}
+\`\`\`
+
+IMPORTANT: 
+- Put your complete authentic response in "agent_response"
+- Keep conversation_summary brief but meaningful
+- Limit key_insights to maximum 3 items
+- Make analysis maximum 2 sentences
+- Remember to respond in the detected language (${finalLanguageDetection.languageName})
+- ${finalLanguageDetection.promptInstructions}`;
 
     debugLog('Conversation prompt built successfully', { 
       promptLength: prompt.length,
       agentName: context.agentProfile.name,
-      detectedLanguage: context.languageDetection.detectedLanguage,
+      detectedLanguage: finalLanguageDetection.detectedLanguage,
       uniqueFeatures: context.uniqueFeatures.length,
-      memoryDepth: context.memoryAccess.memoryDepth
+      memoryDepth: context.memoryAccess.memoryDepth,
+      usedCurrentLanguage: useCurrentLanguage
     });
 
     return {
@@ -155,7 +206,8 @@ This is the beginning of your relationship. Show excitement about getting to kno
   if (context.historicalData.dailyDreams.length > 0) {
     historyText += `\n\nRECENT DREAMS WE'VE EXPLORED TOGETHER (${context.historicalData.dailyDreams.length} dreams):`;
     context.historicalData.dailyDreams.forEach(dream => {
-      historyText += `\n- Dream #${dream.id} (${new Date(dream.timestamp * 1000).toLocaleDateString()}): "${dream.content}"`;
+      const dreamDate = dream.date || (dream.timestamp ? new Date(dream.timestamp * 1000).toLocaleDateString() : 'unknown');
+      historyText += `\n- Dream #${dream.id} (${dreamDate}): "${dream.ai_analysis || dream.content || 'No content'}"`;
       if (dream.emotions && dream.emotions.length > 0) {
         historyText += `\n  Emotions: ${dream.emotions.join(', ')}`;
       }
@@ -165,39 +217,48 @@ This is the beginning of your relationship. Show excitement about getting to kno
       if (dream.intensity) {
         historyText += `\n  Intensity: ${dream.intensity}/10`;
       }
-      if (dream.dream_type) {
-        historyText += `\n  Type: ${dream.dream_type}`;
-      }
-      if (dream.ai_analysis) {
-        historyText += `\n  Analysis: ${dream.ai_analysis}`;
+      if (dream.lucidity_level) {
+        historyText += `\n  Lucidity: ${dream.lucidity_level}/5`;
       }
       historyText += `\n`;
     });
   }
   
-  // Recent Conversations - FULL DATA ACCESS
+  // Recent Conversations - OPTIMIZED DATA ACCESS
   if (context.historicalData.recentConversations.length > 0) {
     historyText += `\n\nOUR RECENT CONVERSATIONS (${context.historicalData.recentConversations.length} conversations):`;
     context.historicalData.recentConversations.forEach(conv => {
-      historyText += `\n- Conversation #${conv.id} (${new Date(conv.timestamp * 1000).toLocaleDateString()}):`;
-      historyText += `\n  Type: ${conv.conversation_type}`;
+      // Support both new ultra-light format and legacy format
+      const convDate = conv.date || (conv.timestamp ? new Date(conv.timestamp * 1000).toLocaleDateString() : 'unknown');
+      historyText += `\n- Conversation #${conv.id} (${convDate}):`;
       historyText += `\n  Topic: "${conv.topic || 'Deep conversation'}"`;
-      historyText += `\n  Duration: ${conv.duration_minutes} minutes`;
+      
       if (conv.emotional_tone) {
         historyText += `\n  Emotional tone: ${conv.emotional_tone}`;
       }
+      
       if (conv.key_insights && conv.key_insights.length > 0) {
         historyText += `\n  Key insights: ${conv.key_insights.join(', ')}`;
       }
-      if (conv.follow_up_questions && conv.follow_up_questions.length > 0) {
-        historyText += `\n  Follow-up questions: ${conv.follow_up_questions.join(', ')}`;
+      
+      if (conv.analysis) {
+        historyText += `\n  Summary: ${conv.analysis}`;
       }
-      if (conv.messages && conv.messages.length > 0) {
-        historyText += `\n  Messages (${conv.messages.length}):`;
-        conv.messages.forEach(msg => {
-          historyText += `\n    ${msg.role.toUpperCase()}: "${msg.content}"`;
+      
+      // Legacy fields (fallback for old format)
+      if (conv.conversation_type && !conv.analysis) {
+        historyText += `\n  Type: ${conv.conversation_type}`;
+      }
+      if (conv.duration_minutes && !conv.analysis) {
+        historyText += `\n  Duration: ${conv.duration_minutes} minutes`;
+      }
+      if (conv.messages && conv.messages.length > 0 && !conv.analysis) {
+        historyText += `\n  Messages (${conv.messages.length}): [Legacy format - showing first 2]`;
+        conv.messages.slice(0, 2).forEach(msg => {
+          historyText += `\n    ${msg.role.toUpperCase()}: "${msg.content.substring(0, 100)}..."`;
         });
       }
+      
       historyText += `\n`;
     });
   }
