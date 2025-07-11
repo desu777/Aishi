@@ -735,9 +735,119 @@ Dream Count++, Intelligence++, Personality Updated
 
 ---
 
+## 📦 **Wagmi v2 Contract Deserialization (CRITICAL INFO)**
+
+### Problem z TypeScript Types
+**Wagmi v2** deserializuje Solidity `struct` jako **obiekt z nazwanymi polami**, nie jako tablicę!
+
+#### Solidity Contract:
+```solidity
+struct AgentMemory {
+    bytes32 memoryCoreHash;
+    bytes32 currentDreamDailyHash;
+    bytes32 currentConvDailyHash;
+    // ... więcej pól
+}
+
+function getAgentMemory(uint256 tokenId) external view returns (AgentMemory memory);
+```
+
+#### ❌ **BŁĘDNA** deserializacja (styl ethers v5/v6):
+```typescript
+const memoryData = await contract.getAgentMemory(tokenId);
+
+// TO NIE DZIAŁA w Wagmi v2!
+const memoryCoreHash = memoryData[0];
+const currentDreamDailyHash = memoryData[1];
+```
+
+#### ✅ **POPRAWNA** deserializacja (Wagmi v2):
+```typescript
+const memoryData = await contract.getAgentMemory(tokenId);
+
+// Wagmi v2 zwraca obiekt z kluczami!
+const memoryCoreHash = memoryData.memoryCoreHash;
+const currentDreamDailyHash = memoryData.currentDreamDailyHash;
+```
+
+### TypeScript Type Handling
+
+#### Hook useReadContract zwraca `unknown` type:
+```typescript
+const { data: memoryData } = useReadContract({
+  // ... config
+});
+// memoryData ma typ: unknown
+```
+
+#### Rozwiązanie - Type Assertions:
+```typescript
+// Option 1: any cast (simple)
+const memoryCoreHash = (memoryData as any).memoryCoreHash as `0x${string}`;
+
+// Option 2: Type guard (advanced)
+interface AgentMemoryStruct {
+  memoryCoreHash: string;
+  currentDreamDailyHash: string;
+  // ... więcej pól
+}
+
+function isAgentMemory(data: unknown): data is AgentMemoryStruct {
+  return typeof data === 'object' && data !== null && 'memoryCoreHash' in data;
+}
+
+if (isAgentMemory(memoryData)) {
+  const memoryCoreHash = memoryData.memoryCoreHash; // Type-safe!
+}
+```
+
+### Przykład z useAgentRead.ts:
+```typescript
+// Dane pamięci z getAgentMemory()
+memory: memoryData ? {
+  memoryCoreHash: (memoryData as any).memoryCoreHash as `0x${string}`,
+  currentDreamDailyHash: (memoryData as any).currentDreamDailyHash as `0x${string}`,
+  currentConvDailyHash: (memoryData as any).currentConvDailyHash as `0x${string}`,
+  lastDreamMonthlyHash: (memoryData as any).lastDreamMonthlyHash as `0x${string}`,
+  lastConvMonthlyHash: (memoryData as any).lastConvMonthlyHash as `0x${string}`,
+  lastConsolidation: (memoryData as any).lastConsolidation as bigint,
+  currentMonth: (memoryData as any).currentMonth as number,
+  currentYear: (memoryData as any).currentYear as number,
+} : undefined
+```
+
+### Debug Output Wagmi v2:
+```
+[useAgentRead] Memory data FULL details {
+  memoryDataType: 'object',
+  memoryDataConstructor: 'Object', 
+  memoryDataLength: 'not array',
+  memoryDataKeys: ['memoryCoreHash', 'currentDreamDailyHash', 'currentConvDailyHash', ...],
+  memoryDataFull: {
+    memoryCoreHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
+    currentDreamDailyHash: '0x33a04c388c4ebb1d83af66a0789f27f536d8820d5a4f4409f33a93ac79fe3b26',
+    // ... więcej pól
+  }
+}
+```
+
+### Key Points:
+- ✅ **Wagmi v2** zwraca struct jako **obiekt z nazwanymi kluczami**
+- ❌ **NIE** jako tablicę indeksowaną `[0], [1], [2]`
+- 🔧 **Używaj** `(data as any).fieldName` dla type safety
+- 🎯 **Zawsze** sprawdzaj `memoryDataKeys` w debug logach
+
+### Affected Functions:
+- `getAgentMemory()` → AgentMemory struct
+- `getPersonalityTraits()` → PersonalityTraits struct  
+- `agents()` → DreamAgent struct (tuple)
+- Wszystkie funkcje zwracające struct/tuple w Wagmi v2
+
+---
+
 ## 📝 Next Steps (Future)
 - [x] STEP 5: Dream Storage Integration (append-only pattern)
-- [ ] STEP 6: Contract write operations (processDailyDream + update hash)
+- [x] STEP 6: Contract write operations (processDailyDream + update hash)
 - [ ] STEP 7: Historical data upload for testing
 - [ ] Advanced error recovery mechanisms
 - [ ] Model selection UI (Llama 3.3 vs DeepSeek R1)

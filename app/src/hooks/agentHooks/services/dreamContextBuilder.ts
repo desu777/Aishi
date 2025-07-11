@@ -76,31 +76,90 @@ export class DreamContextBuilder {
   async buildContext(
     tokenId: number,
     userDream: string,
-    downloadFile: (hash: string) => Promise<{ success: boolean; data?: ArrayBuffer; error?: string }>
+    downloadFile: (hash: string) => Promise<{ success: boolean; data?: ArrayBuffer; error?: string }>,
+    agentData?: any // Optional pre-loaded agent data from useAgentRead
   ): Promise<DreamContext> {
-    this.debugLog('Building dream context', { tokenId, dreamLength: userDream.length });
+    this.debugLog('Building dream context', { tokenId, dreamLength: userDream.length, hasPreloadedData: !!agentData });
 
     try {
-      // 1. Pobierz podstawowe dane agenta
-      const [agentData, personalityTraits, memoryAccess, uniqueFeatures, responseStyle, memoryStructure] = 
-        await Promise.all([
-          this.contract.agents(tokenId),
-          this.contract.getPersonalityTraits(tokenId),
-          this.contract.getMemoryAccess(tokenId),
-          this.contract.getUniqueFeatures(tokenId),
-          this.contract.responseStyles(tokenId),
-          this.contract.getAgentMemory(tokenId)
-        ]);
+      let contractData;
+      
+      if (agentData) {
+        // Use pre-loaded data from useAgentRead (Wagmi v2 compatible)
+        this.debugLog('Using pre-loaded agent data from useAgentRead');
+        contractData = {
+          agentData: {
+            agentName: agentData.agentName,
+            intelligenceLevel: Number(agentData.intelligenceLevel),
+            dreamCount: Number(agentData.dreamCount),
+            conversationCount: Number(agentData.conversationCount)
+          },
+          personalityTraits: agentData.personality,
+                     memoryAccess: {
+             monthsAccessible: agentData.memory?.monthsAccessible || 1,
+             memoryDepth: agentData.memory?.memoryDepth || 'current month only'
+           },
+          uniqueFeatures: agentData.personality?.uniqueFeatures || [],
+          responseStyle: 'balanced',
+          memoryStructure: agentData.memory ? {
+            memoryCoreHash: agentData.memory.memoryCoreHash,
+            currentDreamDailyHash: agentData.memory.currentDreamDailyHash,
+            currentConvDailyHash: agentData.memory.currentConvDailyHash,
+            lastDreamMonthlyHash: agentData.memory.lastDreamMonthlyHash,
+            lastConvMonthlyHash: agentData.memory.lastConvMonthlyHash,
+            lastConsolidation: Number(agentData.memory.lastConsolidation),
+            currentMonth: agentData.memory.currentMonth,
+            currentYear: agentData.memory.currentYear
+          } : null
+        };
+      } else {
+        // Fallback to contract calls for backward compatibility
+        this.debugLog('No pre-loaded data, fetching from contract');
+        const [agentContractData, personalityTraits, memoryAccess, uniqueFeatures, responseStyle, memoryStructure] = 
+          await Promise.all([
+            this.contract.agents(tokenId),
+            this.contract.getPersonalityTraits(tokenId),
+            this.contract.getMemoryAccess(tokenId),
+            this.contract.getUniqueFeatures(tokenId),
+            this.contract.responseStyles(tokenId),
+            this.contract.getAgentMemory(tokenId)
+          ]);
 
-      this.debugLog('Contract data fetched', {
-        agentName: agentData.agentName,
-        intelligenceLevel: Number(agentData.intelligenceLevel),
-        monthsAccessible: Number(memoryAccess.monthsAccessible)
+        contractData = {
+          agentData: {
+            agentName: agentContractData.agentName,
+            intelligenceLevel: Number(agentContractData.intelligenceLevel),
+            dreamCount: Number(agentContractData.dreamCount),
+            conversationCount: Number(agentContractData.conversationCount)
+          },
+          personalityTraits,
+          memoryAccess,
+          uniqueFeatures,
+          responseStyle,
+          memoryStructure
+        };
+      }
+
+      this.debugLog('Contract data prepared', {
+        agentName: contractData.agentData.agentName,
+        intelligenceLevel: contractData.agentData.intelligenceLevel,
+        monthsAccessible: contractData.memoryAccess.monthsAccessible,
+        hasMemoryStructure: !!contractData.memoryStructure
+      });
+
+      // DETAILED CONTRACT DATA LOGGING
+      this.debugLog('Contract data FULL details', {
+        agentDataFull: contractData.agentData,
+        personalityTraitsFull: contractData.personalityTraits,
+        memoryAccessFull: contractData.memoryAccess,
+        uniqueFeaturesFull: contractData.uniqueFeatures,
+        responseStyle: contractData.responseStyle,
+        memoryStructureFull: contractData.memoryStructure
       });
 
       // 2. Determine memory depth based on intelligence level
-      const intelligence = Number(agentData.intelligenceLevel);
-      const monthsAccessible = Number(memoryAccess.monthsAccessible);
+      const intelligence = contractData.agentData.intelligenceLevel;
+      const monthsAccessible = contractData.memoryAccess.monthsAccessible;
       
       // 3. Detect dream language
       this.debugLog('Detecting dream language', { dreamText: userDream.substring(0, 100) + '...' });
@@ -113,11 +172,13 @@ export class DreamContextBuilder {
       });
 
       // 4. Download historical data based on memory access
-      const historicalData = await this.downloadHistoricalData(
-        memoryStructure,
-        monthsAccessible,
-        downloadFile
-      );
+      const historicalData = contractData.memoryStructure ? 
+        await this.downloadHistoricalData(
+          contractData.memoryStructure,
+          monthsAccessible,
+          downloadFile
+        ) : 
+        { dailyDreams: [], monthlyConsolidations: [], yearlyCore: null };
 
       // 5. Build unified context
       const context: DreamContext = {
@@ -130,22 +191,22 @@ export class DreamContextBuilder {
           promptInstructions: languageResult.instructions
         },
         agentProfile: {
-          name: agentData.agentName,
+          name: contractData.agentData.agentName,
           intelligenceLevel: intelligence,
-          dreamCount: Number(agentData.dreamCount),
-          conversationCount: Number(agentData.conversationCount)
+          dreamCount: contractData.agentData.dreamCount,
+          conversationCount: contractData.agentData.conversationCount
         },
         personality: {
-          creativity: Number(personalityTraits.creativity),
-          analytical: Number(personalityTraits.analytical),
-          empathy: Number(personalityTraits.empathy),
-          intuition: Number(personalityTraits.intuition),
-          resilience: Number(personalityTraits.resilience),
-          curiosity: Number(personalityTraits.curiosity),
-          dominantMood: personalityTraits.dominantMood,
-          responseStyle: responseStyle || 'balanced'
+          creativity: Number(contractData.personalityTraits.creativity || 50),
+          analytical: Number(contractData.personalityTraits.analytical || 50),
+          empathy: Number(contractData.personalityTraits.empathy || 50),
+          intuition: Number(contractData.personalityTraits.intuition || 50),
+          resilience: Number(contractData.personalityTraits.resilience || 50),
+          curiosity: Number(contractData.personalityTraits.curiosity || 50),
+          dominantMood: contractData.personalityTraits.dominantMood || 'neutral',
+          responseStyle: contractData.responseStyle || 'balanced'
         },
-        uniqueFeatures: uniqueFeatures.map((feature: any) => ({
+        uniqueFeatures: (contractData.uniqueFeatures || []).map((feature: any) => ({
           name: feature.name,
           description: feature.description,
           intensity: Number(feature.intensity),
@@ -153,7 +214,7 @@ export class DreamContextBuilder {
         })),
         memoryAccess: {
           monthsAccessible,
-          memoryDepth: memoryAccess.memoryDepth
+          memoryDepth: contractData.memoryAccess.memoryDepth
         },
         historicalData
       };
@@ -161,6 +222,27 @@ export class DreamContextBuilder {
       this.debugLog('Dream context built successfully', {
         totalHistoricalItems: historicalData.dailyDreams.length + historicalData.monthlyConsolidations.length,
         hasYearlyCore: !!historicalData.yearlyCore
+      });
+
+      // DETAILED FINAL CONTEXT LOGGING
+      this.debugLog('Final DreamContext FULL details', {
+        userDream: context.userDream.substring(0, 100) + '...',
+        languageDetection: context.languageDetection,
+        agentProfile: context.agentProfile,
+        personality: context.personality,
+        uniqueFeatures: context.uniqueFeatures,
+        memoryAccess: context.memoryAccess,
+        historicalDataSummary: {
+          dailyDreamsCount: context.historicalData.dailyDreams.length,
+          monthlyConsolidationsCount: context.historicalData.monthlyConsolidations.length,
+          hasYearlyCore: !!context.historicalData.yearlyCore,
+          dailyDreamsPreview: context.historicalData.dailyDreams.slice(0, 2).map(dream => ({
+            id: dream.id,
+            content: dream.content?.substring(0, 50) + '...',
+            emotions: dream.emotions,
+            ai_analysis: dream.ai_analysis?.substring(0, 50) + '...'
+          }))
+        }
       });
 
       return context;

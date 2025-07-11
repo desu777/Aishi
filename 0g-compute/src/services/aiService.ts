@@ -7,7 +7,7 @@ import virtualBrokers from './virtualBrokers';
 dotenv.config();
 
 // Constants
-const DEFAULT_MODEL = "llama-3.3-70b-instruct";
+const DEFAULT_MODEL = "deepseek-r1-70b";
 const PROVIDER_TIMEOUT = 30000; // 30 seconds
 const BALANCE_EXPIRATION = 5 * 60 * 1000; // 5 minutes
 const MIN_BALANCE_THRESHOLD = 0.0001;
@@ -103,7 +103,7 @@ export class AIService {
   }
 
   async analyzeDream(request: AIRequest): Promise<AIResponse> {
-    const { userWalletAddress, query, model = 'llama-3.3-70b-instruct' } = request;
+    const { userWalletAddress, query, model = 'deepseek-r1-70b' } = request;
     const startTime = Date.now();
     
     try {

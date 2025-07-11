@@ -136,6 +136,20 @@ ${featuresText}`;
  * Buduje sekcję pamięci i historii
  */
 function buildMemorySection(context: DreamContext): string {
+  // Debug log dla development
+  const debugLog = (message: string, data?: any) => {
+    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+      console.log(`[buildMemorySection] ${message}`, data || '');
+    }
+  };
+
+  debugLog('Building memory section', {
+    dailyDreamsCount: context.historicalData.dailyDreams.length,
+    monthlyConsolidationsCount: context.historicalData.monthlyConsolidations.length,
+    hasYearlyCore: !!context.historicalData.yearlyCore,
+    memoryDepth: context.memoryAccess.memoryDepth,
+    monthsAccessible: context.memoryAccess.monthsAccessible
+  });
   const memoryText = `MEMORY ACCESS: ${context.memoryAccess.memoryDepth}
 Available historical context: ${context.memoryAccess.monthsAccessible} months`;
 
@@ -148,17 +162,74 @@ No historical dream data available yet. This will be your foundational dream exp
 
   let historyText = memoryText;
   
+  // PREVIOUS DREAMS: Add actual content from historical data
   if (context.historicalData.dailyDreams.length > 0) {
     historyText += `\n\nRECENT DREAMS: ${context.historicalData.dailyDreams.length} dreams this month`;
+    
+    // Add daily dreams content
+    historyText += `\n\nDAILY DREAMS HISTORY:`;
+    context.historicalData.dailyDreams.forEach(dream => {
+      historyText += `\n- Dream #${dream.id}: ${dream.content}`;
+      if (dream.ai_analysis) {
+        historyText += `\n  Previous Analysis: ${dream.ai_analysis}`;
+      }
+      if (dream.emotions && dream.emotions.length > 0) {
+        historyText += `\n  Emotions: ${dream.emotions.join(', ')}`;
+      }
+      if (dream.symbols && dream.symbols.length > 0) {
+        historyText += `\n  Symbols: ${dream.symbols.join(', ')}`;
+      }
+      if (dream.intensity) {
+        historyText += `\n  Intensity: ${dream.intensity}/10`;
+      }
+      if (dream.dream_type) {
+        historyText += `\n  Type: ${dream.dream_type}`;
+      }
+    });
   }
   
   if (context.historicalData.monthlyConsolidations.length > 0) {
     historyText += `\n\nPAST PATTERNS: ${context.historicalData.monthlyConsolidations.length} consolidated months of dream history`;
+    
+    // Add monthly consolidations content
+    historyText += `\n\nMONTHLY CONSOLIDATIONS:`;
+    context.historicalData.monthlyConsolidations.forEach(consolidation => {
+      historyText += `\n- ${consolidation.month}/${consolidation.year}: ${consolidation.summary}`;
+      if (consolidation.dominant_themes && consolidation.dominant_themes.length > 0) {
+        historyText += `\n  Themes: ${consolidation.dominant_themes.join(', ')}`;
+      }
+      if (consolidation.total_dreams) {
+        historyText += `\n  Total Dreams: ${consolidation.total_dreams}`;
+      }
+    });
   }
   
   if (context.historicalData.yearlyCore) {
     historyText += `\n\nCORE MEMORIES: Deep historical patterns and growth themes available`;
+    
+    // Add yearly core content
+    historyText += `\n\nYEARLY CORE MEMORIES:`;
+    if (typeof context.historicalData.yearlyCore === 'object') {
+      const core = context.historicalData.yearlyCore;
+      if (core.essence) {
+        historyText += `\n- Core Essence: ${core.essence}`;
+      }
+      if (core.growth_themes) {
+        historyText += `\n- Growth Themes: ${core.growth_themes.join(', ')}`;
+      }
+      if (core.personality_evolution) {
+        historyText += `\n- Personality Evolution: ${core.personality_evolution}`;
+      }
+    }
   }
+
+  debugLog('Memory section built', {
+    finalTextLength: historyText.length,
+    containsPreviousDreams: historyText.includes('DAILY DREAMS HISTORY'),
+    containsMonthlyConsolidations: historyText.includes('MONTHLY CONSOLIDATIONS'),
+    containsYearlyCore: historyText.includes('YEARLY CORE MEMORIES'),
+    previewText: historyText.substring(0, 500) + '...'
+  });
 
   return historyText;
 }

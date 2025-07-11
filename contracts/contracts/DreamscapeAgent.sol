@@ -287,10 +287,13 @@ contract DreamscapeAgent is
         PersonalityTraits storage traits = agentPersonalities[tokenId];
 
         // cooldown – first dream is allowed instantly; afterwards 24h gap
+        // COMMENTED FOR TESTING - REMOVE COOLDOWN
+        /*
         require(
             traits.lastDreamDate == 0 || block.timestamp >= traits.lastDreamDate + 24 hours,
             "cooldown <24h"
         );
+        */
 
         // update counters
         agent.dreamCount      += 1;
@@ -564,8 +567,10 @@ contract DreamscapeAgent is
      */
     function canProcessDreamToday(uint256 tokenId) external view returns (bool canProcess) {
         require(agents[tokenId].owner != address(0), "agent !exist");
-        PersonalityTraits memory t = agentPersonalities[tokenId];
-        return t.lastDreamDate == 0 || block.timestamp >= t.lastDreamDate + 24 hours;
+        // COMMENTED FOR TESTING - ALWAYS RETURN TRUE
+        // PersonalityTraits memory t = agentPersonalities[tokenId];
+        // return t.lastDreamDate == 0 || block.timestamp >= t.lastDreamDate + 24 hours;
+        return true; // TESTING: No cooldown
     }
 
 

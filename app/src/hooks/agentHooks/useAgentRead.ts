@@ -7,7 +7,7 @@ import { Address } from 'viem'
 
 // Debug function
 const debugLog = (message: string, data?: any) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
     console.log(`[useAgentRead] ${message}`, data ? data : '');
   }
 };
@@ -34,7 +34,8 @@ export function useAgentRead(tokenId?: number) {
     userTokenId: userTokenId ? Number(userTokenId) : undefined,
     effectiveTokenId,
     shouldLoadData,
-    address
+    address,
+    timestamp: Date.now()
   });
 
   // Pobierz dane agenta (zastępuje getAgentInfo)
@@ -78,6 +79,32 @@ export function useAgentRead(tokenId?: number) {
     effectiveTokenId
   });
 
+  // DETAILED PERSONALITY TRAITS LOGGING
+  if (personalityTraits) {
+    debugLog('PersonalityTraits RAW data from contract', {
+      rawPersonalityTraits: personalityTraits,
+      personalityTraitsType: typeof personalityTraits,
+      personalityTraitsConstructor: personalityTraits.constructor.name,
+      personalityTraitsLength: Array.isArray(personalityTraits) ? personalityTraits.length : 'not array',
+      personalityTraitsKeys: typeof personalityTraits === 'object' ? Object.keys(personalityTraits) : 'not object'
+    });
+
+    // Test wagmi v2 vs array access
+    debugLog('PersonalityTraits Wagmi v2 vs Array parsing', {
+      // Array style (old ethers)
+      creativityArray: (personalityTraits as any)[0],
+      analyticalArray: (personalityTraits as any)[1],
+      empathyArray: (personalityTraits as any)[2],
+      moodArray: (personalityTraits as any)[6],
+      
+      // Object style (wagmi v2)
+      creativityObj: (personalityTraits as any).creativity,
+      analyticalObj: (personalityTraits as any).analytical,
+      empathyObj: (personalityTraits as any).empathy,
+      moodObj: (personalityTraits as any).dominantMood
+    });
+  }
+
   if (memoryData) {
     debugLog('Memory data details', {
       memoryCoreHash: (memoryData as any).memoryCoreHash,
@@ -115,32 +142,75 @@ export function useAgentRead(tokenId?: number) {
     },
   })
 
+  // DETAILED AGENT DATA LOGGING
+  if (agentData) {
+    debugLog('AgentData RAW data from contract', {
+      rawAgentData: agentData,
+      agentDataType: typeof agentData,
+      agentDataConstructor: agentData.constructor.name,
+      agentDataLength: Array.isArray(agentData) ? agentData.length : 'not array',
+      agentDataKeys: typeof agentData === 'object' ? Object.keys(agentData) : 'not object'
+    });
+
+    // Test wagmi v2 vs array access for agent data
+    debugLog('AgentData Wagmi v2 vs Array parsing', {
+      // Array style (old ethers)
+      agentNameArray: (agentData as any)[1],
+      intelligenceLevelArray: (agentData as any)[4],
+      dreamCountArray: (agentData as any)[5],
+      
+      // Object style (wagmi v2)
+      agentNameObj: (agentData as any).agentName,
+      intelligenceLevelObj: (agentData as any).intelligenceLevel,
+      dreamCountObj: (agentData as any).dreamCount
+    });
+  }
+
   // Kombinuj dane agenta z danymi osobowości
   const combinedAgentData = agentData && personalityTraits ? {
-    // Dane podstawowe z agents()
-    owner: agentData[0] as Address,
-    agentName: agentData[1] as string,
-    createdAt: agentData[2] as bigint,
-    lastUpdated: agentData[3] as bigint,
-    intelligenceLevel: agentData[4] as bigint,
-    dreamCount: agentData[5] as bigint,
-    conversationCount: agentData[6] as bigint,
-    personalityInitialized: agentData[7] as boolean,
-    totalEvolutions: agentData[8] as bigint,
-    lastEvolutionDate: agentData[9] as bigint,
+    // Dane podstawowe z agents() - WAGMI V2 COMPATIBLE
+    owner: ((agentData as any).owner !== undefined ? 
+      (agentData as any).owner : (agentData as any)[0]) as Address,
+    agentName: ((agentData as any).agentName !== undefined ? 
+      (agentData as any).agentName : (agentData as any)[1]) as string,
+    createdAt: ((agentData as any).createdAt !== undefined ? 
+      (agentData as any).createdAt : (agentData as any)[2]) as bigint,
+    lastUpdated: ((agentData as any).lastUpdated !== undefined ? 
+      (agentData as any).lastUpdated : (agentData as any)[3]) as bigint,
+    intelligenceLevel: ((agentData as any).intelligenceLevel !== undefined ? 
+      (agentData as any).intelligenceLevel : (agentData as any)[4]) as bigint,
+    dreamCount: ((agentData as any).dreamCount !== undefined ? 
+      (agentData as any).dreamCount : (agentData as any)[5]) as bigint,
+    conversationCount: ((agentData as any).conversationCount !== undefined ? 
+      (agentData as any).conversationCount : (agentData as any)[6]) as bigint,
+    personalityInitialized: ((agentData as any).personalityInitialized !== undefined ? 
+      (agentData as any).personalityInitialized : (agentData as any)[7]) as boolean,
+    totalEvolutions: ((agentData as any).totalEvolutions !== undefined ? 
+      (agentData as any).totalEvolutions : (agentData as any)[8]) as bigint,
+    lastEvolutionDate: ((agentData as any).lastEvolutionDate !== undefined ? 
+      (agentData as any).lastEvolutionDate : (agentData as any)[9]) as bigint,
     
-    // Dane osobowości z getPersonalityTraits() - ZAKTUALIZOWANE
+    // Dane osobowości z getPersonalityTraits() - WAGMI V2 COMPATIBLE
     personality: {
-      creativity: personalityTraits[0] as number,
-      analytical: personalityTraits[1] as number,
-      empathy: personalityTraits[2] as number,
-      intuition: personalityTraits[3] as number,
-      resilience: personalityTraits[4] as number,
-      curiosity: personalityTraits[5] as number,
-      dominantMood: personalityTraits[6] as string,
-      lastDreamDate: personalityTraits[7] as bigint,
+      creativity: ((personalityTraits as any).creativity !== undefined ? 
+        (personalityTraits as any).creativity : (personalityTraits as any)[0]) as number,
+      analytical: ((personalityTraits as any).analytical !== undefined ? 
+        (personalityTraits as any).analytical : (personalityTraits as any)[1]) as number,
+      empathy: ((personalityTraits as any).empathy !== undefined ? 
+        (personalityTraits as any).empathy : (personalityTraits as any)[2]) as number,
+      intuition: ((personalityTraits as any).intuition !== undefined ? 
+        (personalityTraits as any).intuition : (personalityTraits as any)[3]) as number,
+      resilience: ((personalityTraits as any).resilience !== undefined ? 
+        (personalityTraits as any).resilience : (personalityTraits as any)[4]) as number,
+      curiosity: ((personalityTraits as any).curiosity !== undefined ? 
+        (personalityTraits as any).curiosity : (personalityTraits as any)[5]) as number,
+      dominantMood: ((personalityTraits as any).dominantMood !== undefined ? 
+        (personalityTraits as any).dominantMood : (personalityTraits as any)[6]) as string,
+      lastDreamDate: ((personalityTraits as any).lastDreamDate !== undefined ? 
+        (personalityTraits as any).lastDreamDate : (personalityTraits as any)[7]) as bigint,
       // Dodaj unikalne features z getPersonalityTraits()
-      uniqueFeatures: personalityTraits[8] as Array<{
+      uniqueFeatures: ((personalityTraits as any).uniqueFeatures !== undefined ? 
+        (personalityTraits as any).uniqueFeatures : (personalityTraits as any)[8]) as Array<{
         name: string;
         description: string;
         intensity: number;
@@ -170,6 +240,38 @@ export function useAgentRead(tokenId?: number) {
     currentDreamDailyHash: combinedAgentData?.memory?.currentDreamDailyHash || 'missing'
   });
 
+  // DETAILED COMBINED DATA LOGGING
+  if (combinedAgentData) {
+    debugLog('Combined AgentData FULL details', {
+      agentName: combinedAgentData.agentName,
+      intelligenceLevel: combinedAgentData.intelligenceLevel,
+      dreamCount: combinedAgentData.dreamCount,
+      conversationCount: combinedAgentData.conversationCount,
+      personalityInitialized: combinedAgentData.personalityInitialized,
+      totalEvolutions: combinedAgentData.totalEvolutions,
+      
+      personalityFull: combinedAgentData.personality,
+      
+      personalityDetails: {
+        creativity: combinedAgentData.personality.creativity,
+        analytical: combinedAgentData.personality.analytical,
+        empathy: combinedAgentData.personality.empathy,
+        intuition: combinedAgentData.personality.intuition,
+        resilience: combinedAgentData.personality.resilience,
+        curiosity: combinedAgentData.personality.curiosity,
+        dominantMood: combinedAgentData.personality.dominantMood,
+        lastDreamDate: combinedAgentData.personality.lastDreamDate,
+        uniqueFeaturesCount: combinedAgentData.personality.uniqueFeatures?.length || 0
+      },
+      
+      memoryHashes: combinedAgentData.memory ? {
+        memoryCoreHash: combinedAgentData.memory.memoryCoreHash,
+        currentDreamDailyHash: combinedAgentData.memory.currentDreamDailyHash,
+        lastDreamMonthlyHash: combinedAgentData.memory.lastDreamMonthlyHash
+      } : 'no memory data'
+    });
+  }
+
   return {
     // Dane agenta
     agentData: combinedAgentData,
@@ -193,23 +295,34 @@ export function useAgentRead(tokenId?: number) {
     canProcessError,
 
     memoryAccess: memoryAccess ? {
-      monthsAccessible: memoryAccess[0] as number,
-      memoryDepth: memoryAccess[1] as string,
+      monthsAccessible: ((memoryAccess as any).monthsAccessible !== undefined ? 
+        (memoryAccess as any).monthsAccessible : (memoryAccess as any)[0]) as number,
+      memoryDepth: ((memoryAccess as any).memoryDepth !== undefined ? 
+        (memoryAccess as any).memoryDepth : (memoryAccess as any)[1]) as string,
     } : undefined,
     isLoadingMemoryAccess: memoryAccessLoading,
     memoryAccessError,
 
-    // Osobowość z nowymi danymi
+    // Osobowość z nowymi danymi - WAGMI V2 COMPATIBLE
     personalityTraits: personalityTraits ? {
-      creativity: personalityTraits[0] as number,
-      analytical: personalityTraits[1] as number,
-      empathy: personalityTraits[2] as number,
-      intuition: personalityTraits[3] as number,
-      resilience: personalityTraits[4] as number,
-      curiosity: personalityTraits[5] as number,
-      dominantMood: personalityTraits[6] as string,
-      lastDreamDate: personalityTraits[7] as bigint,
-      uniqueFeatures: personalityTraits[8] as Array<{
+      creativity: ((personalityTraits as any).creativity !== undefined ? 
+        (personalityTraits as any).creativity : (personalityTraits as any)[0]) as number,
+      analytical: ((personalityTraits as any).analytical !== undefined ? 
+        (personalityTraits as any).analytical : (personalityTraits as any)[1]) as number,
+      empathy: ((personalityTraits as any).empathy !== undefined ? 
+        (personalityTraits as any).empathy : (personalityTraits as any)[2]) as number,
+      intuition: ((personalityTraits as any).intuition !== undefined ? 
+        (personalityTraits as any).intuition : (personalityTraits as any)[3]) as number,
+      resilience: ((personalityTraits as any).resilience !== undefined ? 
+        (personalityTraits as any).resilience : (personalityTraits as any)[4]) as number,
+      curiosity: ((personalityTraits as any).curiosity !== undefined ? 
+        (personalityTraits as any).curiosity : (personalityTraits as any)[5]) as number,
+      dominantMood: ((personalityTraits as any).dominantMood !== undefined ? 
+        (personalityTraits as any).dominantMood : (personalityTraits as any)[6]) as string,
+      lastDreamDate: ((personalityTraits as any).lastDreamDate !== undefined ? 
+        (personalityTraits as any).lastDreamDate : (personalityTraits as any)[7]) as bigint,
+      uniqueFeatures: ((personalityTraits as any).uniqueFeatures !== undefined ? 
+        (personalityTraits as any).uniqueFeatures : (personalityTraits as any)[8]) as Array<{
         name: string;
         description: string;
         intensity: number;

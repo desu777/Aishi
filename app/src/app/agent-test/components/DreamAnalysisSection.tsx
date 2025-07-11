@@ -46,6 +46,7 @@ export default function DreamAnalysisSection({
   // NEW: Agent memory data
   const { 
     agentData, 
+    memoryAccess,
     isLoading: isLoadingAgent 
   } = useAgentRead(effectiveTokenId);
   
@@ -71,6 +72,46 @@ export default function DreamAnalysisSection({
   // Log na start komponentu
   debugLog('DreamAnalysisSection loaded', { hasAgent, effectiveTokenId });
 
+  // DETAILED LOGGING OF RECEIVED DATA
+  debugLog('useAgentRead data received', {
+    hasAgentData: !!agentData,
+    hasMemoryAccess: !!memoryAccess,
+    isLoadingAgent,
+    
+    agentDataDetails: agentData ? {
+      agentName: agentData.agentName,
+      intelligenceLevel: agentData.intelligenceLevel,
+      dreamCount: agentData.dreamCount,
+      conversationCount: agentData.conversationCount,
+      totalEvolutions: agentData.totalEvolutions,
+      personalityInitialized: agentData.personalityInitialized
+    } : 'no agent data',
+    
+    personalityDetails: agentData?.personality ? {
+      creativity: agentData.personality.creativity,
+      analytical: agentData.personality.analytical,
+      empathy: agentData.personality.empathy,
+      intuition: agentData.personality.intuition,
+      resilience: agentData.personality.resilience,
+      curiosity: agentData.personality.curiosity,
+      dominantMood: agentData.personality.dominantMood,
+      uniqueFeaturesCount: agentData.personality.uniqueFeatures?.length || 0
+    } : 'no personality data',
+    
+    memoryAccessDetails: memoryAccess ? {
+      monthsAccessible: memoryAccess.monthsAccessible,
+      memoryDepth: memoryAccess.memoryDepth
+    } : 'no memory access data',
+    
+    memoryDetails: agentData?.memory ? {
+      memoryCoreHash: agentData.memory.memoryCoreHash,
+      currentDreamDailyHash: agentData.memory.currentDreamDailyHash,
+      lastDreamMonthlyHash: agentData.memory.lastDreamMonthlyHash,
+      currentMonth: agentData.memory.currentMonth,
+      currentYear: agentData.memory.currentYear
+    } : 'no memory data'
+  });
+
   const handleDreamInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setDreamText(value);
@@ -83,8 +124,26 @@ export default function DreamAnalysisSection({
       return;
     }
     
-    debugLog('Building context for agent', effectiveTokenId);
-    await buildDreamContext(effectiveTokenId);
+    debugLog('Building context for agent', { 
+      tokenId: effectiveTokenId,
+      hasAgentData: !!agentData,
+      hasMemoryAccess: !!memoryAccess,
+      agentName: agentData?.agentName,
+      memoryAccessible: memoryAccess?.monthsAccessible
+    });
+    
+    // Combine all data from useAgentRead (Wagmi v2 compatible)
+    const combinedAgentData = agentData ? {
+      ...agentData,
+      memory: {
+        ...agentData.memory,
+        memoryDepth: memoryAccess?.memoryDepth || 'current month only',
+        monthsAccessible: memoryAccess?.monthsAccessible || 1
+      }
+    } : undefined;
+    
+    // Pass pre-loaded agent data from useAgentRead (Wagmi v2 compatible)
+    await buildDreamContext(effectiveTokenId, combinedAgentData);
   };
 
   // Early return AFTER all hooks

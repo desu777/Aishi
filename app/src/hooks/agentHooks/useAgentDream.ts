@@ -109,7 +109,10 @@ export function useAgentDream() {
   /**
    * Builds dream analysis context
    */
-  const buildDreamContext = async (tokenId: number): Promise<DreamContext | null> => {
+  const buildDreamContext = async (
+    tokenId: number,
+    agentData?: any // Optional pre-loaded agent data from useAgentRead
+  ): Promise<DreamContext | null> => {
     if (!isConnected) {
       const error = 'Wallet not connected';
       setDreamState(prev => ({ ...prev, error }));
@@ -132,63 +135,95 @@ export function useAgentDream() {
     }));
 
     try {
-      debugLog('Starting context building', { tokenId, dreamLength: dreamState.dreamText.length });
-
-      // Update status
-      setDreamState(prev => ({ ...prev, contextStatus: 'Connecting to provider...' }));
-
-      // Get provider and signer
-      const [provider, providerErr] = await getProvider();
-      if (!provider || providerErr) {
-        throw new Error(`Provider error: ${providerErr?.message}`);
-      }
-
-      const [signer, signerErr] = await getSigner(provider);
-      if (!signer || signerErr) {
-        throw new Error(`Signer error: ${signerErr?.message}`);
-      }
-
-      debugLog('Provider and signer connected');
-
-      // Update status
-      setDreamState(prev => ({ ...prev, contextStatus: 'Connecting to contract...' }));
-
-      // Get contract instance
-      const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-      const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
-      const contract = new Contract(contractAddress, contractABI, signer);
-
-      debugLog('Contract connected', { address: contractAddress });
-
-      // Update status
-      setDreamState(prev => ({ ...prev, contextStatus: 'Building context...' }));
-
-      // Create context builder
-      const contextBuilder = new DreamContextBuilder(contract, debugLog);
-
-      // Build context
-      const context = await contextBuilder.buildContext(
-        tokenId,
-        dreamState.dreamText,
-        downloadFile
-      );
-
-      setDreamState(prev => ({ 
-        ...prev, 
-        isLoadingContext: false,
-        contextStatus: 'Context built successfully!',
-        builtContext: context
-      }));
-
-      debugLog('Context building completed', {
-        agentName: context.agentProfile.name,
-        intelligenceLevel: context.agentProfile.intelligenceLevel,
-        memoryDepth: context.memoryAccess.memoryDepth,
-        uniqueFeatures: context.uniqueFeatures.length,
-        historicalItems: context.historicalData.dailyDreams.length + context.historicalData.monthlyConsolidations.length
+      debugLog('Starting context building', { 
+        tokenId, 
+        dreamLength: dreamState.dreamText.length,
+        hasPreloadedData: !!agentData
       });
 
-      return context;
+      if (agentData) {
+        // Use pre-loaded data from useAgentRead (Wagmi v2 compatible)
+        setDreamState(prev => ({ ...prev, contextStatus: 'Using pre-loaded agent data...' }));
+        
+        // Create a dummy contract for the context builder (not used when agentData is provided)
+        const contextBuilder = new DreamContextBuilder(null as any, debugLog);
+        
+        // Build context with pre-loaded data
+        const context = await contextBuilder.buildContext(
+          tokenId,
+          dreamState.dreamText,
+          downloadFile,
+          agentData
+        );
+
+        setDreamState(prev => ({ 
+          ...prev, 
+          isLoadingContext: false,
+          contextStatus: 'Context built successfully from pre-loaded data!',
+          builtContext: context
+        }));
+
+        debugLog('Context building completed with pre-loaded data', {
+          agentName: context.agentProfile.name,
+          intelligenceLevel: context.agentProfile.intelligenceLevel,
+          memoryDepth: context.memoryAccess.memoryDepth,
+          uniqueFeatures: context.uniqueFeatures.length,
+          historicalItems: context.historicalData.dailyDreams.length + context.historicalData.monthlyConsolidations.length
+        });
+
+        return context;
+
+      } else {
+        // Fallback to contract calls (backward compatibility)
+        setDreamState(prev => ({ ...prev, contextStatus: 'Connecting to provider...' }));
+
+        const [provider, providerErr] = await getProvider();
+        if (!provider || providerErr) {
+          throw new Error(`Provider error: ${providerErr?.message}`);
+        }
+
+        const [signer, signerErr] = await getSigner(provider);
+        if (!signer || signerErr) {
+          throw new Error(`Signer error: ${signerErr?.message}`);
+        }
+
+        debugLog('Provider and signer connected');
+
+        setDreamState(prev => ({ ...prev, contextStatus: 'Connecting to contract...' }));
+
+        const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
+        const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+        const contract = new Contract(contractAddress, contractABI, signer);
+
+        debugLog('Contract connected', { address: contractAddress });
+
+        setDreamState(prev => ({ ...prev, contextStatus: 'Building context...' }));
+
+        const contextBuilder = new DreamContextBuilder(contract, debugLog);
+
+        const context = await contextBuilder.buildContext(
+          tokenId,
+          dreamState.dreamText,
+          downloadFile
+        );
+
+        setDreamState(prev => ({ 
+          ...prev, 
+          isLoadingContext: false,
+          contextStatus: 'Context built successfully!',
+          builtContext: context
+        }));
+
+        debugLog('Context building completed', {
+          agentName: context.agentProfile.name,
+          intelligenceLevel: context.agentProfile.intelligenceLevel,
+          memoryDepth: context.memoryAccess.memoryDepth,
+          uniqueFeatures: context.uniqueFeatures.length,
+          historicalItems: context.historicalData.dailyDreams.length + context.historicalData.monthlyConsolidations.length
+        });
+
+        return context;
+      }
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
