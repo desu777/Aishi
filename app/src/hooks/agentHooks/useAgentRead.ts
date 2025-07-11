@@ -5,6 +5,13 @@ import contractData from '../../abi/frontend-contracts.json'
 import { useWallet } from '../useWallet'
 import { Address } from 'viem'
 
+// Debug function
+const debugLog = (message: string, data?: any) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[useAgentRead] ${message}`, data ? data : '');
+  }
+};
+
 export function useAgentRead(tokenId?: number) {
   const { address } = useWallet()
   const contractAddress = contractData.galileo.DreamscapeAgent.address as Address
@@ -21,6 +28,14 @@ export function useAgentRead(tokenId?: number) {
   // Użyj tokenId lub userTokenId jako efectiveTokenId
   const effectiveTokenId = tokenId || (userTokenId ? Number(userTokenId) : undefined)
   const shouldLoadData = effectiveTokenId && effectiveTokenId > 0
+
+  debugLog('useAgentRead initialized', {
+    tokenId,
+    userTokenId: userTokenId ? Number(userTokenId) : undefined,
+    effectiveTokenId,
+    shouldLoadData,
+    address
+  });
 
   // Pobierz dane agenta (zastępuje getAgentInfo)
   const { data: agentData, isLoading: agentLoading, error: agentError } = useReadContract({
@@ -54,6 +69,29 @@ export function useAgentRead(tokenId?: number) {
       enabled: shouldLoadData,
     },
   })
+
+  debugLog('Raw contract data', {
+    agentData: agentData ? 'loaded' : 'null',
+    personalityTraits: personalityTraits ? 'loaded' : 'null',
+    memoryData: memoryData ? 'loaded' : 'null',
+    memoryError: memoryError ? memoryError.message : 'no error',
+    effectiveTokenId
+  });
+
+  if (memoryData) {
+    debugLog('Memory data details', {
+      memoryCoreHash: (memoryData as any).memoryCoreHash,
+      currentDreamDailyHash: (memoryData as any).currentDreamDailyHash,
+      currentConvDailyHash: (memoryData as any).currentConvDailyHash,
+      lastDreamMonthlyHash: (memoryData as any).lastDreamMonthlyHash,
+      lastConvMonthlyHash: (memoryData as any).lastConvMonthlyHash,
+      lastConsolidation: (memoryData as any).lastConsolidation,
+      currentMonth: (memoryData as any).currentMonth,
+      currentYear: (memoryData as any).currentYear
+    });
+  } else {
+    debugLog('Memory data is null/undefined', { memoryData });
+  }
 
   // NOWA FUNKCJA: Sprawdź czy można przetwarzać sen dzisiaj
   const { data: canProcessDreamToday, isLoading: canProcessLoading, error: canProcessError } = useReadContract({
@@ -112,16 +150,25 @@ export function useAgentRead(tokenId?: number) {
     
     // Dane pamięci z getAgentMemory()
     memory: memoryData ? {
-      memoryCoreHash: memoryData[0] as `0x${string}`,
-      currentDreamDailyHash: memoryData[1] as `0x${string}`,
-      currentConvDailyHash: memoryData[2] as `0x${string}`,
-      lastDreamMonthlyHash: memoryData[3] as `0x${string}`,
-      lastConvMonthlyHash: memoryData[4] as `0x${string}`,
-      lastConsolidation: memoryData[5] as bigint,
-      currentMonth: memoryData[6] as number,
-      currentYear: memoryData[7] as number,
+      memoryCoreHash: (memoryData as any).memoryCoreHash as `0x${string}`,
+      currentDreamDailyHash: (memoryData as any).currentDreamDailyHash as `0x${string}`,
+      currentConvDailyHash: (memoryData as any).currentConvDailyHash as `0x${string}`,
+      lastDreamMonthlyHash: (memoryData as any).lastDreamMonthlyHash as `0x${string}`,
+      lastConvMonthlyHash: (memoryData as any).lastConvMonthlyHash as `0x${string}`,
+      lastConsolidation: (memoryData as any).lastConsolidation as bigint,
+      currentMonth: (memoryData as any).currentMonth as number,
+      currentYear: (memoryData as any).currentYear as number,
     } : undefined
   } : undefined
+
+  debugLog('Combined agent data', {
+    hasAgentData: !!agentData,
+    hasPersonalityTraits: !!personalityTraits,
+    hasMemoryData: !!memoryData,
+    hasCombinedData: !!combinedAgentData,
+    hasMemoryInCombined: !!combinedAgentData?.memory,
+    currentDreamDailyHash: combinedAgentData?.memory?.currentDreamDailyHash || 'missing'
+  });
 
   return {
     // Dane agenta
