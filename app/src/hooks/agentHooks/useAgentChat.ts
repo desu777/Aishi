@@ -1,0 +1,632 @@
+'use client';
+
+import { useState, useCallback } from 'react';
+import { useStorageDownload } from '../storage/useStorageDownload';
+import { useStorageUpload } from '../storage/useStorageUpload';
+import { useWallet } from '../useWallet';
+import { useAgentAI } from './useAgentAI';
+import { useAgentConversationPrompt } from './useAgentConversationPrompt';
+import { ConversationContextBuilder, ConversationContext, ChatMessage } from './services/conversationContextBuilder';
+import { Contract, ethers } from 'ethers';
+import frontendContracts from '../../abi/frontend-contracts.json';
+import { getProvider, getSigner } from '../../lib/0g/fees';
+
+interface ChatSession {
+  sessionId: string;
+  tokenId: number;
+  messages: ChatMessage[];
+  builtContext: ConversationContext | null;
+  isActive: boolean;
+  lastActivity: number;
+}
+
+interface ChatState {
+  session: ChatSession | null;
+  isInitializing: boolean;
+  isTyping: boolean;
+  error: string | null;
+  // Save functionality
+  isSaving: boolean;
+  saveStatus: string;
+  // Contract functionality
+  isProcessingContract: boolean;
+  contractStatus: string;
+}
+
+// Context types from contract interface
+enum ContextType {
+  DREAM_DISCUSSION = 0,
+  GENERAL_CHAT = 1,
+  PERSONALITY_QUERY = 2,
+  THERAPEUTIC = 3,
+  ADVICE_SEEKING = 4
+}
+
+export function useAgentChat(tokenId?: number) {
+  const [chatState, setChatState] = useState<ChatState>({
+    session: null,
+    isInitializing: false,
+    isTyping: false,
+    error: null,
+    isSaving: false,
+    saveStatus: '',
+    isProcessingContract: false,
+    contractStatus: ''
+  });
+
+  const { downloadFile } = useStorageDownload();
+  const { uploadFile } = useStorageUpload();
+  const { isConnected, address } = useWallet();
+  const { sendDreamAnalysis } = useAgentAI();
+  const { buildConversationPrompt } = useAgentConversationPrompt();
+
+  // Debug logs dla development
+  const debugLog = (message: string, data?: any) => {
+    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+      console.log(`[useAgentChat] ${message}`, data || '');
+    }
+  };
+
+  debugLog('useAgentChat hook initialized', { tokenId });
+
+  /**
+   * Inicjalizuje nową sesję chatu
+   */
+  const initializeSession = useCallback(async (agentData?: any) => {
+    if (!tokenId || !isConnected) {
+      setChatState(prev => ({ ...prev, error: 'Token ID and wallet connection required' }));
+      return;
+    }
+
+    setChatState(prev => ({ 
+      ...prev, 
+      isInitializing: true, 
+      error: null,
+      session: null
+    }));
+
+    try {
+      debugLog('Initializing chat session', { tokenId, hasAgentData: !!agentData });
+
+      const sessionId = `chat_${tokenId}_${Date.now()}`;
+      
+      // Build conversation context
+      let context: ConversationContext;
+      
+      if (agentData) {
+        // Use pre-loaded data from useAgentRead (faster)
+        const contextBuilder = new ConversationContextBuilder(null as any, debugLog);
+        context = await contextBuilder.buildContext(
+          tokenId,
+          sessionId,
+          [], // Empty conversation history for new session
+          downloadFile,
+          agentData
+        );
+      } else {
+        // Fallback to contract calls
+        const [provider, providerErr] = await getProvider();
+        if (!provider || providerErr) {
+          throw new Error(`Provider error: ${providerErr?.message}`);
+        }
+
+        const [signer, signerErr] = await getSigner(provider);
+        if (!signer || signerErr) {
+          throw new Error(`Signer error: ${signerErr?.message}`);
+        }
+
+        const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
+        const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+        const contract = new Contract(contractAddress, contractABI, signer);
+
+        const contextBuilder = new ConversationContextBuilder(contract, debugLog);
+        context = await contextBuilder.buildContext(
+          tokenId,
+          sessionId,
+          [], // Empty conversation history for new session
+          downloadFile
+        );
+      }
+
+      const session: ChatSession = {
+        sessionId,
+        tokenId,
+        messages: [],
+        builtContext: context,
+        isActive: true,
+        lastActivity: Date.now()
+      };
+
+      setChatState(prev => ({ 
+        ...prev, 
+        isInitializing: false,
+        session
+      }));
+
+      debugLog('Chat session initialized successfully', {
+        sessionId,
+        agentName: context.agentProfile.name,
+        memoryDepth: context.memoryAccess.memoryDepth,
+        uniqueFeatures: context.uniqueFeatures.length
+      });
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setChatState(prev => ({ 
+        ...prev, 
+        isInitializing: false,
+        error: errorMessage
+      }));
+      debugLog('Session initialization failed', { error: errorMessage });
+    }
+  }, [tokenId, isConnected, downloadFile, debugLog]);
+
+  /**
+   * Wysyła wiadomość do agenta
+   */
+  const sendMessage = useCallback(async (userMessage: string) => {
+    if (!chatState.session || !chatState.session.builtContext) {
+      setChatState(prev => ({ ...prev, error: 'Chat session not initialized' }));
+      return;
+    }
+
+    if (!userMessage.trim()) {
+      setChatState(prev => ({ ...prev, error: 'Message cannot be empty' }));
+      return;
+    }
+
+    debugLog('Sending message to agent', { 
+      sessionId: chatState.session.sessionId,
+      messageLength: userMessage.length
+    });
+
+    // Add user message to chat
+    const userMsg: ChatMessage = {
+      id: `user_${Date.now()}`,
+      role: 'user',
+      content: userMessage,
+      timestamp: Date.now()
+    };
+
+    setChatState(prev => ({
+      ...prev,
+      session: prev.session ? {
+        ...prev.session,
+        messages: [...prev.session.messages, userMsg],
+        lastActivity: Date.now()
+      } : null,
+      isTyping: true,
+      error: null
+    }));
+
+    try {
+      // Build conversation prompt with current context + updated history
+      const updatedContext = {
+        ...chatState.session.builtContext,
+        conversationHistory: [...chatState.session.messages, userMsg]
+      };
+
+      const conversationPrompt = buildConversationPrompt(updatedContext, userMessage);
+      
+      debugLog('Sending to AI', { 
+        promptLength: conversationPrompt.prompt.length,
+        agentName: updatedContext.agentProfile.name
+      });
+
+      // Send to AI (reuse existing AI service)
+      const aiResponse = await sendDreamAnalysis(
+        conversationPrompt,
+        'llama-3.3-70b-instruct'
+      );
+
+      if (aiResponse && aiResponse.fullAnalysis) {
+        const agentMsg: ChatMessage = {
+          id: `agent_${Date.now()}`,
+          role: 'agent',
+          content: aiResponse.fullAnalysis,
+          timestamp: Date.now(),
+          metadata: {
+            conversationType: detectConversationType(userMessage),
+            emotionalTone: detectEmotionalTone(aiResponse.fullAnalysis),
+            uniqueFeatures: updatedContext.uniqueFeatures.map(f => f.name)
+          }
+        };
+
+        setChatState(prev => ({
+          ...prev,
+          session: prev.session ? {
+            ...prev.session,
+            messages: [...prev.session.messages, agentMsg],
+            lastActivity: Date.now()
+          } : null,
+          isTyping: false
+        }));
+
+        debugLog('Message sent successfully', {
+          agentResponseLength: agentMsg.content.length,
+          totalMessages: chatState.session.messages.length + 2
+        });
+      } else {
+        throw new Error('AI response was empty or invalid');
+      }
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setChatState(prev => ({ 
+        ...prev, 
+        isTyping: false,
+        error: errorMessage
+      }));
+      debugLog('Message sending failed', { error: errorMessage });
+    }
+  }, [chatState.session, sendDreamAnalysis, buildConversationPrompt, debugLog]);
+
+  /**
+   * Zapisuje konwersację do storage i kontraktu
+   */
+  const saveConversation = useCallback(async () => {
+    if (!chatState.session || !chatState.session.builtContext || chatState.session.messages.length === 0) {
+      setChatState(prev => ({ ...prev, error: 'No conversation to save' }));
+      return;
+    }
+
+    setChatState(prev => ({ 
+      ...prev, 
+      isSaving: true, 
+      saveStatus: 'Preparing conversation data...',
+      error: null
+    }));
+
+    try {
+      debugLog('Starting conversation save', {
+        sessionId: chatState.session.sessionId,
+        messageCount: chatState.session.messages.length
+      });
+
+      // 1. Create conversation data
+      const conversationData = {
+        id: chatState.session.builtContext.agentProfile.conversationCount + 1,
+        timestamp: Math.floor(Date.now() / 1000),
+        conversation_type: detectConversationType(chatState.session.messages),
+        topic: extractConversationTopic(chatState.session.messages),
+        duration_minutes: calculateDuration(chatState.session.messages),
+        user_mood: 'engaged', // Could be detected from messages
+        agent_response_style: chatState.session.builtContext.personality.responseStyle,
+        messages: chatState.session.messages,
+        key_insights: extractKeyInsights(chatState.session.messages),
+        emotional_tone: detectEmotionalTone(chatState.session.messages),
+        user_satisfaction: 8, // Default - could be user-rated
+        breakthrough_moment: false, // Could be detected
+        follow_up_questions: extractFollowUpQuestions(chatState.session.messages),
+        metadata: {
+          session_id: chatState.session.sessionId,
+          unique_features_used: chatState.session.builtContext.uniqueFeatures.map(f => f.name),
+          intelligence_level: chatState.session.builtContext.agentProfile.intelligenceLevel,
+          memory_depth: chatState.session.builtContext.memoryAccess.memoryDepth
+        }
+      };
+
+      // 2. Save to storage
+      setChatState(prev => ({ ...prev, saveStatus: 'Uploading to storage...' }));
+      const rootHash = await saveConversationToStorage(chatState.session.tokenId, conversationData);
+
+      if (rootHash) {
+        // 3. Record in contract
+        setChatState(prev => ({ ...prev, saveStatus: 'Recording in contract...' }));
+        await recordConversationInContract(chatState.session.tokenId, rootHash, conversationData.conversation_type);
+
+        setChatState(prev => ({ 
+          ...prev, 
+          isSaving: false,
+          saveStatus: 'Conversation saved successfully!'
+        }));
+
+        debugLog('Conversation saved successfully', {
+          conversationId: conversationData.id,
+          rootHash,
+          messageCount: conversationData.messages.length
+        });
+
+        // Clear save status after 3 seconds
+        setTimeout(() => {
+          setChatState(prev => ({ ...prev, saveStatus: '' }));
+        }, 3000);
+      }
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setChatState(prev => ({ 
+        ...prev, 
+        isSaving: false,
+        saveStatus: `Save failed: ${errorMessage}`
+      }));
+      debugLog('Conversation save failed', { error: errorMessage });
+    }
+  }, [chatState.session, debugLog]);
+
+  /**
+   * Zapisuje konwersację do storage (append-only pattern)
+   */
+  const saveConversationToStorage = async (tokenId: number, conversationData: any): Promise<string> => {
+    try {
+      debugLog('Saving conversation to storage', { tokenId, conversationId: conversationData.id });
+
+      // 1. Get current conversation hash from contract
+      const [provider] = await getProvider();
+      const [signer] = await getSigner(provider!);
+      const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
+      const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+      const contract = new Contract(contractAddress, contractABI, signer);
+
+      const agentMemory = await contract.getAgentMemory(tokenId);
+      const currentConvHash = (agentMemory as any).currentConvDailyHash;
+      const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+      // 2. Download existing conversations
+      let existingConversations: any[] = [];
+      if (currentConvHash && currentConvHash !== emptyHash) {
+        debugLog('Downloading existing conversations', { hash: currentConvHash });
+        const downloadResult = await downloadFile(currentConvHash);
+        if (downloadResult.success && downloadResult.data) {
+          const textDecoder = new TextDecoder('utf-8');
+          const jsonString = textDecoder.decode(downloadResult.data);
+          existingConversations = JSON.parse(jsonString);
+        }
+      }
+
+      // 3. Add new conversation to top (append-only, newest first)
+      const updatedConversations = [conversationData, ...existingConversations];
+
+      // 4. Create file and upload
+      const fileName = `conversation_essence_daily_${new Date().toISOString().slice(0, 7)}.json`;
+      const file = new File(
+        [JSON.stringify(updatedConversations, null, 2)],
+        fileName,
+        { type: 'application/json' }
+      );
+
+      debugLog('Uploading conversations file', { 
+        fileName, 
+        totalConversations: updatedConversations.length,
+        fileSize: file.size
+      });
+
+      const uploadResult = await uploadFile(file);
+      
+      if (uploadResult.success && uploadResult.rootHash) {
+        debugLog('Conversation uploaded successfully', { 
+          rootHash: uploadResult.rootHash,
+          totalConversations: updatedConversations.length
+        });
+        return uploadResult.rootHash;
+      } else {
+        throw new Error(uploadResult.error || 'Upload failed');
+      }
+
+    } catch (error) {
+      debugLog('Storage save failed', { error: error.message });
+      throw error;
+    }
+  };
+
+  /**
+   * Zapisuje hash konwersacji w kontrakcie
+   */
+  const recordConversationInContract = async (tokenId: number, conversationHash: string, conversationType: string) => {
+    try {
+      debugLog('Recording conversation in contract', { tokenId, conversationHash, conversationType });
+
+      setChatState(prev => ({ 
+        ...prev, 
+        isProcessingContract: true,
+        contractStatus: 'Connecting to contract...'
+      }));
+
+      // 1. Get provider and signer
+      const [provider] = await getProvider();
+      const [signer] = await getSigner(provider!);
+
+      // 2. Connect to contract
+      const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
+      const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+      const contract = new Contract(contractAddress, contractABI, signer);
+
+      // 3. Convert hash to bytes32
+      const hashBytes32 = conversationHash.startsWith('0x') ? conversationHash : `0x${conversationHash}`;
+
+      // 4. Map conversation type to enum
+      const contextType = mapConversationTypeToEnum(conversationType);
+
+      setChatState(prev => ({ 
+        ...prev, 
+        contractStatus: 'Calling recordConversation...'
+      }));
+
+      // 5. Call recordConversation
+      const tx = await contract.recordConversation(tokenId, hashBytes32, contextType);
+
+      setChatState(prev => ({ 
+        ...prev, 
+        contractStatus: 'Waiting for confirmation...'
+      }));
+
+      // 6. Wait for confirmation
+      const receipt = await tx.wait();
+
+      setChatState(prev => ({ 
+        ...prev, 
+        isProcessingContract: false,
+        contractStatus: 'Conversation recorded successfully!'
+      }));
+
+      debugLog('Conversation recorded in contract', {
+        txHash: receipt.transactionHash,
+        gasUsed: receipt.gasUsed?.toString()
+      });
+
+      // Clear contract status after 3 seconds
+      setTimeout(() => {
+        setChatState(prev => ({ ...prev, contractStatus: '' }));
+      }, 3000);
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setChatState(prev => ({ 
+        ...prev, 
+        isProcessingContract: false,
+        contractStatus: `Contract recording failed: ${errorMessage}`
+      }));
+      debugLog('Contract recording failed', { error: errorMessage });
+      throw error;
+    }
+  };
+
+  /**
+   * Resetuje sesję chatu
+   */
+  const resetSession = useCallback(() => {
+    setChatState({
+      session: null,
+      isInitializing: false,
+      isTyping: false,
+      error: null,
+      isSaving: false,
+      saveStatus: '',
+      isProcessingContract: false,
+      contractStatus: ''
+    });
+    debugLog('Chat session reset');
+  }, [debugLog]);
+
+  return {
+    // Session management
+    session: chatState.session,
+    isInitializing: chatState.isInitializing,
+    initializeSession,
+    resetSession,
+    
+    // Messages
+    messages: chatState.session?.messages || [],
+    sendMessage,
+    isTyping: chatState.isTyping,
+    
+    // Save functionality
+    saveConversation,
+    isSaving: chatState.isSaving,
+    saveStatus: chatState.saveStatus,
+    
+    // Contract functionality
+    isProcessingContract: chatState.isProcessingContract,
+    contractStatus: chatState.contractStatus,
+    
+    // Error handling
+    error: chatState.error,
+    clearError: () => setChatState(prev => ({ ...prev, error: null }))
+  };
+}
+
+/**
+ * Helper functions
+ */
+
+function detectConversationType(messages: ChatMessage[] | string): string {
+  if (typeof messages === 'string') {
+    const text = messages.toLowerCase();
+    if (text.includes('dream') || text.includes('nightmare')) return 'dream_discussion';
+    if (text.includes('feel') || text.includes('emotion') || text.includes('help')) return 'therapeutic';
+    if (text.includes('advice') || text.includes('should') || text.includes('what do you think')) return 'advice_seeking';
+    if (text.includes('personality') || text.includes('trait') || text.includes('who are you')) return 'personality_query';
+    return 'general_chat';
+  }
+  
+  // For message arrays, analyze content
+  const userMessages = Array.isArray(messages) ? messages.filter(m => m.role === 'user') : [];
+  const allText = userMessages.map(m => m.content).join(' ').toLowerCase();
+  
+  if (allText.includes('dream') || allText.includes('nightmare')) return 'dream_discussion';
+  if (allText.includes('feel') || allText.includes('emotion') || allText.includes('help')) return 'therapeutic';
+  if (allText.includes('advice') || allText.includes('should') || allText.includes('what do you think')) return 'advice_seeking';
+  if (allText.includes('personality') || allText.includes('trait') || allText.includes('who are you')) return 'personality_query';
+  return 'general_chat';
+}
+
+function detectEmotionalTone(messages: ChatMessage[] | string): string {
+  if (typeof messages === 'string') {
+    const text = messages.toLowerCase();
+    if (text.includes('happy') || text.includes('joy') || text.includes('excited')) return 'positive';
+    if (text.includes('sad') || text.includes('worried') || text.includes('anxious')) return 'negative';
+    if (text.includes('curious') || text.includes('wonder') || text.includes('interesting')) return 'curious';
+    return 'neutral';
+  }
+  
+  // For message arrays
+  const allText = Array.isArray(messages) ? messages.map(m => m.content).join(' ').toLowerCase() : '';
+  if (allText.includes('happy') || allText.includes('joy') || allText.includes('excited')) return 'positive';
+  if (allText.includes('sad') || allText.includes('worried') || allText.includes('anxious')) return 'negative';
+  if (allText.includes('curious') || allText.includes('wonder') || allText.includes('interesting')) return 'curious';
+  return 'neutral';
+}
+
+function extractConversationTopic(messages: ChatMessage[]): string {
+  if (messages.length === 0) return 'General conversation';
+  
+  const userMessages = messages.filter(m => m.role === 'user');
+  if (userMessages.length === 0) return 'General conversation';
+  
+  // Use first user message as topic basis
+  const firstMessage = userMessages[0].content;
+  if (firstMessage.length > 50) {
+    return firstMessage.substring(0, 50) + '...';
+  }
+  return firstMessage;
+}
+
+function calculateDuration(messages: ChatMessage[]): number {
+  if (messages.length < 2) return 1;
+  
+  const timestamps = messages.map(m => m.timestamp);
+  const start = Math.min(...timestamps);
+  const end = Math.max(...timestamps);
+  
+  return Math.max(1, Math.round((end - start) / 60000)); // Convert to minutes
+}
+
+function extractKeyInsights(messages: ChatMessage[]): string[] {
+  // Simple extraction - could be more sophisticated
+  const insights = [];
+  const agentMessages = messages.filter(m => m.role === 'agent');
+  
+  for (const msg of agentMessages) {
+    if (msg.content.includes('insight') || msg.content.includes('understand') || msg.content.includes('realize')) {
+      insights.push(msg.content.substring(0, 100) + '...');
+    }
+  }
+  
+  return insights.slice(0, 3); // Max 3 insights
+}
+
+function extractFollowUpQuestions(messages: ChatMessage[]): string[] {
+  const questions = [];
+  const agentMessages = messages.filter(m => m.role === 'agent');
+  
+  for (const msg of agentMessages) {
+    const sentences = msg.content.split(/[.!?]+/);
+    for (const sentence of sentences) {
+      if (sentence.trim().endsWith('?')) {
+        questions.push(sentence.trim() + '?');
+      }
+    }
+  }
+  
+  return questions.slice(0, 3); // Max 3 questions
+}
+
+function mapConversationTypeToEnum(conversationType: string): ContextType {
+  switch (conversationType) {
+    case 'dream_discussion': return ContextType.DREAM_DISCUSSION;
+    case 'therapeutic': return ContextType.THERAPEUTIC;
+    case 'advice_seeking': return ContextType.ADVICE_SEEKING;
+    case 'personality_query': return ContextType.PERSONALITY_QUERY;
+    default: return ContextType.GENERAL_CHAT;
+  }
+}

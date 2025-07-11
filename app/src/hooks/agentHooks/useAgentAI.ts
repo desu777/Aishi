@@ -80,10 +80,10 @@ export function useAgentAI() {
   };
 
   /**
-   * Sends dream analysis prompt to 0g-compute API
+   * Sends AI prompt to 0g-compute API (supports both dream analysis and conversation)
    */
   const sendDreamAnalysis = async (
-    promptData: DreamAnalysisPrompt,
+    promptData: DreamAnalysisPrompt | any,
     model: string = 'llama-3.3-70b-instruct'
   ): Promise<ParsedAIResponse | null> => {
     if (!address) {
@@ -155,11 +155,11 @@ export function useAgentAI() {
         responseLength: aiResponse.response.length
       });
 
-      // Parse AI response to extract JSON blocks
+      // Parse AI response (different logic for conversation vs dream analysis)
       const parsedResponse = parseAIResponse(aiResponse.response, promptData.expectedFormat);
       
       if (!parsedResponse) {
-        throw new Error('Failed to parse AI response JSON blocks');
+        throw new Error('Failed to parse AI response');
       }
 
       setState(prev => ({ 
@@ -191,19 +191,46 @@ export function useAgentAI() {
   };
 
   /**
-   * Parses AI response text to extract JSON blocks
+   * Parses AI response text (supports both conversation and dream analysis)
    */
   const parseAIResponse = (
     responseText: string, 
-    expectedFormat: DreamAnalysisPrompt['expectedFormat']
+    expectedFormat: any
   ): ParsedAIResponse | null => {
     try {
       debugLog('Parsing AI response', { 
         responseLength: responseText.length,
+        isConversation: expectedFormat.isConversation,
         needsEvolution: expectedFormat.needsPersonalityEvolution
       });
 
-      // Extract JSON blocks from response
+      // For conversation, return raw response as fullAnalysis
+      if (expectedFormat.isConversation) {
+        debugLog('Parsing as conversation response');
+        
+        const parsedResponse: ParsedAIResponse = {
+          fullAnalysis: responseText,
+          dreamData: {
+            id: 0,
+            timestamp: Date.now(),
+            content: '',
+            emotions: [],
+            symbols: [],
+            intensity: 0,
+            lucidity_level: 0,
+            dream_type: 'conversation'
+          },
+          analysis: responseText.substring(0, 200) + '...' // Short excerpt
+        };
+
+        debugLog('Conversation response parsed successfully', {
+          responseLength: parsedResponse.fullAnalysis.length
+        });
+
+        return parsedResponse;
+      }
+
+      // For dream analysis, extract JSON blocks (existing logic)
       const jsonBlocks = extractJsonBlocks(responseText);
       
       if (jsonBlocks.length < 2) {
@@ -232,7 +259,7 @@ export function useAgentAI() {
         personalityImpact: expectedFormat.needsPersonalityEvolution ? storageData.personalityImpact : undefined
       };
 
-      debugLog('AI response parsed successfully', {
+      debugLog('Dream analysis response parsed successfully', {
         hasFullAnalysis: !!parsedResponse.fullAnalysis,
         hasDreamData: !!parsedResponse.dreamData,
         hasPersonalityImpact: !!parsedResponse.personalityImpact
