@@ -89,8 +89,7 @@ export function useAgentAI() {
    * Sends AI prompt to 0g-compute API (supports both dream analysis and conversation)
    */
   const sendDreamAnalysis = async (
-    promptData: DreamAnalysisPrompt | any,
-    model: string = 'llama-3.3-70b-instruct'
+    promptData: DreamAnalysisPrompt | any
   ): Promise<ParsedAIResponse | null> => {
     if (!address) {
       const error = 'Wallet not connected';
@@ -117,7 +116,6 @@ export function useAgentAI() {
     try {
       debugLog('Starting AI analysis', { 
         walletAddress: address,
-        model,
         promptLength: promptData.prompt.length,
         needsEvolution: promptData.expectedFormat.needsPersonalityEvolution
       });
@@ -135,8 +133,7 @@ export function useAgentAI() {
         },
         body: JSON.stringify({
           walletAddress: address,
-          query: promptData.prompt,
-          model: model
+          query: promptData.prompt
         })
       });
 

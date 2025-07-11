@@ -130,7 +130,7 @@ class DatabaseService {
     }
     
     if (process.env.TEST_ENV === 'true') {
-      console.log(`💰 Updated balance for ${walletAddress}: ${newBalance} OG`);
+      console.log(`💰 Updated balance for ${walletAddress}: ${newBalance.toFixed(8)} OG`);
     }
   }
 
@@ -184,7 +184,7 @@ class DatabaseService {
     };
     
     if (process.env.TEST_ENV === 'true') {
-      console.log(`📝 Added transaction: ${transaction.type} ${transaction.amount} OG for ${transaction.walletAddress}`);
+      console.log(`📝 Added transaction: ${transaction.type} ${transaction.amount.toFixed(8)} OG for ${transaction.walletAddress}`);
     }
     
     return newTransaction;

@@ -73,7 +73,7 @@ export class MasterWalletService {
       const balance = parseFloat(ethers.formatEther(ledgerInfo.ledgerInfo[0]));
       
       if (process.env.TEST_ENV === 'true') {
-        console.log(`💰 Master Wallet ledger balance: ${balance} OG`);
+        console.log(`💰 Master Wallet ledger balance: ${balance.toFixed(8)} OG`);
       }
     } catch (error: any) {
       if (error.message.includes('LedgerNotExists')) {
@@ -106,8 +106,8 @@ export class MasterWalletService {
 
       if (balance < threshold) {
         if (process.env.TEST_ENV === 'true') {
-          console.log(`⚠️  Master Wallet balance low: ${balance} OG < ${threshold} OG`);
-          console.log(`🔄 Auto-refilling with ${refillAmount} OG...`);
+          console.log(`⚠️  Master Wallet balance low: ${balance.toFixed(8)} OG < ${threshold.toFixed(8)} OG`);
+          console.log(`🔄 Auto-refilling with ${refillAmount.toFixed(8)} OG...`);
         }
 
         this.isRefilling = true;
@@ -119,7 +119,7 @@ export class MasterWalletService {
           const newBalance = parseFloat(ethers.formatEther(newLedgerInfo.ledgerInfo[0]));
           
           if (process.env.TEST_ENV === 'true') {
-            console.log(`✅ Master Wallet refilled. New balance: ${newBalance} OG`);
+            console.log(`✅ Master Wallet refilled. New balance: ${newBalance.toFixed(8)} OG`);
           }
         } finally {
           this.isRefilling = false;
@@ -196,7 +196,7 @@ export class MasterWalletService {
             const txHash = transaction.hash;
 
             if (process.env.TEST_ENV === 'true') {
-              console.log(`💰 Incoming transaction detected: ${amount} OG from ${from}`);
+              console.log(`💰 Incoming transaction detected: ${amount.toFixed(8)} OG from ${from}`);
             }
 
             onTransaction(from, amount, txHash);

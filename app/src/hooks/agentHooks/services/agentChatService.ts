@@ -202,8 +202,7 @@ export const chatWithAI = async (
       },
       body: JSON.stringify({
         walletAddress,
-        query: prompt,
-        model: 'llama-3.3-70b-instruct'
+        query: prompt
       })
     });
 

@@ -836,9 +836,68 @@ contract DreamscapeAgent is
         return string(abi.encodePacked(n[m-1], " ", _uint2str(y)));
     }
 
-    /* ───── date helpers (approx.) ─────────────────────────────────────────── */
-    function _currentMonth() internal view returns (uint8)  { return uint8((block.timestamp / 30 days) % 12) + 1; }
-    function _currentYear()  internal view returns (uint16) { return uint16(2024 + (block.timestamp / 365 days)); }
+    /* ───── date helpers (fixed) ─────────────────────────────────────────── */
+    function _currentMonth() internal view returns (uint8)  { 
+        // Use proper date calculation instead of approximation
+        uint256 timestamp = block.timestamp;
+        uint256 daysSince1970 = timestamp / 86400; // seconds to days
+        
+        // Calculate years since 1970
+        uint256 year = 1970;
+        uint256 daysInYear;
+        
+        while (true) {
+            daysInYear = _isLeapYear(year) ? 366 : 365;
+            if (daysSince1970 >= daysInYear) {
+                daysSince1970 -= daysInYear;
+                year++;
+            } else {
+                break;
+            }
+        }
+        
+        // Calculate month within the year
+        uint256 dayOfYear = daysSince1970;
+        uint8[12] memory daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        
+        if (_isLeapYear(year)) {
+            daysInMonth[1] = 29; // February in leap year
+        }
+        
+        for (uint8 month = 1; month <= 12; month++) {
+            if (dayOfYear < daysInMonth[month - 1]) {
+                return month;
+            }
+            dayOfYear -= daysInMonth[month - 1];
+        }
+        
+        return 12; // Fallback to December
+    }
+    
+    function _currentYear() internal view returns (uint16) { 
+        uint256 timestamp = block.timestamp;
+        uint256 daysSince1970 = timestamp / 86400; // seconds to days
+        
+        // Calculate years since 1970
+        uint256 year = 1970;
+        uint256 daysInYear;
+        
+        while (true) {
+            daysInYear = _isLeapYear(year) ? 366 : 365;
+            if (daysSince1970 >= daysInYear) {
+                daysSince1970 -= daysInYear;
+                year++;
+            } else {
+                break;
+            }
+        }
+        
+        return uint16(year);
+    }
+    
+    function _isLeapYear(uint256 year) internal pure returns (bool) {
+        return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    }
 
     /* ───── misc util ──────────────────────────────────────────────────────── */
     function _uint2str(uint256 x) internal pure returns (string memory) {

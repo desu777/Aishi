@@ -7,7 +7,7 @@ import virtualBrokers from './virtualBrokers';
 dotenv.config();
 
 // Constants
-const DEFAULT_MODEL = "deepseek-r1-70b";
+const DEFAULT_MODEL = process.env.MODEL_PICKED || "deepseek-r1-70b";
 const PROVIDER_TIMEOUT = 30000; // 30 seconds
 const BALANCE_EXPIRATION = 5 * 60 * 1000; // 5 minutes
 const MIN_BALANCE_THRESHOLD = 0.0001;
@@ -41,6 +41,10 @@ export class AIService {
 
   async initialize(): Promise<void> {
     try {
+      // Log default model configuration
+      console.log(`🎯 Default Model Loaded: ${DEFAULT_MODEL}`);
+      console.log(`📋 Available Models: ${Object.keys(OFFICIAL_PROVIDERS).join(', ')}`);
+      
       // Initialize master wallet
       await masterWallet.initialize();
       
@@ -103,7 +107,7 @@ export class AIService {
   }
 
   async analyzeDream(request: AIRequest): Promise<AIResponse> {
-    const { userWalletAddress, query, model = 'deepseek-r1-70b' } = request;
+    const { userWalletAddress, query, model = DEFAULT_MODEL } = request;
     const startTime = Date.now();
     
     try {
@@ -122,25 +126,32 @@ export class AIService {
         throw new Error(`Unsupported model: ${model}. Available models: ${Object.keys(OFFICIAL_PROVIDERS).join(', ')}`);
       }
 
-      // Estimate cost
-      const estimatedCost = this.estimateCost(query, model);
+      // Log selected model
+      console.log(`🎯 Selected Model: ${model} (from ${process.env.MODEL_PICKED ? 'MODEL_PICKED env' : 'request parameter'})`);
+      if (process.env.TEST_ENV === 'true') {
+        console.log(`🔑 Provider Address: ${providerAddress}`);
+      }
+
+      // Estimate cost for pre-check (user needs some minimum balance)
+      const estimatedCost = virtualBrokers.estimateQueryCost(query, model);
       
-      // Check if user has sufficient balance
+      // Check if user has sufficient balance for estimated cost
       const hasBalance = await virtualBrokers.hasBalance(userWalletAddress, estimatedCost);
       if (!hasBalance) {
         const balance = await virtualBrokers.checkBalance(userWalletAddress);
-        throw new Error(`Insufficient balance. Required: ${estimatedCost} OG, Available: ${balance.balance} OG`);
+        throw new Error(`Insufficient balance. Estimated cost: ${estimatedCost} OG, Available: ${balance.balance} OG`);
       }
-
-      // Deduct estimated cost from user balance
-      await virtualBrokers.deductFunds(
-        userWalletAddress, 
-        estimatedCost, 
-        `AI Query: ${model} - "${query.substring(0, 50)}..."`
-      );
 
       // Check and refill master wallet if needed
       await masterWallet.checkAndRefill();
+
+      // Get initial Master Wallet balance for dynamic cost calculation
+      const initialBalance = await masterWallet.getLedgerBalance();
+      
+      if (process.env.TEST_ENV === 'true') {
+        console.log(`💰 Initial Master Wallet balance: ${initialBalance} OG`);
+        console.log(`📊 Estimated cost: ${estimatedCost} OG`);
+      }
 
       // Get service metadata
       const broker = masterWallet.getBroker();
@@ -194,20 +205,49 @@ export class AIService {
         chatId
       );
 
+      // Get final Master Wallet balance for dynamic cost calculation
+      const finalBalance = await masterWallet.getLedgerBalance();
+      const realCost = Math.max(0, initialBalance - finalBalance); // Ensure non-negative
+      
       if (process.env.TEST_ENV === 'true') {
-        console.log(`✅ AI query completed for ${userWalletAddress} in ${responseTime}ms`);
+        console.log(`💰 Final Master Wallet balance: ${finalBalance} OG`);
+        console.log(`💸 Real cost calculated: ${realCost} OG`);
         console.log(`🔒 Verification Status: ${isValid ? 'Valid ✅' : 'Invalid ❌'}`);
       }
 
-      this.log(`Estimated cost from provider: ${estimatedCost} OG`);
+      // Deduct real cost from user balance (we already checked they have estimated cost)
+      // If real cost > estimated cost, user might go negative, but we'll handle this
+      try {
+        await virtualBrokers.deductFunds(
+          userWalletAddress, 
+          realCost, 
+          `AI Query: ${model} - "${query.substring(0, 50)}..." (Real cost: ${realCost} OG)`
+        );
+      } catch (balanceError: any) {
+        // If user doesn't have enough for real cost, deduct what they have
+        const userBalance = await virtualBrokers.checkBalance(userWalletAddress);
+        const deductedAmount = Math.min(realCost, userBalance.balance);
+        
+        if (deductedAmount > 0) {
+          await virtualBrokers.deductFunds(
+            userWalletAddress, 
+            deductedAmount, 
+            `AI Query: ${model} - "${query.substring(0, 50)}..." (Partial payment: ${deductedAmount}/${realCost} OG)`
+          );
+        }
+        
+        console.warn(`⚠️  User ${userWalletAddress} had insufficient balance for real cost: ${realCost} OG. Deducted: ${deductedAmount} OG`);
+      }
 
-      // Fee is now the direct estimated cost
-      const fee = estimatedCost;
+      if (process.env.TEST_ENV === 'true') {
+        console.log(`✅ AI query completed for ${userWalletAddress} in ${responseTime}ms`);
+        console.log(`💸 Real cost deducted: ${realCost} OG`);
+      }
 
       return {
         response: aiResponse,
         model: actualModel,
-        cost: estimatedCost,
+        cost: realCost,
         chatId: chatId,
         responseTime: responseTime,
         isValid: !!isValid // Convert null to false
@@ -222,9 +262,6 @@ export class AIService {
         console.error(`🔧 Error details:`, error.stack);
       }
       
-      // If error occurred after deduction, we might want to refund
-      // For now, we'll keep the deduction as a "failed query" fee
-      
       throw {
         error: error.message,
         responseTime: responseTime,
@@ -234,18 +271,7 @@ export class AIService {
     }
   }
 
-  private estimateCost(query: string, model: string): number {
-    // Basic cost estimation - in production this would be more sophisticated
-    const baseCosts = {
-      'llama-3.3-70b-instruct': 0.001,  // 0.001 OG per query
-      'deepseek-r1-70b': 0.002,        // 0.002 OG per query
-    };
 
-    const baseCost = baseCosts[model as keyof typeof baseCosts] || 0.001;
-    const lengthMultiplier = Math.max(1, query.length / 100);
-    
-    return baseCost * lengthMultiplier;
-  }
 
   async getAvailableModels(): Promise<{
     models: string[];

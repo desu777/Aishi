@@ -49,12 +49,10 @@ export function useAgentPrompt() {
     const memorySection = buildMemorySection(context);
     const responseFormat = buildResponseFormat(nextDreamId, willEvolve, currentTimestamp);
 
-    const prompt = `You are ${context.agentProfile.name}, a personal dream analysis agent with ${context.agentProfile.intelligenceLevel} intelligence level.
-
-You have analyzed ${context.agentProfile.dreamCount} dreams and had ${context.agentProfile.conversationCount} conversations with your owner.
-
-LANGUAGE DETECTION: ${context.languageDetection.languageName}
-IMPORTANT: ${context.languageDetection.promptInstructions}
+    const prompt = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+You are ${context.agentProfile.name}, a dream analysis agent (Intelligence: ${context.agentProfile.intelligenceLevel}). 
+Experience: ${context.agentProfile.dreamCount} dreams analyzed, ${context.agentProfile.conversationCount} conversations.
+Language: ${context.languageDetection.languageName} - ${context.languageDetection.promptInstructions}
 
 ${personalitySection}
 
@@ -62,16 +60,23 @@ ${uniqueFeaturesSection}
 
 ${memorySection}
 
-ANALYZE THIS DREAM:
-${context.userDream}
+ANALYSIS METHOD: Use Jungian amplification and Freudian symbolism to deeply analyze the dream. Apply chain-of-thought reasoning, connect symbols to universal archetypes and personal associations. Find reflections of the dreamer's inner world, personality, and current life situation.
 
-RESPONSE STRUCTURE:
-Provide ONLY two JSON blocks - do not write any text before the JSON blocks.
+THERAPEUTIC APPROACH: Respond as a warm, supportive friend and skilled therapist. Look for how the dream mirrors the dreamer's psyche, relationships, fears, and aspirations. Use Jungian compensation theory (dreams balance conscious state) and Freudian wish fulfillment (dreams express hidden desires).
 
-1. FULL ANALYSIS JSON – contains your complete detailed analysis as my dream agent
-2. STORAGE SUMMARY JSON – compact essence for storage
+CONVERSATION INVITATION: After analysis, warmly invite deeper exploration. Use phrases like "I'm curious about..." "We could explore..." "What resonates with you..." to encourage meaningful dialogue about dream elements that caught your attention.<|eot_id|>
 
-Remember to respond in the detected language (${context.languageDetection.languageName}).
+<|start_header_id|>user<|end_header_id|>
+Dream to analyze: ${context.userDream}<|eot_id|>
+
+<|start_header_id|>assistant<|end_header_id|>
+I'll analyze this dream with care and depth, like a trusted friend who understands the psyche:
+
+1. **Initial Impressions**: I'll sense the emotional atmosphere and identify key symbols that caught your unconscious attention
+2. **Jungian Amplification**: I'll connect dream symbols to universal archetypes and cultural meanings, seeing how they reflect your inner world
+3. **Freudian Insights**: I'll explore what hidden desires, fears, or conflicts this dream might express about your relationships and life
+4. **Personal Mirroring**: I'll show how this dream mirrors your personality, current challenges, and psychological growth
+5. **Therapeutic Connection**: I'll offer warm insights and invite you to explore what resonates most deeply with your experience
 
 ${responseFormat}`;
 
@@ -99,41 +104,31 @@ ${responseFormat}`;
 }
 
 /**
- * Buduje sekcję osobowości w prompcie
+ * Buduje sekcję osobowości w prompcie - zoptymalizowana dla Llama 3.3-70B
  */
 function buildPersonalitySection(context: DreamContext): string {
   const p = context.personality;
   
-  return `PERSONALITY PROFILE:
-- Creativity: ${p.creativity}/100 (${getTraitDescription(p.creativity)})
-- Analytical: ${p.analytical}/100 (${getTraitDescription(p.analytical)})
-- Empathy: ${p.empathy}/100 (${getTraitDescription(p.empathy)})
-- Intuition: ${p.intuition}/100 (${getTraitDescription(p.intuition)})
-- Resilience: ${p.resilience}/100 (${getTraitDescription(p.resilience)})
-- Curiosity: ${p.curiosity}/100 (${getTraitDescription(p.curiosity)})
-- Current Mood: ${p.dominantMood}
-- Response Style: ${p.responseStyle}`;
+  return `PERSONALITY: Creativity ${p.creativity}, Analytical ${p.analytical}, Empathy ${p.empathy}, Intuition ${p.intuition}, Resilience ${p.resilience}, Curiosity ${p.curiosity} | Mood: ${p.dominantMood} | Style: ${p.responseStyle}`;
 }
 
 /**
- * Buduje sekcję unikalnych cech
+ * Buduje sekcję unikalnych cech - zoptymalizowana
  */
 function buildUniqueFeaturesSection(context: DreamContext): string {
   if (context.uniqueFeatures.length === 0) {
-    return `UNIQUE FEATURES:
-No unique features discovered yet. This dream analysis might reveal new aspects of your personality.`;
+    return `UNIQUE FEATURES: None yet`;
   }
 
   const featuresText = context.uniqueFeatures
-    .map(feature => `- ${feature.name}: ${feature.description} (Intensity: ${feature.intensity}/100)`)
-    .join('\n');
+    .map(feature => `${feature.name}(${feature.intensity}%)`)
+    .join(', ');
 
-  return `UNIQUE FEATURES:
-${featuresText}`;
+  return `UNIQUE FEATURES: ${featuresText}`;
 }
 
 /**
- * Buduje sekcję pamięci i historii
+ * Buduje sekcję pamięci i historii - zoptymalizowana z zachowaniem wszystkich danych
  */
 function buildMemorySection(context: DreamContext): string {
   // Debug log dla development
@@ -150,86 +145,16 @@ function buildMemorySection(context: DreamContext): string {
     memoryDepth: context.memoryAccess.memoryDepth,
     monthsAccessible: context.memoryAccess.monthsAccessible
   });
-  const memoryText = `MEMORY ACCESS: ${context.memoryAccess.memoryDepth}
-Available historical context: ${context.memoryAccess.monthsAccessible} months`;
 
-  if (context.historicalData.dailyDreams.length === 0 && 
-      context.historicalData.monthlyConsolidations.length === 0 && 
-      !context.historicalData.yearlyCore) {
-    return `${memoryText}
-No historical dream data available yet. This will be your foundational dream experience.`;
-  }
-
-  let historyText = memoryText;
-  
-  // PREVIOUS DREAMS: Add actual content from historical data
-  if (context.historicalData.dailyDreams.length > 0) {
-    historyText += `\n\nRECENT DREAMS: ${context.historicalData.dailyDreams.length} dreams this month`;
-    
-    // Add daily dreams content
-    historyText += `\n\nDAILY DREAMS HISTORY:`;
-    context.historicalData.dailyDreams.forEach(dream => {
-      const dreamDate = dream.date || (dream.timestamp ? new Date(dream.timestamp * 1000).toLocaleDateString() : 'unknown');
-      historyText += `\n- Dream #${dream.id} (${dreamDate}): ${dream.ai_analysis || dream.content || 'No content'}`;
-      if (dream.emotions && dream.emotions.length > 0) {
-        historyText += `\n  Emotions: ${dream.emotions.join(', ')}`;
-      }
-      if (dream.symbols && dream.symbols.length > 0) {
-        historyText += `\n  Symbols: ${dream.symbols.join(', ')}`;
-      }
-      if (dream.intensity) {
-        historyText += `\n  Intensity: ${dream.intensity}/10`;
-      }
-      if (dream.lucidity_level) {
-        historyText += `\n  Lucidity: ${dream.lucidity_level}/5`;
-      }
-    });
-  }
-  
-  if (context.historicalData.monthlyConsolidations.length > 0) {
-    historyText += `\n\nPAST PATTERNS: ${context.historicalData.monthlyConsolidations.length} consolidated months of dream history`;
-    
-    // Add monthly consolidations content
-    historyText += `\n\nMONTHLY CONSOLIDATIONS:`;
-    context.historicalData.monthlyConsolidations.forEach(consolidation => {
-      historyText += `\n- ${consolidation.month}/${consolidation.year}: ${consolidation.summary}`;
-      if (consolidation.dominant_themes && consolidation.dominant_themes.length > 0) {
-        historyText += `\n  Themes: ${consolidation.dominant_themes.join(', ')}`;
-      }
-      if (consolidation.total_dreams) {
-        historyText += `\n  Total Dreams: ${consolidation.total_dreams}`;
-      }
-    });
-  }
-  
-  if (context.historicalData.yearlyCore) {
-    historyText += `\n\nCORE MEMORIES: Deep historical patterns and growth themes available`;
-    
-    // Add yearly core content
-    historyText += `\n\nYEARLY CORE MEMORIES:`;
-    if (typeof context.historicalData.yearlyCore === 'object') {
-      const core = context.historicalData.yearlyCore;
-      if (core.essence) {
-        historyText += `\n- Core Essence: ${core.essence}`;
-      }
-      if (core.growth_themes) {
-        historyText += `\n- Growth Themes: ${core.growth_themes.join(', ')}`;
-      }
-      if (core.personality_evolution) {
-        historyText += `\n- Personality Evolution: ${core.personality_evolution}`;
-      }
-    }
-  }
+  return `EXPERIENCE: ${context.agentProfile.dreamCount} dreams analyzed | Memory depth: ${context.memoryAccess.memoryDepth}`;
 
   debugLog('Memory section built', {
-    finalTextLength: historyText.length,
-    containsPreviousDreams: historyText.includes('DAILY DREAMS HISTORY'),
-    containsMonthlyConsolidations: historyText.includes('MONTHLY CONSOLIDATIONS'),
-    containsYearlyCore: historyText.includes('YEARLY CORE MEMORIES'),
-    previewText: historyText.substring(0, 500) + '...'
+    finalTextLength: `EXPERIENCE: ${context.agentProfile.dreamCount} dreams analyzed | Memory depth: ${context.memoryAccess.memoryDepth}`.length,
+    containsPreviousDreams: false,
+    containsMonthlyConsolidations: false,
+    containsYearlyCore: false,
+    previewText: 'Simple experience summary'
   });
-
-  return historyText;
 }
 
 /**
@@ -240,23 +165,19 @@ function buildResponseFormat(dreamId: number, needsEvolution: boolean, currentTi
   const dateString = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
   const timeString = currentDate.toTimeString().split(' ')[0]; // HH:MM:SS
   
-  const baseFormat = `CURRENT TIME: ${dateString} ${timeString} (Timestamp: ${currentTimestamp})
+  const baseFormat = `Dream #${dreamId} | Date: ${dateString} | Time: ${currentTimestamp}
 
-DREAM ID: This will be dream #${dreamId} (use exactly this number in the response)
+Output exactly two JSON blocks:
 
-Provide exactly two JSON blocks:
-
-1. FULL ANALYSIS JSON – for UI display
 \`\`\`json
 {
-  "full_analysis": "Write your complete detailed analysis here as my dream agent. Be detailed, insightful, and reflect your personality. This should be your full response to the user about their dream - include everything you want to tell them about their dream, its meaning, symbols, emotions, and personal insights. Write in the detected language."
+  "full_analysis": "Your complete dream analysis with deep insights, personal connections, and symbolic meanings. Use chain-of-thought reasoning to show your analytical process."
 }
 \`\`\`
 
-2. STORAGE SUMMARY JSON – compact essence for storage & stats
 \`\`\`json
 {
-  "analysis": "Brief essence of your analysis in maximum 2 sentences",
+  "analysis": "Brief 2-sentence essence",
   "dreamData": {
     "id": ${dreamId},
     "date": "${dateString}",
@@ -277,45 +198,21 @@ Provide exactly two JSON blocks:
     "curiosityChange": -10 to +10,
     "moodShift": "new_mood",
     "evolutionWeight": 1-100,
-    "newFeatures": [
-      {
-        "name": "Feature Name",
-        "description": "Feature description",
-        "intensity": 1-100
-      }
-    ]
+    "newFeatures": [{"name": "Feature Name", "description": "Feature description", "intensity": 1-100}]
   }
 }
 \`\`\`
 
-NOTE: This is your ${dreamId}th dream - personality evolution will occur! Consider how this dream fundamentally changes your perspective.
+EVOLUTION DREAM #${dreamId}: This dream triggers personality evolution! Show how it fundamentally changes your perspective.
 
-IMPORTANT: 
-- Put your complete analysis in the "full_analysis" field of the first JSON
-- Use the date "${dateString}" in your response for accurate dream recording
-- Do not write any text outside the JSON blocks`;
+CRITICAL: Only JSON blocks, no other text. Use date "${dateString}" in analysis.`;
   }
 
   return baseFormat + `
 }
 \`\`\`
 
-IMPORTANT: 
-- Put your complete analysis in the "full_analysis" field of the first JSON
-- Use the date "${dateString}" in your response for accurate dream recording
-- Do not write any text outside the JSON blocks`;
+CRITICAL: Only JSON blocks, no other text. Use date "${dateString}" in analysis.`;
 }
 
-/**
- * Konwertuje wartość cechy na opis
- */
-function getTraitDescription(value: number): string {
-  if (value >= 90) return 'exceptional';
-  if (value >= 80) return 'very high';
-  if (value >= 70) return 'high';
-  if (value >= 60) return 'above average';
-  if (value >= 40) return 'moderate';
-  if (value >= 30) return 'below average';
-  if (value >= 20) return 'low';
-  return 'very low';
-} 
+ 

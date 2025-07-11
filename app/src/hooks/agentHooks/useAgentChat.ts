@@ -222,20 +222,20 @@ export function useAgentChat(tokenId?: number) {
       });
 
       // Send to AI (reuse existing AI service)
-      const aiResponse = await sendDreamAnalysis(
+      const parsedResponse = await sendDreamAnalysis(
         conversationPrompt,
         'llama-3.3-70b-instruct'
       );
 
-      if (aiResponse && aiResponse.fullAnalysis) {
+      if (parsedResponse && parsedResponse.fullAnalysis) {
         const agentMsg: ChatMessage = {
           id: `agent_${Date.now()}`,
           role: 'agent',
-          content: aiResponse.fullAnalysis,
+          content: parsedResponse.fullAnalysis,
           timestamp: Date.now(),
           metadata: {
             conversationType: 'general_chat', // Simplified
-            emotionalTone: aiResponse.conversationSummary?.emotional_tone || 'neutral',
+            emotionalTone: parsedResponse.conversationSummary?.emotional_tone || 'neutral',
             uniqueFeatures: updatedContext.uniqueFeatures.map(f => f.name)
           }
         };
@@ -247,7 +247,7 @@ export function useAgentChat(tokenId?: number) {
             messages: [...prev.session.messages, agentMsg],
             lastActivity: Date.now(),
             // Update current conversation summary from AI response
-            currentSummary: aiResponse.conversationSummary || prev.session.currentSummary
+            currentSummary: parsedResponse.conversationSummary || prev.session.currentSummary
           } : null,
           isTyping: false
         }));
@@ -255,8 +255,8 @@ export function useAgentChat(tokenId?: number) {
         debugLog('Message sent successfully', {
           agentResponseLength: agentMsg.content.length,
           totalMessages: chatState.session.messages.length + 2,
-          hasSummary: !!aiResponse.conversationSummary,
-          summaryTopic: aiResponse.conversationSummary?.topic
+          hasSummary: !!parsedResponse.conversationSummary,
+          summaryTopic: parsedResponse.conversationSummary?.topic
         });
       } else {
         throw new Error('AI response was empty or invalid');

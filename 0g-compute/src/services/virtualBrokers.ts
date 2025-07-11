@@ -113,7 +113,7 @@ export class VirtualBrokersService {
       });
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`💰 Funded broker ${walletAddress}: +${amount} OG = ${newBalance} OG`);
+        console.log(`💰 Funded broker ${walletAddress}: +${amount.toFixed(8)} OG = ${newBalance.toFixed(8)} OG`);
       }
 
       // Get updated broker info
@@ -154,7 +154,7 @@ export class VirtualBrokersService {
       const transactions = database.getTransactions(normalizedAddress, 20);
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`📊 Balance check for ${walletAddress}: ${broker.balance} OG`);
+        console.log(`📊 Balance check for ${walletAddress}: ${broker.balance.toFixed(8)} OG`);
       }
 
       return {
@@ -195,7 +195,7 @@ export class VirtualBrokersService {
       });
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`💸 Deducted ${amount} OG from ${walletAddress}: ${newBalance} OG remaining`);
+        console.log(`💸 Deducted ${amount.toFixed(8)} OG from ${walletAddress}: ${newBalance.toFixed(8)} OG remaining`);
       }
 
       return newBalance;
@@ -271,14 +271,22 @@ export class VirtualBrokersService {
   }
 
   /**
-   * Estimate AI query cost (placeholder - will be implemented in AI service)
+   * Estimate AI query cost (approximate - real cost calculated dynamically)
    */
-  estimateQueryCost(query: string): number {
-    // Basic estimation - in real implementation this would be more sophisticated
-    const basePrice = 0.001; // 0.001 OG per query
+  estimateQueryCost(query: string, model?: string): number {
+    // Use MODEL_PICKED from environment or default
+    const selectedModel = model || process.env.MODEL_PICKED || 'deepseek-r1-70b';
+    
+    // Approximate cost estimation based on model
+    const baseCosts = {
+      'llama-3.3-70b-instruct': 0.001,  // 0.001 OG per query
+      'deepseek-r1-70b': 0.002,        // 0.002 OG per query
+    };
+
+    const baseCost = baseCosts[selectedModel as keyof typeof baseCosts] || 0.001;
     const lengthMultiplier = Math.max(1, query.length / 100);
     
-    return basePrice * lengthMultiplier;
+    return baseCost * lengthMultiplier;
   }
 }
 

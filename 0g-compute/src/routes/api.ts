@@ -2,6 +2,7 @@ import express from 'express';
 import virtualBrokers from '../services/virtualBrokers';
 import aiService from '../services/aiService';
 import masterWallet from '../services/masterWallet';
+import queryManager from '../services/queryManager';
 
 const router = express.Router();
 
@@ -122,7 +123,7 @@ router.get('/balance/:walletAddress', async (req, res) => {
  */
 router.post('/analyze-dream', async (req, res) => {
   try {
-    const { walletAddress, query, model } = req.body;
+    const { walletAddress, query } = req.body;
     
     if (!walletAddress || !query) {
       return res.status(400).json({
@@ -132,14 +133,17 @@ router.post('/analyze-dream', async (req, res) => {
       });
     }
 
-    const result = await aiService.analyzeDream({
-      userWalletAddress: walletAddress,
-      query: query,
-      model: model || 'llama-3.3-70b-instruct'
-    });
+    // Backend zawsze używa MODEL_PICKED z .env
+    const selectedModel = process.env.MODEL_PICKED || 'deepseek-r1-70b';
+    
+    const result = await queryManager.processQuery(
+      walletAddress,
+      query,
+      selectedModel
+    );
     
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🤖 API: AI analysis completed for ${walletAddress}`);
+      console.log(`🤖 API: AI analysis completed for ${walletAddress} using model: ${selectedModel}`);
     }
 
     handleSuccess(res, result, 'Dream analysis completed successfully');
@@ -172,10 +176,11 @@ router.get('/models', async (req, res) => {
  */
 router.get('/status', async (req, res) => {
   try {
-    const [aiStatus, brokersSummary, walletInfo] = await Promise.all([
+    const [aiStatus, brokersSummary, walletInfo, queueStatus] = await Promise.all([
       aiService.getServiceStatus(),
       virtualBrokers.getAllBrokers(),
-      masterWallet.getWalletInfo()
+      masterWallet.getWalletInfo(),
+      Promise.resolve(queryManager.getQueueStatus())
     ]);
 
     const status = {
@@ -188,7 +193,8 @@ router.get('/status', async (req, res) => {
       },
       ai: aiStatus,
       brokers: brokersSummary,
-      masterWallet: walletInfo
+      masterWallet: walletInfo,
+      queryManager: queueStatus
     };
 
     if (process.env.TEST_ENV === 'true') {
@@ -225,7 +231,7 @@ router.get('/master-wallet-address', async (req, res) => {
  */
 router.post('/estimate-cost', async (req, res) => {
   try {
-    const { query, model } = req.body;
+    const { query } = req.body;
     
     if (!query) {
       return res.status(400).json({
@@ -235,16 +241,19 @@ router.post('/estimate-cost', async (req, res) => {
       });
     }
 
-    const cost = virtualBrokers.estimateQueryCost(query);
+    // Backend zawsze używa MODEL_PICKED z .env
+    const selectedModel = process.env.MODEL_PICKED || 'deepseek-r1-70b';
+    const cost = virtualBrokers.estimateQueryCost(query, selectedModel);
     
     if (process.env.TEST_ENV === 'true') {
-      console.log(`💰 API: Cost estimation for query: ${cost} OG`);
+      console.log(`💰 API: Cost estimation for query: ${cost} OG (model: ${selectedModel})`);
     }
 
     handleSuccess(res, { 
       estimatedCost: cost,
-      model: model || 'llama-3.3-70b-instruct',
-      queryLength: query.length
+      model: selectedModel,
+      queryLength: query.length,
+      note: 'This is an approximate cost - actual cost may vary and will be calculated dynamically'
     }, 'Cost estimated successfully');
   } catch (error: any) {
     handleError(res, error, 'Failed to estimate cost');
@@ -280,6 +289,24 @@ router.get('/transactions/:walletAddress', async (req, res) => {
     }, 'Transaction history retrieved successfully');
   } catch (error: any) {
     handleError(res, error, 'Failed to retrieve transaction history');
+  }
+});
+
+/**
+ * GET /api/queue-status
+ * Gets query processing queue status
+ */
+router.get('/queue-status', (req, res) => {
+  try {
+    const queueStatus = queryManager.getQueueStatus();
+    
+    if (process.env.TEST_ENV === 'true') {
+      console.log('📋 API: Queue status retrieved');
+    }
+
+    handleSuccess(res, queueStatus, 'Queue status retrieved successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to retrieve queue status');
   }
 });
 

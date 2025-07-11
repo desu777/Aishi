@@ -6,6 +6,7 @@ import apiRoutes from './routes/api';
 import aiService from './services/aiService';
 import masterWallet from './services/masterWallet';
 import virtualBrokers from './services/virtualBrokers';
+import queryManager from './services/queryManager';
 
 // Load environment variables
 dotenv.config();
@@ -106,6 +107,11 @@ async function initializeServices() {
     console.log(`   Database: ${process.env.DATABASE_PATH || './data/brokers.db'}`);
     console.log(`   Port: ${PORT}`);
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`   Max Concurrent Queries: ${process.env.MAX_CONCURRENT_QUERIES || '5'}`);
+    
+    // Display queue status
+    const queueStatus = queryManager.getQueueStatus();
+    console.log(`   Query Manager: Ready (Queue: ${queueStatus.queueLength}, Active: ${queueStatus.activeQueries}/${queueStatus.maxConcurrent})`);
     
   } catch (error: any) {
     console.error('❌ Failed to initialize services:', error.message);
@@ -122,6 +128,9 @@ async function gracefulShutdown() {
   
   try {
     // Cleanup services
+    console.log('🛑 Cleaning up Query Manager...');
+    // QueryManager cleanup would happen here if needed
+    
     await aiService.cleanup();
     await masterWallet.cleanup();
     
