@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useStorageDownload } from '../storage/useStorageDownload';
+import { useStorageUpload } from '../storage/useStorageUpload';
 import { useWallet } from '../useWallet';
 import { Contract, ethers } from 'ethers';
 import frontendContracts from '../../abi/frontend-contracts.json';
@@ -15,6 +16,44 @@ interface DreamState {
   isLoadingContext: boolean;
   contextStatus: string;
   builtContext: DreamContext | null;
+  isUploadingToStorage: boolean;
+  uploadStatus: string;
+  // NEW: STEP 6 - Contract operations
+  isProcessingContract: boolean;
+  contractStatus: string;
+}
+
+// Interface for dream data we save to storage
+interface DreamStorageData {
+  analysis: string;
+  dreamData: {
+    id: number;
+    timestamp: number;
+    content: string;
+    emotions: string[];
+    symbols: string[];
+    intensity: number;
+    lucidity_level: number;
+    dream_type: string;
+  };
+}
+
+// NEW: STEP 6 - PersonalityImpact interface (from contract ABI)
+interface PersonalityImpact {
+  creativityChange: number;       // int8 (-128 to 127)
+  analyticalChange: number;       // int8 (-128 to 127)
+  empathyChange: number;          // int8 (-128 to 127)
+  intuitionChange: number;        // int8 (-128 to 127)
+  resilienceChange: number;       // int8 (-128 to 127)
+  curiosityChange: number;        // int8 (-128 to 127)
+  moodShift: string;             // REQUIRED - nie może być pusty
+  evolutionWeight: number;        // uint8 (1-100)
+  newFeatures: Array<{
+    name: string;                 // REQUIRED - nie może być pusty
+    description: string;          // REQUIRED - nie może być pusty
+    intensity: number;            // uint8 (1-100)
+    addedAt: number;             // timestamp
+  }>;                            // max 2 features
 }
 
 export function useAgentDream() {
@@ -24,10 +63,16 @@ export function useAgentDream() {
     error: null,
     isLoadingContext: false,
     contextStatus: '',
-    builtContext: null
+    builtContext: null,
+    isUploadingToStorage: false,
+    uploadStatus: '',
+    // NEW: STEP 6 - Contract operations
+    isProcessingContract: false,
+    contractStatus: ''
   });
 
   const { downloadFile } = useStorageDownload();
+  const { uploadFile } = useStorageUpload();
   const { isConnected } = useWallet();
 
   // Debug logs dla development
@@ -51,7 +96,12 @@ export function useAgentDream() {
       error: null,
       isLoadingContext: false,
       contextStatus: '',
-      builtContext: null
+      builtContext: null,
+      isUploadingToStorage: false,
+      uploadStatus: '',
+      // NEW: STEP 6 - Contract operations
+      isProcessingContract: false,
+      contractStatus: ''
     });
     debugLog('Dream state reset');
   };
@@ -153,6 +203,482 @@ export function useAgentDream() {
     }
   };
 
+  /**
+   * Saves dream data to storage using append-only pattern
+   * Downloads existing file, adds new dream to top, uploads new file
+   */
+  const saveDreamToStorage = async (
+    tokenId: number,
+    dreamStorageData: DreamStorageData
+  ): Promise<{ success: boolean; rootHash?: string; error?: string }> => {
+    if (!isConnected) {
+      const error = 'Wallet not connected';
+      setDreamState(prev => ({ ...prev, error }));
+      debugLog('Dream storage failed - wallet not connected');
+      return { success: false, error };
+    }
+
+    setDreamState(prev => ({ 
+      ...prev, 
+      isUploadingToStorage: true, 
+      error: null,
+      uploadStatus: 'Preparing dream storage...' 
+    }));
+
+    try {
+      debugLog('Starting dream storage', { 
+        tokenId, 
+        dreamId: dreamStorageData.dreamData.id,
+        dreamType: dreamStorageData.dreamData.dream_type 
+      });
+
+      // 1. Get contract instance to read current memory
+      setDreamState(prev => ({ ...prev, uploadStatus: 'Reading agent memory...' }));
+      
+      const [provider, providerErr] = await getProvider();
+      if (!provider || providerErr) {
+        throw new Error(`Provider error: ${providerErr?.message}`);
+      }
+
+      const [signer, signerErr] = await getSigner(provider);
+      if (!signer || signerErr) {
+        throw new Error(`Signer error: ${signerErr?.message}`);
+      }
+
+      const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
+      const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+      const contract = new Contract(contractAddress, contractABI, signer);
+
+      debugLog('Contract connected for storage');
+
+      // 2. Get current memory structure
+      const agentMemory = await contract.getAgentMemory(tokenId);
+      const currentDreamHash = agentMemory.currentDreamDailyHash;
+      const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+      debugLog('Current dream hash from contract', { currentDreamHash });
+
+      // 3. Download existing dreams file if it exists
+      setDreamState(prev => ({ ...prev, uploadStatus: 'Downloading existing dreams...' }));
+      
+      let existingDreams: any[] = [];
+      
+      if (currentDreamHash && currentDreamHash !== emptyHash) {
+        debugLog('Downloading existing dreams file', { hash: currentDreamHash });
+        
+        const downloadResult = await downloadFile(currentDreamHash);
+        
+        if (downloadResult.success && downloadResult.data) {
+          try {
+            // Convert ArrayBuffer to string and parse JSON
+            const textDecoder = new TextDecoder('utf-8');
+            const jsonText = textDecoder.decode(downloadResult.data);
+            existingDreams = JSON.parse(jsonText);
+            debugLog('Existing dreams loaded', { count: existingDreams.length });
+          } catch (parseError) {
+            debugLog('Failed to parse existing dreams, starting fresh', parseError);
+            existingDreams = [];
+          }
+        } else {
+          debugLog('Failed to download existing dreams, starting fresh', downloadResult.error);
+          existingDreams = [];
+        }
+      } else {
+        debugLog('No existing dreams file, starting fresh array');
+      }
+
+      // 4. Create new dream entry (format from agent_memory.md)
+      const newDreamEntry = {
+        id: dreamStorageData.dreamData.id,
+        timestamp: dreamStorageData.dreamData.timestamp,
+        content: dreamStorageData.dreamData.content,
+        emotions: dreamStorageData.dreamData.emotions,
+        symbols: dreamStorageData.dreamData.symbols,
+        intensity: dreamStorageData.dreamData.intensity,
+        lucidity_level: dreamStorageData.dreamData.lucidity_level,
+        dream_type: dreamStorageData.dreamData.dream_type,
+        // Additional fields from agent_memory.md format
+        weather_in_dream: "unknown",
+        characters: ["self"],
+        locations: ["dream_space"],
+        actions: ["dreaming"],
+        mood_before_sleep: "unknown",
+        mood_after_waking: "unknown",
+        // Add analysis as metadata
+        ai_analysis: dreamStorageData.analysis
+      };
+
+      // 5. Append new dream to TOP of array (newest first)
+      const updatedDreams = [newDreamEntry, ...existingDreams];
+      debugLog('Updated dreams array created', { totalDreams: updatedDreams.length });
+
+      // 6. Create new file content
+      setDreamState(prev => ({ ...prev, uploadStatus: 'Creating updated dreams file...' }));
+      
+      const fileContent = JSON.stringify(updatedDreams, null, 2);
+      const blob = new Blob([fileContent], { type: 'application/json' });
+      const file = new File([blob], `dream_essence_daily_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}.json`, {
+        type: 'application/json'
+      });
+
+      debugLog('New dreams file created', { 
+        fileSize: file.size, 
+        fileName: file.name,
+        totalDreams: updatedDreams.length
+      });
+
+      // 7. Upload new file to storage
+      setDreamState(prev => ({ ...prev, uploadStatus: 'Uploading to 0G Storage...' }));
+      
+      const uploadResult = await uploadFile(file);
+      
+      if (!uploadResult.success) {
+        throw new Error(`Upload failed: ${uploadResult.error}`);
+      }
+
+      setDreamState(prev => ({ 
+        ...prev, 
+        isUploadingToStorage: false,
+        uploadStatus: 'Dream saved to storage successfully!'
+      }));
+
+      debugLog('Dream storage completed successfully', {
+        newRootHash: uploadResult.rootHash,
+        totalDreams: updatedDreams.length,
+        dreamId: dreamStorageData.dreamData.id
+      });
+
+      return {
+        success: true,
+        rootHash: uploadResult.rootHash
+      };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setDreamState(prev => ({ 
+        ...prev, 
+        isUploadingToStorage: false,
+        error: errorMessage,
+        uploadStatus: ''
+      }));
+      debugLog('Dream storage failed', { error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  /**
+   * Extracts dream data from AI response and saves to storage
+   * Works for both regular dreams and evolution dreams (extracts same data)
+   */
+  const extractAndSaveDreamData = async (
+    tokenId: number,
+    parsedAIResponse: any
+  ): Promise<{ success: boolean; rootHash?: string; error?: string }> => {
+    try {
+      debugLog('Extracting dream data from AI response', {
+        tokenId,
+        hasAnalysis: !!parsedAIResponse.analysis,
+        hasDreamData: !!parsedAIResponse.dreamData,
+        hasPersonalityImpact: !!parsedAIResponse.personalityImpact
+      });
+
+      // Validate required data
+      if (!parsedAIResponse.analysis || !parsedAIResponse.dreamData) {
+        throw new Error('Missing required data: analysis or dreamData');
+      }
+
+      // Extract the data we need for storage (same for regular and evolution dreams)
+      const dreamStorageData: DreamStorageData = {
+        analysis: parsedAIResponse.analysis,
+        dreamData: {
+          id: parsedAIResponse.dreamData.id,
+          timestamp: parsedAIResponse.dreamData.timestamp,
+          content: parsedAIResponse.dreamData.content,
+          emotions: parsedAIResponse.dreamData.emotions || [],
+          symbols: parsedAIResponse.dreamData.symbols || [],
+          intensity: parsedAIResponse.dreamData.intensity || 5,
+          lucidity_level: parsedAIResponse.dreamData.lucidity_level || 1,
+          dream_type: parsedAIResponse.dreamData.dream_type || 'unknown'
+        }
+      };
+
+      debugLog('Dream storage data extracted', {
+        dreamId: dreamStorageData.dreamData.id,
+        dreamType: dreamStorageData.dreamData.dream_type,
+        analysisLength: dreamStorageData.analysis.length,
+        emotionsCount: dreamStorageData.dreamData.emotions.length,
+        symbolsCount: dreamStorageData.dreamData.symbols.length
+      });
+
+      // Save to storage
+      const result = await saveDreamToStorage(tokenId, dreamStorageData);
+      
+      if (result.success) {
+        debugLog('Dream data saved to storage successfully', {
+          rootHash: result.rootHash,
+          dreamId: dreamStorageData.dreamData.id
+        });
+      }
+
+      return result;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      debugLog('Failed to extract and save dream data', { error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  /**
+   * NEW: STEP 6 - Creates PersonalityImpact based on dream type
+   * For regular dreams: uses current personality data (neutral)
+   * For evolution dreams (%5==0): uses AI response data
+   */
+  const createPersonalityImpact = (
+    builtContext: DreamContext,
+    parsedAIResponse: any,
+    dreamCount: number
+  ): PersonalityImpact => {
+    const isEvolutionDream = dreamCount > 0 && dreamCount % 5 === 0;
+    
+    debugLog('Creating PersonalityImpact', {
+      dreamCount,
+      isEvolutionDream,
+      hasAIPersonalityImpact: !!parsedAIResponse.personalityImpact
+    });
+
+    if (isEvolutionDream && parsedAIResponse.personalityImpact) {
+      // Evolution dream - use AI response data
+      const aiImpact = parsedAIResponse.personalityImpact;
+      
+      debugLog('Using AI PersonalityImpact for evolution dream', aiImpact);
+      
+      return {
+        creativityChange: aiImpact.creativityChange || 0,
+        analyticalChange: aiImpact.analyticalChange || 0,
+        empathyChange: aiImpact.empathyChange || 0,
+        intuitionChange: aiImpact.intuitionChange || 0,
+        resilienceChange: aiImpact.resilienceChange || 0,
+        curiosityChange: aiImpact.curiosityChange || 0,
+        moodShift: aiImpact.moodShift || 'neutral',
+        evolutionWeight: aiImpact.evolutionWeight || 75,
+        newFeatures: (aiImpact.newFeatures || []).map((feature: any) => ({
+          name: feature.name,
+          description: feature.description,
+          intensity: feature.intensity || 50,
+          addedAt: Math.floor(Date.now() / 1000)
+        }))
+      };
+    } else {
+      // Regular dream - use current personality data (neutral impact)
+      const currentPersonality = builtContext.personality;
+      
+      debugLog('Using neutral PersonalityImpact for regular dream', {
+        currentMood: currentPersonality.dominantMood
+      });
+      
+      return {
+        creativityChange: 0,
+        analyticalChange: 0,
+        empathyChange: 0,
+        intuitionChange: 0,
+        resilienceChange: 0,
+        curiosityChange: 0,
+        moodShift: currentPersonality.dominantMood || 'neutral',
+        evolutionWeight: 50,
+        newFeatures: []
+      };
+    }
+  };
+
+  /**
+   * NEW: STEP 6 - Calls processDailyDream on contract
+   * Updates dream hash and personality (if evolution dream)
+   */
+  const callProcessDailyDream = async (
+    tokenId: number,
+    dreamHash: string,
+    personalityImpact: PersonalityImpact
+  ): Promise<{ success: boolean; txHash?: string; error?: string }> => {
+    if (!isConnected) {
+      const error = 'Wallet not connected';
+      setDreamState(prev => ({ ...prev, error }));
+      debugLog('Contract call failed - wallet not connected');
+      return { success: false, error };
+    }
+
+    setDreamState(prev => ({ 
+      ...prev, 
+      isProcessingContract: true, 
+      error: null,
+      contractStatus: 'Preparing contract transaction...' 
+    }));
+
+    try {
+      debugLog('Starting processDailyDream contract call', { 
+        tokenId, 
+        dreamHash,
+        personalityImpact: {
+          moodShift: personalityImpact.moodShift,
+          evolutionWeight: personalityImpact.evolutionWeight,
+          newFeaturesCount: personalityImpact.newFeatures.length
+        }
+      });
+
+      // 1. Get contract instance
+      setDreamState(prev => ({ ...prev, contractStatus: 'Connecting to contract...' }));
+      
+      const [provider, providerErr] = await getProvider();
+      if (!provider || providerErr) {
+        throw new Error(`Provider error: ${providerErr?.message}`);
+      }
+
+      const [signer, signerErr] = await getSigner(provider);
+      if (!signer || signerErr) {
+        throw new Error(`Signer error: ${signerErr?.message}`);
+      }
+
+      const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
+      const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+      const contract = new Contract(contractAddress, contractABI, signer);
+
+      debugLog('Contract connected for processDailyDream');
+
+      // 2. Use dreamHash directly (already in correct bytes32 format from 0G Storage)
+      const dreamHashBytes32 = dreamHash; // 0G Storage returns hex string "0x..." which is valid bytes32
+      
+      debugLog('Using root hash from storage as bytes32', { 
+        originalHash: dreamHash,
+        bytes32Hash: dreamHashBytes32
+      });
+
+      // 3. Call processDailyDream
+      setDreamState(prev => ({ ...prev, contractStatus: 'Calling processDailyDream...' }));
+      
+      const tx = await contract.processDailyDream(
+        tokenId,
+        dreamHashBytes32,
+        personalityImpact
+      );
+
+      debugLog('processDailyDream transaction sent', { 
+        txHash: tx.hash,
+        tokenId,
+        dreamHash: dreamHashBytes32
+      });
+
+      // 4. Wait for transaction confirmation
+      setDreamState(prev => ({ ...prev, contractStatus: 'Waiting for confirmation...' }));
+      
+      const receipt = await tx.wait();
+      
+      debugLog('processDailyDream transaction confirmed', {
+        txHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString()
+      });
+
+      setDreamState(prev => ({ 
+        ...prev, 
+        isProcessingContract: false,
+        contractStatus: 'Dream processed successfully!'
+      }));
+
+      return {
+        success: true,
+        txHash: receipt.transactionHash
+      };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setDreamState(prev => ({ 
+        ...prev, 
+        isProcessingContract: false,
+        error: errorMessage,
+        contractStatus: ''
+      }));
+      debugLog('processDailyDream failed', { error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  /**
+   * NEW: STEP 6 - Main function combining STEP 5 + STEP 6
+   * Processes storage upload AND contract write operations
+   */
+  const processStorageAndContract = async (
+    tokenId: number,
+    parsedAIResponse: any
+  ): Promise<{ success: boolean; txHash?: string; rootHash?: string; error?: string }> => {
+    if (!dreamState.builtContext) {
+      const error = 'Context not built - call buildDreamContext first';
+      setDreamState(prev => ({ ...prev, error }));
+      debugLog('processStorageAndContract failed - no context');
+      return { success: false, error };
+    }
+
+    try {
+      debugLog('Starting storage and contract processing', {
+        tokenId,
+        hasBuiltContext: !!dreamState.builtContext,
+        currentDreamCount: dreamState.builtContext.agentProfile.dreamCount
+      });
+
+      // STEP 5: Extract and save dream data to storage
+      const storageResult = await extractAndSaveDreamData(tokenId, parsedAIResponse);
+      
+      if (!storageResult.success) {
+        throw new Error(`Storage failed: ${storageResult.error}`);
+      }
+
+      debugLog('Storage processing completed', {
+        rootHash: storageResult.rootHash
+      });
+
+      // STEP 6: Create PersonalityImpact and call contract
+      const currentDreamCount = dreamState.builtContext.agentProfile.dreamCount + 1; // +1 for new dream
+      const personalityImpact = createPersonalityImpact(
+        dreamState.builtContext,
+        parsedAIResponse,
+        currentDreamCount
+      );
+
+      // Call processDailyDream with new root hash
+      const contractResult = await callProcessDailyDream(
+        tokenId,
+        storageResult.rootHash!,
+        personalityImpact
+      );
+
+      if (!contractResult.success) {
+        // Storage succeeded but contract failed
+        debugLog('Contract failed after successful storage', {
+          storageRootHash: storageResult.rootHash,
+          contractError: contractResult.error
+        });
+        throw new Error(`Contract failed: ${contractResult.error}`);
+      }
+
+      debugLog('Storage and contract processing completed successfully', {
+        rootHash: storageResult.rootHash,
+        txHash: contractResult.txHash,
+        dreamCount: currentDreamCount,
+        isEvolutionDream: currentDreamCount % 5 === 0
+      });
+
+      return {
+        success: true,
+        rootHash: storageResult.rootHash,
+        txHash: contractResult.txHash
+      };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      debugLog('processStorageAndContract failed', { error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  };
+
   return {
     dreamText: dreamState.dreamText,
     isProcessing: dreamState.isProcessing,
@@ -160,8 +686,19 @@ export function useAgentDream() {
     isLoadingContext: dreamState.isLoadingContext,
     contextStatus: dreamState.contextStatus,
     builtContext: dreamState.builtContext,
+    isUploadingToStorage: dreamState.isUploadingToStorage,
+    uploadStatus: dreamState.uploadStatus,
+    // NEW: STEP 6 exports
+    isProcessingContract: dreamState.isProcessingContract,
+    contractStatus: dreamState.contractStatus,
     setDreamText,
     resetDream,
-    buildDreamContext
+    buildDreamContext,
+    saveDreamToStorage,
+    extractAndSaveDreamData,
+    // NEW: STEP 6 functions
+    createPersonalityImpact,
+    callProcessDailyDream,
+    processStorageAndContract
   };
 }

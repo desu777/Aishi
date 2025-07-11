@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { useAgentDream, useAgentPrompt, useAgentAI } from '../../../hooks/agentHooks';
-import { Moon, Loader2, AlertCircle, Brain, Database, Users, FileText, Sparkles, Zap } from 'lucide-react';
+import { useAgentDream, useAgentPrompt, useAgentAI, useAgentRead } from '../../../hooks/agentHooks';
+import { useStorageDownload } from '../../../hooks/storage/useStorageDownload';
+import { Moon, Loader2, AlertCircle, Brain, Database, Users, FileText, Sparkles, Zap, Download, Archive } from 'lucide-react';
 
 interface DreamAnalysisSectionProps {
   hasAgent: boolean;
@@ -23,7 +24,14 @@ export default function DreamAnalysisSection({
     contextStatus, 
     builtContext, 
     error,
-    buildDreamContext 
+    buildDreamContext,
+    isUploadingToStorage,
+    uploadStatus,
+    extractAndSaveDreamData,
+    // NEW: STEP 6 imports
+    isProcessingContract,
+    contractStatus,
+    processStorageAndContract
   } = useAgentDream();
   const { buildDreamAnalysisPrompt } = useAgentPrompt();
   const { 
@@ -34,6 +42,20 @@ export default function DreamAnalysisSection({
     resetAI, 
     sendDreamAnalysis 
   } = useAgentAI();
+  
+  // NEW: Agent memory data
+  const { 
+    agentData, 
+    isLoading: isLoadingAgent 
+  } = useAgentRead(effectiveTokenId);
+  
+  // NEW: Storage download functionality
+  const { 
+    downloadFile, 
+    isLoading: isDownloading, 
+    error: downloadError, 
+    status: downloadStatus 
+  } = useStorageDownload();
   
   // State hooks MUST be here, not after conditional returns
   const [builtPrompt, setBuiltPrompt] = useState<string | null>(null);
@@ -123,8 +145,446 @@ export default function DreamAnalysisSection({
     await sendDreamAnalysis(promptData);
   };
 
+  // Handler for STEP 5: Save to Storage
+  const handleSaveToStorage = async () => {
+    if (!effectiveTokenId || !parsedResponse) {
+      debugLog('Missing tokenId or AI response data');
+      return;
+    }
+
+    debugLog('Saving dream to storage', { 
+      tokenId: effectiveTokenId,
+      dreamId: parsedResponse.dreamData.id,
+      hasPersonalityImpact: !!parsedResponse.personalityImpact
+    });
+    
+    const result = await extractAndSaveDreamData(effectiveTokenId, parsedResponse);
+    
+    if (result.success) {
+      debugLog('Storage save successful', {
+        rootHash: result.rootHash
+      });
+    } else {
+      debugLog('Storage save failed', {
+        error: result.error
+      });
+      // setError(`Storage save failed: ${result.error}`); // Original code had this line commented out
+    }
+  };
+
+  // NEW: STEP 6 - Handler for Storage + Contract processing
+  const handleProcessStorageAndContract = async () => {
+    if (!effectiveTokenId || !parsedResponse) {
+      debugLog('Missing tokenId or AI response data');
+      return;
+    }
+
+    debugLog('Starting storage and contract processing', {
+      tokenId: effectiveTokenId,
+      hasParsedResponse: !!parsedResponse,
+      hasBuiltContext: !!builtContext
+    });
+
+    const result = await processStorageAndContract(effectiveTokenId, parsedResponse);
+    
+    if (result.success) {
+      debugLog('Storage and contract processing successful', {
+        rootHash: result.rootHash,
+        txHash: result.txHash
+      });
+    } else {
+      debugLog('Storage and contract processing failed', {
+        error: result.error
+      });
+      // setError(`Processing failed: ${result.error}`); // Original code had this line commented out
+    }
+  };
+
+  // NEW: Handler for downloading memory files
+  const handleDownloadMemoryFile = async (rootHash: string, fileName: string) => {
+    if (!rootHash || rootHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+      debugLog('Cannot download - empty or null hash', { rootHash, fileName });
+      return;
+    }
+
+    debugLog('Starting memory file download', { rootHash, fileName });
+    
+    const result = await downloadFile(rootHash);
+    
+    if (result.success && result.data) {
+      // Convert ArrayBuffer to JSON and trigger download
+      try {
+        const textDecoder = new TextDecoder('utf-8');
+        const jsonText = textDecoder.decode(result.data);
+        const blob = new Blob([jsonText], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        debugLog('Memory file download successful', { fileName, size: result.data.byteLength });
+      } catch (error) {
+        debugLog('Failed to process downloaded file', { error, fileName });
+      }
+    } else {
+      debugLog('Memory file download failed', { error: result.error, fileName });
+    }
+  };
+
   return (
     <div>
+      {/* MEMORY FILES SECTION - Before Step 1 */}
+      {isLoadingAgent ? (
+        <div style={{
+          backgroundColor: theme.bg.card,
+          border: `1px solid ${theme.border}`,
+          borderRadius: '12px',
+          padding: '40px',
+          textAlign: 'center',
+          marginBottom: '20px'
+        }}>
+          <Loader2 size={32} style={{ 
+            color: theme.accent.primary, 
+            marginBottom: '15px',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <p style={{ color: theme.text.secondary, fontSize: '14px' }}>
+            Loading agent memory data...
+          </p>
+        </div>
+      ) : agentData?.memory ? (
+        <div style={{
+          backgroundColor: theme.bg.card,
+          border: `1px solid ${theme.border}`,
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{
+            color: theme.text.primary,
+            marginBottom: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <Archive size={20} />
+            Memory Files - Agent #{effectiveTokenId}
+          </h3>
+          
+          <div style={{
+            fontSize: '14px',
+            color: theme.text.secondary,
+            marginBottom: '20px',
+            padding: '10px',
+            backgroundColor: theme.bg.panel,
+            borderRadius: '6px',
+            border: `1px solid ${theme.border}`
+          }}>
+            📁 Download JSON files from agent's hierarchical memory system. Each file contains structured data from different time periods.
+          </div>
+
+          {/* Memory Files Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '15px'
+          }}>
+            {/* Daily Dreams File */}
+            <div style={{
+              padding: '15px',
+              backgroundColor: theme.bg.panel,
+              borderRadius: '8px',
+              border: `1px solid ${theme.border}`
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '10px'
+              }}>
+                <FileText size={16} style={{ color: theme.accent.primary }} />
+                <h4 style={{
+                  color: theme.text.primary,
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  margin: 0
+                }}>
+                  Daily Dreams (Current Month)
+                </h4>
+              </div>
+              
+              <div style={{
+                fontSize: '12px',
+                color: theme.text.secondary,
+                marginBottom: '10px',
+                fontFamily: 'monospace'
+              }}>
+                {agentData.memory.currentDreamDailyHash || 'No hash available'}
+              </div>
+              
+              <button
+                onClick={() => handleDownloadMemoryFile(
+                  agentData.memory.currentDreamDailyHash,
+                  `daily_dreams_${agentData.memory.currentYear}-${String(agentData.memory.currentMonth).padStart(2, '0')}.json`
+                )}
+                disabled={!agentData.memory.currentDreamDailyHash || 
+                         agentData.memory.currentDreamDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                         isDownloading}
+                style={{
+                  backgroundColor: (!agentData.memory.currentDreamDailyHash || 
+                                   agentData.memory.currentDreamDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                                   isDownloading) ? theme.bg.card : theme.accent.primary,
+                  color: (!agentData.memory.currentDreamDailyHash || 
+                         agentData.memory.currentDreamDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                         isDownloading) ? theme.text.secondary : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  cursor: (!agentData.memory.currentDreamDailyHash || 
+                          agentData.memory.currentDreamDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                          isDownloading) ? 'not-allowed' : 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download size={12} />
+                    Download
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Monthly Dreams File */}
+            <div style={{
+              padding: '15px',
+              backgroundColor: theme.bg.panel,
+              borderRadius: '8px',
+              border: `1px solid ${theme.border}`
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '10px'
+              }}>
+                <FileText size={16} style={{ color: theme.accent.secondary }} />
+                <h4 style={{
+                  color: theme.text.primary,
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  margin: 0
+                }}>
+                  Monthly Dreams (Last Consolidation)
+                </h4>
+              </div>
+              
+              <div style={{
+                fontSize: '12px',
+                color: theme.text.secondary,
+                marginBottom: '10px',
+                fontFamily: 'monospace'
+              }}>
+                {agentData.memory.lastDreamMonthlyHash || 'No hash available'}
+              </div>
+              
+              <button
+                onClick={() => handleDownloadMemoryFile(
+                  agentData.memory.lastDreamMonthlyHash,
+                  `monthly_dreams_consolidated.json`
+                )}
+                disabled={!agentData.memory.lastDreamMonthlyHash || 
+                         agentData.memory.lastDreamMonthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                         isDownloading}
+                style={{
+                  backgroundColor: (!agentData.memory.lastDreamMonthlyHash || 
+                                   agentData.memory.lastDreamMonthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                                   isDownloading) ? theme.bg.card : theme.accent.secondary,
+                  color: (!agentData.memory.lastDreamMonthlyHash || 
+                         agentData.memory.lastDreamMonthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                         isDownloading) ? theme.text.secondary : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  cursor: (!agentData.memory.lastDreamMonthlyHash || 
+                          agentData.memory.lastDreamMonthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                          isDownloading) ? 'not-allowed' : 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download size={12} />
+                    Download
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Yearly Core Memory File */}
+            <div style={{
+              padding: '15px',
+              backgroundColor: theme.bg.panel,
+              borderRadius: '8px',
+              border: `1px solid ${theme.border}`
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '10px'
+              }}>
+                <Brain size={16} style={{ color: '#ffa500' }} />
+                <h4 style={{
+                  color: theme.text.primary,
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  margin: 0
+                }}>
+                  Yearly Core Memory
+                </h4>
+              </div>
+              
+              <div style={{
+                fontSize: '12px',
+                color: theme.text.secondary,
+                marginBottom: '10px',
+                fontFamily: 'monospace'
+              }}>
+                {agentData.memory.memoryCoreHash || 'No hash available'}
+              </div>
+              
+              <button
+                onClick={() => handleDownloadMemoryFile(
+                  agentData.memory.memoryCoreHash,
+                  `yearly_core_memory.json`
+                )}
+                disabled={!agentData.memory.memoryCoreHash || 
+                         agentData.memory.memoryCoreHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                         isDownloading}
+                style={{
+                  backgroundColor: (!agentData.memory.memoryCoreHash || 
+                                   agentData.memory.memoryCoreHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                                   isDownloading) ? theme.bg.card : '#ffa500',
+                  color: (!agentData.memory.memoryCoreHash || 
+                         agentData.memory.memoryCoreHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                         isDownloading) ? theme.text.secondary : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  cursor: (!agentData.memory.memoryCoreHash || 
+                          agentData.memory.memoryCoreHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                          isDownloading) ? 'not-allowed' : 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download size={12} />
+                    Download
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Download Status */}
+          {downloadStatus && (
+            <div style={{
+              marginTop: '15px',
+              padding: '10px',
+              backgroundColor: theme.bg.card,
+              borderRadius: '6px',
+              border: `1px solid ${theme.border}`,
+              fontSize: '12px',
+              color: theme.text.secondary,
+              fontFamily: 'monospace'
+            }}>
+              {downloadStatus}
+            </div>
+          )}
+
+          {/* Download Error */}
+          {downloadError && (
+            <div style={{
+              marginTop: '10px',
+              padding: '10px',
+              backgroundColor: '#ff4444',
+              borderRadius: '6px',
+              fontSize: '12px',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <AlertCircle size={14} />
+              Download Error: {downloadError}
+            </div>
+          )}
+
+          {/* Memory Info */}
+          <div style={{
+            marginTop: '15px',
+            padding: '10px',
+            backgroundColor: theme.bg.card,
+            borderRadius: '6px',
+            border: `1px solid ${theme.border}`,
+            fontSize: '12px',
+            color: theme.text.secondary
+          }}>
+            <strong>Memory Info:</strong> Current Period: {agentData.memory.currentMonth}/{agentData.memory.currentYear} | 
+            Last Consolidation: {agentData.memory.lastConsolidation ? new Date(Number(agentData.memory.lastConsolidation) * 1000).toLocaleDateString() : 'Never'}
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          backgroundColor: theme.bg.card,
+          border: `1px solid ${theme.border}`,
+          borderRadius: '12px',
+          padding: '40px',
+          textAlign: 'center',
+          marginBottom: '20px'
+        }}>
+          <AlertCircle size={48} style={{ color: theme.text.secondary, marginBottom: '20px' }} />
+          <h3 style={{ color: theme.text.primary, marginBottom: '10px' }}>
+            No Memory Data Found
+          </h3>
+          <p style={{ color: theme.text.secondary, fontSize: '14px' }}>
+            The agent's memory data is not yet available. Please ensure the agent is minted and has processed some dreams.
+          </p>
+        </div>
+      )}
+
       {/* STEP 1: Dream Input */}
       <div style={{
         backgroundColor: theme.bg.card,
@@ -788,6 +1248,110 @@ export default function DreamAnalysisSection({
             }}>
               <strong>Brief Analysis:</strong> {parsedResponse.analysis}
             </div>
+
+            {/* Save to Storage Button */}
+            {effectiveTokenId && (
+              <button
+                onClick={handleSaveToStorage}
+                disabled={isUploadingToStorage}
+                style={{
+                  backgroundColor: isUploadingToStorage ? theme.bg.panel : theme.accent.primary,
+                  color: isUploadingToStorage ? theme.text.secondary : 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  cursor: isUploadingToStorage ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginTop: '15px'
+                }}
+              >
+                {isUploadingToStorage ? (
+                  <>
+                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    Saving Dream...
+                  </>
+                ) : (
+                  <>
+                    <Database size={16} />
+                    Save Dream to Storage
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Upload Status Display */}
+            {uploadStatus && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                backgroundColor: theme.bg.panel,
+                borderRadius: '6px',
+                fontSize: '13px',
+                color: theme.text.secondary,
+                fontFamily: 'monospace'
+              }}>
+                {uploadStatus}
+              </div>
+            )}
+
+            {/* NEW: STEP 6 - Process Storage & Contract Button */}
+            {effectiveTokenId && builtContext && (
+              <button
+                onClick={handleProcessStorageAndContract}
+                disabled={isUploadingToStorage || isProcessingContract}
+                style={{
+                  backgroundColor: (isUploadingToStorage || isProcessingContract) ? theme.bg.panel : theme.accent.secondary,
+                  color: (isUploadingToStorage || isProcessingContract) ? theme.text.secondary : 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  cursor: (isUploadingToStorage || isProcessingContract) ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginTop: '12px'
+                }}
+              >
+                {(isUploadingToStorage || isProcessingContract) ? (
+                  <>
+                    <div style={{ 
+                      width: '16px', 
+                      height: '16px', 
+                      border: '2px solid transparent',
+                      borderTop: '2px solid currentColor',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    {isUploadingToStorage ? 'Saving to Storage...' : 'Processing Contract...'}
+                  </>
+                ) : (
+                  <>
+                    🚀 Process Storage & Contract
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* NEW: STEP 6 - Contract Status Display */}
+            {(uploadStatus || contractStatus) && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                backgroundColor: theme.bg.panel,
+                borderRadius: '6px',
+                fontSize: '13px',
+                color: theme.text.secondary,
+                fontFamily: 'monospace'
+              }}>
+                {contractStatus || uploadStatus}
+              </div>
+            )}
           </div>
         )}
       </div>

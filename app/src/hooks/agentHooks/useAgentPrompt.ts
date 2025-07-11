@@ -66,8 +66,10 @@ ANALYZE THIS DREAM:
 ${context.userDream}
 
 RESPONSE STRUCTURE:
-1. First provide a FULL PERSONALIZED ANALYSIS as my dream agent - be detailed, insightful, and reflect your personality
-2. Then provide the JSON summary with brief essence
+Provide ONLY two JSON blocks - do not write any text before the JSON blocks.
+
+1. FULL ANALYSIS JSON – contains your complete detailed analysis as my dream agent
+2. STORAGE SUMMARY JSON – compact essence for storage
 
 Remember to respond in the detected language (${context.languageDetection.languageName}).
 
@@ -173,18 +175,17 @@ function buildResponseFormat(dreamId: number, needsEvolution: boolean, currentTi
 
 DREAM ID: This will be dream #${dreamId} (use exactly this number in the response)
 
-After your full analysis, provide **two** JSON blocks:
+Provide exactly two JSON blocks:
 
 1. FULL ANALYSIS JSON – for UI display
 \`\`\`json
 {
-  "full_analysis": "<your entire detailed analysis here>"
+  "full_analysis": "Write your complete detailed analysis here as my dream agent. Be detailed, insightful, and reflect your personality. This should be your full response to the user about their dream - include everything you want to tell them about their dream, its meaning, symbols, emotions, and personal insights. Write in the detected language."
 }
 \`\`\`
 
 2. STORAGE SUMMARY JSON – compact essence for storage & stats
-
-RESPONSE FORMAT (JSON):
+\`\`\`json
 {
   "analysis": "Brief essence of your analysis in maximum 2 sentences",
   "dreamData": {
@@ -218,16 +219,24 @@ RESPONSE FORMAT (JSON):
     ]
   }
 }
+\`\`\`
 
 NOTE: This is your ${dreamId}th dream - personality evolution will occur! Consider how this dream fundamentally changes your perspective.
 
-IMPORTANT: Use the timestamp ${currentTimestamp} in your response for accurate dream recording.`;
+IMPORTANT: 
+- Put your complete analysis in the "full_analysis" field of the first JSON
+- Use the timestamp ${currentTimestamp} in your response for accurate dream recording
+- Do not write any text outside the JSON blocks`;
   }
 
   return baseFormat + `
 }
+\`\`\`
 
-IMPORTANT: Use the timestamp ${currentTimestamp} in your response for accurate dream recording.`;
+IMPORTANT: 
+- Put your complete analysis in the "full_analysis" field of the first JSON
+- Use the timestamp ${currentTimestamp} in your response for accurate dream recording
+- Do not write any text outside the JSON blocks`;
 }
 
 /**
