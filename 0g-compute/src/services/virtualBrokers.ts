@@ -272,21 +272,29 @@ export class VirtualBrokersService {
 
   /**
    * Estimate AI query cost (approximate - real cost calculated dynamically)
+   * LOWERED COSTS: Based on logs showing 0.00000000 OG real costs
    */
   estimateQueryCost(query: string, model?: string): number {
     // Use MODEL_PICKED from environment or default
     const selectedModel = model || process.env.MODEL_PICKED || 'deepseek-r1-70b';
     
-    // Approximate cost estimation based on model
+    // SIGNIFICANTLY LOWERED cost estimation - real costs are near zero
     const baseCosts = {
-      'llama-3.3-70b-instruct': 0.001,  // 0.001 OG per query
-      'deepseek-r1-70b': 0.002,        // 0.002 OG per query
+      'llama-3.3-70b-instruct': 0.00001,  // 0.00001 OG per query (100x lower)
+      'deepseek-r1-70b': 0.00002,         // 0.00002 OG per query (100x lower)
     };
 
-    const baseCost = baseCosts[selectedModel as keyof typeof baseCosts] || 0.001;
-    const lengthMultiplier = Math.max(1, query.length / 100);
+    const baseCost = baseCosts[selectedModel as keyof typeof baseCosts] || 0.00001;
+    // Reduced length multiplier impact
+    const lengthMultiplier = Math.max(1, query.length / 10000); // 100x less sensitive to length
     
-    return baseCost * lengthMultiplier;
+    const estimatedCost = baseCost * lengthMultiplier;
+    
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`💰 Cost estimation: ${estimatedCost.toFixed(8)} OG (model: ${selectedModel}, length: ${query.length})`);
+    }
+    
+    return estimatedCost;
   }
 }
 

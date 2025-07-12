@@ -335,7 +335,11 @@ export function useAgentMemoryCore(tokenId?: number) {
         statusMessage: 'Uploading memory core to storage...' 
       }));
 
-      const storageResult = await saveMemoryCoreToStorage(memoryCoreData);
+      const storageResult = await saveMemoryCoreToStorage(
+        operationalTokenId,
+        memoryCoreData,
+        downloadFile
+      );
       
       if (!storageResult.success) {
         throw new Error(`Storage upload failed: ${storageResult.error}`);

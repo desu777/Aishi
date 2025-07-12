@@ -390,14 +390,21 @@ export const consolidateConversationsWithLLM = async (
 };
 
 /**
- * Zapisuje skonsolidowane dane do 0G Storage
+ * Zapisuje skonsolidowane dane do 0G Storage (APPEND PATTERN)
+ * Pobiera istniejące konsolidacje, appenduje nowe na TOP tablicy i zapisuje zaktualizowany plik
  */
 export const saveConsolidationToStorage = async (
+  tokenId: number,
   dreamConsolidation: MonthlyDreamConsolidation,
-  conversationConsolidation: MonthlyConversationConsolidation
+  conversationConsolidation: MonthlyConversationConsolidation,
+  downloadFile: (hash: string) => Promise<{ success: boolean; data?: ArrayBuffer; error?: string }>
 ): Promise<{ success: boolean; dreamHash?: string; convHash?: string; error?: string }> => {
   try {
-    debugLog('Saving consolidation to storage');
+    debugLog('Saving consolidation to storage using APPEND pattern', {
+      tokenId,
+      dreamMonth: `${dreamConsolidation.year}-${dreamConsolidation.month}`,
+      convMonth: `${conversationConsolidation.year}-${conversationConsolidation.month}`
+    });
 
     // Get provider and signer
     const [provider, providerErr] = await getProvider();
@@ -410,15 +417,94 @@ export const saveConsolidationToStorage = async (
       throw new Error(`Signer error: ${signerErr?.message}`);
     }
 
-    // Create dream consolidation file
-    const dreamFileName = `dream_consolidation_${dreamConsolidation.year}-${String(dreamConsolidation.month).padStart(2, '0')}.json`;
-    const dreamBlob = new Blob([JSON.stringify(dreamConsolidation, null, 2)], { type: 'application/json' });
-    const dreamFile = new File([dreamBlob], dreamFileName, { type: 'application/json' });
+    // Get contract to read current monthly hashes
+    const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
+    const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+    const contract = new Contract(contractAddress, contractABI, signer);
 
-    // Create conversation consolidation file
-    const convFileName = `conversation_consolidation_${conversationConsolidation.year}-${String(conversationConsolidation.month).padStart(2, '0')}.json`;
-    const convBlob = new Blob([JSON.stringify(conversationConsolidation, null, 2)], { type: 'application/json' });
-    const convFile = new File([convBlob], convFileName, { type: 'application/json' });
+    const agentMemory = await contract.getAgentMemory(tokenId);
+    const currentDreamMonthlyHash = agentMemory.lastDreamMonthlyHash;
+    const currentConvMonthlyHash = agentMemory.lastConvMonthlyHash;
+    const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+    debugLog('Current monthly hashes from contract', {
+      dreamHash: currentDreamMonthlyHash,
+      convHash: currentConvMonthlyHash
+    });
+
+    // 1. DREAM CONSOLIDATIONS - APPEND PATTERN
+    let existingDreamConsolidations: MonthlyDreamConsolidation[] = [];
+    
+    if (currentDreamMonthlyHash && currentDreamMonthlyHash !== emptyHash) {
+      debugLog('Downloading existing dream consolidations', { hash: currentDreamMonthlyHash });
+      const downloadResult = await downloadFile(currentDreamMonthlyHash);
+      
+      if (downloadResult.success && downloadResult.data) {
+        try {
+          const textDecoder = new TextDecoder('utf-8');
+          const jsonText = textDecoder.decode(downloadResult.data);
+          const parsedData = JSON.parse(jsonText);
+          existingDreamConsolidations = Array.isArray(parsedData) ? parsedData : [];
+          debugLog('Existing dream consolidations loaded', { count: existingDreamConsolidations.length });
+        } catch (parseError) {
+          debugLog('Failed to parse existing dream consolidations, starting fresh', parseError);
+          existingDreamConsolidations = [];
+        }
+      } else {
+        debugLog('Failed to download existing dream consolidations, starting fresh', downloadResult.error);
+      }
+    } else {
+      debugLog('No existing dream consolidations, starting fresh array');
+    }
+
+    // Append new dream consolidation to TOP of array (newest first)
+    const updatedDreamConsolidations = [dreamConsolidation, ...existingDreamConsolidations];
+    debugLog('Updated dream consolidations array created', { totalCount: updatedDreamConsolidations.length });
+
+    // 2. CONVERSATION CONSOLIDATIONS - APPEND PATTERN
+    let existingConvConsolidations: MonthlyConversationConsolidation[] = [];
+    
+    if (currentConvMonthlyHash && currentConvMonthlyHash !== emptyHash) {
+      debugLog('Downloading existing conversation consolidations', { hash: currentConvMonthlyHash });
+      const downloadResult = await downloadFile(currentConvMonthlyHash);
+      
+      if (downloadResult.success && downloadResult.data) {
+        try {
+          const textDecoder = new TextDecoder('utf-8');
+          const jsonText = textDecoder.decode(downloadResult.data);
+          const parsedData = JSON.parse(jsonText);
+          existingConvConsolidations = Array.isArray(parsedData) ? parsedData : [];
+          debugLog('Existing conversation consolidations loaded', { count: existingConvConsolidations.length });
+        } catch (parseError) {
+          debugLog('Failed to parse existing conversation consolidations, starting fresh', parseError);
+          existingConvConsolidations = [];
+        }
+      } else {
+        debugLog('Failed to download existing conversation consolidations, starting fresh', downloadResult.error);
+      }
+    } else {
+      debugLog('No existing conversation consolidations, starting fresh array');
+    }
+
+    // Append new conversation consolidation to TOP of array (newest first)
+    const updatedConvConsolidations = [conversationConsolidation, ...existingConvConsolidations];
+    debugLog('Updated conversation consolidations array created', { totalCount: updatedConvConsolidations.length });
+
+    // 3. CREATE AND UPLOAD FILES
+    const dreamFileName = `dream_consolidations_monthly_${new Date().getFullYear()}.json`;
+    const dreamContent = JSON.stringify(updatedDreamConsolidations, null, 2);
+    const dreamFile = new File([dreamContent], dreamFileName, { type: 'application/json' });
+
+    const convFileName = `conversation_consolidations_monthly_${new Date().getFullYear()}.json`;
+    const convContent = JSON.stringify(updatedConvConsolidations, null, 2);
+    const convFile = new File([convContent], convFileName, { type: 'application/json' });
+
+    debugLog('Created new consolidation files', {
+      dreamFileSize: dreamFile.size,
+      convFileSize: convFile.size,
+      dreamFileName,
+      convFileName
+    });
 
     // Upload both files
     const [dreamResult, convResult] = await Promise.all([
@@ -434,9 +520,11 @@ export const saveConsolidationToStorage = async (
       throw new Error(`Conversation consolidation upload failed: ${convResult.error}`);
     }
 
-    debugLog('Consolidation saved to storage', {
+    debugLog('Consolidation APPEND completed successfully', {
       dreamHash: dreamResult.rootHash,
-      convHash: convResult.rootHash
+      convHash: convResult.rootHash,
+      totalDreamConsolidations: updatedDreamConsolidations.length,
+      totalConvConsolidations: updatedConvConsolidations.length
     });
 
     return {

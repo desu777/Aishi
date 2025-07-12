@@ -363,7 +363,12 @@ export function useAgentConsolidation(tokenId?: number) {
         throw new Error('Missing consolidation data');
       }
 
-      const storageResult = await saveConsolidationToStorage(dreamConsolidation, conversationConsolidation);
+      const storageResult = await saveConsolidationToStorage(
+        operationalTokenId,
+        dreamConsolidation, 
+        conversationConsolidation,
+        downloadFile
+      );
       
       if (!storageResult.success) {
         throw new Error(`Storage upload failed: ${storageResult.error}`);

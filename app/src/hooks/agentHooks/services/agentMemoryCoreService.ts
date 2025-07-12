@@ -206,19 +206,19 @@ OUTPUT FORMAT - Return exactly one JSON object:
 \`\`\`json
 {
   "year": ${year},
-  "agent_id": ${agentData?.tokenId || 0},
+  "agent_id": ${Number(agentData?.tokenId || 0)},
   "core_version": "1.0",
   "created_at": "${new Date().toISOString()}",
   "yearly_overview": {
     "total_months_consolidated": ${monthlyDreamConsolidations.length},
     "total_dreams_processed": ${monthlyDreamConsolidations.reduce((sum, m) => sum + (m.total_dreams || 0), 0)},
     "total_conversations_recorded": ${monthlyConversationConsolidations.reduce((sum, m) => sum + (m.total_conversations || 0), 0)},
-    "agent_age_in_days": ${Math.floor((Date.now() - (agentData?.createdAt || Date.now())) / (1000 * 60 * 60 * 24))},
-    "intelligence_growth": {
-      "starting_level": 0,
-      "ending_level": ${agentData?.intelligenceLevel || 0},
-      "total_growth": ${agentData?.intelligenceLevel || 0}
-    }
+    "agent_age_in_days": ${Math.floor((Date.now() - Number(agentData?.createdAt || Date.now())) / (1000 * 60 * 60 * 24))},
+          "intelligence_growth": {
+        "starting_level": 0,
+        "ending_level": ${Number(agentData?.intelligenceLevel || 0)},
+        "total_growth": ${Number(agentData?.intelligenceLevel || 0)}
+      }
   },
   "personality_evolution_journey": {
     "annual_shifts": {
@@ -404,13 +404,19 @@ export const consolidateYearWithLLM = async (
 };
 
 /**
- * Zapisuje roczną esencję (memory core) do 0G Storage
+ * Zapisuje roczną esencję (memory core) do 0G Storage (APPEND PATTERN)
+ * Pobiera istniejące roczne konsolidacje, appenduje nową na TOP tablicy i zapisuje zaktualizowany plik
  */
 export const saveMemoryCoreToStorage = async (
-  memoryCoreData: YearlyMemoryCore
+  tokenId: number,
+  memoryCoreData: YearlyMemoryCore,
+  downloadFile: (hash: string) => Promise<{ success: boolean; data?: ArrayBuffer; error?: string }>
 ): Promise<{ success: boolean; memoryCoreHash?: string; error?: string }> => {
   try {
-    debugLog('Saving memory core to storage');
+    debugLog('Saving memory core to storage using APPEND pattern', {
+      tokenId,
+      year: memoryCoreData.year
+    });
 
     // Get provider and signer
     const [provider, providerErr] = await getProvider();
@@ -423,12 +429,60 @@ export const saveMemoryCoreToStorage = async (
       throw new Error(`Signer error: ${signerErr?.message}`);
     }
 
-    // Create memory core file
-    const memoryCoreFileName = `memory_core_${memoryCoreData.year}.json`;
-    const memoryCoreBlob = new Blob([JSON.stringify(memoryCoreData, null, 2)], { type: 'application/json' });
-    const memoryCoreFile = new File([memoryCoreBlob], memoryCoreFileName, { type: 'application/json' });
+    // Get contract to read current yearly hash
+    const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
+    const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+    const contract = new Contract(contractAddress, contractABI, signer);
 
-    // Upload to 0G Storage
+    const agentMemory = await contract.getAgentMemory(tokenId);
+    const currentYearlyHash = agentMemory.lastYearlyHash;
+    const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+    debugLog('Current yearly hash from contract', { 
+      yearlyHash: currentYearlyHash 
+    });
+
+    // 1. YEARLY MEMORY CORES - APPEND PATTERN
+    let existingMemoryCores: YearlyMemoryCore[] = [];
+    
+    if (currentYearlyHash && currentYearlyHash !== emptyHash) {
+      debugLog('Downloading existing yearly memory cores', { hash: currentYearlyHash });
+      const downloadResult = await downloadFile(currentYearlyHash);
+      
+      if (downloadResult.success && downloadResult.data) {
+        try {
+          const textDecoder = new TextDecoder('utf-8');
+          const jsonText = textDecoder.decode(downloadResult.data);
+          const parsedData = JSON.parse(jsonText);
+          existingMemoryCores = Array.isArray(parsedData) ? parsedData : [];
+          debugLog('Existing yearly memory cores loaded', { count: existingMemoryCores.length });
+        } catch (parseError) {
+          debugLog('Failed to parse existing memory cores, starting fresh', parseError);
+          existingMemoryCores = [];
+        }
+      } else {
+        debugLog('Failed to download existing memory cores, starting fresh', downloadResult.error);
+      }
+    } else {
+      debugLog('No existing yearly memory cores, starting fresh array');
+    }
+
+    // Append new memory core to TOP of array (newest first)
+    const updatedMemoryCores = [memoryCoreData, ...existingMemoryCores];
+    debugLog('Updated memory cores array created', { totalCount: updatedMemoryCores.length });
+
+    // 2. CREATE AND UPLOAD FILE
+    const memoryCoreFileName = `memory_cores_yearly_${new Date().getFullYear()}.json`;
+    const memoryCoreContent = JSON.stringify(updatedMemoryCores, null, 2);
+    const memoryCoreFile = new File([memoryCoreContent], memoryCoreFileName, { type: 'application/json' });
+
+    debugLog('Created new memory core file', {
+      fileName: memoryCoreFileName,
+      fileSize: memoryCoreFile.size,
+      totalYears: updatedMemoryCores.length
+    });
+
+    // Upload file
     const uploadResult = await uploadFileComplete(
       memoryCoreFile, 
       STORAGE_CONFIG.storageRpc, 
@@ -440,9 +494,10 @@ export const saveMemoryCoreToStorage = async (
       throw new Error(`Memory core upload failed: ${uploadResult.error}`);
     }
 
-    debugLog('Memory core saved to storage', {
+    debugLog('Memory core APPEND completed successfully', {
       memoryCoreHash: uploadResult.rootHash,
-      fileSize: memoryCoreBlob.size
+      totalYearlyMemoryCores: updatedMemoryCores.length,
+      newYear: memoryCoreData.year
     });
 
     return {

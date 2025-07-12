@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useWallet } from '../useWallet';
+import { useStorageDownload } from '../storage/useStorageDownload';
 import { useAgentRead } from './useAgentRead';
 import {
   consolidateDreamsWithLLM,
@@ -95,6 +96,7 @@ export function useConsolidationTestMode(tokenId?: number) {
   const [isTestingConsolidation, setIsTestingConsolidation] = useState(false);
 
   const { address } = useWallet();
+  const { downloadFile } = useStorageDownload();
   const { 
     agentData, 
     personalityTraits,
@@ -386,8 +388,10 @@ export function useConsolidationTestMode(tokenId?: number) {
 
       // Step 2: Storage Upload
       const storageResult = await saveConsolidationToStorage(
+        operationalTokenId,
         dreamResult.data!,
-        convResult.data!
+        convResult.data!,
+        downloadFile
       );
 
       if (!storageResult.success) {
@@ -504,7 +508,11 @@ export function useConsolidationTestMode(tokenId?: number) {
       }));
 
       // Step 2: Storage Upload
-      const storageResult = await saveMemoryCoreToStorage(yearlyResult.data!);
+      const storageResult = await saveMemoryCoreToStorage(
+        operationalTokenId,
+        yearlyResult.data!,
+        downloadFile
+      );
 
       if (!storageResult.success) {
         throw new Error(`Memory core storage upload failed: ${storageResult.error}`);
