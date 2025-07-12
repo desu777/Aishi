@@ -25,10 +25,28 @@ interface ParsedAIResponse {
   dreamData?: {
     id: number;
     date: string;
+    timestamp?: number;
+    // Podstawowe dane
     emotions: string[];
     symbols: string[];
+    themes?: string[];
     intensity: number;
-    lucidity_level: number;
+    lucidity: number;  // ZMIANA z lucidity_level
+    // Archetypy i wzorce  
+    archetypes?: string[];
+    recurring_from?: number[];
+    // Analiza
+    analysis?: string;
+    // Wpływ na osobowość
+    personality_impact?: {
+      dominant_trait?: string;
+      shift_direction?: string;
+      intensity?: number;
+    };
+    // Metadane
+    sleep_quality?: number;
+    recall_clarity?: number;
+    dream_type?: string;
   };
   personalityImpact?: {
     evolutionWeight: number;

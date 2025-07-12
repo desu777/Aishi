@@ -127,9 +127,15 @@ ${dreams.map(dream => `
 Dream #${dream.id} (${dream.date}):
 - Emotions: ${dream.emotions?.join(', ') || 'none'}
 - Symbols: ${dream.symbols?.join(', ') || 'none'}
+- Themes: ${dream.themes?.join(', ') || 'none'}
 - Intensity: ${dream.intensity}/10
-- Lucidity: ${dream.lucidity_level}/5
-- AI Analysis: ${dream.ai_analysis || 'No analysis'}
+- Lucidity: ${dream.lucidity || dream.lucidity_level}/5
+- Archetypes: ${dream.archetypes?.join(', ') || 'none'}
+- Dream Type: ${dream.dream_type || 'neutral'}
+- Sleep Quality: ${dream.sleep_quality || 'unknown'}/10
+- Recall Clarity: ${dream.recall_clarity || 'unknown'}/10
+- AI Analysis: ${dream.ai_analysis || dream.analysis || 'No analysis'}
+${dream.recurring_from?.length ? `- Recurring from Dreams: ${dream.recurring_from.join(', ')}` : ''}
 `).join('\n')}
 
 CONSOLIDATION TASK:

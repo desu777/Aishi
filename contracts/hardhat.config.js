@@ -16,7 +16,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200 // Standard optimization for contract size
+        runs: 1 // Maksymalna optymalizacja dla rozmiaru kontraktu
       },
       viaIR: true // Fixes "Stack too deep" errors
     }

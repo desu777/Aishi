@@ -23,12 +23,23 @@ import {
 interface MockDream {
   id: number;
   date: string;
+  timestamp: number;
   emotions: string[];
   symbols: string[];
-  intensity: number;
-  lucidity_level: number;
-  ai_analysis: string;
   themes: string[];
+  intensity: number;
+  lucidity: number;
+  archetypes: string[];
+  recurring_from?: number[];
+  personality_impact?: {
+    dominant_trait: string;
+    shift_direction: string;
+    intensity: number;
+  };
+  sleep_quality: number;
+  recall_clarity: number;
+  dream_type: string;
+  ai_analysis: string;
 }
 
 interface MockConversation {
@@ -116,29 +127,9 @@ export function useConsolidationTestMode(tokenId?: number) {
   debugLog('useConsolidationTestMode initialized', { tokenId, operationalTokenId });
 
   /**
-   * Generates realistic mock dreams for testing
-   */
-  const generateMockDreams = (count: number = 15): MockDream[] => {
-    const themes = ['transformation', 'anxiety', 'relationships', 'adventure', 'mystery', 'healing', 'creativity'];
-    const emotions = ['fear', 'joy', 'curiosity', 'anxiety', 'peace', 'excitement', 'confusion', 'wonder'];
-    const symbols = ['water', 'flying', 'animals', 'family', 'nature', 'buildings', 'vehicles', 'colors'];
-
-    return Array.from({ length: count }, (_, i) => ({
-      id: i + 1,
-      date: new Date(Date.now() - (count - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      emotions: emotions.slice(0, Math.floor(Math.random() * 3) + 1),
-      symbols: symbols.slice(0, Math.floor(Math.random() * 4) + 1),
-      intensity: Math.floor(Math.random() * 10) + 1,
-      lucidity_level: Math.floor(Math.random() * 5) + 1,
-      themes: themes.slice(0, Math.floor(Math.random() * 3) + 1),
-      ai_analysis: `Dream ${i + 1} shows elements of ${themes[i % themes.length]} with strong ${emotions[i % emotions.length]} undertones. The presence of ${symbols[i % symbols.length]} suggests deep symbolic processing of subconscious material.`
-    }));
-  };
-
-  /**
    * Generates realistic mock conversations for testing
    */
-  const generateMockConversations = (count: number = 20): MockConversation[] => {
+  const generateMockConversations = (count: number = 23): MockConversation[] => {
     const topics = ['personal_growth', 'relationships', 'career_decisions', 'life_philosophy', 'dreams', 'creativity'];
     const tones = ['reflective', 'curious', 'supportive', 'analytical', 'empathetic', 'encouraging'];
     const insights = [
@@ -267,7 +258,27 @@ export function useConsolidationTestMode(tokenId?: number) {
         const month = currentDate.getMonth() + 1;
         const year = currentDate.getFullYear();
 
-        const dreams = generateMockDreams(15);
+        const dreams: MockDream[] = Array.from({ length: 15 }, (_, i) => ({
+          id: i + 1,
+          date: new Date(Date.now() - (14 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          timestamp: Math.floor(Date.now() / 1000) - (14 - i) * 24 * 60 * 60,
+          emotions: ['fear', 'joy', 'curiosity'].slice(0, Math.floor(Math.random() * 3) + 1),
+          symbols: ['water', 'flying', 'animals'].slice(0, Math.floor(Math.random() * 4) + 1),
+          themes: ['transformation', 'anxiety', 'relationships'].slice(0, Math.floor(Math.random() * 3) + 1),
+          intensity: Math.floor(Math.random() * 10) + 1,
+          lucidity: Math.floor(Math.random() * 5) + 1,
+          archetypes: ['hero', 'shadow', 'anima', 'wise_old_man'].slice(0, Math.floor(Math.random() * 2) + 1),
+          recurring_from: i > 5 ? [Math.floor(Math.random() * (i - 3)) + 1] : undefined,
+          personality_impact: {
+            dominant_trait: ['creativity', 'empathy', 'resilience', 'curiosity'][Math.floor(Math.random() * 4)],
+            shift_direction: ['positive', 'negative', 'neutral'][Math.floor(Math.random() * 3)],
+            intensity: Math.floor(Math.random() * 10) + 1
+          },
+          sleep_quality: Math.floor(Math.random() * 10) + 1,
+          recall_clarity: Math.floor(Math.random() * 10) + 1,
+          dream_type: ['transformative', 'nightmare', 'neutral', 'lucid', 'prophetic'][Math.floor(Math.random() * 5)],
+          ai_analysis: `Dream ${i + 1} shows elements of ${['transformation', 'anxiety', 'relationships'][i % 3]} with strong ${['fear', 'joy', 'curiosity'][i % 3]} undertones. The presence of ${['water', 'flying', 'animals'][i % 3]} suggests deep symbolic processing of subconscious material.`
+        }));
         const conversations = generateMockConversations(23);
 
         setMockData({

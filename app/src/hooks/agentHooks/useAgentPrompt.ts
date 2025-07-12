@@ -153,7 +153,15 @@ function buildMemorySection(context: DreamContext): string {
     memorySection += `\n\nALL PREVIOUS DREAMS:`;
     context.historicalData.dailyDreams.forEach(dream => {
       const dreamDate = dream.date || (dream.timestamp ? new Date(dream.timestamp * 1000).toLocaleDateString('pl-PL') : 'unknown');
-      memorySection += `\nDream #${dream.id} (${dreamDate}): ${dream.emotions?.join(',') || 'neutral'} | ${dream.symbols?.join(',') || 'none'} | "${(dream.ai_analysis || dream.content || 'No analysis')}"`;
+      const themes = dream.themes?.join(',') || 'none';
+      const archetypes = dream.archetypes?.join(',') || 'none';
+      const dreamType = dream.dream_type || 'neutral';
+      const sleepQuality = dream.sleep_quality || 'unknown';
+      const recallClarity = dream.recall_clarity || 'unknown';
+      const intensity = dream.intensity || 5;
+      const lucidity = dream.lucidity || dream.lucidity_level || 1; // backward compatibility
+      
+      memorySection += `\nDream #${dream.id} (${dreamDate}): ${dream.emotions?.join(',') || 'neutral'} | ${dream.symbols?.join(',') || 'none'} | Themes: ${themes} | Archetypes: ${archetypes} | Type: ${dreamType} | Quality: ${sleepQuality}/10 | Clarity: ${recallClarity}/10 | Intensity: ${intensity}/10 | Lucidity: ${lucidity}/5 | "${(dream.ai_analysis || dream.analysis || dream.content || 'No analysis')}"`;
     });
   }
   
@@ -205,10 +213,22 @@ Output exactly two JSON blocks:
   "dreamData": {
     "id": ${dreamId},
     "date": "${dateString}",
+    "timestamp": ${currentTimestamp},
     "emotions": ["emotion1", "emotion2"],
     "symbols": ["symbol1", "symbol2"],
+    "themes": ["theme1", "theme2"],
     "intensity": 1-10,
-    "lucidity_level": 1-5
+    "lucidity": 1-5,
+    "archetypes": ["archetype1", "archetype2"],
+    "recurring_from": [previousDreamIds],
+    "personality_impact": {
+      "dominant_trait": "trait_name",
+      "shift_direction": "positive|negative|neutral",
+      "intensity": 1-10
+    },
+    "sleep_quality": 1-10,
+    "recall_clarity": 1-10,
+    "dream_type": "transformative|nightmare|neutral|lucid|prophetic"
   }${needsEvolution ? ',' : ''}`;
 
   if (needsEvolution) {

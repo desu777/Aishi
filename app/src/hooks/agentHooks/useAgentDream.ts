@@ -29,10 +29,27 @@ interface DreamStorageData {
   dreamData: {
     id: number;
     date: string;
+    timestamp?: number;
+    // Podstawowe dane
     emotions: string[];
     symbols: string[];
+    themes?: string[];
     intensity: number;
-    lucidity_level: number;
+    lucidity: number;  // ZMIANA z lucidity_level
+    // Archetypy i wzorce  
+    archetypes?: string[];
+    recurring_from?: number[];
+    // Analiza - będzie w głównym analysis
+    // Wpływ na osobowość
+    personality_impact?: {
+      dominant_trait?: string;
+      shift_direction?: string;
+      intensity?: number;
+    };
+    // Metadane
+    sleep_quality?: number;
+    recall_clarity?: number;
+    dream_type?: string;
   };
 }
 
@@ -320,16 +337,40 @@ export function useAgentDream() {
         debugLog('No existing dreams file, starting fresh array');
       }
 
-      // 4. Create new dream entry (optimized format)
-      const newDreamEntry = {
+      // 4. Create new dream entry (optimized format) 
+      const newDreamEntry: any = {
         id: dreamStorageData.dreamData.id,
         date: dreamStorageData.dreamData.date,
+        timestamp: dreamStorageData.dreamData.timestamp || Math.floor(Date.now() / 1000),
         emotions: dreamStorageData.dreamData.emotions,
         symbols: dreamStorageData.dreamData.symbols,
         intensity: dreamStorageData.dreamData.intensity,
-        lucidity_level: dreamStorageData.dreamData.lucidity_level,
+        lucidity: dreamStorageData.dreamData.lucidity,
         ai_analysis: dreamStorageData.analysis
       };
+
+      // Add optional fields only if they exist and are not empty
+      if (dreamStorageData.dreamData.themes && dreamStorageData.dreamData.themes.length > 0) {
+        newDreamEntry.themes = dreamStorageData.dreamData.themes;
+      }
+      if (dreamStorageData.dreamData.archetypes && dreamStorageData.dreamData.archetypes.length > 0) {
+        newDreamEntry.archetypes = dreamStorageData.dreamData.archetypes;
+      }
+      if (dreamStorageData.dreamData.recurring_from && dreamStorageData.dreamData.recurring_from.length > 0) {
+        newDreamEntry.recurring_from = dreamStorageData.dreamData.recurring_from;
+      }
+      if (dreamStorageData.dreamData.personality_impact) {
+        newDreamEntry.personality_impact = dreamStorageData.dreamData.personality_impact;
+      }
+      if (dreamStorageData.dreamData.sleep_quality !== undefined) {
+        newDreamEntry.sleep_quality = dreamStorageData.dreamData.sleep_quality;
+      }
+      if (dreamStorageData.dreamData.recall_clarity !== undefined) {
+        newDreamEntry.recall_clarity = dreamStorageData.dreamData.recall_clarity;
+      }
+      if (dreamStorageData.dreamData.dream_type) {
+        newDreamEntry.dream_type = dreamStorageData.dreamData.dream_type;
+      }
 
       // 5. Append new dream to TOP of array (newest first)
       const updatedDreams = [newDreamEntry, ...existingDreams];
@@ -416,21 +457,39 @@ export function useAgentDream() {
         dreamData: {
           id: parsedAIResponse.dreamData.id,
           date: parsedAIResponse.dreamData.date,
+          timestamp: parsedAIResponse.dreamData.timestamp || Math.floor(Date.now() / 1000),
+          // Podstawowe dane
           emotions: parsedAIResponse.dreamData.emotions || [],
           symbols: parsedAIResponse.dreamData.symbols || [],
+          themes: parsedAIResponse.dreamData.themes || [],
           intensity: parsedAIResponse.dreamData.intensity || 5,
-          lucidity_level: parsedAIResponse.dreamData.lucidity_level || 1
+          lucidity: parsedAIResponse.dreamData.lucidity || 1,
+          // Archetypy i wzorce
+          archetypes: parsedAIResponse.dreamData.archetypes || [],
+          recurring_from: parsedAIResponse.dreamData.recurring_from || [],
+          // Wpływ na osobowość
+          personality_impact: parsedAIResponse.dreamData.personality_impact || undefined,
+          // Metadane
+          sleep_quality: parsedAIResponse.dreamData.sleep_quality || undefined,
+          recall_clarity: parsedAIResponse.dreamData.recall_clarity || undefined,
+          dream_type: parsedAIResponse.dreamData.dream_type || undefined
         }
       };
 
       debugLog('Dream storage data extracted', {
         dreamId: dreamStorageData.dreamData.id,
         date: dreamStorageData.dreamData.date,
+        timestamp: dreamStorageData.dreamData.timestamp,
         analysisLength: dreamStorageData.analysis.length,
         emotionsCount: dreamStorageData.dreamData.emotions.length,
         symbolsCount: dreamStorageData.dreamData.symbols.length,
+        themesCount: dreamStorageData.dreamData.themes?.length || 0,
+        archetypesCount: dreamStorageData.dreamData.archetypes?.length || 0,
         intensity: dreamStorageData.dreamData.intensity,
-        lucidity_level: dreamStorageData.dreamData.lucidity_level
+        lucidity: dreamStorageData.dreamData.lucidity,
+        dreamType: dreamStorageData.dreamData.dream_type,
+        sleepQuality: dreamStorageData.dreamData.sleep_quality,
+        recallClarity: dreamStorageData.dreamData.recall_clarity
       });
 
       // Save to storage

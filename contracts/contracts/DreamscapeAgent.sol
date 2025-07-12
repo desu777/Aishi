@@ -181,22 +181,24 @@ contract DreamscapeAgent is
         address  to
     ) external payable nonReentrant whenNotPaused returns (uint256 tokenId) {
         /* ── basic checks ── */
-        require(to != address(0),                "invalid to addr");
-        require(ownerToTokenId[to] == 0,         "wallet already has agent");
-        require(totalAgents < MAX_AGENTS,        "max supply reached");
-        require(bytes(agentName).length > 0 && bytes(agentName).length <= 32, "name length");
-        require(!nameExists[agentName],          "name exists");
-        require(msg.value >= MINTING_FEE,        "fee < 0.1 OG");
+        require(to != address(0), "!to");
+        require(ownerToTokenId[to] == 0, "exists");
+        require(totalAgents < MAX_AGENTS, "max");
+        require(bytes(agentName).length > 0 && bytes(agentName).length <= 32, "name");
+        require(!nameExists[agentName], "taken");
+        require(msg.value >= MINTING_FEE, "fee");
 
         /* ── optional proof verification ── */
         bytes32[] memory dataHashes;
         if (address(verifier) != address(0)) {
-            require(descriptions.length == proofs.length, "len mismatch");
+            require(descriptions.length == proofs.length, "len");
             PreimageProofOutput[] memory outs = verifier.verifyPreimage(proofs);
             dataHashes = new bytes32[](outs.length);
-            for (uint256 i = 0; i < outs.length; ++i) {
-                require(outs[i].isValid, "invalid proof");
+            uint256 outsLength = outs.length;
+            for (uint256 i; i < outsLength;) {
+                require(outs[i].isValid, "!proof");
                 dataHashes[i] = outs[i].dataHash;
+                unchecked { ++i; }
             }
         }
 
@@ -253,14 +255,16 @@ contract DreamscapeAgent is
         });
 
         /* ── economics ── */
-        totalAgents          += 1;
-        totalFeesCollected   += MINTING_FEE;
+        unchecked {
+            totalAgents          += 1;
+            totalFeesCollected   += MINTING_FEE;
+        }
 
         (bool sent, ) = treasury.call{value: MINTING_FEE}("");
-        require(sent, "treasury transfer failed");
+        require(sent, "!sent");
         if (msg.value > MINTING_FEE) {
             (bool refund, ) = msg.sender.call{value: msg.value - MINTING_FEE}("");
-            require(refund, "refund failed");
+            require(refund, "!refund");
         }
         
         /* ── events ── */
@@ -295,10 +299,12 @@ contract DreamscapeAgent is
         );
         */
 
-        // update counters
-        agent.dreamCount      += 1;
-        agent.lastUpdated      = block.timestamp;
-        traits.lastDreamDate   = block.timestamp;
+        // update counters (unchecked for gas optimization)
+        unchecked {
+            agent.dreamCount      += 1;
+            agent.lastUpdated      = block.timestamp;
+            traits.lastDreamDate   = block.timestamp;
+        }
 
         /* ── 1. update hierarchical memory ── */
         AgentMemory storage mem = agentMemories[tokenId];
@@ -310,7 +316,7 @@ contract DreamscapeAgent is
         /* ── 2. incremental intelligence boost every 3 dreams ── */
         if (agent.dreamCount % 3 == 0) {
             uint256 oldLvl = agent.intelligenceLevel;
-            agent.intelligenceLevel += 1;
+            unchecked { agent.intelligenceLevel += 1; }
             emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
         }
 
@@ -328,23 +334,27 @@ contract DreamscapeAgent is
 
             // ── AI-generated unique features ──
             if (impact.newFeatures.length > 0) {
-                require(impact.newFeatures.length <= 2, "max 2 features per dream");
+                require(impact.newFeatures.length <= 2, "max2");
                 
-                for (uint256 i = 0; i < impact.newFeatures.length; i++) {
-                    require(bytes(impact.newFeatures[i].name).length > 0, "feature name empty");
-                    require(impact.newFeatures[i].intensity > 0 && impact.newFeatures[i].intensity <= 100, "invalid intensity");
+                uint256 featuresLength = impact.newFeatures.length;
+                for (uint256 i; i < featuresLength;) {
+                    require(bytes(impact.newFeatures[i].name).length > 0, "!name");
+                    require(impact.newFeatures[i].intensity > 0 && impact.newFeatures[i].intensity <= 100, "!int");
                     
                     // Add timestamp and push to agent's unique features
                     UniqueFeature memory newFeature = impact.newFeatures[i];
                     newFeature.addedAt = block.timestamp;
                     traits.uniqueFeatures.push(newFeature);
+                    unchecked { ++i; }
                 }
                 
                 emit UniqueFeaturesAdded(tokenId, impact.newFeatures, traits.uniqueFeatures.length);
             }
 
-            agent.totalEvolutions += 1;
-            agent.lastEvolutionDate = block.timestamp;
+            unchecked {
+                agent.totalEvolutions += 1;
+                agent.lastEvolutionDate = block.timestamp;
+            }
 
             _checkPersonalityMilestones(tokenId, before, traits);
             _updateResponseStyle(tokenId);
@@ -366,8 +376,10 @@ contract DreamscapeAgent is
     ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
         DreamAgent storage agent = agents[tokenId];
 
-        agent.conversationCount += 1;
-        agent.lastUpdated        = block.timestamp;
+        unchecked {
+            agent.conversationCount += 1;
+            agent.lastUpdated        = block.timestamp;
+        }
 
         /* ── 1. update hierarchical memory ── */
         AgentMemory storage mem = agentMemories[tokenId];
@@ -379,7 +391,7 @@ contract DreamscapeAgent is
         /* ── 2. intelligence boost every 10th conversation ── */
         if (agent.conversationCount % 10 == 0) {
             uint256 oldLvl = agent.intelligenceLevel;
-            agent.intelligenceLevel += 1;
+            unchecked { agent.intelligenceLevel += 1; }
             emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
         }
 
@@ -411,14 +423,14 @@ contract DreamscapeAgent is
         mem.lastConvMonthlyHash  = convMonthlyHash;
         mem.lastConsolidation    = block.timestamp;
 
-        // streak logic
-        consolidationStreak[tokenId] += 1;
+        // streak logic (unchecked safe increment)
+        unchecked { consolidationStreak[tokenId] += 1; }
         uint256 bonus = _calculateConsolidationBonus(tokenId);
         string memory special = _checkConsolidationMilestones(tokenId);
 
         DreamAgent storage agent = agents[tokenId];
         uint256 oldLvl = agent.intelligenceLevel;
-        agent.intelligenceLevel += bonus;
+        unchecked { agent.intelligenceLevel += bonus; }
 
         emit ConsolidationCompleted(tokenId, _formatPeriod(month, year), bonus, special);
         emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
@@ -445,7 +457,7 @@ contract DreamscapeAgent is
             pendingRewards[tokenId].yearlyReflection = false;
             DreamAgent storage agent = agents[tokenId];
             uint256 oldLvl = agent.intelligenceLevel;
-            agent.intelligenceLevel += 5;
+            unchecked { agent.intelligenceLevel += 5; }
             emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
         }
     }
@@ -695,7 +707,7 @@ contract DreamscapeAgent is
             agents[tokenId].owner == msg.sender ||
             hasRole(ADMIN_ROLE, msg.sender)     ||
             _isAuthorizedUser(tokenId, msg.sender),
-            "not authorised"
+            "!auth"
         );
         _;
     }
@@ -703,7 +715,7 @@ contract DreamscapeAgent is
     modifier onlyOwnerOrAdmin(uint256 tokenId) {
         require(
             agents[tokenId].owner == msg.sender || hasRole(ADMIN_ROLE, msg.sender),
-            "owner/admin only"
+            "!owner"
         );
         _;
     }
@@ -717,18 +729,20 @@ contract DreamscapeAgent is
     /* ───────────────────────────────────────── PRIVATE: PERSONALITY ──────── */
 
     function _validatePersonalityImpact(PersonalityImpact calldata i) internal pure {
-        require(i.evolutionWeight > 0 && i.evolutionWeight <= 100, "weight out of range");
-        require(bytes(i.moodShift).length > 0,                   "empty mood");
+        require(i.evolutionWeight > 0 && i.evolutionWeight <= 100, "weight");
+        require(bytes(i.moodShift).length > 0, "mood");
         require(_inRange(i.creativityChange)   && _inRange(i.analyticalChange) &&
                 _inRange(i.empathyChange)      && _inRange(i.intuitionChange)  &&
-                _inRange(i.resilienceChange)   && _inRange(i.curiosityChange),  unicode"Δ out of range");
+                _inRange(i.resilienceChange)   && _inRange(i.curiosityChange), "range");
         
         // Validate unique features (max 2 per dream)
-        require(i.newFeatures.length <= 2, "max 2 features per impact");
-        for (uint256 j = 0; j < i.newFeatures.length; j++) {
-            require(bytes(i.newFeatures[j].name).length > 0, "feature name empty");
-            require(bytes(i.newFeatures[j].description).length > 0, "feature description empty");
-            require(i.newFeatures[j].intensity > 0 && i.newFeatures[j].intensity <= 100, "feature intensity out of range");
+        require(i.newFeatures.length <= 2, "max2");
+        uint256 featuresLength = i.newFeatures.length;
+        for (uint256 j; j < featuresLength;) {
+            require(bytes(i.newFeatures[j].name).length > 0, "!name");
+            require(bytes(i.newFeatures[j].description).length > 0, "!desc");
+            require(i.newFeatures[j].intensity > 0 && i.newFeatures[j].intensity <= 100, "!int");
+            unchecked { ++j; }
         }
     }
     function _inRange(int8 x) private pure returns (bool) { return x >= -10 && x <= 10; }

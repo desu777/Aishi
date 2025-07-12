@@ -241,9 +241,14 @@ export class DreamContextBuilder {
             date: dream.date || (dream.timestamp ? new Date(dream.timestamp * 1000).toLocaleDateString() : 'unknown'),
             emotions: dream.emotions,
             symbols: dream.symbols,
+            themes: dream.themes,
             intensity: dream.intensity,
-            lucidity_level: dream.lucidity_level,
-            ai_analysis: dream.ai_analysis?.substring(0, 50) + '...'
+            lucidity: dream.lucidity || dream.lucidity_level, // backward compatibility
+            archetypes: dream.archetypes,
+            dream_type: dream.dream_type,
+            sleep_quality: dream.sleep_quality,
+            recall_clarity: dream.recall_clarity,
+            ai_analysis: dream.ai_analysis?.substring(0, 50) + '...' || dream.analysis?.substring(0, 50) + '...'
           }))
         }
       });

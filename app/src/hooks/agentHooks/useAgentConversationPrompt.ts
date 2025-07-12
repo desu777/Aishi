@@ -245,51 +245,57 @@ function buildDominantSymbolsSection(context: ConversationContext): string {
  * Buduje sekcję pamięci i historii - ROZSZERZONA z lepszym łączeniem kontekstu
  */
 function buildMemorySection(context: ConversationContext): string {
-  const memoryText = `MEMORY ACCESS: ${context.memoryAccess.memoryDepth} | Intelligence: ${context.agentProfile.intelligenceLevel} | Together: ${context.agentProfile.dreamCount} dreams, ${context.agentProfile.conversationCount} talks`;
+  let memorySection = `MEMORY ACCESS: ${context.memoryAccess.memoryDepth} | Intelligence: ${context.agentProfile.intelligenceLevel} | Together: ${context.agentProfile.dreamCount} dreams, ${context.agentProfile.conversationCount} talks`;
 
   if (context.historicalData.dailyDreams.length === 0 && 
       context.historicalData.recentConversations.length === 0) {
-    return `${memoryText} | Just starting together!`;
+    return `${memorySection} | Just starting together!`;
   }
 
-  let historyText = memoryText;
-  
-  // 🆕 WSZYSTKIE RECENT DREAMS - bez ograniczeń
+  // Dodaj wszystkie poprzednie sny
   if (context.historicalData.dailyDreams.length > 0) {
-    historyText += `\n\nALL RECENT DREAMS:`;
+    memorySection += `\n\nALL PREVIOUS DREAMS:`;
     context.historicalData.dailyDreams.forEach(dream => {
-      const dreamDate = dream.date || (dream.timestamp ? new Date(dream.timestamp * 1000).toLocaleDateString('en-US') : 'unknown');
-      historyText += `\nDream #${dream.id} (${dreamDate}): ${dream.emotions?.join(',') || 'neutral'} | ${dream.symbols?.join(',') || 'none'} | "${(dream.ai_analysis || dream.content || 'No analysis')}"`;
+      const dreamDate = dream.date || (dream.timestamp ? new Date(dream.timestamp * 1000).toLocaleDateString('pl-PL') : 'unknown');
+      const themes = dream.themes?.join(',') || 'none';
+      const archetypes = dream.archetypes?.join(',') || 'none';
+      const dreamType = dream.dream_type || 'neutral';
+      const sleepQuality = dream.sleep_quality || 'unknown';
+      const recallClarity = dream.recall_clarity || 'unknown';
+      const intensity = dream.intensity || 5;
+      const lucidity = dream.lucidity || dream.lucidity_level || 1; // backward compatibility
+      
+      memorySection += `\nDream #${dream.id} (${dreamDate}): ${dream.emotions?.join(',') || 'neutral'} | ${dream.symbols?.join(',') || 'none'} | Themes: ${themes} | Archetypes: ${archetypes} | Type: ${dreamType} | Quality: ${sleepQuality}/10 | Clarity: ${recallClarity}/10 | Intensity: ${intensity}/10 | Lucidity: ${lucidity}/5 | "${(dream.ai_analysis || dream.analysis || dream.content || 'No analysis')}"`;
     });
   }
   
   // 🆕 WSZYSTKIE RECENT CONVERSATIONS - bez ograniczeń  
   if (context.historicalData.recentConversations.length > 0) {
-    historyText += `\n\nALL RECENT TALKS:`;
+    memorySection += `\n\nALL RECENT TALKS:`;
     context.historicalData.recentConversations.forEach(conv => {
       const convDate = conv.date || (conv.timestamp ? new Date(conv.timestamp * 1000).toLocaleDateString('en-US') : 'unknown');
-      historyText += `\n${convDate}: ${conv.topic || 'chat'} (${conv.emotional_tone || 'neutral'}) - ${(conv.analysis || conv.conversation_type || 'talked')}`;
+      memorySection += `\n${convDate}: ${conv.topic || 'chat'} (${conv.emotional_tone || 'neutral'}) - ${(conv.analysis || conv.conversation_type || 'talked')}`;
     });
   }
 
   // 🆕 WSZYSTKIE MONTHLY CONVERSATIONS - dodane
   if (context.historicalData.monthlyConversations.length > 0) {
-    historyText += `\n\nALL MONTHLY CONVERSATIONS:`;
+    memorySection += `\n\nALL MONTHLY CONVERSATIONS:`;
     context.historicalData.monthlyConversations.forEach(conv => {
       const convDate = conv.date || (conv.timestamp ? new Date(conv.timestamp * 1000).toLocaleDateString('en-US') : 'unknown');
-      historyText += `\n${convDate}: ${conv.topic || 'monthly summary'} (${conv.emotional_tone || 'neutral'}) - ${(conv.analysis || conv.conversation_type || 'monthly chat')}`;
+      memorySection += `\n${convDate}: ${conv.topic || 'monthly summary'} (${conv.emotional_tone || 'neutral'}) - ${(conv.analysis || conv.conversation_type || 'monthly chat')}`;
     });
   }
 
   // 🆕 WSZYSTKIE MONTHLY THEMES - bez ograniczeń
   if (context.historicalData.monthlyConsolidations.length > 0) {
-    historyText += `\n\nALL MONTHLY THEMES:`;
+    memorySection += `\n\nALL MONTHLY THEMES:`;
     context.historicalData.monthlyConsolidations.forEach(consolidation => {
-      historyText += `\n${consolidation.month}/${consolidation.year}: ${consolidation.dominant_themes?.join(', ') || 'mixed themes'} (${consolidation.total_dreams || 0} dreams)`;
+      memorySection += `\n${consolidation.month}/${consolidation.year}: ${consolidation.dominant_themes?.join(', ') || 'mixed themes'} (${consolidation.total_dreams || 0} dreams)`;
     });
   }
 
-  return historyText;
+  return memorySection;
 }
 
 /**
