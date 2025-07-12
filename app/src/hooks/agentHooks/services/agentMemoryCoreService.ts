@@ -333,7 +333,8 @@ export const consolidateYearWithLLM = async (
   monthlyConversationConsolidations: MonthlyConversationConsolidation[],
   year: number,
   agentPersonality: any,
-  agentData: any
+  agentData: any,
+  walletAddress: string
 ): Promise<{ success: boolean; data?: YearlyMemoryCore; error?: string }> => {
   try {
     debugLog('Starting yearly consolidation with LLM', { 
@@ -359,7 +360,7 @@ export const consolidateYearWithLLM = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        walletAddress: 'memory_core_service', // Placeholder wallet address
+        walletAddress: walletAddress, // Real wallet address
         query: prompt
       })
     });

@@ -256,7 +256,8 @@ export const consolidateDreamsWithLLM = async (
   dreams: any[],
   month: number,
   year: number,
-  agentPersonality: any
+  agentPersonality: any,
+  walletAddress: string
 ): Promise<{ success: boolean; data?: MonthlyDreamConsolidation; error?: string }> => {
   try {
     debugLog('Starting dream consolidation with LLM', { 
@@ -276,7 +277,7 @@ export const consolidateDreamsWithLLM = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        walletAddress: 'consolidation_service', // Placeholder wallet address
+        walletAddress: walletAddress, // Real wallet address
         query: prompt
       })
     });
@@ -325,7 +326,8 @@ export const consolidateConversationsWithLLM = async (
   conversations: any[],
   month: number,
   year: number,
-  agentPersonality: any
+  agentPersonality: any,
+  walletAddress: string
 ): Promise<{ success: boolean; data?: MonthlyConversationConsolidation; error?: string }> => {
   try {
     debugLog('Starting conversation consolidation with LLM', { 
@@ -345,7 +347,7 @@ export const consolidateConversationsWithLLM = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        walletAddress: 'consolidation_service', // Placeholder wallet address
+        walletAddress: walletAddress, // Real wallet address
         query: prompt
       })
     });

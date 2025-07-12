@@ -46,7 +46,7 @@ interface MemoryCoreState {
 }
 
 export function useAgentMemoryCore(tokenId?: number) {
-  const { isConnected } = useWallet();
+  const { isConnected, address } = useWallet();
   const { downloadFile } = useStorageDownload();
   const { 
     agentData, 
@@ -305,7 +305,8 @@ export function useAgentMemoryCore(tokenId?: number) {
         monthlyConversationConsolidations,
         currentYear,
         personalityTraits,
-        agentData
+        agentData,
+        address!
       );
 
       if (!llmResult.success || !llmResult.data) {

@@ -6,7 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
 import { useAgentMint } from '../../hooks/agentHooks';
 import { useAgentRead } from '../../hooks/agentHooks';
-import { Sparkles, Info, Moon, MessageCircle, Zap, Database, TrendingUp, Gem } from 'lucide-react';
+import { Sparkles, Info, Moon, MessageCircle, Zap, Database, TrendingUp, Gem, TestTube } from 'lucide-react';
 
 // Import nowych komponentów
 import MintSection from './components/MintSection';
@@ -16,6 +16,7 @@ import AgentChatSection from './components/AgentChatSection';
 import ConsolidationTestSection from './components/ConsolidationTestSection';
 import AgentStatsSection from './components/AgentStatsSection';
 import MemoryCoreSection from './components/MemoryCoreSection';
+import ConsolidationTestMode from './components/ConsolidationTestMode';
 
 export default function AgentTest() {
   const { theme, debugLog } = useTheme();
@@ -56,8 +57,8 @@ export default function AgentTest() {
     effectiveTokenId
   } = useAgentRead();
   
-  // Mode state - dodano 'memory-core'
-  const [mode, setMode] = useState<'mint' | 'info' | 'dream' | 'chat' | 'consolidation' | 'stats' | 'memory-core'>('mint');
+  // Mode state - dodano 'memory-core' i 'test-mode'
+  const [mode, setMode] = useState<'mint' | 'info' | 'dream' | 'chat' | 'consolidation' | 'stats' | 'memory-core' | 'test-mode'>('mint');
   
   // Debug log on start
   debugLog('Agent Test page loaded');
@@ -265,6 +266,26 @@ export default function AgentTest() {
                   <Sparkles size={16} />
                   Statistics
                 </button>
+                
+                <button
+                  onClick={() => setMode('test-mode')}
+                  style={{
+                    backgroundColor: mode === 'test-mode' ? '#FF6B6B' : theme.bg.panel,
+                    color: mode === 'test-mode' ? 'white' : theme.text.primary,
+                    border: `1px solid ${mode === 'test-mode' ? '#FF6B6B' : theme.border}`,
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <TestTube size={16} />
+                  Test Mode
+                </button>
               </div>
             </div>
 
@@ -337,6 +358,13 @@ export default function AgentTest() {
             {mode === 'stats' && (
           <AgentStatsSection
             tokenId={effectiveTokenId}
+          />
+        )}
+
+            {mode === 'test-mode' && (
+          <ConsolidationTestMode
+            hasAgent={readHasAgent}
+            effectiveTokenId={effectiveTokenId}
           />
         )}
       </div>

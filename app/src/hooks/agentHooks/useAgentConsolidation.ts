@@ -59,7 +59,7 @@ interface ConsolidationState {
 }
 
 export function useAgentConsolidation(tokenId?: number) {
-  const { isConnected } = useWallet();
+  const { isConnected, address } = useWallet();
   const { downloadFile } = useStorageDownload();
   const { 
     agentData, 
@@ -321,10 +321,10 @@ export function useAgentConsolidation(tokenId?: number) {
 
       const [dreamResult, convResult] = await Promise.all([
         monthlyDreams.length > 0 
-          ? consolidateDreamsWithLLM(monthlyDreams, currentMonth, currentYear, personalityTraits)
+          ? consolidateDreamsWithLLM(monthlyDreams, currentMonth, currentYear, personalityTraits, address!)
           : Promise.resolve({ success: true, data: null }),
         monthlyConversations.length > 0 
-          ? consolidateConversationsWithLLM(monthlyConversations, currentMonth, currentYear, personalityTraits)
+          ? consolidateConversationsWithLLM(monthlyConversations, currentMonth, currentYear, personalityTraits, address!)
           : Promise.resolve({ success: true, data: null })
       ]);
 

@@ -14,6 +14,7 @@ export { useAgentConversation } from './useAgentConversation';
 export { useAgentConsolidation } from './useAgentConsolidation';
 export { useAgentStats } from './useAgentStats';
 export { useAgentMemoryCore } from './useAgentMemoryCore';
+export { useConsolidationTestMode } from './useConsolidationTestMode';
 
 // Language detection utilities
 export { 
