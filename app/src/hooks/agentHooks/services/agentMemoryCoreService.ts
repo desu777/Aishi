@@ -291,7 +291,7 @@ export const consolidateYearWithLLM = async (
       totalConversations: memoryCoreData.yearly_overview.total_conversations,
       evolutionStage: memoryCoreData.yearly_overview.agent_evolution_stage,
       consciousnessLevel: memoryCoreData.final_metrics.consciousness_level,
-      yearlyEssence: memoryCoreData.yearly_essence.substring(0, 100) + '...'
+      yearlyEssenceLength: memoryCoreData.yearly_essence.length
     });
 
     return { success: true, data: memoryCoreData };

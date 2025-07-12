@@ -319,15 +319,17 @@ export class DreamContextBuilder {
         this.debugLog('Skipping daily dreams - hash is empty or null');
       }
 
-      // 2. Download monthly consolidations based on access level
+      // 2. Download monthly consolidations based on access level OR deep memory active
+      const isDeepMemoryActive = process.env.MEMORY_DEEP_ACTIVE === 'true';
       this.debugLog('Checking lastDreamMonthlyHash', {
         hash: memory.lastDreamMonthlyHash,
         isEmpty: memory.lastDreamMonthlyHash === emptyHash,
         monthsAccessible,
-        hasAccess: monthsAccessible > 1
+        hasAccess: monthsAccessible > 1,
+        isDeepMemoryActive
       });
 
-      if (memory.lastDreamMonthlyHash && memory.lastDreamMonthlyHash !== emptyHash && monthsAccessible > 1) {
+      if (memory.lastDreamMonthlyHash && memory.lastDreamMonthlyHash !== emptyHash && (monthsAccessible > 1 || isDeepMemoryActive)) {
         this.debugLog('Downloading monthly consolidations', memory.lastDreamMonthlyHash);
         const monthlyResult = await downloadFile(memory.lastDreamMonthlyHash);
         this.debugLog('Monthly consolidations download result', {
@@ -339,9 +341,14 @@ export class DreamContextBuilder {
         if (monthlyResult.success && monthlyResult.data) {
           const monthlyData = this.parseJsonData(monthlyResult.data);
           if (monthlyData && Array.isArray(monthlyData)) {
-            // WSZYSTKIE dane - bez filtrowania
+            // WSZYSTKIE dane - bez filtrowania (UNIFIED SCHEMA sorting)
             result.monthlyConsolidations = monthlyData
-              .sort((a, b) => b.consolidation_date - a.consolidation_date);
+              .sort((a, b) => {
+                // Sort by year and month (newest first) - UNIFIED SCHEMA compatible
+                const aTime = (a.year || 2024) * 12 + (a.month || 1);
+                const bTime = (b.year || 2024) * 12 + (b.month || 1);
+                return bTime - aTime;
+              });
             this.debugLog('Monthly consolidations loaded', { count: result.monthlyConsolidations.length });
           }
         }
@@ -349,19 +356,20 @@ export class DreamContextBuilder {
         this.debugLog('Skipping monthly consolidations', {
           reason: !memory.lastDreamMonthlyHash ? 'no hash' :
                   memory.lastDreamMonthlyHash === emptyHash ? 'empty hash' :
-                  monthsAccessible <= 1 ? 'insufficient access level' : 'unknown'
+                  (!isDeepMemoryActive && monthsAccessible <= 1) ? 'insufficient access level' : 'unknown'
         });
       }
 
-      // 3. Download yearly core (memory core) if accessible
+      // 3. Download yearly core (memory core) if accessible OR deep memory active
       this.debugLog('Checking memoryCoreHash', {
         hash: memory.memoryCoreHash,
         isEmpty: memory.memoryCoreHash === emptyHash,
         monthsAccessible,
-        hasAccess: monthsAccessible >= 12
+        hasAccess: monthsAccessible >= 12,
+        isDeepMemoryActive
       });
 
-      if (memory.memoryCoreHash && memory.memoryCoreHash !== emptyHash && monthsAccessible >= 12) {
+      if (memory.memoryCoreHash && memory.memoryCoreHash !== emptyHash && (monthsAccessible >= 12 || isDeepMemoryActive)) {
         this.debugLog('Downloading yearly core', memory.memoryCoreHash);
         const coreResult = await downloadFile(memory.memoryCoreHash);
         this.debugLog('Yearly core download result', {
@@ -381,7 +389,7 @@ export class DreamContextBuilder {
         this.debugLog('Skipping yearly core', {
           reason: !memory.memoryCoreHash ? 'no hash' :
                   memory.memoryCoreHash === emptyHash ? 'empty hash' :
-                  monthsAccessible < 12 ? 'insufficient access level' : 'unknown'
+                  (!isDeepMemoryActive && monthsAccessible < 12) ? 'insufficient access level' : 'unknown'
         });
       }
 

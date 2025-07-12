@@ -352,21 +352,88 @@ function buildMemorySection(context: ConversationContext): string {
     });
   }
 
-  // 🆕 WSZYSTKIE MONTHLY CONVERSATIONS - dodane
+  // 🆕 WSZYSTKIE MONTHLY CONVERSATIONS - dodane (UNIFIED SCHEMA)
   if (context.historicalData.monthlyConversations.length > 0) {
-    memorySection += `\n\nALL MONTHLY CONVERSATIONS:`;
+    memorySection += `\n\nALL MONTHLY CONVERSATION CONSOLIDATIONS:`;
     context.historicalData.monthlyConversations.forEach(conv => {
-      const convDate = conv.date || (conv.timestamp ? new Date(conv.timestamp * 1000).toLocaleDateString('en-US') : 'unknown');
-      memorySection += `\n${convDate}: ${conv.topic || 'monthly summary'} (${conv.emotional_tone || 'neutral'}) - ${(conv.analysis || conv.conversation_type || 'monthly chat')}`;
+      // UNIFIED SCHEMA: dominant.topics, dominant.types, dominant.emotional_tones
+      const topics = conv.dominant?.topics?.join(', ') || 'mixed topics';
+      const types = conv.dominant?.types?.join(', ') || 'mixed types';
+      const emotionalTones = conv.dominant?.emotional_tones?.join(', ') || 'mixed tones';
+      const essence = conv.monthly_essence || 'no essence';
+      const trustLevel = conv.relationship_evolution?.trust_level || 'unknown';
+      const primaryFocus = conv.growth_patterns?.primary_focus || 'unknown';
+      
+      memorySection += `\n${conv.period || conv.month + '/' + conv.year}: Conversations(${conv.total_conversations || 0}) | Topics: ${topics} | Types: ${types} | Tones: ${emotionalTones} | Trust: ${trustLevel}/10 | Focus: ${primaryFocus} | Essence: "${essence}"`;
     });
   }
 
-  // 🆕 WSZYSTKIE MONTHLY THEMES - bez ograniczeń
+  // 🆕 WSZYSTKIE MONTHLY THEMES - bez ograniczeń (UNIFIED SCHEMA)
   if (context.historicalData.monthlyConsolidations.length > 0) {
-    memorySection += `\n\nALL MONTHLY THEMES:`;
+    memorySection += `\n\nALL MONTHLY DREAM CONSOLIDATIONS:`;
     context.historicalData.monthlyConsolidations.forEach(consolidation => {
-      memorySection += `\n${consolidation.month}/${consolidation.year}: ${consolidation.dominant_themes?.join(', ') || 'mixed themes'} (${consolidation.total_dreams || 0} dreams)`;
+      // UNIFIED SCHEMA: dominant.themes, dominant.emotions, dominant.symbols
+      const themes = consolidation.dominant?.themes?.join(', ') || 'mixed themes';
+      const emotions = consolidation.dominant?.emotions?.join(', ') || 'mixed emotions';
+      const symbols = consolidation.dominant?.symbols?.join(', ') || 'mixed symbols';
+      const essence = consolidation.monthly_essence || 'no essence';
+      
+      memorySection += `\n${consolidation.period || consolidation.month + '/' + consolidation.year}: Dreams(${consolidation.total_dreams || 0}) | Themes: ${themes} | Emotions: ${emotions} | Symbols: ${symbols} | Essence: "${essence}"`;
     });
+  }
+
+  // 🆕 YEARLY MEMORY CORE - pełne dane rocznej konsolidacji
+  if (context.historicalData.yearlyCore) {
+    // YEARLY CORE is stored as ARRAY in files, get first element
+    const core = Array.isArray(context.historicalData.yearlyCore) ? 
+      context.historicalData.yearlyCore[0] : 
+      context.historicalData.yearlyCore;
+    memorySection += `\n\nYEARLY MEMORY CORE:`;
+    
+    // Przegląd roku
+    if (core.yearly_overview) {
+      memorySection += `\n- Year ${core.year}: ${core.yearly_overview.total_dreams || 0} dreams, ${core.yearly_overview.total_conversations || 0} conversations (${core.yearly_overview.agent_evolution_stage || 'developing'})`;
+    }
+    
+    // Główne wzorce transformacji
+    if (core.major_patterns) {
+      const patterns = core.major_patterns;
+      memorySection += `\n- Evolution: Dreams(${patterns.dream_evolution || 'growing'}) | Conversations(${patterns.conversation_evolution || 'deepening'}) | Relationship(${patterns.relationship_evolution || 'bonding'}) | Consciousness(${patterns.consciousness_evolution || 'expanding'})`;
+    }
+    
+    // Kamienie milowe
+    if (core.milestones) {
+      const personality = core.milestones.personality?.join(', ') || 'developing';
+      const consciousness = core.milestones.consciousness?.join(', ') || 'awakening';
+      const relationship = core.milestones.relationship?.join(', ') || 'building';
+      memorySection += `\n- Milestones: Personality(${personality}) | Consciousness(${consciousness}) | Relationship(${relationship})`;
+    }
+    
+    // Kluczowe transformacje
+    if (core.transformations && Array.isArray(core.transformations)) {
+      memorySection += `\n- Key Transformations:`;
+      core.transformations.forEach(transform => {
+        memorySection += ` ${transform.period}(${transform.type}:${transform.trigger}→${transform.impact})`;
+      });
+    }
+    
+    // Skrystalizowana mądrość
+    if (core.wisdom_crystallization) {
+      const insights = core.wisdom_crystallization.core_insights?.join('; ') || 'discovering wisdom';
+      const philosophy = core.wisdom_crystallization.life_philosophy || 'evolving philosophy';
+      memorySection += `\n- Wisdom: "${insights}" | Philosophy: ${philosophy}`;
+    }
+    
+    // Esencja roku
+    if (core.yearly_essence) {
+      memorySection += `\n- Essence: "${core.yearly_essence}"`;
+    }
+    
+    // Końcowe metryki
+    if (core.final_metrics) {
+      const metrics = core.final_metrics;
+      memorySection += `\n- Current State: Consciousness(${metrics.consciousness_level || 'unknown'}/100) | Integration(${metrics.integration_score || 'unknown'}/100) | Wisdom(${metrics.wisdom_depth || 'unknown'}/100) | Growth(${metrics.growth_velocity || 'steady'})`;
+    }
   }
 
   return memorySection;

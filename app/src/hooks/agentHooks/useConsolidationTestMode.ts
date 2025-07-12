@@ -278,10 +278,14 @@ export function useConsolidationTestMode(tokenId?: number) {
       debugLog(`Generating ${mode} mock data`);
 
       if (mode === 'monthly') {
-        // Generate current month mock data
+        // Generate PREVIOUS month mock data (cannot consolidate current month)
         const currentDate = new Date();
-        const month = currentDate.getMonth() + 1;
-        const year = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11, convert to 1-12
+        const currentYear = currentDate.getFullYear();
+        
+        // Calculate previous month (handle January -> December of previous year)
+        const month = currentMonth === 1 ? 12 : currentMonth - 1;
+        const year = currentMonth === 1 ? currentYear - 1 : currentYear;
 
         const dreams: MockDream[] = Array.from({ length: 15 }, (_, i) => ({
           id: i + 1,

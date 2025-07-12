@@ -292,7 +292,21 @@ export class ConversationContextBuilder {
       currentConvDailyHash: memory.currentConvDailyHash,
       lastDreamMonthlyHash: memory.lastDreamMonthlyHash,
       lastConvMonthlyHash: memory.lastConvMonthlyHash,
-      monthsAccessible
+      monthsAccessible,
+      // WAGMI V2 DEBUG: Check hash formats
+      hashLengths: {
+        memoryCoreHash: memory.memoryCoreHash?.length,
+        dreamDaily: memory.currentDreamDailyHash?.length,
+        convDaily: memory.currentConvDailyHash?.length,
+        dreamMonthly: memory.lastDreamMonthlyHash?.length,
+        convMonthly: memory.lastConvMonthlyHash?.length
+      },
+      emptyHashCheck: {
+        memoryCoreEmpty: memory.memoryCoreHash === '0x0000000000000000000000000000000000000000000000000000000000000000',
+        dreamDailyEmpty: memory.currentDreamDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000',
+        dreamMonthlyEmpty: memory.lastDreamMonthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000',
+        convMonthlyEmpty: memory.lastConvMonthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000'
+      }
     });
 
     const result = {
@@ -326,12 +340,28 @@ export class ConversationContextBuilder {
         }
       }
 
-      // 3. Download monthly dream consolidations (if months access > 1)
-      if (memory.lastDreamMonthlyHash && memory.lastDreamMonthlyHash !== emptyHash && monthsAccessible > 1) {
+      // 3. Download monthly dream consolidations (if months access > 1 OR deep memory active)
+      const isDeepMemoryActive = process.env.MEMORY_DEEP_ACTIVE === 'true';
+      if (memory.lastDreamMonthlyHash && memory.lastDreamMonthlyHash !== emptyHash && (monthsAccessible > 1 || isDeepMemoryActive)) {
         this.debugLog('Downloading monthly dream consolidations', { hash: memory.lastDreamMonthlyHash });
         const monthlyResult = await downloadFile(memory.lastDreamMonthlyHash);
         if (monthlyResult.success && monthlyResult.data) {
           const monthlyData = this.parseJsonData(monthlyResult.data);
+          this.debugLog('Monthly dream consolidations parsed', { 
+            isArray: Array.isArray(monthlyData),
+            dataType: typeof monthlyData,
+            dataLength: monthlyData?.length,
+            firstItem: monthlyData?.[0] ? {
+              month: monthlyData[0].month,
+              year: monthlyData[0].year,
+              period: monthlyData[0].period,
+              total_dreams: monthlyData[0].total_dreams,
+              hasDominant: !!monthlyData[0].dominant,
+              dominantKeys: monthlyData[0].dominant ? Object.keys(monthlyData[0].dominant) : [],
+              hasEssence: !!monthlyData[0].monthly_essence
+            } : null
+          });
+          
           if (Array.isArray(monthlyData)) {
             result.monthlyConsolidations = monthlyData; // WSZYSTKIE dane - bez filtrowania
             this.debugLog('Monthly dream consolidations loaded', { count: result.monthlyConsolidations.length });
@@ -339,8 +369,8 @@ export class ConversationContextBuilder {
         }
       }
 
-      // 4. Download monthly conversation consolidations (if months access > 1)
-      if (memory.lastConvMonthlyHash && memory.lastConvMonthlyHash !== emptyHash && monthsAccessible > 1) {
+      // 4. Download monthly conversation consolidations (if months access > 1 OR deep memory active)
+      if (memory.lastConvMonthlyHash && memory.lastConvMonthlyHash !== emptyHash && (monthsAccessible > 1 || isDeepMemoryActive)) {
         this.debugLog('Downloading monthly conversation consolidations', { hash: memory.lastConvMonthlyHash });
         const monthlyConvResult = await downloadFile(memory.lastConvMonthlyHash);
         if (monthlyConvResult.success && monthlyConvResult.data) {
@@ -352,12 +382,33 @@ export class ConversationContextBuilder {
         }
       }
 
-      // 5. Download yearly core (if months access >= 12)
-      if (memory.memoryCoreHash && memory.memoryCoreHash !== emptyHash && monthsAccessible >= 12) {
+      // 5. Download yearly core (if months access >= 12 OR deep memory active)
+      if (memory.memoryCoreHash && memory.memoryCoreHash !== emptyHash && (monthsAccessible >= 12 || isDeepMemoryActive)) {
         this.debugLog('Downloading yearly core', { hash: memory.memoryCoreHash });
         const coreResult = await downloadFile(memory.memoryCoreHash);
         if (coreResult.success && coreResult.data) {
           result.yearlyCore = this.parseJsonData(coreResult.data);
+          this.debugLog('Yearly core parsed', { 
+            hasData: !!result.yearlyCore,
+            isArray: Array.isArray(result.yearlyCore),
+            dataType: typeof result.yearlyCore,
+            dataLength: result.yearlyCore?.length,
+            firstItem: Array.isArray(result.yearlyCore) && result.yearlyCore[0] ? {
+              year: result.yearlyCore[0].year,
+              agent_id: result.yearlyCore[0].agent_id,
+              hasYearlyOverview: !!result.yearlyCore[0].yearly_overview,
+              hasMajorPatterns: !!result.yearlyCore[0].major_patterns,
+              hasMilestones: !!result.yearlyCore[0].milestones,
+              hasWisdom: !!result.yearlyCore[0].wisdom_crystallization,
+              hasEssence: !!result.yearlyCore[0].yearly_essence,
+              hasFinalMetrics: !!result.yearlyCore[0].final_metrics
+            } : (result.yearlyCore ? {
+              year: result.yearlyCore.year,
+              agent_id: result.yearlyCore.agent_id,
+              hasYearlyOverview: !!result.yearlyCore.yearly_overview,
+              hasMajorPatterns: !!result.yearlyCore.major_patterns
+            } : null)
+          });
           this.debugLog('Yearly core loaded', { hasData: !!result.yearlyCore });
         }
       }

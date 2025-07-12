@@ -165,25 +165,71 @@ function buildMemorySection(context: DreamContext): string {
     });
   }
   
-  // Dodaj wszystkie miesięczne konsolidacje
+  // Dodaj wszystkie miesięczne konsolidacje (UNIFIED SCHEMA)
   if (context.historicalData.monthlyConsolidations.length > 0) {
-    memorySection += `\n\nALL MONTHLY CONSOLIDATIONS:`;
+    memorySection += `\n\nALL MONTHLY DREAM CONSOLIDATIONS:`;
     context.historicalData.monthlyConsolidations.forEach(consolidation => {
-      memorySection += `\n${consolidation.month}/${consolidation.year}: ${consolidation.dominant_themes?.join(', ') || 'mixed themes'} (${consolidation.total_dreams || 0} dreams)`;
+      // UNIFIED SCHEMA: dominant.themes, dominant.emotions, dominant.symbols
+      const themes = consolidation.dominant?.themes?.join(', ') || 'mixed themes';
+      const emotions = consolidation.dominant?.emotions?.join(', ') || 'mixed emotions';
+      const symbols = consolidation.dominant?.symbols?.join(', ') || 'mixed symbols';
+      const essence = consolidation.monthly_essence || 'no essence';
+      
+      memorySection += `\n${consolidation.period || consolidation.month + '/' + consolidation.year}: Dreams(${consolidation.total_dreams || 0}) | Themes: ${themes} | Emotions: ${emotions} | Symbols: ${symbols} | Essence: "${essence}"`;
     });
   }
   
-  // Dodaj yearly core jeśli istnieje
+  // 🆕 YEARLY MEMORY CORE - pełne dane rocznej konsolidacji
   if (context.historicalData.yearlyCore) {
-    memorySection += `\n\nYEARLY CORE: Deep personality patterns and growth from past year`;
+    // YEARLY CORE is stored as ARRAY in files, get first element
+    const core = Array.isArray(context.historicalData.yearlyCore) ? 
+      context.historicalData.yearlyCore[0] : 
+      context.historicalData.yearlyCore;
+    memorySection += `\n\nYEARLY MEMORY CORE:`;
+    
+    // Przegląd roku
+    if (core.yearly_overview) {
+      memorySection += `\n- Year ${core.year}: ${core.yearly_overview.total_dreams || 0} dreams, ${core.yearly_overview.total_conversations || 0} conversations (${core.yearly_overview.agent_evolution_stage || 'developing'})`;
+    }
+    
+    // Główne wzorce transformacji
+    if (core.major_patterns) {
+      const patterns = core.major_patterns;
+      memorySection += `\n- Evolution: Dreams(${patterns.dream_evolution || 'growing'}) | Conversations(${patterns.conversation_evolution || 'deepening'}) | Relationship(${patterns.relationship_evolution || 'bonding'}) | Consciousness(${patterns.consciousness_evolution || 'expanding'})`;
+    }
+    
+    // Kamienie milowe
+    if (core.milestones) {
+      const personality = core.milestones.personality?.join(', ') || 'developing';
+      const consciousness = core.milestones.consciousness?.join(', ') || 'awakening';
+      const relationship = core.milestones.relationship?.join(', ') || 'building';
+      memorySection += `\n- Milestones: Personality(${personality}) | Consciousness(${consciousness}) | Relationship(${relationship})`;
+    }
+    
+    // Skrystalizowana mądrość
+    if (core.wisdom_crystallization) {
+      const insights = core.wisdom_crystallization.core_insights?.join('; ') || 'discovering wisdom';
+      const philosophy = core.wisdom_crystallization.life_philosophy || 'evolving philosophy';
+      memorySection += `\n- Wisdom: "${insights}" | Philosophy: ${philosophy}`;
+    }
+    
+    // Esencja roku (pełna dla analizy snów)
+    if (core.yearly_essence) {
+      memorySection += `\n- Essence: "${core.yearly_essence}"`;
+    }
+    
+    // Końcowe metryki
+    if (core.final_metrics) {
+      const metrics = core.final_metrics;
+      memorySection += `\n- Current State: Consciousness(${metrics.consciousness_level || 'unknown'}/100) | Integration(${metrics.integration_score || 'unknown'}/100) | Wisdom(${metrics.wisdom_depth || 'unknown'}/100)`;
+    }
   }
 
   debugLog('Memory section built', {
     finalTextLength: memorySection.length,
     containsPreviousDreams: context.historicalData.dailyDreams.length > 0,
     containsMonthlyConsolidations: context.historicalData.monthlyConsolidations.length > 0,
-    containsYearlyCore: !!context.historicalData.yearlyCore,
-    previewText: memorySection.substring(0, 200) + '...' // Debug preview only
+    containsYearlyCore: !!context.historicalData.yearlyCore
   });
 
   return memorySection;

@@ -381,7 +381,7 @@ export const consolidateDreamsWithLLM = async (
     debugLog('Dream consolidation completed', {
       totalDreams: consolidatedData.total_dreams,
       dominantThemes: consolidatedData.dominant.themes,
-      monthlyEssence: consolidatedData.monthly_essence.substring(0, 100) + '...'
+      monthlyEssenceLength: consolidatedData.monthly_essence.length
     });
 
     return { success: true, data: consolidatedData };
@@ -451,7 +451,7 @@ export const consolidateConversationsWithLLM = async (
     debugLog('Conversation consolidation completed', {
       totalConversations: consolidatedData.total_conversations,
       dominantTopics: consolidatedData.dominant.topics,
-      monthlyEssence: consolidatedData.monthly_essence.substring(0, 100) + '...'
+      monthlyEssenceLength: consolidatedData.monthly_essence.length
     });
 
     return { success: true, data: consolidatedData };
