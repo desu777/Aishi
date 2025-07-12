@@ -6,13 +6,14 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
 import { useAgentMint } from '../../hooks/agentHooks';
 import { useAgentRead } from '../../hooks/agentHooks';
-import { Sparkles, Info, Moon, MessageCircle, Zap } from 'lucide-react';
+import { Sparkles, Info, Moon, MessageCircle, Zap, Database } from 'lucide-react';
 
 // Import nowych komponentów
 import MintSection from './components/MintSection';
 import AgentInfoSection from './components/AgentInfoSection';
 import DreamAnalysisSection from './components/DreamAnalysisSection';
 import AgentChatSection from './components/AgentChatSection';
+import ConsolidationTestSection from './components/ConsolidationTestSection';
 
 export default function AgentTest() {
   const { theme, debugLog } = useTheme();
@@ -54,7 +55,7 @@ export default function AgentTest() {
   } = useAgentRead();
   
   // Mode state
-  const [mode, setMode] = useState<'mint' | 'info' | 'dream' | 'chat'>('mint');
+  const [mode, setMode] = useState<'mint' | 'info' | 'dream' | 'chat' | 'consolidation'>('mint');
   
   // Debug log on start
   debugLog('Agent Test page loaded');
@@ -202,6 +203,26 @@ export default function AgentTest() {
                   <MessageCircle size={16} />
                   Agent Chat
                 </button>
+                
+                <button
+                  onClick={() => setMode('consolidation')}
+                  style={{
+                    backgroundColor: mode === 'consolidation' ? theme.accent.primary : theme.bg.panel,
+                    color: mode === 'consolidation' ? 'white' : theme.text.primary,
+                    border: `1px solid ${mode === 'consolidation' ? theme.accent.primary : theme.border}`,
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Database size={16} />
+                  Consolidation
+                </button>
               </div>
             </div>
 
@@ -254,6 +275,13 @@ export default function AgentTest() {
             hasAgent={readHasAgent}
             effectiveTokenId={effectiveTokenId}
             agentData={agentData}
+          />
+        )}
+
+            {mode === 'consolidation' && (
+          <ConsolidationTestSection
+            hasAgent={readHasAgent}
+            effectiveTokenId={effectiveTokenId}
           />
         )}
       </div>

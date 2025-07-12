@@ -11,6 +11,7 @@ export { useAgentPrompt } from './useAgentPrompt';
 export { useAgentConversationPrompt } from './useAgentConversationPrompt';
 export { useAgentAI } from './useAgentAI';
 export { useAgentConversation } from './useAgentConversation';
+export { useAgentConsolidation } from './useAgentConsolidation';
 
 // Language detection utilities
 export { 

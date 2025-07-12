@@ -185,7 +185,7 @@ function buildRoleDefinitionSection(context: ConversationContext): string {
 function buildOwnerPersonalitySection(context: ConversationContext): string {
   const p = context.personality;
   
-  let personalityText = `OWNER PERSONALITY SNAPSHOT:
+  let personalityText = `Your PERSONALITY SNAPSHOT:
 Creativity ${p.creativity}, Analytical ${p.analytical}, Empathy ${p.empathy}, 
 Intuition ${p.intuition}, Resilience ${p.resilience}, Curiosity ${p.curiosity}
 Dominant mood: ${p.dominantMood} | Response style: ${p.responseStyle}`;
