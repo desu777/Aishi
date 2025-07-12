@@ -409,7 +409,7 @@ export default function MemoryCoreSection({
                       {dream.period} - {dream.total_dreams} dreams
                     </div>
                     <div style={{ color: theme.text.secondary, fontSize: '0.75rem' }}>
-                      Themes: {dream.dominant_themes?.join(', ') || 'none'}
+                      Themes: {dream.dominant.themes?.join(', ') || 'none'}
                     </div>
                   </div>
                 ))}
@@ -427,7 +427,7 @@ export default function MemoryCoreSection({
                       {conv.period} - {conv.total_conversations} conversations
                     </div>
                     <div style={{ color: theme.text.secondary, fontSize: '0.75rem' }}>
-                      Topics: {conv.dominant_topics?.join(', ') || 'none'}
+                      Topics: {conv.dominant.topics?.join(', ') || 'none'}
                     </div>
                   </div>
                 ))}
@@ -675,7 +675,7 @@ export default function MemoryCoreSection({
               }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ color: '#8B5CF6', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {memoryCoreState.memoryCoreData.yearly_overview.total_dreams_processed}
+                    {memoryCoreState.memoryCoreData.yearly_overview.total_dreams}
                   </div>
                   <div style={{ color: theme.text.secondary, fontSize: '0.9rem' }}>
                     Dreams Processed
@@ -683,7 +683,7 @@ export default function MemoryCoreSection({
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ color: '#8B5CF6', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {memoryCoreState.memoryCoreData.yearly_overview.total_conversations_recorded}
+                    {memoryCoreState.memoryCoreData.yearly_overview.total_conversations}
                   </div>
                   <div style={{ color: theme.text.secondary, fontSize: '0.9rem' }}>
                     Conversations
@@ -691,10 +691,10 @@ export default function MemoryCoreSection({
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ color: '#8B5CF6', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {memoryCoreState.memoryCoreData.yearly_overview.intelligence_growth.total_growth}
+                    {memoryCoreState.memoryCoreData.final_metrics.consciousness_level}
                   </div>
                   <div style={{ color: theme.text.secondary, fontSize: '0.9rem' }}>
-                    Intelligence Growth
+                    Consciousness Level
                   </div>
                 </div>
               </div>
@@ -714,7 +714,7 @@ export default function MemoryCoreSection({
                   lineHeight: '1.5',
                   margin: 0
                 }}>
-                  {memoryCoreState.memoryCoreData.yearly_essence_summary}
+                  {memoryCoreState.memoryCoreData.yearly_essence}
                 </p>
               </div>
 

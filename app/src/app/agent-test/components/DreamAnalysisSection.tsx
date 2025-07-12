@@ -1236,7 +1236,7 @@ export default function DreamAnalysisSection({
                 <div><strong>Dream ID:</strong> #{parsedResponse.dreamData.id}</div>
                 <div><strong>Date:</strong> {parsedResponse.dreamData.date}</div>
                 <div><strong>Intensity:</strong> {parsedResponse.dreamData.intensity}/10</div>
-                <div><strong>Lucidity:</strong> {parsedResponse.dreamData.lucidity_level}/5</div>
+                <div><strong>Lucidity:</strong> {parsedResponse.dreamData.lucidity}/5</div>
               </div>
               
               <div style={{ marginTop: '10px', fontSize: '12px' }}>

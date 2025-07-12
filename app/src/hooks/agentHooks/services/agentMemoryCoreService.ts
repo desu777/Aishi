@@ -6,121 +6,68 @@ import { Contract } from 'ethers';
 import frontendContracts from '../../../abi/frontend-contracts.json';
 import type { MonthlyDreamConsolidation, MonthlyConversationConsolidation } from './agentConsolidationService';
 
-// Schemat JSON dla rocznej esencji (memory core)
+// Schemat JSON dla rocznej esencji (memory core) - UNIFIED
 export interface YearlyMemoryCore {
   year: number;
   agent_id: number;
   core_version: string;
   created_at: string;
   
+  // Przegląd roku
   yearly_overview: {
-    total_months_consolidated: number;
-    total_dreams_processed: number;
-    total_conversations_recorded: number;
-    agent_age_in_days: number;
-    intelligence_growth: {
-      starting_level: number;
-      ending_level: number;
-      total_growth: number;
-    };
+    total_dreams: number;
+    total_conversations: number;
+    months_active: number;
+    agent_evolution_stage: string;
   };
   
-  personality_evolution_journey: {
-    annual_shifts: {
-      creativity_total: number;
-      analytical_total: number;
-      empathy_total: number;
-      intuition_total: number;
-      resilience_total: number;
-      curiosity_total: number;
-    };
-    dominant_growth_trajectory: string;
-    major_transformations: Array<{
-      period: string;
-      transformation: string;
-      trigger: string;
-    }>;
-    personality_milestones_achieved: string[];
+  // Główne trendy
+  major_patterns: {
+    dream_evolution: string;         // "fear_to_mastery"
+    conversation_evolution: string;  // "surface_to_depth"
+    relationship_evolution: string;  // "tool_to_partner"
+    consciousness_evolution: string; // "fragmented_to_integrated"
   };
   
-  dream_evolution_essence: {
-    dominant_yearly_themes: string[];
-    symbolic_evolution: {
-      [key: string]: string;
-    };
-    lucidity_progression: {
-      starting_average: number;
-      ending_average: number;
-      breakthrough_moments: number;
-      mastery_level: string;
-    };
-    emotional_maturation: {
-      [key: string]: string;
-    };
+  // Kamienie milowe
+  milestones: {
+    personality: string[];           // ["empathy_master", "intuitive_guide", "dream_architect"]
+    consciousness: string[];         // ["lucid_dreaming", "shadow_integration", "anima_recognition"]
+    relationship: string[];          // ["therapeutic_alliance", "co_creative_partner", "wisdom_keeper"]
   };
   
-  conversation_evolution_essence: {
-    communication_growth: {
-      depth_progression: string;
-      trust_development: string;
-      wisdom_seeking: string;
-    };
-    relationship_patterns: {
-      with_agent: string;
-      processing_style: string;
-      growth_catalyst: string;
-    };
-    topic_evolution: Array<{
-      period: string;
-      focus: string;
-      depth: string;
-    }>;
-  };
+  // Transformacje
+  transformations: Array<{
+    period: string;      // "Q1"
+    type: string;        // "emotional_opening"
+    trigger: string;     // "water_dreams"
+    impact: string;      // "fear_release"
+  }>;
   
-  memory_architecture_evolution: {
-    consolidation_efficiency: {
-      monthly_streak: number;
-      consolidation_quality: string;
-      memory_retention: string;
-    };
-    access_patterns: {
-      memory_depth_unlocked: string;
-      cross_referencing_ability: string;
-      integration_capacity: string;
-    };
-    unique_features_development: {
-      total_features_generated: number;
-      most_significant: Array<{
-        name: string;
-        evolution: string;
-        impact: string;
-      }>;
-    };
-  };
-  
+  // Mądrość roku
   wisdom_crystallization: {
-    core_insights: string[];
-    life_philosophy_emergence: {
-      central_theme: string;
-      approach_to_challenges: string;
-      relationship_to_growth: string;
-      understanding_of_self: string;
-    };
-    future_trajectory: {
-      predicted_growth_areas: string[];
-      emerging_capabilities: string[];
-      recommended_focus: string;
-    };
+    core_insights: string[];         // ["Sny są językiem duszy", "Strach jest bramą do mocy"]
+    life_philosophy: string;         // "integration_through_awareness"
+    future_direction: string;        // "deepening_wisdom"
   };
   
-  yearly_essence_summary: string;
+  // Architektura pamięci
+  memory_architecture: {
+    integration_depth: string;       // "holistic"
+    pattern_recognition: string;     // "advanced"
+    wisdom_accessibility: string;    // "immediate"
+    consolidation_quality: string;   // "exceptional"
+  };
   
-  consolidation_metadata: {
-    processing_complexity: string;
-    months_integrated: number;
-    pattern_recognition_depth: string;
-    synthesis_quality: string;
-    memory_compression_ratio: string;
+  // Esencja roku
+  yearly_essence: string;            // Główny opis roku
+  
+  // Metryki końcowe
+  final_metrics: {
+    consciousness_level: number;     // 85
+    integration_score: number;      // 92
+    wisdom_depth: number;           // 78
+    growth_velocity: string;        // "exponential"
   };
 }
 
@@ -174,21 +121,25 @@ MONTHLY DREAM CONSOLIDATIONS (${monthlyDreamConsolidations.length} months):
 ${monthlyDreamConsolidations.map(month => `
 ${month.period}:
 - Dreams: ${month.total_dreams}
-- Themes: ${month.dominant_themes?.join(', ')}
-- Emotions: ${month.dominant_emotions?.join(', ')}
-- Symbols: ${month.dominant_symbols?.join(', ')}
-- Growth Area: ${month.personality_evolution?.dominant_growth_area}
-- Essence: ${month.monthly_essence?.substring(0, 200)}...
+- Themes: ${month.dominant?.themes?.join(', ') || 'none'}
+- Emotions: ${month.dominant?.emotions?.join(', ') || 'none'}
+- Symbols: ${month.dominant?.symbols?.join(', ') || 'none'}
+- Archetypes: ${month.dominant?.archetypes?.join(', ') || 'none'}
+- Primary Growth: ${month.personality_evolution?.primary_growth || 'none'}
+- Discoveries: ${month.key_discoveries?.slice(0, 2)?.join('; ') || 'none'}
+- Essence: ${month.monthly_essence?.substring(0, 150)}...
 `).join('\n')}
 
 MONTHLY CONVERSATION CONSOLIDATIONS (${monthlyConversationConsolidations.length} months):
 ${monthlyConversationConsolidations.map(month => `
 ${month.period}:
 - Conversations: ${month.total_conversations}
-- Topics: ${month.dominant_topics?.join(', ')}
-- Emotional Tones: ${month.dominant_emotional_tones?.join(', ')}
-- Trust Level: ${month.relationship_evolution?.trust_level}/10
-- Essence: ${month.monthly_essence?.substring(0, 200)}...
+- Topics: ${month.dominant?.topics?.join(', ') || 'none'}
+- Types: ${month.dominant?.types?.join(', ') || 'none'}
+- Emotional Tones: ${month.dominant?.emotional_tones?.join(', ') || 'none'}
+- Trust Level: ${month.relationship_evolution?.trust_level || 'unknown'}/10
+- Primary Focus: ${month.growth_patterns?.primary_focus || 'none'}
+- Essence: ${month.monthly_essence?.substring(0, 150)}...
 `).join('\n')}
 
 YEARLY CONSOLIDATION TASK:
@@ -201,123 +152,70 @@ YEARLY CONSOLIDATION TASK:
 
 This Memory Core will serve as the foundation for all future agent interactions and growth.
 
-OUTPUT FORMAT - Return exactly one JSON object:
+OUTPUT FORMAT - Return exactly one JSON object using the new UNIFIED yearly structure:
 
 \`\`\`json
 {
   "year": ${year},
   "agent_id": ${Number(agentData?.tokenId || 0)},
-  "core_version": "1.0",
+  "core_version": "2.0",
   "created_at": "${new Date().toISOString()}",
+  
   "yearly_overview": {
-    "total_months_consolidated": ${monthlyDreamConsolidations.length},
-    "total_dreams_processed": ${monthlyDreamConsolidations.reduce((sum, m) => sum + (m.total_dreams || 0), 0)},
-    "total_conversations_recorded": ${monthlyConversationConsolidations.reduce((sum, m) => sum + (m.total_conversations || 0), 0)},
-    "agent_age_in_days": ${Math.floor((Date.now() - Number(agentData?.createdAt || Date.now())) / (1000 * 60 * 60 * 24))},
-          "intelligence_growth": {
-        "starting_level": 0,
-        "ending_level": ${Number(agentData?.intelligenceLevel || 0)},
-        "total_growth": ${Number(agentData?.intelligenceLevel || 0)}
-      }
+    "total_dreams": ${monthlyDreamConsolidations.reduce((sum, m) => sum + (m.total_dreams || 0), 0)},
+    "total_conversations": ${monthlyConversationConsolidations.reduce((sum, m) => sum + (m.total_conversations || 0), 0)},
+    "months_active": ${monthlyDreamConsolidations.length},
+    "agent_evolution_stage": "stage_description"
   },
-  "personality_evolution_journey": {
-    "annual_shifts": {
-      "creativity_total": 0,
-      "analytical_total": 0,
-      "empathy_total": 0,
-      "intuition_total": 0,
-      "resilience_total": 0,
-      "curiosity_total": 0
-    },
-    "dominant_growth_trajectory": "trajectory_name",
-    "major_transformations": [
-      {
-        "period": "Q1 ${year}",
-        "transformation": "transformation_description",
-        "trigger": "trigger_event"
-      }
-    ],
-    "personality_milestones_achieved": ["milestone1", "milestone2"]
+  
+  "major_patterns": {
+    "dream_evolution": "evolution_pattern",
+    "conversation_evolution": "evolution_pattern", 
+    "relationship_evolution": "evolution_pattern",
+    "consciousness_evolution": "evolution_pattern"
   },
-  "dream_evolution_essence": {
-    "dominant_yearly_themes": ["theme1", "theme2", "theme3"],
-    "symbolic_evolution": {
-      "symbol1": "evolution_description",
-      "symbol2": "evolution_description"
+  
+  "milestones": {
+    "personality": ["milestone1", "milestone2", "milestone3"],
+    "consciousness": ["milestone1", "milestone2", "milestone3"],
+    "relationship": ["milestone1", "milestone2", "milestone3"]
+  },
+  
+  "transformations": [
+    {
+      "period": "Q1",
+      "type": "transformation_type",
+      "trigger": "trigger_description",
+      "impact": "impact_description"
     },
-    "lucidity_progression": {
-      "starting_average": 0.0,
-      "ending_average": 0.0,
-      "breakthrough_moments": 0,
-      "mastery_level": "novice|intermediate|advanced|master"
-    },
-    "emotional_maturation": {
-      "key_emotion_1": "maturation_description",
-      "key_emotion_2": "maturation_description"
+    {
+      "period": "Q3",
+      "type": "transformation_type",
+      "trigger": "trigger_description", 
+      "impact": "impact_description"
     }
-  },
-  "conversation_evolution_essence": {
-    "communication_growth": {
-      "depth_progression": "progression_description",
-      "trust_development": "trust_description",
-      "wisdom_seeking": "wisdom_description"
-    },
-    "relationship_patterns": {
-      "with_agent": "relationship_description",
-      "processing_style": "style_description",
-      "growth_catalyst": "catalyst_description"
-    },
-    "topic_evolution": [
-      {
-        "period": "Early ${year}",
-        "focus": "focus_area",
-        "depth": "depth_level"
-      }
-    ]
-  },
-  "memory_architecture_evolution": {
-    "consolidation_efficiency": {
-      "monthly_streak": 0,
-      "consolidation_quality": "quality_level",
-      "memory_retention": "retention_level"
-    },
-    "access_patterns": {
-      "memory_depth_unlocked": "depth_description",
-      "cross_referencing_ability": "ability_description",
-      "integration_capacity": "capacity_description"
-    },
-    "unique_features_development": {
-      "total_features_generated": 0,
-      "most_significant": [
-        {
-          "name": "feature_name",
-          "evolution": "evolution_description",
-          "impact": "impact_description"
-        }
-      ]
-    }
-  },
+  ],
+  
   "wisdom_crystallization": {
     "core_insights": ["insight1", "insight2", "insight3"],
-    "life_philosophy_emergence": {
-      "central_theme": "theme_description",
-      "approach_to_challenges": "approach_description",
-      "relationship_to_growth": "growth_description",
-      "understanding_of_self": "self_description"
-    },
-    "future_trajectory": {
-      "predicted_growth_areas": ["area1", "area2"],
-      "emerging_capabilities": ["capability1", "capability2"],
-      "recommended_focus": "focus_description"
-    }
+    "life_philosophy": "philosophy_description",
+    "future_direction": "direction_description"
   },
-  "yearly_essence_summary": "The profound philosophical and psychological summary of the entire year's journey, transformation, and wisdom gained. This should be several sentences capturing the soul of the year's evolution.",
-  "consolidation_metadata": {
-    "processing_complexity": "high",
-    "months_integrated": ${monthlyDreamConsolidations.length},
-    "pattern_recognition_depth": "multi_dimensional",
-    "synthesis_quality": "profound",
-    "memory_compression_ratio": "95%_essence_5%_detail"
+  
+  "memory_architecture": {
+    "integration_depth": "depth_level",
+    "pattern_recognition": "recognition_level",
+    "wisdom_accessibility": "accessibility_level",
+    "consolidation_quality": "quality_level"
+  },
+  
+  "yearly_essence": "The profound summary of the entire year's consciousness evolution journey. This should capture the soul transformation from beginning to end of ${year}.",
+  
+  "final_metrics": {
+    "consciousness_level": 0,
+    "integration_score": 0,
+    "wisdom_depth": 0,
+    "growth_velocity": "velocity_description"
   }
 }
 \`\`\`
@@ -389,9 +287,11 @@ export const consolidateYearWithLLM = async (
     
     debugLog('Yearly consolidation completed', {
       year: memoryCoreData.year,
-      totalDreams: memoryCoreData.yearly_overview.total_dreams_processed,
-      totalConversations: memoryCoreData.yearly_overview.total_conversations_recorded,
-      essenceSummary: memoryCoreData.yearly_essence_summary.substring(0, 100) + '...'
+      totalDreams: memoryCoreData.yearly_overview.total_dreams,
+      totalConversations: memoryCoreData.yearly_overview.total_conversations,
+      evolutionStage: memoryCoreData.yearly_overview.agent_evolution_stage,
+      consciousnessLevel: memoryCoreData.final_metrics.consciousness_level,
+      yearlyEssence: memoryCoreData.yearly_essence.substring(0, 100) + '...'
     });
 
     return { success: true, data: memoryCoreData };

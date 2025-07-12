@@ -324,8 +324,9 @@ export function useAgentMemoryCore(tokenId?: number) {
 
       debugLog('LLM processing completed', {
         year: memoryCoreData.year,
-        totalDreams: memoryCoreData.yearly_overview.total_dreams_processed,
-        totalConversations: memoryCoreData.yearly_overview.total_conversations_recorded
+        totalDreams: memoryCoreData.yearly_overview.total_dreams,
+        totalConversations: memoryCoreData.yearly_overview.total_conversations,
+        evolutionStage: memoryCoreData.yearly_overview.agent_evolution_stage
       });
 
       // Step 2: Upload to storage

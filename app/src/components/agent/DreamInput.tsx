@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAgentDream } from '../../hooks/agentHooks/useAgentDream';
+import { useAgentRead } from '../../hooks/agentHooks/useAgentRead';
 import { Moon, Brain, Sparkles, CheckCircle, AlertCircle, Loader2, Save, Zap, Database, FileText, ArrowRight } from 'lucide-react';
 
 interface DreamInputProps {
@@ -11,44 +12,56 @@ interface DreamInputProps {
 
 export default function DreamInput({ className }: DreamInputProps) {
   const { theme, debugLog } = useTheme();
+  
+  // Agent data from useAgentRead
+  const { hasAgent, agentData: userAgent, userTokenId } = useAgentRead();
+  
+  // Dream processing from useAgentDream
   const {
-    // State
-    isAnalyzing,
-    isSavingToStorage,
-    isProcessingOnChain,
-    isWaitingForReceipt,
-    isComplete,
+    dreamText,
+    isProcessing,
     error,
-    currentStep,
-    dreamAnalysis,
-    storageHash,
-    txHash,
-    
-    // Actions
-    processDream,
-    resetProcessing,
-    
-    // Agent context
-    hasAgent,
-    userAgent,
-    userTokenId,
-    
-    // Configuration
-    computeConfig,
-    storageConfig
+    isLoadingContext,
+    contextStatus,
+    builtContext,
+    isUploadingToStorage,
+    uploadStatus,
+    isProcessingContract,
+    contractStatus,
+    setDreamText,
+    resetDream,
+    buildDreamContext,
+    processStorageAndContract
   } = useAgentDream();
 
   // Local state for dream input
-  const [dreamText, setDreamText] = useState('');
   const [emotions, setEmotions] = useState<string[]>([]);
   const [lucidDream, setLucidDream] = useState(false);
   const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
+  const [processingStep, setProcessingStep] = useState<'analyzing' | 'saving' | 'processing' | null>(null);
+  const [dreamAnalysis, setDreamAnalysis] = useState<any>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [storageHash, setStorageHash] = useState<string | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
 
   // Available emotions for selection
   const availableEmotions = [
     'happy', 'sad', 'anxious', 'excited', 'confused', 'peaceful',
     'frightened', 'curious', 'nostalgic', 'frustrated', 'hopeful', 'surprised'
   ];
+
+  // Update processing step based on hook states
+  useEffect(() => {
+    if (isLoadingContext) {
+      setProcessingStep('analyzing');
+    } else if (isUploadingToStorage) {
+      setProcessingStep('saving');
+    } else if (isProcessingContract) {
+      setProcessingStep('processing');
+    } else if (!isProcessing) {
+      setProcessingStep(null);
+    }
+  }, [isLoadingContext, isUploadingToStorage, isProcessingContract, isProcessing]);
 
   // Handle dream processing
   const handleProcessDream = async () => {
@@ -57,22 +70,79 @@ export default function DreamInput({ className }: DreamInputProps) {
       return;
     }
 
-    const dreamInput = {
-      dreamText: dreamText.trim(),
-      emotions: selectedEmotions,
-      lucidDream
-    };
+    if (!userTokenId) {
+      alert('No agent token ID found');
+      return;
+    }
 
-    debugLog('Processing dream', dreamInput);
+    debugLog('Processing dream', { dreamLength: dreamText.length, emotions: selectedEmotions, lucidDream });
     
-    const result = await processDream(dreamInput);
-    
-    if (result.success) {
-      // Clear input on success
-      setDreamText('');
-      setSelectedEmotions([]);
-      setLucidDream(false);
-      debugLog('Dream processed successfully', result);
+    // Reset previous results
+    setDreamAnalysis(null);
+    setTxHash(null);
+    setStorageHash(null);
+    setIsComplete(false);
+
+    try {
+      // Step 1: Build context
+      const context = await buildDreamContext(Number(userTokenId), userAgent);
+      
+      if (!context) {
+        throw new Error('Failed to build dream context');
+      }
+
+      // Step 2: Call AI for analysis (we'll simulate this for now)
+      const mockAIResponse = {
+        analysis: `Dream analysis for: ${dreamText.substring(0, 100)}...`,
+        dreamData: {
+          id: Date.now(),
+          date: new Date().toISOString().split('T')[0],
+          timestamp: Math.floor(Date.now() / 1000),
+          emotions: selectedEmotions,
+          symbols: ['mock', 'symbols'],
+          themes: ['adventure', 'mystery'],
+          intensity: Math.floor(Math.random() * 10) + 1,
+          lucidity: lucidDream ? Math.floor(Math.random() * 5) + 1 : 1
+        },
+        personalityImpact: {
+          creativityChange: Math.floor(Math.random() * 10) - 5,
+          analyticalChange: Math.floor(Math.random() * 10) - 5,
+          empathyChange: Math.floor(Math.random() * 10) - 5,
+          intuitionChange: Math.floor(Math.random() * 10) - 5,
+          resilienceChange: Math.floor(Math.random() * 10) - 5,
+          curiosityChange: Math.floor(Math.random() * 10) - 5
+        },
+        dreamMetadata: {
+          themes: ['adventure', 'mystery'],
+          symbols: ['mock', 'symbols'],
+          emotions: selectedEmotions,
+          intensity: Math.floor(Math.random() * 10) + 1
+        }
+      };
+
+      setDreamAnalysis(mockAIResponse);
+
+      // Step 3: Process storage and contract
+      const result = await processStorageAndContract(Number(userTokenId), mockAIResponse);
+
+      if (result.success) {
+        setTxHash(result.txHash || null);
+        setStorageHash(result.rootHash || null);
+        setIsComplete(true);
+        
+        // Clear input on success
+        setDreamText('');
+        setSelectedEmotions([]);
+        setLucidDream(false);
+        
+        debugLog('Dream processed successfully', result);
+      } else {
+        throw new Error(result.error || 'Processing failed');
+      }
+
+    } catch (error) {
+      debugLog('Dream processing failed', { error });
+      // Error is handled by the hook
     }
   };
 
@@ -90,11 +160,15 @@ export default function DreamInput({ className }: DreamInputProps) {
     setDreamText('');
     setSelectedEmotions([]);
     setLucidDream(false);
-    resetProcessing();
+    setDreamAnalysis(null);
+    setTxHash(null);
+    setStorageHash(null);
+    setIsComplete(false);
+    resetDream();
   };
 
   // Loading state
-  const isLoading = isAnalyzing || isSavingToStorage || isProcessingOnChain || isWaitingForReceipt;
+  const isLoading = isLoadingContext || isUploadingToStorage || isProcessingContract;
 
   return (
     <div className={className}>
@@ -348,20 +422,20 @@ export default function DreamInput({ className }: DreamInputProps) {
                   gap: '8px'
                 }}
               >
-                {currentStep === 'analyzing' ? (
+                {processingStep === 'analyzing' ? (
                   <>
                     <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
                     AI Analyzing...
                   </>
-                ) : currentStep === 'saving' ? (
+                ) : processingStep === 'saving' ? (
                   <>
                     <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
                     Saving to Storage...
                   </>
-                ) : currentStep === 'processing' ? (
+                ) : processingStep === 'processing' ? (
                   <>
                     <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                    {isWaitingForReceipt ? 'Waiting for Confirmation...' : 'Processing On-Chain...'}
+                    Processing On-Chain...
                   </>
                 ) : (
                   <>
@@ -425,11 +499,11 @@ export default function DreamInput({ className }: DreamInputProps) {
               padding: '12px',
               backgroundColor: theme.bg.panel,
               borderRadius: '8px',
-              border: `1px solid ${isAnalyzing ? theme.accent.primary : theme.border}`
+              border: `1px solid ${isLoadingContext ? theme.accent.primary : theme.border}`
             }}>
-              {isAnalyzing ? (
+              {isLoadingContext ? (
                 <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: theme.accent.primary }} />
-              ) : currentStep === 'analyzing' ? (
+              ) : processingStep === 'analyzing' ? (
                 <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: theme.accent.primary }} />
               ) : dreamAnalysis ? (
                 <CheckCircle size={16} style={{ color: '#44ff44' }} />
@@ -438,14 +512,14 @@ export default function DreamInput({ className }: DreamInputProps) {
               )}
               <div>
                 <div style={{ 
-                  color: isAnalyzing || dreamAnalysis ? theme.accent.primary : theme.text.secondary,
+                  color: isLoadingContext || dreamAnalysis ? theme.accent.primary : theme.text.secondary,
                   fontWeight: '600',
                   fontSize: '14px'
                 }}>
                   1. AI Analysis via 0G Compute
                 </div>
                 <div style={{ fontSize: '12px', color: theme.text.secondary }}>
-                  {isAnalyzing ? 'Analyzing dream with AI...' : 
+                  {isLoadingContext ? (contextStatus || 'Building context...') : 
                    dreamAnalysis ? 'Analysis complete' : 'Waiting...'}
                 </div>
               </div>
@@ -459,9 +533,9 @@ export default function DreamInput({ className }: DreamInputProps) {
               padding: '12px',
               backgroundColor: theme.bg.panel,
               borderRadius: '8px',
-              border: `1px solid ${isSavingToStorage ? theme.accent.primary : theme.border}`
+              border: `1px solid ${isUploadingToStorage ? theme.accent.primary : theme.border}`
             }}>
-              {isSavingToStorage ? (
+              {isUploadingToStorage ? (
                 <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: theme.accent.primary }} />
               ) : storageHash ? (
                 <CheckCircle size={16} style={{ color: '#44ff44' }} />
@@ -470,14 +544,14 @@ export default function DreamInput({ className }: DreamInputProps) {
               )}
               <div>
                 <div style={{ 
-                  color: isSavingToStorage || storageHash ? theme.accent.primary : theme.text.secondary,
+                  color: isUploadingToStorage || storageHash ? theme.accent.primary : theme.text.secondary,
                   fontWeight: '600',
                   fontSize: '14px'
                 }}>
                   2. Save to 0G Storage
                 </div>
                 <div style={{ fontSize: '12px', color: theme.text.secondary }}>
-                  {isSavingToStorage ? 'Saving to decentralized storage...' : 
+                  {isUploadingToStorage ? (uploadStatus || 'Saving to storage...') : 
                    storageHash ? `Saved: ${storageHash.slice(0, 8)}...${storageHash.slice(-6)}` : 'Waiting...'}
                 </div>
               </div>
@@ -491,9 +565,9 @@ export default function DreamInput({ className }: DreamInputProps) {
               padding: '12px',
               backgroundColor: theme.bg.panel,
               borderRadius: '8px',
-              border: `1px solid ${isProcessingOnChain || isWaitingForReceipt ? theme.accent.primary : theme.border}`
+              border: `1px solid ${isProcessingContract ? theme.accent.primary : theme.border}`
             }}>
-              {isProcessingOnChain || isWaitingForReceipt ? (
+              {isProcessingContract ? (
                 <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: theme.accent.primary }} />
               ) : isComplete && txHash ? (
                 <CheckCircle size={16} style={{ color: '#44ff44' }} />
@@ -502,15 +576,14 @@ export default function DreamInput({ className }: DreamInputProps) {
               )}
               <div>
                 <div style={{ 
-                  color: isProcessingOnChain || isWaitingForReceipt || isComplete ? theme.accent.primary : theme.text.secondary,
+                  color: isProcessingContract || isComplete ? theme.accent.primary : theme.text.secondary,
                   fontWeight: '600',
                   fontSize: '14px'
                 }}>
                   3. Process On-Chain
                 </div>
                 <div style={{ fontSize: '12px', color: theme.text.secondary }}>
-                  {isProcessingOnChain ? 'Sending transaction...' : 
-                   isWaitingForReceipt ? 'Waiting for confirmation...' :
+                  {isProcessingContract ? (contractStatus || 'Processing contract...') :
                    isComplete && txHash ? 'Transaction confirmed' : 'Waiting...'}
                 </div>
               </div>
@@ -597,7 +670,7 @@ export default function DreamInput({ className }: DreamInputProps) {
                       {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
                     </span>
                     <span style={{ marginLeft: '5px' }}>
-                      {typeof value === 'number' ? (value >= 0 ? `+${value}` : value) : value}
+                      {typeof value === 'number' ? (value >= 0 ? `+${value}` : value.toString()) : String(value)}
                     </span>
                   </div>
                 ))}

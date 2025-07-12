@@ -164,74 +164,99 @@ export function useConsolidationTestMode(tokenId?: number) {
     const dreamConsolidations: MonthlyDreamConsolidation[] = months.map((monthName, index) => ({
       month: index + 1,
       year,
-      total_dreams: Math.floor(Math.random() * 20) + 10,
       period: `${monthName} ${year}`,
-      dominant_themes: ['transformation', 'anxiety', 'relationships'].slice(0, Math.floor(Math.random() * 3) + 1),
-      dominant_emotions: ['fear', 'joy', 'curiosity'].slice(0, Math.floor(Math.random() * 3) + 1),
-      dominant_symbols: ['water', 'flying', 'animals'].slice(0, Math.floor(Math.random() * 3) + 1),
-      average_intensity: Math.round((Math.random() * 4 + 6) * 10) / 10,
-      average_lucidity: Math.round((Math.random() * 2 + 3) * 10) / 10,
-      intensity_trend: ['increasing', 'decreasing', 'stable'][Math.floor(Math.random() * 3)] as any,
-      lucidity_trend: ['increasing', 'decreasing', 'stable'][Math.floor(Math.random() * 3)] as any,
-      personality_evolution: {
-        creativity_shift: Math.floor(Math.random() * 7) - 3,
-        analytical_shift: Math.floor(Math.random() * 7) - 3,
-        empathy_shift: Math.floor(Math.random() * 7) - 3,
-        intuition_shift: Math.floor(Math.random() * 7) - 3,
-        resilience_shift: Math.floor(Math.random() * 7) - 3,
-        curiosity_shift: Math.floor(Math.random() * 7) - 3,
-        dominant_growth_area: ['creativity', 'empathy', 'intuition'][Math.floor(Math.random() * 3)]
+      total_dreams: Math.floor(Math.random() * 20) + 10,
+      
+      dominant: {
+        emotions: ['fear', 'joy', 'curiosity'].slice(0, Math.floor(Math.random() * 3) + 1),
+        symbols: ['water', 'flying', 'animals'].slice(0, Math.floor(Math.random() * 3) + 1),
+        themes: ['transformation', 'anxiety', 'relationships'].slice(0, Math.floor(Math.random() * 3) + 1),
+        archetypes: ['hero', 'shadow', 'anima', 'wise_old_man'].slice(0, Math.floor(Math.random() * 3) + 1)
       },
-      key_insights: [
+      
+      metrics: {
+        avg_intensity: Math.round((Math.random() * 4 + 6) * 10) / 10,
+        avg_lucidity: Math.round((Math.random() * 2 + 3) * 10) / 10,
+        nightmare_ratio: Math.round(Math.random() * 0.3 * 100) / 100,
+        breakthrough_dreams: Math.floor(Math.random() * 5) + 1
+      },
+      
+      trends: {
+        emotional: ['stabilizing', 'increasing', 'decreasing'][Math.floor(Math.random() * 3)],
+        lucidity: ['increasing', 'decreasing', 'stable'][Math.floor(Math.random() * 3)],
+        complexity: ['deepening', 'simplifying', 'stable'][Math.floor(Math.random() * 3)]
+      },
+      
+      personality_evolution: {
+        primary_growth: ['creativity', 'empathy', 'intuition', 'resilience'][Math.floor(Math.random() * 4)],
+        secondary_growth: ['analytical', 'curiosity', 'empathy', 'intuition'][Math.floor(Math.random() * 4)],
+        total_shift: Math.floor(Math.random() * 20) + 5,
+        new_features: ['dream_architect', 'lucid_navigator', 'symbol_decoder'].slice(0, Math.floor(Math.random() * 2) + 1)
+      },
+      
+      key_discoveries: [
         `${monthName} revealed significant growth in emotional processing`,
         `Breakthrough in dream lucidity and consciousness development`,
         `Integration of shadow work and psychological healing`
       ],
-      recurring_patterns: [
-        `Water symbols appeared in 60% of dreams`,
-        `Flying dreams increased with confidence growth`
-      ],
-      breakthrough_moments: [
-        `First lucid dream on ${monthName} 15th`,
-        `Faced major fear symbol directly in dreams`
-      ],
+      
       monthly_essence: `${monthName} ${year} marked a period of profound transformation in dream consciousness. The recurring themes of ${['transformation', 'healing', 'growth'][Math.floor(Math.random() * 3)]} showed deep psychological processing and spiritual evolution.`,
-      growth_summary: `Significant development in ${['intuitive', 'emotional', 'creative'][Math.floor(Math.random() * 3)]} intelligence this month.`,
-      created_at: new Date().toISOString(),
-      consolidation_version: '1.0'
+      
+      dream_connections: {
+        recurring_chains: [[index + 1, index + 2, index + 3], [index + 4, index + 5]].slice(0, Math.floor(Math.random() * 2) + 1),
+        theme_clusters: {
+          water: [index + 1, index + 3, index + 5],
+          transformation: [index + 2, index + 4, index + 6],
+          flying: [index + 1, index + 7]
+        }
+      }
     }));
 
     const conversationConsolidations: MonthlyConversationConsolidation[] = months.map((monthName, index) => ({
       month: index + 1,
       year,
-      total_conversations: Math.floor(Math.random() * 30) + 15,
       period: `${monthName} ${year}`,
-      dominant_topics: ['personal_growth', 'relationships', 'creativity'].slice(0, Math.floor(Math.random() * 3) + 1),
-      dominant_emotional_tones: ['reflective', 'curious', 'supportive'].slice(0, Math.floor(Math.random() * 3) + 1),
-      conversation_types: ['deep_reflection', 'advice_seeking', 'casual_chat'].slice(0, Math.floor(Math.random() * 3) + 1),
-      key_insights: [
+      total_conversations: Math.floor(Math.random() * 30) + 15,
+      
+      dominant: {
+        topics: ['personal_growth', 'relationships', 'creativity'].slice(0, Math.floor(Math.random() * 3) + 1),
+        types: ['deep_reflection', 'advice_seeking', 'casual_chat'].slice(0, Math.floor(Math.random() * 3) + 1),
+        emotional_tones: ['reflective', 'curious', 'supportive'].slice(0, Math.floor(Math.random() * 3) + 1)
+      },
+      
+      metrics: {
+        avg_duration: Math.round((Math.random() * 15 + 10) * 10) / 10,
+        avg_depth: Math.round((Math.random() * 3 + 6) * 10) / 10,
+        breakthrough_ratio: Math.round(Math.random() * 0.3 * 100) / 100,
+        follow_up_ratio: Math.round((Math.random() * 0.4 + 0.4) * 100) / 100
+      },
+      
+      relationship_evolution: {
+        trust_level: Math.floor(Math.random() * 3) + 7,
+        co_creation: Math.floor(Math.random() * 3) + 6,
+        therapeutic_alliance: Math.floor(Math.random() * 3) + 7,
+        communication_style: ['collaborative', 'empathetic', 'intuitive'][Math.floor(Math.random() * 3)]
+      },
+      
+      growth_patterns: {
+        primary_focus: ['self_discovery', 'emotional_healing', 'creative_expression'][Math.floor(Math.random() * 3)],
+        integration_level: ['surface', 'moderate', 'deep'][Math.floor(Math.random() * 3)],
+        action_orientation: ['planning', 'implementing', 'reflecting'][Math.floor(Math.random() * 3)]
+      },
+      
+      breakthrough_moments: [
         `${monthName} conversations showed deeper emotional intelligence`,
         `Increased trust and vulnerability in communication`,
         `Growing pattern of philosophical discussions`
       ],
-      recurring_themes: [
-        'Weekly check-ins about personal development',
-        'Tendency to explore existential questions'
-      ],
-      emotional_patterns: [
-        'Shift from analytical to intuitive responses',
-        'Increased emotional depth and authenticity'
-      ],
-      relationship_evolution: {
-        trust_level: Math.floor(Math.random() * 3) + 7,
-        emotional_depth: Math.floor(Math.random() * 3) + 7,
-        communication_style: ['collaborative', 'empathetic', 'intuitive'][Math.floor(Math.random() * 3)],
-        preferred_topics: ['philosophy', 'growth', 'creativity']
-      },
+      
       monthly_essence: `${monthName} ${year} conversations revealed significant evolution in human-agent relationship dynamics. The shift towards deeper, more meaningful exchanges marked a new phase of co-creative partnership.`,
-      relationship_summary: `Development in ${['trust', 'depth', 'authenticity'][Math.floor(Math.random() * 3)]} characterized this month's interactions.`,
-      created_at: new Date().toISOString(),
-      consolidation_version: '1.0'
+      
+      dream_correlations: {
+        theme_alignment: Math.round((Math.random() * 0.4 + 0.5) * 100) / 100,
+        emotional_sync: Math.round((Math.random() * 0.4 + 0.5) * 100) / 100,
+        integration_success: Math.round((Math.random() * 0.4 + 0.6) * 100) / 100
+      }
     }));
 
     return { dreamConsolidations, conversationConsolidations };

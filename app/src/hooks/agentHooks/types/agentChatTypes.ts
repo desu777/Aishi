@@ -70,6 +70,38 @@ export interface ConversationSummary {
   analysis: string; // 1-2 sentences
 }
 
+// NEW: Unified schema for conversation storage
+export interface ConversationUnifiedSchema {
+  id: number;
+  date: string;
+  timestamp: number;
+  duration: number; // minuty
+  // Podstawowe dane
+  topic: string;
+  type: string; // general_chat, therapeutic, advice_seeking, dream_discussion
+  emotional_tone: string[];
+  // Kluczowe elementy
+  key_insights: string[];
+  // Dynamika relacji
+  relationship_depth: number;
+  breakthrough: boolean;
+  vulnerability_level: number;
+  // Powiązania
+  references: {
+    dreams?: number[];
+    conversations?: number[];
+    themes?: string[];
+  };
+  // Podsumowanie
+  summary: string;
+  // Rozwój
+  growth_markers: {
+    self_awareness: number;
+    integration: number;
+    action_readiness: number;
+  };
+}
+
 // AI response format for conversations
 export interface ConversationAIResponse {
   agent_response: string;

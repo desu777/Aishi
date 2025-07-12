@@ -5,81 +5,108 @@ import { uploadFileComplete } from '../../../lib/0g/uploader';
 import { Contract } from 'ethers';
 import frontendContracts from '../../../abi/frontend-contracts.json';
 
-// Schemat JSON dla konsolidacji miesięcznej snów
+// Schemat JSON dla konsolidacji miesięcznej snów (UNIFIED)
 export interface MonthlyDreamConsolidation {
   month: number;           // 1-12
   year: number;            // 2024+
+  period: string;          // "December 2024"
   total_dreams: number;    // Liczba snów w miesiącu
-  period: string;          // "January 2024"
   
-  // Dominujące wzorce
-  dominant_themes: string[];           // ["anxiety", "transformation", "relationships"]
-  dominant_emotions: string[];         // ["fear", "joy", "curiosity"]
-  dominant_symbols: string[];          // ["water", "flying", "animals"]
-  
-  // Statystyki
-  average_intensity: number;           // 1-10
-  average_lucidity: number;            // 1-5
-  intensity_trend: 'increasing' | 'decreasing' | 'stable';
-  lucidity_trend: 'increasing' | 'decreasing' | 'stable';
-  
-  // Analiza rozwoju
-  personality_evolution: {
-    creativity_shift: number;          // -10 do +10
-    analytical_shift: number;          // -10 do +10
-    empathy_shift: number;             // -10 do +10
-    intuition_shift: number;           // -10 do +10
-    resilience_shift: number;          // -10 do +10
-    curiosity_shift: number;           // -10 do +10
-    dominant_growth_area: string;      // "creativity" | "empathy" | etc.
+  // Dominujące wzorce (grupowane)
+  dominant: {
+    emotions: string[];      // ["ciekawość", "lęk", "radość"]
+    symbols: string[];       // ["woda", "światło", "drogi"]
+    themes: string[];        // ["transformacja", "podróż", "relacje"]
+    archetypes: string[];    // ["hero", "shadow", "anima"]
   };
   
-  // Kluczowe insighty
-  key_insights: string[];              // Najważniejsze odkrycia z miesiąca
-  recurring_patterns: string[];        // Powtarzające się wzorce
-  breakthrough_moments: string[];      // Przełomowe momenty
+  // Statystyki (grupowane)
+  metrics: {
+    avg_intensity: number;     // 6.8
+    avg_lucidity: number;      // 3.2
+    nightmare_ratio: number;   // 0.15
+    breakthrough_dreams: number; // 3
+  };
+  
+  // Trendy (grupowane)
+  trends: {
+    emotional: string;       // "stabilizing"
+    lucidity: string;        // "increasing"
+    complexity: string;      // "deepening"
+  };
+  
+  // Ewolucja osobowości (nowa struktura)
+  personality_evolution: {
+    primary_growth: string;    // "intuition"
+    secondary_growth: string;  // "empathy"
+    total_shift: number;       // 12
+    new_features: string[];    // ["dream_architect"]
+  };
+  
+  // Kluczowe odkrycia
+  key_discoveries: string[];   // ["Woda przestała być zagrożeniem", "Zwiększona kontrola w snach", "Integracja cienia"]
   
   // Esencja miesiąca
-  monthly_essence: string;             // Głębokie podsumowanie miesiąca
-  growth_summary: string;              // Podsumowanie rozwoju osobistego
+  monthly_essence: string;     // "Grudzień był miesiącem głębokiej transformacji..."
   
-  // Metadane
-  created_at: string;                  // ISO timestamp
-  consolidation_version: string;       // "1.0"
+  // Powiązania snów (nowe)
+  dream_connections: {
+    recurring_chains: number[][];    // [[145, 151, 156]]
+    theme_clusters: {
+      [key: string]: number[];       // { "water": [142, 145, 151, 156], "transformation": [148, 156, 159] }
+    };
+  };
 }
 
-// Schemat JSON dla konsolidacji miesięcznej konwersacji
+// Schemat JSON dla konsolidacji miesięcznej konwersacji (UNIFIED)
 export interface MonthlyConversationConsolidation {
   month: number;           
   year: number;            
+  period: string;          // "December 2024"
   total_conversations: number;
-  period: string;          
   
-  // Dominujące tematy i tony
-  dominant_topics: string[];           // ["dream_interpretation", "personal_growth", "relationships"]
-  dominant_emotional_tones: string[];  // ["supportive", "analytical", "empathetic"]
-  conversation_types: string[];        // ["therapeutic", "advice_seeking", "general_chat"]
-  
-  // Kluczowe insighty z konwersacji
-  key_insights: string[];              // Najważniejsze odkrycia z rozmów
-  recurring_themes: string[];          // Powtarzające się tematy
-  emotional_patterns: string[];        // Wzorce emocjonalne w rozmowach
-  
-  // Analiza relacji z agentem
-  relationship_evolution: {
-    trust_level: number;               // 1-10
-    emotional_depth: number;           // 1-10
-    communication_style: string;       // "formal" | "casual" | "intimate"
-    preferred_topics: string[];        // Ulubione tematy użytkownika
+  // Dominujące wzorce (grupowane)
+  dominant: {
+    topics: string[];           // ["sny", "rozwój osobisty", "relacje"]
+    types: string[];            // ["dream_discussion", "therapeutic", "general_chat"]
+    emotional_tones: string[];  // ["reflective", "curious", "grateful"]
   };
   
-  // Esencja miesiąca konwersacji
-  monthly_essence: string;             
-  relationship_summary: string;        // Podsumowanie rozwoju relacji
+  // Statystyki (grupowane)
+  metrics: {
+    avg_duration: number;       // 18.5
+    avg_depth: number;          // 7.8
+    breakthrough_ratio: number; // 0.12
+    follow_up_ratio: number;    // 0.65
+  };
   
-  // Metadane
-  created_at: string;                  
-  consolidation_version: string;       
+  // Dynamika relacji
+  relationship_evolution: {
+    trust_level: number;        // 8.5
+    co_creation: number;        // 7.2
+    therapeutic_alliance: number; // 8.8
+    communication_style: string; // "collaborative"
+  };
+  
+  // Wzorce rozwoju (nowe)
+  growth_patterns: {
+    primary_focus: string;      // "self_discovery"
+    integration_level: string;  // "deep"
+    action_orientation: string; // "increasing"
+  };
+  
+  // Kluczowe momenty
+  breakthrough_moments: string[];  // ["Połączenie snów z życiem codziennym", "Przełom w rozumieniu relacji", "Decyzja o zmianie kariery"]
+  
+  // Esencja miesiąca
+  monthly_essence: string;    // "Grudniowe rozmowy charakteryzowała głęboka refleksja..."
+  
+  // Korelacje ze snami (nowe)
+  dream_correlations: {
+    theme_alignment: number;     // 0.82
+    emotional_sync: number;      // 0.75
+    integration_success: number; // 0.88
+  };
 }
 
 // Konfiguracja storage - używamy doors.md
@@ -151,31 +178,46 @@ OUTPUT FORMAT - Return exactly one JSON object:
 {
   "month": ${month},
   "year": ${year},
-  "total_dreams": ${dreams.length},
   "period": "${period}",
-  "dominant_themes": ["theme1", "theme2", "theme3"],
-  "dominant_emotions": ["emotion1", "emotion2", "emotion3"],
-  "dominant_symbols": ["symbol1", "symbol2", "symbol3"],
-  "average_intensity": 0.0,
-  "average_lucidity": 0.0,
-  "intensity_trend": "increasing|decreasing|stable",
-  "lucidity_trend": "increasing|decreasing|stable",
-  "personality_evolution": {
-    "creativity_shift": 0,
-    "analytical_shift": 0,
-    "empathy_shift": 0,
-    "intuition_shift": 0,
-    "resilience_shift": 0,
-    "curiosity_shift": 0,
-    "dominant_growth_area": "creativity"
+  "total_dreams": ${dreams.length},
+  
+  "dominant": {
+    "emotions": ["emotion1", "emotion2", "emotion3"],
+    "symbols": ["symbol1", "symbol2", "symbol3"],
+    "themes": ["theme1", "theme2", "theme3"],
+    "archetypes": ["archetype1", "archetype2", "archetype3"]
   },
-  "key_insights": ["insight1", "insight2", "insight3"],
-  "recurring_patterns": ["pattern1", "pattern2"],
-  "breakthrough_moments": ["moment1", "moment2"],
+  
+  "metrics": {
+    "avg_intensity": 0.0,
+    "avg_lucidity": 0.0,
+    "nightmare_ratio": 0.0,
+    "breakthrough_dreams": 0
+  },
+  
+  "trends": {
+    "emotional": "stabilizing|increasing|decreasing",
+    "lucidity": "increasing|decreasing|stable",
+    "complexity": "deepening|simplifying|stable"
+  },
+  
+  "personality_evolution": {
+    "primary_growth": "growth_area",
+    "secondary_growth": "growth_area",
+    "total_shift": 0,
+    "new_features": ["feature1", "feature2"]
+  },
+  
+  "key_discoveries": ["discovery1", "discovery2", "discovery3"],
   "monthly_essence": "Deep philosophical reflection on the month's dream journey...",
-  "growth_summary": "Summary of personal growth and evolution...",
-  "created_at": "${new Date().toISOString()}",
-  "consolidation_version": "1.0"
+  
+  "dream_connections": {
+    "recurring_chains": [[1, 2, 3]],
+    "theme_clusters": {
+      "water": [1, 2],
+      "transformation": [3, 4]
+    }
+  }
 }
 \`\`\`
 
@@ -213,9 +255,16 @@ CONVERSATIONS TO CONSOLIDATE (${conversations.length} conversations):
 ${conversations.map(conv => `
 Conversation #${conv.id} (${conv.date}):
 - Topic: ${conv.topic || 'General'}
-- Emotional Tone: ${conv.emotional_tone || 'neutral'}
+- Type: ${conv.type || 'general_chat'}
+- Duration: ${conv.duration || 'unknown'} minutes
+- Emotional Tone: ${Array.isArray(conv.emotional_tone) ? conv.emotional_tone.join(', ') : conv.emotional_tone || 'neutral'}
 - Key Insights: ${conv.key_insights?.join(', ') || 'none'}
-- Analysis: ${conv.analysis || 'No analysis'}
+- Relationship Depth: ${conv.relationship_depth || 'unknown'}/10
+- Vulnerability Level: ${conv.vulnerability_level || 'unknown'}/10
+- Breakthrough: ${conv.breakthrough ? 'Yes' : 'No'}
+- Growth Markers: Self-awareness ${conv.growth_markers?.self_awareness || 'unknown'}/10, Integration ${conv.growth_markers?.integration || 'unknown'}/10, Action-readiness ${conv.growth_markers?.action_readiness || 'unknown'}/10
+- References: Dreams ${conv.references?.dreams?.join(', ') || 'none'}, Themes ${conv.references?.themes?.join(', ') || 'none'}
+- Summary: ${conv.summary || conv.analysis || 'No summary'}
 `).join('\n')}
 
 CONSOLIDATION TASK:
@@ -231,24 +280,43 @@ OUTPUT FORMAT - Return exactly one JSON object:
 {
   "month": ${month},
   "year": ${year},
-  "total_conversations": ${conversations.length},
   "period": "${period}",
-  "dominant_topics": ["topic1", "topic2", "topic3"],
-  "dominant_emotional_tones": ["tone1", "tone2", "tone3"],
-  "conversation_types": ["type1", "type2", "type3"],
-  "key_insights": ["insight1", "insight2", "insight3"],
-  "recurring_themes": ["theme1", "theme2"],
-  "emotional_patterns": ["pattern1", "pattern2"],
+  "total_conversations": ${conversations.length},
+  
+  "dominant": {
+    "topics": ["topic1", "topic2", "topic3"],
+    "types": ["type1", "type2", "type3"],
+    "emotional_tones": ["tone1", "tone2", "tone3"]
+  },
+  
+  "metrics": {
+    "avg_duration": 0.0,
+    "avg_depth": 0.0,
+    "breakthrough_ratio": 0.0,
+    "follow_up_ratio": 0.0
+  },
+  
   "relationship_evolution": {
     "trust_level": 0,
-    "emotional_depth": 0,
-    "communication_style": "formal",
-    "preferred_topics": ["topic1", "topic2"]
+    "co_creation": 0,
+    "therapeutic_alliance": 0,
+    "communication_style": "collaborative"
   },
+  
+  "growth_patterns": {
+    "primary_focus": "focus_area",
+    "integration_level": "level",
+    "action_orientation": "orientation"
+  },
+  
+  "breakthrough_moments": ["moment1", "moment2", "moment3"],
   "monthly_essence": "Deep reflection on the month's conversation journey...",
-  "relationship_summary": "Summary of relationship development...",
-  "created_at": "${new Date().toISOString()}",
-  "consolidation_version": "1.0"
+  
+  "dream_correlations": {
+    "theme_alignment": 0.0,
+    "emotional_sync": 0.0,
+    "integration_success": 0.0
+  }
 }
 \`\`\`
 
@@ -312,7 +380,7 @@ export const consolidateDreamsWithLLM = async (
     
     debugLog('Dream consolidation completed', {
       totalDreams: consolidatedData.total_dreams,
-      dominantThemes: consolidatedData.dominant_themes,
+      dominantThemes: consolidatedData.dominant.themes,
       monthlyEssence: consolidatedData.monthly_essence.substring(0, 100) + '...'
     });
 
@@ -382,7 +450,7 @@ export const consolidateConversationsWithLLM = async (
     
     debugLog('Conversation consolidation completed', {
       totalConversations: consolidatedData.total_conversations,
-      dominantTopics: consolidatedData.dominant_topics,
+      dominantTopics: consolidatedData.dominant.topics,
       monthlyEssence: consolidatedData.monthly_essence.substring(0, 100) + '...'
     });
 

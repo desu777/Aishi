@@ -13,7 +13,7 @@ import {
   LanguageDetectionResult 
 } from '../types/agentChatTypes';
 import { STORAGE_CONFIG, COMPUTE_CONFIG } from '../config/agentChatConfig';
-import { detectLanguage, getLanguageInstruction, logLanguageDetection } from '../utils/languageDetection';
+import { detectAndGetInstructions, getLanguageName, formatDetectionResult } from '../utils/languageDetection';
 
 /**
  * Step 1: Build chat context from agent personality + history + language detection
@@ -40,14 +40,13 @@ export const buildChatContext = async (
     });
 
     // 🆕 STEP 1: Wykrywanie języka wiadomości użytkownika
-    const languageDetection = detectLanguage(userMessage);
-    logLanguageDetection(languageDetection, debugLog);
+    const languageDetection = detectAndGetInstructions(userMessage);
+    debugLog('Language detection result', formatDetectionResult(languageDetection));
 
     let context = `You are an AI dream agent having a conversation with your owner.\n\n`;
     
     // 🆕 STEP 2: Dodanie instrukcji językowej dla AI
-    const languageInstruction = getLanguageInstruction(languageDetection.language);
-    context += `${languageInstruction}\n\n`;
+    context += `${languageDetection.instructions}\n\n`;
     
     // ZAWSZE: Dodaj personality agenta
     if (agentInfo) {
@@ -158,21 +157,32 @@ export const buildChatContext = async (
       hasPersonality: !!agentInfo?.personality,
       agentName: agentInfo?.agentName,
       detectedLanguage: languageDetection.language,
-      languageConfidence: languageDetection.confidence
+      languageConfidence: languageDetection.detection.confidence
     });
     
-    return { context, languageDetection };
+    return { 
+      context, 
+      languageDetection: {
+        language: languageDetection.language,
+        confidence: languageDetection.detection.confidence,
+        isReliable: languageDetection.detection.isReliable
+      }
+    };
   } catch (error) {
     debugLog('Error building chat context', { error });
     
     // Fallback z podstawowym wykrywaniem języka
-    const fallbackLanguageDetection = detectLanguage(userMessage || '');
+    const fallbackLanguageDetection = detectAndGetInstructions(userMessage || '');
     const fallbackContext = 'You are an AI dream agent having a conversation. Unable to load previous context.\n' + 
-                           getLanguageInstruction(fallbackLanguageDetection.language) + '\n\n';
+                           fallbackLanguageDetection.instructions + '\n\n';
     
     return { 
       context: fallbackContext, 
-      languageDetection: fallbackLanguageDetection 
+      languageDetection: {
+        language: fallbackLanguageDetection.language,
+        confidence: fallbackLanguageDetection.detection.confidence,
+        isReliable: fallbackLanguageDetection.detection.isReliable
+      }
     };
   }
 };

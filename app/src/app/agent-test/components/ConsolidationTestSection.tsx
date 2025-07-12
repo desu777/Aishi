@@ -808,7 +808,7 @@ export default function ConsolidationTestSection({
                       Dominant Themes:
                     </div>
                     <div style={{ color: theme.text.primary, fontSize: '0.9rem' }}>
-                      {consolidationState.dreamConsolidation.dominant_themes.join(', ')}
+                      {consolidationState.dreamConsolidation.dominant.themes.join(', ')}
                     </div>
                   </div>
                   <div style={{ marginBottom: '10px' }}>
@@ -827,13 +827,13 @@ export default function ConsolidationTestSection({
                     <div>
                       <span style={{ color: theme.text.secondary, fontSize: '0.8rem' }}>Avg Intensity:</span>
                       <span style={{ color: theme.text.primary, marginLeft: '5px' }}>
-                        {consolidationState.dreamConsolidation.average_intensity.toFixed(1)}/10
+                        {consolidationState.dreamConsolidation.metrics.avg_intensity.toFixed(1)}/10
                       </span>
                     </div>
                     <div>
                       <span style={{ color: theme.text.secondary, fontSize: '0.8rem' }}>Avg Lucidity:</span>
                       <span style={{ color: theme.text.primary, marginLeft: '5px' }}>
-                        {consolidationState.dreamConsolidation.average_lucidity.toFixed(1)}/5
+                        {consolidationState.dreamConsolidation.metrics.avg_lucidity.toFixed(1)}/5
                       </span>
                     </div>
                   </div>
@@ -855,7 +855,7 @@ export default function ConsolidationTestSection({
                       Dominant Topics:
                     </div>
                     <div style={{ color: theme.text.primary, fontSize: '0.9rem' }}>
-                      {consolidationState.conversationConsolidation.dominant_topics.join(', ')}
+                      {consolidationState.conversationConsolidation.dominant.topics.join(', ')}
                     </div>
                   </div>
                   <div style={{ marginBottom: '10px' }}>
@@ -878,9 +878,9 @@ export default function ConsolidationTestSection({
                       </span>
                     </div>
                     <div>
-                      <span style={{ color: theme.text.secondary, fontSize: '0.8rem' }}>Emotional Depth:</span>
+                      <span style={{ color: theme.text.secondary, fontSize: '0.8rem' }}>Therapeutic Alliance:</span>
                       <span style={{ color: theme.text.primary, marginLeft: '5px' }}>
-                        {consolidationState.conversationConsolidation.relationship_evolution.emotional_depth}/10
+                        {consolidationState.conversationConsolidation.relationship_evolution.therapeutic_alliance}/10
                       </span>
                     </div>
                   </div>

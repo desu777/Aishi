@@ -5,9 +5,9 @@ import { useStorageDownload } from '../storage/useStorageDownload';
 import { useStorageUpload } from '../storage/useStorageUpload';
 import { useWallet } from '../useWallet';
 import { useAgentConversation } from './useAgentConversation';
-import { useAgentConversationPrompt } from './useAgentConversationPrompt';
+import { useAgentConversationPrompt, buildConversationSummaryPrompt } from './useAgentConversationPrompt';
 import { ConversationContextBuilder, ConversationContext, ChatMessage } from './services/conversationContextBuilder';
-import { ConversationSummary } from './types/agentChatTypes';
+import { ConversationSummary, ConversationUnifiedSchema } from './types/agentChatTypes';
 import { Contract, ethers } from 'ethers';
 import frontendContracts from '../../abi/frontend-contracts.json';
 import { getProvider, getSigner } from '../../lib/0g/fees';
@@ -19,13 +19,7 @@ interface ChatSession {
   builtContext: ConversationContext | null;
   isActive: boolean;
   lastActivity: number;
-  // New: current conversation summary for saving
-  currentSummary?: {
-    topic: string;
-    emotional_tone: string;
-    key_insights: string[];
-    analysis: string;
-  };
+  // Removed currentSummary - unified schema created on demand
 }
 
 interface ChatState {
@@ -237,8 +231,8 @@ export function useAgentChat(tokenId?: number) {
           content: parsedResponse.agentResponse,
           timestamp: Date.now(),
           metadata: {
-            conversationType: 'general_chat', // Simplified
-            emotionalTone: parsedResponse.conversationSummary.emotional_tone || 'neutral',
+            conversationType: 'general_chat',
+            emotionalTone: 'neutral', // Simplified - no summary
             uniqueFeatures: updatedContext.uniqueFeatures.map(f => f.name)
           }
         };
@@ -248,20 +242,15 @@ export function useAgentChat(tokenId?: number) {
           session: prev.session ? {
             ...prev.session,
             messages: [...prev.session.messages, agentMsg],
-            lastActivity: Date.now(),
-            // Update current conversation summary from AI response
-            currentSummary: parsedResponse.conversationSummary || prev.session.currentSummary
+            lastActivity: Date.now()
+            // Removed currentSummary - no auto-summary
           } : null,
           isTyping: false
         }));
 
         debugLog('Message sent successfully', {
           agentResponseLength: agentMsg.content.length,
-          totalMessages: chatState.session.messages.length + 2,
-          hasSummary: !!parsedResponse.conversationSummary,
-          summaryTopic: parsedResponse.conversationSummary.topic,
-          referencesCount: parsedResponse.references.length,
-          nextQuestionsCount: parsedResponse.nextQuestions.length
+          totalMessages: chatState.session.messages.length + 2
         });
       } else {
         throw new Error('AI conversation response was empty or invalid');
@@ -279,7 +268,80 @@ export function useAgentChat(tokenId?: number) {
   }, [chatState.session, sendConversationMessage, buildConversationPrompt, debugLog]);
 
   /**
-   * Zapisuje konwersację do storage i kontraktu
+   * NEW: Wysyła rozmowę do LLM dla utworzenia unified summary
+   */
+  const createConversationSummary = async (
+    conversationHistory: ChatMessage[],
+    context: ConversationContext
+  ): Promise<ConversationUnifiedSchema | null> => {
+    try {
+      debugLog('Creating conversation summary with LLM', {
+        messageCount: conversationHistory.length,
+        agentName: context.agentProfile.name
+      });
+
+      // Build summarization prompt
+      const summaryPrompt = buildConversationSummaryPrompt(context, conversationHistory);
+      
+      debugLog('Sending to AI for summarization', { 
+        promptLength: summaryPrompt.length
+      });
+
+      // Send to AI compute service
+      const apiUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
+      
+      const response = await fetch(`${apiUrl}/analyze-dream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          walletAddress: address,
+          query: summaryPrompt
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const apiResult = await response.json();
+      
+      if (!apiResult.success) {
+        throw new Error(apiResult.error || 'Conversation summarization failed');
+      }
+
+      const aiResponseText = apiResult.data.response;
+      debugLog('LLM summary response received', { responseLength: aiResponseText.length });
+
+      // Parse JSON response
+      const jsonMatch = aiResponseText.match(/```json\s*([\s\S]*?)\s*```/);
+      if (!jsonMatch) {
+        throw new Error('No JSON block found in LLM response');
+      }
+
+      const summaryData = JSON.parse(jsonMatch[1]) as ConversationUnifiedSchema;
+      
+      debugLog('Conversation summary created', {
+        conversationId: summaryData.id,
+        topic: summaryData.topic,
+        type: summaryData.type,
+        duration: summaryData.duration,
+        keyInsights: summaryData.key_insights.length
+      });
+
+      return summaryData;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      debugLog('Conversation summarization failed', { error: errorMessage });
+      return null;
+    }
+  };
+
+  /**
+   * Zapisuje konwersację do storage i kontraktu - używa unified schema
    */
   const saveConversation = useCallback(async () => {
     if (!chatState.session || !chatState.session.builtContext || chatState.session.messages.length === 0) {
@@ -287,38 +349,32 @@ export function useAgentChat(tokenId?: number) {
       return;
     }
 
-    if (!chatState.session.currentSummary) {
-      setChatState(prev => ({ ...prev, error: 'No conversation summary available to save' }));
-      return;
-    }
-
     setChatState(prev => ({ 
       ...prev, 
       isSaving: true, 
-      saveStatus: 'Preparing conversation summary...',
+      saveStatus: 'Creating conversation summary...',
       error: null
     }));
 
     try {
-      debugLog('Starting conversation save', {
+      debugLog('Starting conversation save with unified schema', {
         sessionId: chatState.session.sessionId,
-        messageCount: chatState.session.messages.length,
-        hasSummary: !!chatState.session.currentSummary
+        messageCount: chatState.session.messages.length
       });
 
-      // 1. Create ultra-light conversation data
-      const conversationData: ConversationSummary = {
-        id: chatState.session.builtContext.agentProfile.conversationCount + 1,
-        date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-        topic: chatState.session.currentSummary.topic,
-        emotional_tone: chatState.session.currentSummary.emotional_tone,
-        key_insights: chatState.session.currentSummary.key_insights, // WSZYSTKIE insights
-        analysis: chatState.session.currentSummary.analysis
-      };
+      // 1. Create unified summary using LLM
+      const unifiedSummary = await createConversationSummary(
+        chatState.session.messages, 
+        chatState.session.builtContext
+      );
+      
+      if (!unifiedSummary) {
+        throw new Error('Failed to create conversation summary');
+      }
 
       // 2. Save to storage
       setChatState(prev => ({ ...prev, saveStatus: 'Uploading to storage...' }));
-      const rootHash = await saveConversationToStorage(chatState.session.tokenId, conversationData);
+      const rootHash = await saveConversationToStorage(chatState.session.tokenId, unifiedSummary);
 
       if (rootHash) {
         // 3. Record in contract
@@ -331,11 +387,13 @@ export function useAgentChat(tokenId?: number) {
           saveStatus: 'Conversation saved successfully!'
         }));
 
-        debugLog('Conversation saved successfully', {
-          conversationId: conversationData.id,
+        debugLog('Conversation saved successfully with unified schema', {
+          conversationId: unifiedSummary.id,
           rootHash,
-          topic: conversationData.topic,
-          emotionalTone: conversationData.emotional_tone
+          topic: unifiedSummary.topic,
+          type: unifiedSummary.type,
+          duration: unifiedSummary.duration,
+          relationshipDepth: unifiedSummary.relationship_depth
         });
 
         // Clear save status after 3 seconds
@@ -353,14 +411,19 @@ export function useAgentChat(tokenId?: number) {
       }));
       debugLog('Conversation save failed', { error: errorMessage });
     }
-  }, [chatState.session, debugLog]);
+  }, [chatState.session, address, debugLog]);
 
   /**
-   * Zapisuje konwersację do storage (append-only pattern)
+   * Zapisuje konwersację do storage (append-only pattern) - unified schema
    */
-  const saveConversationToStorage = async (tokenId: number, conversationData: any): Promise<string> => {
+  const saveConversationToStorage = async (tokenId: number, conversationData: ConversationUnifiedSchema): Promise<string> => {
     try {
-      debugLog('Saving conversation to storage', { tokenId, conversationId: conversationData.id });
+      debugLog('Saving conversation to storage with unified schema', { 
+        tokenId, 
+        conversationId: conversationData.id,
+        topic: conversationData.topic,
+        type: conversationData.type
+      });
 
       // 1. Get current conversation hash from contract
       const [provider] = await getProvider();
@@ -396,10 +459,12 @@ export function useAgentChat(tokenId?: number) {
         { type: 'application/json' }
       );
 
-      debugLog('Uploading conversations file', { 
+      debugLog('Uploading conversations file with unified schema', { 
         fileName, 
         totalConversations: updatedConversations.length,
-        fileSize: file.size
+        fileSize: file.size,
+        newConversationType: conversationData.type,
+        relationshipDepth: conversationData.relationship_depth
       });
 
       const uploadResult = await uploadFile(file);

@@ -9,25 +9,25 @@ export default function AgentChat() {
   const { theme, debugLog } = useTheme();
   const {
     sendMessage,
-    resetChat,
-    saveCurrentConversation,
-    isLoadingContext,
-    isProcessingWithAI,
-    isSavingToStorage,
-    isRecordingOnChain,
-    isWaitingForReceipt,
-    isComplete,
+    resetSession,
+    saveConversation,
+    isTyping,
+    // isProcessingWithAI, // Not exported by useAgentChat
+    isSaving,
+    isProcessingContract,
+    // isWaitingForReceipt, // Not exported by useAgentChat
+    // isComplete, // Not exported by useAgentChat
     error,
-    currentStep,
-    lastConversation,
-    storageHash,
-    txHash,
-    hasAgent,
-    userAgent,
-    userTokenId,
-    isConnected,
-    isCorrectNetwork,
-    ContextType,
+    // currentStep, // Not exported by useAgentChat
+    // lastConversation, // Not exported by useAgentChat  
+    // storageHash, // Not exported by useAgentChat
+    // txHash, // Not exported by useAgentChat
+    // hasAgent, // Should come from useAgentRead
+    // userAgent, // Should come from useAgentRead  
+    // userTokenId, // Should come from useAgentRead
+    // isConnected, // Should come from useWallet
+    // isCorrectNetwork, // Should come from useWallet  
+    // ContextType, // Should be imported directly
     lastPrompt
   } = useAgentChat();
 

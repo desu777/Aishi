@@ -59,31 +59,23 @@ export function useAgentConversationPrompt() {
       conversationHistoryLength: context.conversationHistory.length
     });
 
-    // 🆕 WYKRYCIE JĘZYKA: na podstawie bieżącej wiadomości użytkownika
-    const currentLanguageResult = detectAndGetInstructions(userMessage);
-    debugLog('Current message language detection', {
-      detectedLanguage: currentLanguageResult.language,
-      confidence: currentLanguageResult.detection.confidence,
-      isReliable: currentLanguageResult.detection.isReliable,
-      originalContextLanguage: context.languageDetection.detectedLanguage
+    // 🔍 WYKRYCIE JĘZYKA Z WIADOMOŚCI UŻYTKOWNIKA (przed budową promptu)
+    const messageLanguageDetection = detectAndGetInstructions(userMessage);
+    debugLog('Message language detection', {
+      detectedLanguage: messageLanguageDetection.language,
+      confidence: messageLanguageDetection.detection.confidence,
+      isReliable: messageLanguageDetection.detection.isReliable,
+      userMessage: userMessage.substring(0, 50) + '...'
     });
 
-    // Użyj aktualnego wykrycia języka jeśli jest bardziej niezawodne
-    const useCurrentLanguage = currentLanguageResult.detection.isReliable && 
-                              currentLanguageResult.detection.confidence > 0.3;
+    // Użyj wykrytego języka z wiadomości (podobnie jak w useAgentPrompt.ts)
+    const languageInstructions = messageLanguageDetection.instructions;
+    const detectedLanguageName = getLanguageName(messageLanguageDetection.language);
     
-    const finalLanguageDetection = useCurrentLanguage ? {
-      detectedLanguage: currentLanguageResult.language,
-      languageName: getLanguageName(currentLanguageResult.language),
-      confidence: currentLanguageResult.detection.confidence,
-      isReliable: currentLanguageResult.detection.isReliable,
-      promptInstructions: currentLanguageResult.instructions
-    } : context.languageDetection;
-
-    debugLog('Final language selection', {
-      usedCurrentLanguage: useCurrentLanguage,
-      finalLanguage: finalLanguageDetection.detectedLanguage,
-      finalInstructions: finalLanguageDetection.promptInstructions
+    debugLog('Language instructions prepared', {
+      language: messageLanguageDetection.language,
+      languageName: detectedLanguageName,
+      instructions: languageInstructions
     });
 
     // 🆕 BUDUJ SEKCJE PROMPTU - rozszerzone
@@ -103,7 +95,7 @@ export function useAgentConversationPrompt() {
     const prompt = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 ${roleDefinition}
 
-${finalLanguageDetection.promptInstructions}
+${languageInstructions}
 
 ${ownerPersonalitySection}
 
@@ -117,6 +109,8 @@ ${memorySection}
 
 ${digitalSoulSection}
 
+CONVERSATION STYLE: Engage in natural, flowing conversation. Be warm, empathetic, and genuinely interested. Reference their dreams, personality, and past conversations when relevant. Don't create formal summaries - just be present and supportive.
+
 ${privateThoughtTagOpen}
 Think freely and empathetically.
 ${privateThoughtTagClose}<|eot_id|>
@@ -127,32 +121,18 @@ ${conversationHistorySection}
 They just said: ${userMessage}<|eot_id|>
 
 <|start_header_id|>assistant<|end_header_id|>
-\`\`\`json
-{
-  "agent_response": "",
-  "references": [],
-  "emotional_mirror": {
-    "detected_emotion": "",
-    "matching_personality_trait": "which trait resonates",
-    "symbolic_connection": "which dream symbols relate"
-  },
-  "next_questions": [],
-  "conversation_summary": {
-    "topic": "",
-    "emotional_tone": "How they're feeling",
-    "key_insights": ["insight1", "insight2", "insight3"],
-    "analysis": ""
-  }
-}
-\`\`\``;
+${privateThoughtTagOpen}
+Im her/his friend, need to respond naturally and warmly to their message, drawing on our shared history and their personality profile.
+${privateThoughtTagClose}`;
 
     debugLog('Conversation prompt built successfully', { 
       promptLength: prompt.length,
       agentName: context.agentProfile.name,
-      detectedLanguage: finalLanguageDetection.detectedLanguage,
+      detectedLanguage: messageLanguageDetection.language,
+      detectedLanguageName: detectedLanguageName,
+      languageInstructions: languageInstructions,
       uniqueFeatures: context.uniqueFeatures.length,
       memoryDepth: context.memoryAccess.memoryDepth,
-      usedCurrentLanguage: useCurrentLanguage,
       dominantSymbols: getDominantSymbols(context).length
     });
 
@@ -160,7 +140,7 @@ They just said: ${userMessage}<|eot_id|>
       prompt,
       expectedFormat: {
         isConversation: true,
-        needsStructuredResponse: true // 🆕 ZMIENIONE NA TRUE
+        needsStructuredResponse: false // 🆕 ZMIENIONE NA FALSE - simple chat
       }
     };
   };
@@ -168,6 +148,86 @@ They just said: ${userMessage}<|eot_id|>
   return {
     buildConversationPrompt
   };
+}
+
+/**
+ * NEW: Buduje prompt do tworzenia unified schema z całej rozmowy
+ */
+export function buildConversationSummaryPrompt(
+  context: ConversationContext,
+  conversationHistory: ChatMessage[]
+): string {
+  const conversationId = context.agentProfile.conversationCount + 1;
+  const sessionDuration = conversationHistory.length > 0 ? 
+    Math.floor((conversationHistory[conversationHistory.length - 1].timestamp - conversationHistory[0].timestamp) / 60000) : 1;
+  
+  // Build conversation text
+  let conversationText = '';
+  conversationHistory.forEach(message => {
+    const role = message.role === 'user' ? 'User' : `${context.agentProfile.name}`;
+    conversationText += `${role}: ${message.content}\n`;
+  });
+
+  const prompt = `You are analyzing a completed conversation between ${context.agentProfile.name} (AI agent) and their owner.
+Create a comprehensive summary using the unified conversation schema.
+
+AGENT CONTEXT:
+- Name: ${context.agentProfile.name}
+- Intelligence: ${context.agentProfile.intelligenceLevel}
+- Dreams analyzed: ${context.agentProfile.dreamCount}
+- Conversations: ${context.agentProfile.conversationCount}
+- Personality: Creativity ${context.personality.creativity}, Empathy ${context.personality.empathy}, Intuition ${context.personality.intuition}
+
+CONVERSATION TO ANALYZE:
+Duration: ${sessionDuration} minutes
+Messages: ${conversationHistory.length}
+
+${conversationText}
+
+AVAILABLE DREAMS FOR REFERENCES:
+${context.historicalData.dailyDreams.map(dream => 
+  `Dream #${dream.id}: ${dream.emotions?.join(',') || 'neutral'} | ${dream.symbols?.join(',') || 'none'} | ${dream.themes?.join(',') || 'none'}`
+).join('\n')}
+
+ANALYSIS TASK:
+1. Determine the main topic and conversation type
+2. Assess emotional tones and relationship dynamics
+3. Extract key insights and growth markers
+4. Identify connections to dreams and themes
+5. Evaluate breakthrough moments and vulnerability levels
+
+OUTPUT FORMAT - Return exactly one JSON object:
+
+\`\`\`json
+{
+  "id": ${conversationId},
+  "date": "${new Date().toISOString().split('T')[0]}",
+  "timestamp": ${Math.floor(Date.now() / 1000)},
+  "duration": ${sessionDuration},
+  "topic": "Main conversation topic",
+  "type": "general_chat|therapeutic|advice_seeking|dream_discussion",
+  "emotional_tone": ["tone1", "tone2"],
+  "key_insights": ["insight1", "insight2", "insight3"],
+  "relationship_depth": 1-10,
+  "breakthrough": true|false,
+  "vulnerability_level": 1-10,
+  "references": {
+    "dreams": [dreamIds],
+    "conversations": [convIds],
+    "themes": ["theme1", "theme2"]
+  },
+  "summary": "Comprehensive summary of the conversation and its significance",
+  "growth_markers": {
+    "self_awareness": 1-10,
+    "integration": 1-10,
+    "action_readiness": 1-10
+  }
+}
+\`\`\`
+
+CRITICAL: Only return the JSON object, no additional text. Be insightful and comprehensive.`;
+
+  return prompt;
 }
 
 /**
@@ -269,12 +329,26 @@ function buildMemorySection(context: ConversationContext): string {
     });
   }
   
-  // 🆕 WSZYSTKIE RECENT CONVERSATIONS - bez ograniczeń  
+  // 🆕 WSZYSTKIE RECENT CONVERSATIONS - pełne dane ze schematu
   if (context.historicalData.recentConversations.length > 0) {
     memorySection += `\n\nALL RECENT TALKS:`;
     context.historicalData.recentConversations.forEach(conv => {
       const convDate = conv.date || (conv.timestamp ? new Date(conv.timestamp * 1000).toLocaleDateString('en-US') : 'unknown');
-      memorySection += `\n${convDate}: ${conv.topic || 'chat'} (${conv.emotional_tone || 'neutral'}) - ${(conv.analysis || conv.conversation_type || 'talked')}`;
+      const duration = conv.duration || 'unknown';
+      const type = conv.type || 'general_chat';
+      const emotionalTone = Array.isArray(conv.emotional_tone) ? conv.emotional_tone.join(',') : (conv.emotional_tone || 'neutral');
+      const keyInsights = conv.key_insights ? conv.key_insights.join(', ') : 'none';
+      const relationshipDepth = conv.relationship_depth || 'unknown';
+      const breakthrough = conv.breakthrough ? 'Yes' : 'No';
+      const vulnerabilityLevel = conv.vulnerability_level || 'unknown';
+      const growthMarkers = conv.growth_markers ? 
+        `Self-awareness: ${conv.growth_markers.self_awareness}/10, Integration: ${conv.growth_markers.integration}/10, Action-readiness: ${conv.growth_markers.action_readiness}/10` : 
+        'unknown';
+      const references = conv.references ? 
+        `Dreams: ${conv.references.dreams?.join(',') || 'none'}, Themes: ${conv.references.themes?.join(',') || 'none'}` : 
+        'none';
+      
+      memorySection += `\nConversation #${conv.id} (${convDate}): ${conv.topic || 'chat'} | Type: ${type} | Duration: ${duration}min | Tone: (${emotionalTone}) | Insights: [${keyInsights}] | Depth: ${relationshipDepth}/10 | Breakthrough: ${breakthrough} | Vulnerability: ${vulnerabilityLevel}/10 | Growth: (${growthMarkers}) | References: (${references}) | Summary: "${conv.summary || conv.analysis || 'No summary'}"`;
     });
   }
 
