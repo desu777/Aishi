@@ -28,12 +28,12 @@
     "lucidity_trend": "stable",
     
     "personality_evolution": {
-      "creativity_shift": +3,
+      "creativity_shift": 3,
       "analytical_shift": -1,
-      "empathy_shift": +2,
-      "intuition_shift": +4,
-      "resilience_shift": +1,
-      "curiosity_shift": +2,
+      "empathy_shift": 2,
+      "intuition_shift": 4,
+      "resilience_shift": 1,
+      "curiosity_shift": 2,
       "dominant_growth_area": "intuition"
     },
     

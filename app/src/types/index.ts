@@ -14,17 +14,21 @@ export interface ThemeColors {
     main: string;
     card: string;
     panel: string;
+    success: string;
   };
   text: {
     primary: string;
     secondary: string;
+    tertiary: string;
     accent: string;
+    success: string;
   };
   border: string;
   accent: {
     primary: string;
     secondary: string;
     tertiary: string;
+    success: string;
   };
   dream: {
     violet: string;

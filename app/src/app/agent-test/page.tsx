@@ -6,7 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
 import { useAgentMint } from '../../hooks/agentHooks';
 import { useAgentRead } from '../../hooks/agentHooks';
-import { Sparkles, Info, Moon, MessageCircle, Zap, Database } from 'lucide-react';
+import { Sparkles, Info, Moon, MessageCircle, Zap, Database, TrendingUp, Gem } from 'lucide-react';
 
 // Import nowych komponentów
 import MintSection from './components/MintSection';
@@ -14,6 +14,8 @@ import AgentInfoSection from './components/AgentInfoSection';
 import DreamAnalysisSection from './components/DreamAnalysisSection';
 import AgentChatSection from './components/AgentChatSection';
 import ConsolidationTestSection from './components/ConsolidationTestSection';
+import AgentStatsSection from './components/AgentStatsSection';
+import MemoryCoreSection from './components/MemoryCoreSection';
 
 export default function AgentTest() {
   const { theme, debugLog } = useTheme();
@@ -54,8 +56,8 @@ export default function AgentTest() {
     effectiveTokenId
   } = useAgentRead();
   
-  // Mode state
-  const [mode, setMode] = useState<'mint' | 'info' | 'dream' | 'chat' | 'consolidation'>('mint');
+  // Mode state - dodano 'memory-core'
+  const [mode, setMode] = useState<'mint' | 'info' | 'dream' | 'chat' | 'consolidation' | 'stats' | 'memory-core'>('mint');
   
   // Debug log on start
   debugLog('Agent Test page loaded');
@@ -223,6 +225,46 @@ export default function AgentTest() {
                   <Database size={16} />
                   Consolidation
                 </button>
+                
+                <button
+                  onClick={() => setMode('memory-core')}
+                  style={{
+                    backgroundColor: mode === 'memory-core' ? '#8B5CF6' : theme.bg.panel,
+                    color: mode === 'memory-core' ? 'white' : theme.text.primary,
+                    border: `1px solid ${mode === 'memory-core' ? '#8B5CF6' : theme.border}`,
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Gem size={16} />
+                  Memory Core
+                </button>
+                
+                <button
+                  onClick={() => setMode('stats')}
+                  style={{
+                    backgroundColor: mode === 'stats' ? theme.accent.primary : theme.bg.panel,
+                    color: mode === 'stats' ? 'white' : theme.text.primary,
+                    border: `1px solid ${mode === 'stats' ? theme.accent.primary : theme.border}`,
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Sparkles size={16} />
+                  Statistics
+                </button>
               </div>
             </div>
 
@@ -282,6 +324,19 @@ export default function AgentTest() {
           <ConsolidationTestSection
             hasAgent={readHasAgent}
             effectiveTokenId={effectiveTokenId}
+          />
+        )}
+
+            {mode === 'memory-core' && (
+          <MemoryCoreSection
+            hasAgent={readHasAgent}
+            effectiveTokenId={effectiveTokenId}
+          />
+        )}
+
+            {mode === 'stats' && (
+          <AgentStatsSection
+            tokenId={effectiveTokenId}
           />
         )}
       </div>

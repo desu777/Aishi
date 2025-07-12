@@ -1,61 +1,61 @@
 {
     "month": 12,
     "year": 2024,
-    "total_dreams": 15,
+    "total_conversations": 23,
     "period": "December 2024",
     
-    "dominant_themes": [
-      "transformation", 
-      "anxiety", 
-      "relationships"
+    "dominant_topics": [
+      "personal_growth", 
+      "relationships", 
+      "career_decisions"
     ],
     
-    "dominant_emotions": [
-      "fear", 
-      "joy", 
-      "curiosity"
+    "emotional_tones": [
+      "reflective", 
+      "curious", 
+      "supportive"
     ],
     
-    "dominant_symbols": [
-      "water", 
-      "flying", 
-      "animals"
+    "conversation_types": [
+      "deep_reflection",
+      "advice_seeking", 
+      "casual_chat"
     ],
     
-    "average_intensity": 7.2,
-    "average_lucidity": 3.8,
-    "intensity_trend": "increasing",
-    "lucidity_trend": "stable",
+    "average_depth": 7.8,
+    "average_duration": 4.2,
+    "depth_trend": "increasing",
+    "engagement_trend": "stable",
     
     "personality_evolution": {
-      "creativity_shift": +3,
-      "analytical_shift": -1,
-      "empathy_shift": +2,
-      "intuition_shift": +4,
-      "resilience_shift": +1,
-      "curiosity_shift": +2,
-      "dominant_growth_area": "intuition"
+      "empathy_shift": 4,
+      "analytical_shift": 2,
+      "creativity_shift": 1,
+      "intuition_shift": 3,
+      "resilience_shift": 2,
+      "curiosity_shift": 3,
+      "dominant_growth_area": "empathy"
     },
     
     "key_insights": [
-      "Recurring water dreams suggest emotional processing",
-      "Flying dreams increased with confidence growth",
-      "Animal symbols represent instinctual wisdom"
+      "Deeper emotional processing through regular conversations",
+      "Increased trust and openness over time",
+      "Strong pattern of seeking guidance during decision points"
     ],
     
     "recurring_patterns": [
-      "Water appears in 60% of dreams",
-      "Nightmares decreased from 40% to 20%"
+      "Weekly check-ins about personal goals",
+      "Tendency to discuss relationships on weekends"
     ],
     
     "breakthrough_moments": [
-      "First lucid dream on December 15th",
-      "Faced fear symbol directly in dream"
+      "First vulnerable conversation about fears",
+      "Major career decision discussion led to clarity"
     ],
     
-    "monthly_essence": "December marked a profound transformation in your dream landscape. The recurring theme of water symbolizes deep emotional processing and cleansing. Your increasing ability to fly in dreams reflects growing confidence and freedom from limiting beliefs. The shift from fearful to curious emotions shows remarkable psychological growth...",
+    "monthly_essence": "December conversations revealed profound personal growth and increasing emotional intelligence. The deepening trust between you and your agent created space for more vulnerable and meaningful exchanges. Your pattern of seeking guidance while maintaining autonomy shows healthy psychological development...",
     
-    "growth_summary": "This month showed significant development in intuitive abilities and emotional resilience. The 25% increase in lucidity suggests stronger self-awareness.",
+    "growth_summary": "This month showed significant development in emotional intelligence and communication depth. The 35% increase in conversation depth suggests growing self-awareness and trust.",
     
     "created_at": "2024-12-15T10:30:00Z",
     "consolidation_version": "1.0"

@@ -33,13 +33,16 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       main: '#0A0A0A',      // Główne tło - czarny
       card: '#121218',      // Sidebar - dark gray
       panel: '#18181F',     // Panele - darker gray
+      success: '#10B981',   // Success background - green
     },
     
     // Teksty (z /client)
     text: {
       primary: '#E6E6E6',   // Główny tekst - light gray
       secondary: '#9999A5', // Drugorzędny tekst - medium gray
-      accent: '#8B5CF6'     // Accent text - violet
+      tertiary: '#6B7280',  // Tertiary text - darker gray
+      accent: '#8B5CF6',    // Accent text - violet
+      success: '#10B981',   // Success text - green
     },
     
     // Obramowania (z /client)
@@ -50,6 +53,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       primary: '#8B5CF6',   // Violet - główny akcent
       secondary: '#FF5CAA', // Pink - zachowujemy z /client
       tertiary: '#7F5AF0',  // Purple - zachowujemy z /client
+      success: '#10B981',   // Success accent - green
     },
     
     // Dodatkowe kolory dla Dreamscape
