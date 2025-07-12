@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useAgentDream, useAgentPrompt, useAgentAI, useAgentRead } from '../../../hooks/agentHooks';
 import { useStorageDownload } from '../../../hooks/storage/useStorageDownload';
-import { Moon, Loader2, AlertCircle, Brain, Database, Users, FileText, Sparkles, Zap, Download, Archive } from 'lucide-react';
+import { Moon, Loader2, AlertCircle, Brain, Database, Users, FileText, Sparkles, Zap, Download, Archive, MessageCircle } from 'lucide-react';
 
 interface DreamAnalysisSectionProps {
   hasAgent: boolean;
@@ -342,7 +342,7 @@ export default function DreamAnalysisSection({
             borderRadius: '6px',
             border: `1px solid ${theme.border}`
           }}>
-            📁 Download JSON files from agent's hierarchical memory system. Each file contains structured data from different time periods.
+            📁 Download JSON files from agent's hierarchical memory system. Each file contains structured data from different time periods, including dreams and conversations.
           </div>
 
           {/* Memory Files Grid */}
@@ -554,6 +554,156 @@ export default function DreamAnalysisSection({
                   padding: '8px 16px',
                   cursor: (!agentData.memory.memoryCoreHash || 
                           agentData.memory.memoryCoreHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                          isDownloading) ? 'not-allowed' : 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download size={12} />
+                    Download
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Daily Conversations File */}
+            <div style={{
+              padding: '15px',
+              backgroundColor: theme.bg.panel,
+              borderRadius: '8px',
+              border: `1px solid ${theme.border}`
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '10px'
+              }}>
+                <MessageCircle size={16} style={{ color: '#4CAF50' }} />
+                <h4 style={{
+                  color: theme.text.primary,
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  margin: 0
+                }}>
+                  Daily Conversations (Current Month)
+                </h4>
+              </div>
+              
+              <div style={{
+                fontSize: '12px',
+                color: theme.text.secondary,
+                marginBottom: '10px',
+                fontFamily: 'monospace'
+              }}>
+                {agentData.memory.currentConvDailyHash || 'No hash available'}
+              </div>
+              
+              <button
+                onClick={() => handleDownloadMemoryFile(
+                  agentData.memory.currentConvDailyHash,
+                  `daily_conversations_${agentData.memory.currentYear}-${String(agentData.memory.currentMonth).padStart(2, '0')}.json`
+                )}
+                disabled={!agentData.memory.currentConvDailyHash || 
+                         agentData.memory.currentConvDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                         isDownloading}
+                style={{
+                  backgroundColor: (!agentData.memory.currentConvDailyHash || 
+                                   agentData.memory.currentConvDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                                   isDownloading) ? theme.bg.card : '#4CAF50',
+                  color: (!agentData.memory.currentConvDailyHash || 
+                         agentData.memory.currentConvDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                         isDownloading) ? theme.text.secondary : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  cursor: (!agentData.memory.currentConvDailyHash || 
+                          agentData.memory.currentConvDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                          isDownloading) ? 'not-allowed' : 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download size={12} />
+                    Download
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Monthly Conversations File */}
+            <div style={{
+              padding: '15px',
+              backgroundColor: theme.bg.panel,
+              borderRadius: '8px',
+              border: `1px solid ${theme.border}`
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '10px'
+              }}>
+                <Users size={16} style={{ color: '#2196F3' }} />
+                <h4 style={{
+                  color: theme.text.primary,
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  margin: 0
+                }}>
+                  Monthly Conversations (Last Consolidation)
+                </h4>
+              </div>
+              
+              <div style={{
+                fontSize: '12px',
+                color: theme.text.secondary,
+                marginBottom: '10px',
+                fontFamily: 'monospace'
+              }}>
+                {agentData.memory.lastConvMonthlyHash || 'No hash available'}
+              </div>
+              
+              <button
+                onClick={() => handleDownloadMemoryFile(
+                  agentData.memory.lastConvMonthlyHash,
+                  `monthly_conversations_consolidated.json`
+                )}
+                disabled={!agentData.memory.lastConvMonthlyHash || 
+                         agentData.memory.lastConvMonthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                         isDownloading}
+                style={{
+                  backgroundColor: (!agentData.memory.lastConvMonthlyHash || 
+                                   agentData.memory.lastConvMonthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                                   isDownloading) ? theme.bg.card : '#2196F3',
+                  color: (!agentData.memory.lastConvMonthlyHash || 
+                         agentData.memory.lastConvMonthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
+                         isDownloading) ? theme.text.secondary : 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  cursor: (!agentData.memory.lastConvMonthlyHash || 
+                          agentData.memory.lastConvMonthlyHash === '0x0000000000000000000000000000000000000000000000000000000000000000' ||
                           isDownloading) ? 'not-allowed' : 'pointer',
                   fontSize: '12px',
                   fontWeight: '600',
