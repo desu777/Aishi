@@ -111,22 +111,37 @@ npm run test       # Run tests
 ## Development Workflow
 
 ### Environment Setup
-Each component requires specific environment variables:
 
-**0G-Compute** (`.env`):
+The project uses **centralized environment loading** for security. Environment files are stored outside the repository for enhanced security.
+
+**Centralized Loading System**:
+- Primary: `ENV_FILE_PATH` environment variable (external secure location)
+- Fallback: Local `.env` files in project directories
+- Implementation: `envLoader.ts` (0g-compute) and `envLoader.js` (contracts)
+
+**External .env locations**:
+- **0G-Compute**: `C:\Users\kubas\Desktop\env\dreamscape\.env`
+- **Contracts**: `C:\Users\kubas\Desktop\env\contracts\.env`
+
+**Example .env files**:
+
+**0G-Compute**:
 ```
 MASTER_WALLET_KEY=your_private_key_here
 RPC_URL=https://evmrpc-testnet.0g.ai
 CHAIN_ID=16601
+PORT=3001
+TEST_ENV=true
 ```
 
-**App** (`.env`):
+**App**:
 ```
 NEXT_PUBLIC_COMPUTE_API_URL=http://localhost:3001/api
 NEXT_PUBLIC_DREAM_TEST=true
+MEMORY_DEEP_ACTIVE=true
 ```
 
-**Contracts** (`.env`):
+**Contracts**:
 ```
 WALLET_PRIVATE_KEY=your_private_key_here
 TREASURY_ADDRESS=0x...
@@ -151,8 +166,11 @@ DREAMSCAPE_TEST=true
 
 3. Start services in order:
    ```bash
-   # Terminal 1: Backend
-   cd 0g-compute && npm run dev
+   # Terminal 1: Backend (with external .env)
+   cd 0g-compute
+   ENV_FILE_PATH=C:\Users\kubas\Desktop\env\dreamscape\.env npm run dev
+   # OR with local fallback
+   npm run dev
 
    # Terminal 2: Main App
    cd app && npm run dev
@@ -160,6 +178,40 @@ DREAMSCAPE_TEST=true
    # Terminal 3: Landing Page (optional)
    cd frontend && npm run dev
    ```
+
+## Application Flow Architecture
+
+### User Journey
+1. **Landing Page** (`frontend:3000`) → **Main App** (`app:3003`)
+2. **Dream Input** → **AI Analysis** → **NFT Minting** → **Memory System**
+
+### Data Flow
+```
+User Input (app:3003)
+    ↓
+0G-Compute Backend (3001)
+    ↓
+AI Analysis (0G Network)
+    ↓
+Smart Contracts (Galileo)
+    ↓
+0G Storage (Off-chain)
+    ↓
+Memory Consolidation
+```
+
+### Service Communication
+- **Frontend** → **Backend**: HTTP API calls to port 3001
+- **Backend** → **0G Network**: SDK for AI inference
+- **Backend** → **Contracts**: Ethers.js for blockchain interaction  
+- **App** → **0G Storage**: Direct SDK calls for file operations
+- **Backend** → **Database**: SQLite for virtual broker management
+
+### Environment Loading Flow
+1. **Check ENV_FILE_PATH** → External .env location
+2. **Fallback** → Local .env in project directory
+3. **Auto-load** → On module import
+4. **Logging** → Only when TEST_ENV=true
 
 ## Core Features
 
@@ -265,11 +317,11 @@ npm run build  # Verifies TypeScript compilation
 
 ##NIE HARDCODUJ API ani zmiennych które można wsadzić do .env: zawsze używaj zmiennych środowiskowych, plików konfiguracyjnych lub stałych. Typu adres sieci kryptowalutowej, rpc itp
 
-##ZMIENNE ŚRODOWISKOWE: przyjmij, że plik .env zawsze istnieje, ale nie masz do niego bezpośredniego dostępu. plik env.example stanowi brame między tobą a mną. Jeśli w tym pliku znajduje się pusta zmienna, to znaczy że to wrażliwe API które dodałem do pliku .env ale tutaj nie udostępniłem. Jeśli tworzysz kod i zawiera odczyt z .env dodawaj do pliku doors.md. Do git ignore zawsze dodawaj plik .env.example .
+##ZMIENNE ŚRODOWISKOWE: Projekt używa scentralizowanego systemu ładowania zmiennych środowiskowych. Pliki .env są przechowywane poza repozytorium dla bezpieczeństwa. Używaj centralized env loader (envLoader.ts/js) który automatycznie ładuje z ENV_FILE_PATH lub lokalnego fallback. Do git ignore zawsze dodawaj plik .env.example .
 
 ##BEZPIECZEŃSTWO PLIKÓW .ENV: Z powodów bezpieczeństwa, wszystkie wrażliwe pliki .env są przechowywane w osobnym folderze poza repozytorium. Projekt używa env_loader.py lub innego centralnego punktu ładowania zmiennych w zależności od używanego języka który automatycznie ładuje .env z zewnętrznej lokalizacji (poprzez zmienną ENV_FILE_PATH) lub z lokalnego fallback. Ta zasada obowiązuje we wszystkich projektach - nigdy nie przechowuj wrażliwych danych w repozytorium, używaj zewnętrznych ścieżek konfigurowanych przez zmienne środowiskowe.
 
-##LOGI DEVELOPERSKIE: używaj sprawdzenia process.env.TEST_ENV === 'true' dla wyświetlania logów debugowych dla projektów które nie mają zdefiniowanej tej zmiennej. Jeśli mają odczytaj z doors.md i zawsze stosuj tą zmienną do logów.
+##LOGI DEVELOPERSKIE: używaj sprawdzenia process.env.TEST_ENV === 'true' dla wyświetlania logów debugowych. Centralized env loader automatycznie obsługuje tę zmienną. W środowisku deweloperskim ustaw TEST_ENV=true w pliku .env dla szczegółowych logów.
 
 ##RESEARCH PRZED DZIAŁANIEM – jeśli nie jesteś pewny implementacji, twoja wiedza nie wystarcza żebyś stwierdził czy rozwiązanie jest dobre. Skorzystaj z sieci, przeszukaj.
 

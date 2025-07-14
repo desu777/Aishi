@@ -5,9 +5,16 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node src/server.ts",
+    "dev:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/dreamscape/.env npm run dev",
+    "dev:windows": "set ENV_FILE_PATH=C:\\Users\\kubas\\Desktop\\env\\dreamscape\\.env && npm run dev",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "npm run build && npm run start"
+    "test": "npm run build && npm run start",
+    "postinstall": "npm run rebuild",
+    "rebuild": "npm rebuild better-sqlite3",
+    "setup:wsl": "npm install && npm run rebuild && echo 'WSL setup complete. Use: npm run dev:wsl'",
+    "setup:windows": "npm install && npm run rebuild && echo 'Windows setup complete. Use: npm run dev:windows'",
+    "setup": "npm install && npm run rebuild && echo 'Setup complete. Environment detected automatically.'"
   },
   "dependencies": {
     "@0glabs/0g-serving-broker": "^0.2.13",

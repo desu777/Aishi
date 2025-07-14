@@ -7,8 +7,20 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "compile": "hardhat compile",
+    "compile:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run compile",
+    "compile:windows": "set ENV_FILE_PATH=C:\\Users\\kubas\\Desktop\\env\\contracts\\.env && npm run compile",
     "deploy": "hardhat deploy --network galileo",
-    "deploy:local": "hardhat deploy --network hardhat"
+    "deploy:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run deploy",
+    "deploy:windows": "set ENV_FILE_PATH=C:\\Users\\kubas\\Desktop\\env\\contracts\\.env && npm run deploy",
+    "deploy:local": "hardhat deploy --network hardhat",
+    "deploy:local:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run deploy:local",
+    "deploy:local:windows": "set ENV_FILE_PATH=C:\\Users\\kubas\\Desktop\\env\\contracts\\.env && npm run deploy:local",
+    "test:complete": "hardhat run scripts/test-complete-suite.js",
+    "test:complete:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run test:complete",
+    "test:complete:windows": "set ENV_FILE_PATH=C:\\Users\\kubas\\Desktop\\env\\contracts\\.env && npm run test:complete",
+    "setup:wsl": "npm install && echo 'WSL setup complete. Use: npm run compile:wsl && npm run deploy:wsl'",
+    "setup:windows": "npm install && echo 'Windows setup complete. Use: npm run compile:windows && npm run deploy:windows'",
+    "setup": "npm install && echo 'Setup complete. Environment detected automatically.'"
   },
   "dependencies": {
     "axios": "^1.10.0",

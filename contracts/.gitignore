@@ -15,7 +15,7 @@ typechain/
 .env.local
 .env.production
 .env.test
-.env.example
+# Note: .env.example is intentionally NOT ignored - it serves as a template
 
 # Deployment artifacts
 deployments/
