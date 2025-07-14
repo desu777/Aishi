@@ -1,10 +1,7 @@
 import { ethers } from 'ethers';
 import { createZGComputeNetworkBroker } from '@0glabs/0g-serving-broker';
 import type { ZGComputeNetworkBroker } from '@0glabs/0g-serving-broker';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+import '../config/envLoader';
 
 export class MasterWalletService {
   private provider: ethers.JsonRpcProvider;

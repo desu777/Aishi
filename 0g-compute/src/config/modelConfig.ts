@@ -1,7 +1,4 @@
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+import './envLoader';
 
 // Mapping of simple model names to full model names
 export const MODEL_MAPPING = {

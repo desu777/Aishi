@@ -1,7 +1,7 @@
 require('@nomicfoundation/hardhat-ethers');
 require('hardhat-deploy');
 require('hardhat-deploy-ethers');
-require('dotenv').config();
+require('./config/envLoader');
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {

@@ -1,15 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
+import './config/envLoader';
 import apiRoutes from './routes/api';
 import aiService from './services/aiService';
 import masterWallet from './services/masterWallet';
 import virtualBrokers from './services/virtualBrokers';
 import queryManager from './services/queryManager';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

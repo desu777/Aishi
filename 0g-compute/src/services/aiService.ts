@@ -1,10 +1,7 @@
 import OpenAI from 'openai';
-import dotenv from 'dotenv';
+import '../config/envLoader';
 import masterWallet from './masterWallet';
 import virtualBrokers from './virtualBrokers';
-
-// Load environment variables
-dotenv.config();
 
 // Constants
 const DEFAULT_MODEL = process.env.MODEL_PICKED || "deepseek-r1-70b";

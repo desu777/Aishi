@@ -1,10 +1,7 @@
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+import '../config/envLoader';
 
 export interface UserBroker {
   id?: number;
