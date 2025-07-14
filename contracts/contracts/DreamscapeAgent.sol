@@ -440,6 +440,10 @@ contract DreamscapeAgent is
             pendingRewards[tokenId].yearlyReflection = true;
             emit YearlyReflectionAvailable(tokenId, year);
         }
+
+        // Clear daily hashes after successful consolidation
+        mem.currentDreamDailyHash = bytes32(0);
+        mem.currentConvDailyHash  = bytes32(0);
     }
 
     /**
@@ -460,6 +464,11 @@ contract DreamscapeAgent is
             unchecked { agent.intelligenceLevel += 5; }
             emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
         }
+
+        // Optional: Clear monthly hashes after yearly consolidation
+        // This provides a clean slate for the new year
+        // mem.lastDreamMonthlyHash = bytes32(0);
+        // mem.lastConvMonthlyHash  = bytes32(0);
     }
 
     /* ───────────────────────────────────────────────── VIEW HELPERS ────────── */
@@ -816,8 +825,7 @@ contract DreamscapeAgent is
         if (m.currentMonth != cm || m.currentYear != cy) {
             emit ConsolidationNeeded(id, m.currentMonth, m.currentYear, "monthly");
             m.currentMonth = cm; m.currentYear = cy;
-            m.currentDreamDailyHash = bytes32(0);
-            m.currentConvDailyHash  = bytes32(0);
+            // Note: currentDreamDailyHash and currentConvDailyHash are now cleared in consolidateMonth()
             if (block.timestamp > m.lastConsolidation + 37 days) consolidationStreak[id] = 0; // lose streak
         }
     }
