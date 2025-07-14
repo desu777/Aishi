@@ -8,14 +8,34 @@ AI backend service with virtual brokers and Master Wallet architecture for 0G Ne
 # Install dependencies
 npm install
 
-# Set environment path (external .env for security)
-export ENV_FILE_PATH=C:\Users\kubas\Desktop\env\dreamscape\.env
-
 # Run development server
 npm run dev
 
 # Production build
 npm run build && npm start
+```
+
+## Terminal Commands
+
+```bash
+# Method 1: Use external .env (recommended)
+ENV_FILE_PATH=C:\Users\kubas\Desktop\env\dreamscape\.env npm run dev
+
+# Method 2: Linux/WSL format
+ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/dreamscape/.env npm run dev
+
+# Method 3: Use local .env fallback
+npm run dev
+
+# Multiple terminals for full system:
+# Terminal 1: Backend
+cd 0g-compute && npm run dev
+
+# Terminal 2: Main app
+cd app && npm run dev
+
+# Terminal 3: Frontend (optional)
+cd frontend && npm run dev
 ```
 
 ## Environment Setup

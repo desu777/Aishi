@@ -8,9 +8,6 @@ Smart contracts for Dreamscape iNFT system with personality evolution on Galileo
 # Install dependencies
 npm install
 
-# Set environment path (external .env for security)
-export ENV_FILE_PATH=C:\Users\kubas\Desktop\env\contracts\.env
-
 # Compile contracts
 npm run compile
 
@@ -19,6 +16,19 @@ npm run deploy
 
 # Deploy to local hardhat
 npm run deploy:local
+```
+
+## Terminal Commands
+
+```bash
+# Method 1: Use external .env (recommended)
+ENV_FILE_PATH=C:\Users\kubas\Desktop\env\contracts\.env npm run deploy
+
+# Method 2: Linux/WSL format
+ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run deploy
+
+# Method 3: Use local .env fallback
+npm run deploy
 ```
 
 ## Environment Setup
