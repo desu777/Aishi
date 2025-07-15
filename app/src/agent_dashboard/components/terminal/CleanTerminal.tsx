@@ -2,6 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { CommandProcessor } from '../../commands/CommandProcessor';
+import { TerminalLine } from '../../commands/types';
+import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
+import { useAgentRead } from '../../../hooks/agentHooks/useAgentRead';
 
 interface TerminalProps {
   darkMode?: boolean;
@@ -11,15 +15,11 @@ interface TerminalProps {
   className?: string;
 }
 
-interface TerminalLine {
-  type: 'input' | 'output' | 'system';
-  content: string;
-  timestamp?: number;
-}
+// TerminalLine is now imported from types
 
 const CleanTerminal: React.FC<TerminalProps> = ({
   darkMode = true,
-  title = "Agent Dashboard — zsh — 80x24",
+  title,
   width = "100%",
   height = "600px",
   className = ""
@@ -34,8 +34,22 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   ]);
   const [currentInput, setCurrentInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingMintName, setPendingMintName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
+  const commandProcessorRef = useRef(new CommandProcessor());
+  
+  // Agent hooks
+  const { mintAgent, isLoading: isMinting, error: mintError, resetMint, isWalletConnected, hasCurrentBalance, isCorrectNetwork } = useAgentMint();
+  const { hasAgent, agentData, isLoading: isLoadingAgent } = useAgentRead();
+
+  // Generate dynamic title based on agent status
+  const getTerminalTitle = (): string => {
+    if (hasAgent && agentData?.agentName) {
+      return `${agentData.agentName} — zeroG — 80x24`;
+    }
+    return title || "Agent Dashboard — zeroG — 80x24";
+  };
 
   // Focus input when terminal is clicked
   const handleTerminalClick = () => {
@@ -52,36 +66,202 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   // Handle command input
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      executeCommand(currentInput);
+      executeEnhancedCommand(currentInput);
       setCurrentInput('');
     }
   };
 
-  // Execute command - clean version with no mock responses
+  // Add line to terminal
+  const addLine = (line: TerminalLine) => {
+    setLines(prev => [...prev, line]);
+  };
+
+  // Execute command using CommandProcessor
   const executeCommand = async (command: string) => {
     const trimmedCommand = command.trim();
     
     // Add input to history
-    setLines(prev => [...prev, { 
+    addLine({ 
       type: 'input', 
       content: `$ ${trimmedCommand}`,
       timestamp: Date.now()
-    }]);
+    });
 
     if (!trimmedCommand) return;
 
-    // Only handle clear command for terminal functionality
-    if (trimmedCommand.toLowerCase() === 'clear') {
-      setLines([]);
-      return;
-    }
+    try {
+      setIsLoading(true);
+      
+      const result = await commandProcessorRef.current.executeCommand(trimmedCommand, {
+        addLine,
+        setLoading: setIsLoading,
+        currentUser: 'user'
+      });
 
-    // For any other command, show a generic message
-    setLines(prev => [...prev, { 
-      type: 'output', 
-      content: 'Terminal ready for command integration...',
-      timestamp: Date.now()
-    }]);
+      // Handle special clear command
+      if (result.output === '__CLEAR__') {
+        setLines([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle mint command specifically
+      if (trimmedCommand.startsWith('mint ') && result.requiresConfirmation) {
+        const agentName = trimmedCommand.split(' ').slice(1).join(' ');
+        
+        // Check wallet and agent status first
+        if (!isWalletConnected) {
+          addLine({
+            type: 'error',
+            content: 'Wallet not connected. Please connect your wallet first.',
+            timestamp: Date.now()
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (!isCorrectNetwork) {
+          addLine({
+            type: 'error', 
+            content: 'Wrong network. Please switch to 0G Galileo Testnet.',
+            timestamp: Date.now()
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (hasAgent && agentData) {
+          addLine({
+            type: 'info',
+            content: `You already have an agent: "${agentData.agentName}" (Token ID: ${agentData.intelligenceLevel})`,
+            timestamp: Date.now()
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (!hasCurrentBalance) {
+          addLine({
+            type: 'error',
+            content: 'Insufficient balance. You need 0.1 OG to mint an agent.',
+            timestamp: Date.now()
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Store the agent name for confirmation
+        setPendingMintName(agentName);
+        
+        addLine({
+          type: 'info',
+          content: `Ready to mint agent "${agentName}"`,
+          timestamp: Date.now()
+        });
+        
+        addLine({
+          type: 'warning',
+          content: 'are u sure? yes/no',
+          timestamp: Date.now()
+        });
+      } else if (result.output) {
+        addLine({
+          type: result.type,
+          content: result.output,
+          timestamp: Date.now()
+        });
+      }
+      
+    } catch (error: any) {
+      addLine({
+        type: 'error',
+        content: `Error: ${error.message || error}`,
+        timestamp: Date.now()
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle mint confirmation
+  const handleMintConfirmation = async (confirmed: boolean) => {
+    if (!pendingMintName) return;
+    
+    if (confirmed) {
+      addLine({
+        type: 'success',
+        content: 'new era of your life begins now . . .',
+        timestamp: Date.now()
+      });
+      
+      try {
+        setIsLoading(true);
+        const result = await mintAgent(pendingMintName);
+        
+        if (result.success) {
+          addLine({
+            type: 'success', 
+            content: `✅ Agent "${pendingMintName}" minted successfully!`,
+            timestamp: Date.now()
+          });
+          
+          if (result.txHash) {
+            addLine({
+              type: 'info',
+              content: `Transaction: ${result.txHash}`,
+              timestamp: Date.now()
+            });
+          }
+        } else {
+          addLine({
+            type: 'error',
+            content: `❌ Minting failed: ${result.error}`,
+            timestamp: Date.now()
+          });
+        }
+      } catch (error: any) {
+        addLine({
+          type: 'error',
+          content: `❌ Minting error: ${error.message || error}`,
+          timestamp: Date.now()
+        });
+      } finally {
+        setIsLoading(false);
+        setPendingMintName(null);
+      }
+    } else {
+      addLine({
+        type: 'info',
+        content: 'Mint cancelled',
+        timestamp: Date.now()
+      });
+      setPendingMintName(null);
+    }
+  };
+
+  // Enhanced command execution to handle mint confirmation
+  const executeEnhancedCommand = async (command: string) => {
+    const trimmedCommand = command.trim().toLowerCase();
+    
+    // Handle mint confirmation
+    if (pendingMintName) {
+      if (trimmedCommand === 'yes' || trimmedCommand === 'y') {
+        await handleMintConfirmation(true);
+        return;
+      } else if (trimmedCommand === 'no' || trimmedCommand === 'n') {
+        await handleMintConfirmation(false);
+        return;
+      } else {
+        addLine({
+          type: 'warning',
+          content: 'Please answer yes/no (y/n)',
+          timestamp: Date.now()
+        });
+        return;
+      }
+    }
+    
+    await executeCommand(command);
   };
 
   // Terminal colors based on mode
@@ -180,7 +360,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           paddingLeft: 'clamp(8px, 2vw, 12px)',
           paddingRight: 'clamp(8px, 2vw, 12px)'
         }}>
-          {title}
+          {getTerminalTitle()}
         </div>
 
         <div style={{ width: 'clamp(32px, 8vw, 60px)' }} /> {/* Responsive spacer */}
@@ -207,7 +387,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           <div key={index} style={{
             marginBottom: '2px',
             color: line.type === 'system' ? colors.system : 
-                   line.type === 'input' ? colors.prompt : colors.text,
+                   line.type === 'input' ? colors.prompt :
+                   line.type === 'error' ? '#ff6b6b' :
+                   line.type === 'success' ? '#51cf66' :
+                   line.type === 'warning' ? '#ffd43b' :
+                   line.type === 'info' ? theme.accent.primary :
+                   colors.text,
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word'
           }}>
