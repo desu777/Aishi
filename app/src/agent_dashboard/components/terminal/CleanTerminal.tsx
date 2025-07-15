@@ -34,6 +34,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   const [lines, setLines] = useState<TerminalLine[]>([]);
   const [welcomeLines, setWelcomeLines] = useState<TerminalLine[]>([]);
   const [currentInput, setCurrentInput] = useState('');
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const [isSystemLoading, setIsSystemLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -49,6 +51,21 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
   // Check if mobile for shorter title
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Load command history from localStorage on mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('dreamscape-terminal-history');
+    if (savedHistory) {
+      try {
+        const history = JSON.parse(savedHistory);
+        if (Array.isArray(history)) {
+          setCommandHistory(history.slice(-50)); // Keep max 50 entries
+        }
+      } catch (error) {
+        debugLog('Failed to load command history:', error);
+      }
+    }
+  }, [debugLog]);
   
   useEffect(() => {
     const checkIsMobile = () => {
@@ -196,11 +213,69 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
   }, [lines]);
 
-  // Handle command input
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  // Save command to history and localStorage
+  const saveCommandToHistory = useCallback((command: string) => {
+    const trimmedCommand = command.trim();
+    if (!trimmedCommand || trimmedCommand === 'clear') return;
+
+    setCommandHistory(prev => {
+      // Remove duplicates and add to end
+      const newHistory = prev.filter(cmd => cmd !== trimmedCommand);
+      newHistory.push(trimmedCommand);
+      
+      // Keep max 50 entries
+      const limitedHistory = newHistory.slice(-50);
+      
+      // Save to localStorage
+      try {
+        localStorage.setItem('dreamscape-terminal-history', JSON.stringify(limitedHistory));
+      } catch (error) {
+        debugLog('Failed to save command history:', error);
+      }
+      
+      return limitedHistory;
+    });
+  }, [debugLog]);
+
+  // Handle keyboard input including arrow navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      if (currentInput.trim()) {
+        saveCommandToHistory(currentInput);
+      }
       executeEnhancedCommand(currentInput);
       setCurrentInput('');
+      setHistoryIndex(-1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (commandHistory.length > 0) {
+        const newIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
+        setHistoryIndex(newIndex);
+        setCurrentInput(commandHistory[newIndex]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex > -1) {
+        const newIndex = historyIndex + 1;
+        if (newIndex >= commandHistory.length) {
+          setHistoryIndex(-1);
+          setCurrentInput('');
+        } else {
+          setHistoryIndex(newIndex);
+          setCurrentInput(commandHistory[newIndex]);
+        }
+      }
+    } else if (e.key === 'Escape') {
+      setCurrentInput('');
+      setHistoryIndex(-1);
+    }
+  };
+
+  // Handle input changes (reset history when typing)
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCurrentInput(e.target.value);
+    if (historyIndex !== -1) {
+      setHistoryIndex(-1); // Exit history mode when typing
     }
   };
 
@@ -699,8 +774,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
               ref={inputRef}
               type="text"
               value={currentInput}
-              onChange={(e) => setCurrentInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
               disabled={false}
               style={{
                 background: 'transparent',
