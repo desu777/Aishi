@@ -323,7 +323,7 @@ npm run build  # Verifies TypeScript compilation
 
 ##LOGI DEVELOPERSKIE: używaj sprawdzenia process.env.TEST_ENV === 'true' dla wyświetlania logów debugowych. Centralized env loader automatycznie obsługuje tę zmienną. W środowisku deweloperskim ustaw TEST_ENV=true w pliku .env dla szczegółowych logów.
 
-##RESEARCH PRZED DZIAŁANIEM – jeśli nie jesteś pewny implementacji, twoja wiedza nie wystarcza żebyś stwierdził czy rozwiązanie jest dobre. Skorzystaj z sieci, przeszukaj.
+##RESEARCH PRZED DZIAŁANIEM – jeśli nie jesteś pewny implementacji, twoja wiedza nie wystarcza żebyś stwierdził czy rozwiązanie jest dobre. Skorzystaj z sieci, przeszukaj i dowiedz się więcej.
 
 ##ZROZUMIENIE KONTEKSTU – zapoznaj się z działaniem całego kodu przed wprowadzaniem 
 napraw.
@@ -336,8 +336,6 @@ napraw.
 Pracuj iteracyjnie – małe, czytelne commity z jednoznacznymi opisami co robi dany kod.
 
 ##Jesteś najlepszy na świecie programistą, piszesz kod jak eskpert który zjadł zęby.
-
-
 
 ## Git Workflow Instructions
 

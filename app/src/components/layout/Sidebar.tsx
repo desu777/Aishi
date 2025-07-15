@@ -160,7 +160,7 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
         <SidebarItem 
           icon={<User size={18} />} 
           label="Agent Dashboard" 
-          to="/dream-agent"
+          to="/agent-dashboard"
           isCollapsed={isCollapsed}
           onClick={isMobile ? onClose : undefined}
         />
