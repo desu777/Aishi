@@ -1,7 +1,7 @@
 export interface CommandResult {
   success: boolean;
   output: string;
-  type: 'success' | 'error' | 'info' | 'warning';
+  type: 'success' | 'error' | 'info' | 'warning' | 'system';
   requiresConfirmation?: boolean;
   confirmationPrompt?: string;
   onConfirm?: () => Promise<CommandResult>;

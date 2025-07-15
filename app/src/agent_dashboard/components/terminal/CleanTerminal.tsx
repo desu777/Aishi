@@ -43,12 +43,26 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   const { mintAgent, isLoading: isMinting, error: mintError, resetMint, isWalletConnected, hasCurrentBalance, isCorrectNetwork } = useAgentMint();
   const { hasAgent, agentData, isLoading: isLoadingAgent } = useAgentRead();
 
+  // Check if mobile for shorter title
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 480);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
   // Generate dynamic title based on agent status
   const getTerminalTitle = (): string => {
     if (hasAgent && agentData?.agentName) {
-      return `${agentData.agentName} — zeroG — 80x24`;
+      return isMobile ? `${agentData.agentName} — zeroG` : `${agentData.agentName} — zeroG — 80x24`;
     }
-    return title || "Agent Dashboard — zeroG — 80x24";
+    return title || (isMobile ? "Agent — zeroG" : "Agent Dashboard — zeroG — 80x24");
   };
 
   // Focus input when terminal is clicked

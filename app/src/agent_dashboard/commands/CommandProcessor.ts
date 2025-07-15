@@ -1,4 +1,4 @@
-import { Command, CommandResult, CommandContext, TerminalLine } from './types';
+import { Command, CommandResult, CommandContext } from './types';
 import { mintCommand } from './mint';
 
 export class CommandProcessor {
@@ -12,7 +12,10 @@ export class CommandProcessor {
     this.registerCommand(mintCommand);
   }
 
-  private registerCommand(command: Command) {
+  private registerCommand(command: Command): void {
+    if (!command.name || !command.handler) {
+      throw new Error('Invalid command: name and handler are required');
+    }
     this.commands.set(command.name, command);
   }
 
@@ -85,10 +88,11 @@ export class CommandProcessor {
       }
       
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        output: `Error executing command: ${error.message || error}`,
+        output: `Error executing command: ${errorMessage}`,
         type: 'error'
       };
     }

@@ -38,6 +38,23 @@ export default function AgentDashboard() {
     debugLog('Commands panel toggled', { showCommands: !showCommands });
   };
 
+  // Handle escape key to close commands modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showCommands) {
+        setShowCommands(false);
+      }
+    };
+
+    if (showCommands) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showCommands]);
+
   return (
     <Layout>
       <div style={{
@@ -122,121 +139,135 @@ export default function AgentDashboard() {
             darkMode={darkMode}
             width="100%"
             height="100%"
-            title={isMobile ? "Agent — zsh" : "Agent Dashboard — zsh — 80x24"}
           />
         </div>
 
-        {/* Commands Panel */}
+        {/* Commands Modal */}
         {showCommands && (
-          <div style={{
-            marginTop: 'clamp(12px, 3vw, 20px)',
-            padding: 'clamp(12px, 3vw, 16px)',
-            borderRadius: '8px',
-            backgroundColor: theme.bg.card,
-            border: `1px solid ${theme.border}`,
-            animation: 'fadeIn 0.3s ease'
-          }}>
-            <h3 style={{
-              margin: '0 0 clamp(8px, 2vw, 12px) 0',
-              color: theme.text.primary,
-              fontSize: 'clamp(1rem, 3vw, 1.1rem)'
-            }}>
-              Available Commands
-            </h3>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 'clamp(8px, 2vw, 12px)',
-              fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)',
-              color: theme.text.secondary
-            }}>
-              <div style={{
-                padding: '8px',
-                borderRadius: '4px',
-                backgroundColor: theme.bg.panel,
-                border: `1px solid ${theme.border}`
-              }}>
-                <strong style={{ color: theme.accent.primary }}>Agent Commands:</strong>
-                <br />
-                <span style={{ fontFamily: 'monospace', fontSize: '0.85em' }}>
-                  mint, info, stats, chat
-                </span>
-              </div>
-              <div style={{
-                padding: '8px',
-                borderRadius: '4px',
-                backgroundColor: theme.bg.panel,
-                border: `1px solid ${theme.border}`
-              }}>
-                <strong style={{ color: theme.accent.primary }}>System Commands:</strong>
-                <br />
-                <span style={{ fontFamily: 'monospace', fontSize: '0.85em' }}>
-                  status, clear, help
-                </span>
-              </div>
-              <div style={{
-                padding: '8px',
-                borderRadius: '4px',
-                backgroundColor: theme.bg.panel,
-                border: `1px solid ${theme.border}`
-              }}>
-                <strong style={{ color: theme.accent.primary }}>Memory Commands:</strong>
-                <br />
-                <span style={{ fontFamily: 'monospace', fontSize: '0.85em' }}>
-                  memory, consolidate
-                </span>
-              </div>
-            </div>
-            <div style={{
-              marginTop: '12px',
-              padding: '8px',
-              borderRadius: '4px',
-              backgroundColor: theme.bg.panel,
-              border: `1px solid ${theme.border}`,
-              fontSize: 'clamp(0.8rem, 2vw, 0.85rem)',
-              color: theme.text.secondary
-            }}>
-              <strong style={{ color: theme.accent.primary }}>Note:</strong> Commands will be integrated with real agent functionality. Type any command to see current status.
-            </div>
-          </div>
-        )}
-
-        {/* Quick Commands - Only show when commands panel is closed */}
-        {!showCommands && (
-          <div style={{
-            marginTop: 'clamp(12px, 3vw, 20px)',
-            padding: 'clamp(12px, 3vw, 16px)',
-            borderRadius: '8px',
-            backgroundColor: theme.bg.card,
-            border: `1px solid ${theme.border}`
-          }}>
-            <h3 style={{
-              margin: '0 0 clamp(8px, 2vw, 12px) 0',
-              color: theme.text.primary,
-              fontSize: 'clamp(1rem, 3vw, 1.1rem)'
-            }}>
-              Quick Commands
-            </h3>
-            <div style={{
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
               display: 'flex',
-              gap: 'clamp(6px, 2vw, 12px)',
-              flexWrap: 'wrap'
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              animation: 'fadeIn 0.3s ease'
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowCommands(false);
+              }
+            }}
+          >
+            <div style={{
+              backgroundColor: theme.bg.card,
+              border: `1px solid ${theme.border}`,
+              borderRadius: '12px',
+              padding: 'clamp(20px, 5vw, 32px)',
+              width: 'clamp(300px, 90vw, 500px)',
+              maxWidth: '90vw',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+              animation: 'slideIn 0.3s ease'
             }}>
-              {['clear', 'help', 'status'].map((cmd) => (
-                <span
-                  key={cmd}
-                  style={{
-                    padding: 'clamp(3px, 1vw, 4px) clamp(6px, 2vw, 8px)',
-                    borderRadius: '4px',
-                    backgroundColor: theme.bg.panel,
+              <h3 style={{
+                margin: '0 0 clamp(16px, 4vw, 24px) 0',
+                color: theme.text.primary,
+                fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
+                fontWeight: 'bold',
+                textAlign: 'center'
+              }}>
+                Available Commands
+              </h3>
+              
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'clamp(12px, 3vw, 16px)'
+              }}>
+                {/* Mint Command */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  padding: 'clamp(12px, 3vw, 16px)',
+                  backgroundColor: theme.bg.panel,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: '8px',
+                  transition: 'all 0.2s ease'
+                }}>
+                  <code style={{
                     color: theme.accent.primary,
-                    fontSize: 'clamp(10px, 2.5vw, 12px)',
-                    fontFamily: 'monospace'
-                  }}
-                >
-                  {cmd}
-                </span>
-              ))}
+                    fontSize: 'clamp(0.9rem, 3vw, 1rem)',
+                    fontFamily: 'monospace',
+                    fontWeight: 'bold'
+                  }}>
+                    mint &lt;name&gt;
+                  </code>
+                  <span style={{
+                    color: theme.text.secondary,
+                    fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)',
+                    lineHeight: '1.4'
+                  }}>
+                    Mint a new AI dream agent with the specified name
+                  </span>
+                </div>
+                
+                {/* Clear Command */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  padding: 'clamp(12px, 3vw, 16px)',
+                  backgroundColor: theme.bg.panel,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: '8px',
+                  transition: 'all 0.2s ease'
+                }}>
+                  <code style={{
+                    color: theme.accent.primary,
+                    fontSize: 'clamp(0.9rem, 3vw, 1rem)',
+                    fontFamily: 'monospace',
+                    fontWeight: 'bold'
+                  }}>
+                    clear
+                  </code>
+                  <span style={{
+                    color: theme.text.secondary,
+                    fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)',
+                    lineHeight: '1.4'
+                  }}>
+                    Clear terminal output and command history
+                  </span>
+                </div>
+              </div>
+              
+              {/* Close hint */}
+              <div style={{
+                marginTop: 'clamp(16px, 4vw, 24px)',
+                padding: 'clamp(8px, 2vw, 12px)',
+                backgroundColor: theme.bg.main,
+                border: `1px solid ${theme.border}`,
+                borderRadius: '6px',
+                textAlign: 'center',
+                fontSize: 'clamp(0.8rem, 2vw, 0.85rem)',
+                color: theme.text.secondary
+              }}>
+                Press <kbd style={{
+                  backgroundColor: theme.bg.panel,
+                  color: theme.text.primary,
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontSize: '0.9em',
+                  fontFamily: 'monospace'
+                }}>Esc</kbd> or click outside to close
+              </div>
             </div>
           </div>
         )}
@@ -245,8 +276,13 @@ export default function AgentDashboard() {
       {/* Mobile-specific styles */}
       <style jsx>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
         
         @media (max-width: 480px) {
