@@ -39,46 +39,44 @@ No agent found. Type 'mint <name>' to create your agent.`;
   const consolidationStreak = stats.consolidationStreak || 0;
   const pendingRewards = stats.pendingRewards || {};
 
-  // Format evolution metrics
+  // Format evolution metrics - TYLKO PRAWDZIWE DANE Z KONTRAKTU
   const totalEvolutions = Number(agent.totalEvolutions || 0);
   const dreamCount = Number(agent.dreamCount || 0);
   const evolutionRate = dreamCount > 0 ? (totalEvolutions / dreamCount).toFixed(2) : '0.00';
   const lastEvolution = agent.lastEvolutionDate ? 
     new Date(Number(agent.lastEvolutionDate) * 1000).toLocaleDateString() : 'Never';
 
-  // Calculate trend
+  // Calculate trend based on real data
   const evolutionTrend = evolutionRate > 0.5 ? '↗ Increasing' : 
                         evolutionRate > 0.2 ? '→ Steady' : '↘ Decreasing';
 
-  // Format performance metrics
+  // Format performance metrics - TYLKO PRAWDZIWE DANE
   const conversationCount = Number(agent.conversationCount || 0);
-  const responseQuality = Math.min(95, 70 + (totalEvolutions * 3)); // Mock calculation
-  const memoryEfficiency = Math.min(100, 60 + (consolidationStreak * 5)); // Mock calculation
-
-  // Format consolidation info
-  const longestStreak = Math.max(consolidationStreak, Math.floor(consolidationStreak * 1.5)); // Mock data
-  const totalConsolidations = consolidationStreak + Math.floor(consolidationStreak / 2); // Mock data
-  const nextDue = '25 days'; // Mock - should be calculated
-
-  // Format milestones
+  const intelligenceLevel = Number(agent.intelligenceLevel || 0);
+  
+  // Format consolidation info - TYLKO PRAWDZIWE DANE
+  const consolidationReward = stats.pendingRewards || {};
+  const intelligenceBonus = Number(consolidationReward.intelligenceBonus || 0);
+  
+  // Format milestones - TYLKO PRAWDZIWE DANE Z KONTRAKTU
   const achievedMilestones = milestones.filter((m: any) => m.achieved);
   const pendingMilestones = milestones.filter((m: any) => !m.achieved);
 
   let milestonesText = '';
   
-  // Add achieved milestones
+  // Add achieved milestones - PRAWDZIWE DANE
   achievedMilestones.slice(0, 2).forEach((milestone: any) => {
-    const achievedDate = new Date(milestone.achievedAt * 1000).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
-    milestonesText += `✅ ${formatMilestoneName(milestone.milestoneName)} (achieved ${achievedDate})\n`;
+    const achievedDate = milestone.achievedAt ? 
+      new Date(milestone.achievedAt * 1000).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      }) : 'Unknown';
+    milestonesText += `[✓] ${formatMilestoneName(milestone.milestoneName)} (achieved ${achievedDate})\n`;
   });
 
-  // Add pending milestones
+  // Add pending milestones - BEZ MOCK PROGRESS
   pendingMilestones.slice(0, 2).forEach((milestone: any) => {
-    const progress = Math.floor(Math.random() * 40 + 60); // Mock progress
-    milestonesText += `⏳ ${formatMilestoneName(milestone.milestoneName)} (progress: ${progress}%)\n`;
+    milestonesText += `[...] ${formatMilestoneName(milestone.milestoneName)} (in progress)\n`;
   });
 
   return `═══════════════════════════════════════
@@ -93,17 +91,16 @@ EVOLUTION METRICS:
 PERFORMANCE:
 ├─ Dream Processing: ${dreamCount} total
 ├─ Conversation Count: ${conversationCount}
-├─ Response Quality: ${responseQuality}% positive
-└─ Memory Efficiency: ${memoryEfficiency}%
+├─ Intelligence Level: ${intelligenceLevel}
+└─ Personality Initialized: ${agent.personalityInitialized ? 'Yes' : 'No'}
 
 CONSOLIDATION:
 ├─ Current Streak: ${consolidationStreak} months
-├─ Longest Streak: ${longestStreak} months
-├─ Total Consolidations: ${totalConsolidations}
-└─ Next Due: ${nextDue}
+├─ Pending Intelligence Bonus: +${intelligenceBonus}
+└─ Agent Created: ${new Date(Number(agent.createdAt) * 1000).toLocaleDateString()}
 
 MILESTONES:
-${milestonesText.trim()}`;
+${milestonesText.trim() || 'No milestones data available'}`;
 }
 
 // Helper function to format milestone names

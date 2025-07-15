@@ -11,6 +11,7 @@ import { formatAgentInfo } from '../../commands/info';
 import { formatAgentStats } from '../../commands/stats';
 import { formatSystemStatus } from '../../commands/status';
 import { formatMemoryStatus } from '../../commands/memory';
+import { formatHelpOutput } from '../../commands/help';
 
 interface TerminalProps {
   darkMode?: boolean;
@@ -31,6 +32,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 }) => {
   const { theme, debugLog } = useTheme();
   const [lines, setLines] = useState<TerminalLine[]>([]);
+  const [welcomeLines, setWelcomeLines] = useState<TerminalLine[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSystemLoading, setIsSystemLoading] = useState(true);
@@ -59,32 +61,6 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
-  // System loading sequence with welcome message - runs only once
-  useEffect(() => {
-    const initializeSystem = async () => {
-      // Don't initialize if already initialized
-      if (isInitialized) {
-        return;
-      }
-      
-      // Wait for 2.5 seconds to show loading animation
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      
-      // Build welcome message
-      const welcomeMessages = buildWelcomeMessage();
-      
-      // Set welcome messages to terminal
-      setLines(welcomeMessages);
-      setIsSystemLoading(false);
-      setIsInitialized(true);
-    };
-
-    // Only run if not initialized yet
-    if (!isInitialized) {
-      initializeSystem();
-    }
-  }, [hasAgent, agentData, isLoadingAgent, isInitialized]);
-
   // Build welcome message based on agent status
   const buildWelcomeMessage = useCallback((): TerminalLine[] => {
     const messages: TerminalLine[] = [];
@@ -108,7 +84,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       });
 
       messages.push({
-        type: 'info',
+        type: 'info-labeled',
         content: `Intelligence: ${intelligenceLevel} lvl | Dreams: ${dreamCount} | Created: ${createdDate}`,
         timestamp
       });
@@ -118,7 +94,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       const memoryAccess = agentData.memoryAccess?.monthsAccessible || 0;
       
       messages.push({
-        type: 'info',
+        type: 'info-labeled',
         content: `Network: 0G Galileo | Mood: ${dominantMood} | Memory: ${memoryAccess} months`,
         timestamp
       });
@@ -152,7 +128,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       });
 
       messages.push({
-        type: 'info',
+        type: 'info-labeled',
         content: 'Network: 0G Galileo | Status: No agent minted',
         timestamp
       });
@@ -173,6 +149,32 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
     return messages;
   }, [hasAgent, agentData, isLoadingAgent]);
+
+  // System loading sequence with welcome message - runs only once
+  useEffect(() => {
+    const initializeSystem = async () => {
+      // Don't initialize if already initialized
+      if (isInitialized) {
+        return;
+      }
+      
+      // Wait for 2.5 seconds to show loading animation
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      
+      // Build welcome message
+      const welcomeMessages = buildWelcomeMessage();
+      
+      // Set welcome messages separately
+      setWelcomeLines(welcomeMessages);
+      setIsSystemLoading(false);
+      setIsInitialized(true);
+    };
+
+    // Only run if not initialized yet
+    if (!isInitialized) {
+      initializeSystem();
+    }
+  }, [hasAgent, agentData, isLoadingAgent, isInitialized, buildWelcomeMessage]);
 
   // Generate dynamic title based on agent status
   const getTerminalTitle = (): string => {
@@ -229,12 +231,10 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         currentUser: 'user'
       });
 
-      // Handle special clear command
+      // Handle special clear command - only clear user commands, keep welcome
       if (result.output === '__CLEAR__') {
         setLines([]);
         setIsLoading(false);
-        setIsInitialized(false);
-        setIsSystemLoading(true);
         return;
       }
 
@@ -279,6 +279,13 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           content: memoryOutput,
           timestamp: Date.now()
         });
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.output === 'HELP_COMMAND_REQUEST') {
+        const helpLines = formatHelpOutput();
+        setLines(prev => [...prev, ...helpLines]);
         setIsLoading(false);
         return;
       }
@@ -580,22 +587,104 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             </span>
           </div>
         ) : (
-          lines.map((line, index) => (
-            <div key={index} style={{
-              marginBottom: '2px',
-              color: line.type === 'system' ? colors.system : 
-                     line.type === 'input' ? colors.prompt :
-                     line.type === 'error' ? '#ff6b6b' :
-                     line.type === 'success' ? '#51cf66' :
-                     line.type === 'warning' ? '#ffd43b' :
-                     line.type === 'info' ? theme.accent.primary :
-                     colors.text,
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word'
-            }}>
-              {line.content}
-            </div>
-          ))
+          <>
+            {/* Welcome Messages */}
+            {welcomeLines.map((line, index) => (
+              <div key={`welcome-${index}`} style={{
+                marginBottom: '2px',
+                color: line.type === 'system' ? '#6b7280' : 
+                       line.type === 'input' ? theme.accent.primary :
+                       line.type === 'error' ? '#ef4444' :
+                       line.type === 'success' ? '#22c55e' :
+                       line.type === 'warning' ? '#f59e0b' :
+                       line.type === 'info' ? colors.text :
+                       line.type === 'help-command' ? '#ffffff' :
+                       line.type === 'info-labeled' ? colors.text :
+                       colors.text,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word'
+              }}>
+                {line.type === 'info-labeled' ? (
+                  <span>
+                    {line.content.split(' | ').map((segment, index) => (
+                      <span key={index}>
+                        {segment.includes(':') ? (
+                          <span>
+                            <span style={{ color: theme.accent.primary }}>
+                              {segment.split(':')[0]}:
+                            </span>
+                            <span style={{ color: colors.text }}>
+                              {segment.substring(segment.indexOf(':') + 1)}
+                            </span>
+                          </span>
+                        ) : (
+                          <span style={{ color: colors.text }}>{segment}</span>
+                        )}
+                        {index < line.content.split(' | ').length - 1 && (
+                          <span style={{ color: theme.accent.primary }}> | </span>
+                        )}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  line.content
+                )}
+              </div>
+            ))}
+            
+            {/* User Command Lines */}
+            {lines.map((line, index) => (
+              <div key={`user-${index}`} style={{
+                marginBottom: '2px',
+                color: line.type === 'system' ? '#6b7280' : 
+                       line.type === 'input' ? theme.accent.primary :
+                       line.type === 'error' ? '#ef4444' :
+                       line.type === 'success' ? '#22c55e' :
+                       line.type === 'warning' ? '#f59e0b' :
+                       line.type === 'info' ? colors.text :
+                       line.type === 'help-command' ? colors.text :
+                       line.type === 'info-labeled' ? colors.text :
+                       colors.text,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word'
+              }}>
+                {line.type === 'help-command' ? (
+                  <span>
+                    <span style={{ color: theme.accent.primary }}>
+                      {line.content.split(' - ')[0]}
+                    </span>
+                    <span style={{ color: colors.text }}>
+                      {line.content.includes(' - ') ? ' - ' + line.content.split(' - ')[1] : ''}
+                    </span>
+                  </span>
+                ) : line.type === 'info-labeled' ? (
+                  <span>
+                    {line.content.split(' | ').map((segment, index) => (
+                      <span key={index}>
+                        {segment.includes(':') ? (
+                          <span>
+                            <span style={{ color: theme.accent.primary }}>
+                              {segment.split(':')[0]}:
+                            </span>
+                            <span style={{ color: colors.text }}>
+                              {segment.substring(segment.indexOf(':') + 1)}
+                            </span>
+                          </span>
+                        ) : (
+                          <span style={{ color: colors.text }}>{segment}</span>
+                        )}
+                        {index < line.content.split(' | ').length - 1 && (
+                          <span style={{ color: colors.text }}> | </span>
+                        )}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  line.content
+                )}
+              </div>
+            ))}
+          </>
         )}
 
         {/* Current Input Line - Hidden during system loading */}
@@ -605,14 +694,14 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             alignItems: 'center',
             marginTop: '4px'
           }}>
-            <span style={{ color: colors.prompt, marginRight: '8px' }}>$</span>
+            <span style={{ color: theme.accent.primary, marginRight: '8px' }}>$</span>
             <input
               ref={inputRef}
               type="text"
               value={currentInput}
               onChange={(e) => setCurrentInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              disabled={isLoading}
+              disabled={false}
               style={{
                 background: 'transparent',
                 border: 'none',

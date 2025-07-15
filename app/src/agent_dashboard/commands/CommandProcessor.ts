@@ -71,22 +71,9 @@ export class CommandProcessor {
 
     // Handle help command specially
     if (trimmedInput.toLowerCase() === 'help') {
-      const availableCommands = Array.from(this.commands.values());
-      const helpOutput = [
-        'Available commands:',
-        '',
-        ...availableCommands.map(cmd => `  ${cmd.name.padEnd(10)} - ${cmd.description}`),
-        '',
-        'System commands:',
-        '  help       - Show this help message',
-        '  clear      - Clear the terminal screen',
-        '',
-        'Usage: <command> [arguments]'
-      ].join('\n');
-      
       return {
         success: true,
-        output: helpOutput,
+        output: 'HELP_COMMAND_REQUEST',
         type: 'info'
       };
     }

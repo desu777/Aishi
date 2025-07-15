@@ -45,29 +45,29 @@ No agent found. Type 'mint <name>' to create your agent.`;
                     intelligenceLevel >= 5 ? 'Advanced' : 
                     intelligenceLevel >= 2 ? 'Intermediate' : 'Beginner';
 
-  // Format storage info (mock calculations)
+  // Format storage info - TYLKO PRAWDZIWE DANE Z KONTRAKTU
   const dreamCount = Number(agent.dreamCount || 0);
   const conversationCount = Number(agent.conversationCount || 0);
-  const dreamStorageKB = dreamCount * 50; // Mock: 50KB per dream
-  const conversationStorageKB = conversationCount * 80; // Mock: 80KB per conversation
-  const memoryCoreKB = 856; // Mock memory core size
-  const totalStorageKB = dreamStorageKB + conversationStorageKB + memoryCoreKB;
-
-  // Format consolidation info
+  
+  // Format consolidation info - TYLKO PRAWDZIWE DANE
   const consolidationStreak = consolidation.consolidationStreak || 0;
   const isUpToDate = consolidation.needsConsolidation !== true;
-  const consolidationStatus = isUpToDate ? '✅ Up to date' : '⚠️ Needs consolidation';
-  const nextDue = '25 days'; // Mock - should be calculated from current date
+  const consolidationStatus = isUpToDate ? '[✓] Up to date' : '[!] Needs consolidation';
   const pendingRewards = consolidation.consolidationReward?.totalReward || 0;
-
-  // Format recent activity
+  
+  // Format recent activity - TYLKO PRAWDZIWE DANE Z KONTRAKTU
   const canProcessToday = agent.canProcessDreamToday || false;
   const dreamsTodayAvailable = canProcessToday ? '1' : '0';
   const dreamsTodayUsed = canProcessToday ? '0' : '1';
   const lastDreamDate = agent.personality?.lastDreamDate ? 
     new Date(Number(agent.personality.lastDreamDate) * 1000).toLocaleDateString() : 'Never';
-  const activeConversations = 3; // Mock data
-  const memoryUpdates = 12; // Mock data
+  
+  // Memory hashes from contract
+  const currentDreamHash = agent.memory?.currentDreamDailyHash || 'None';
+  const currentConvHash = agent.memory?.currentConvDailyHash || 'None';
+  const memoryCoreHash = agent.memory?.memoryCoreHash || 'None';
+  const lastConsolidationDate = agent.memory?.lastConsolidation ? 
+    new Date(Number(agent.memory.lastConsolidation) * 1000).toLocaleDateString() : 'Never';
 
   return `═══════════════════════════════════════
            MEMORY SYSTEM
@@ -78,21 +78,21 @@ ACCESS LEVELS:
 ├─ Intelligence Level: ${intelligenceLevel}
 └─ Access Tier: ${accessTier}
 
-STORAGE:
-├─ Dream Storage: ${(dreamStorageKB / 1024).toFixed(1)} MB used
-├─ Conversation Storage: ${(conversationStorageKB / 1024).toFixed(1)} MB used
-├─ Memory Core: ${memoryCoreKB} KB used
-└─ Total Usage: ${(totalStorageKB / 1024).toFixed(3)} MB
+MEMORY HASHES:
+├─ Memory Core: ${memoryCoreHash.slice(0, 10)}...
+├─ Current Dream Daily: ${currentDreamHash.slice(0, 10)}...
+├─ Current Conv Daily: ${currentConvHash.slice(0, 10)}...
+└─ Last Consolidation: ${lastConsolidationDate}
 
 CONSOLIDATION:
 ├─ Status: ${consolidationStatus}
-├─ Next Due: ${nextDue}
 ├─ Current Streak: ${consolidationStreak} months
-└─ Pending Rewards: +${pendingRewards} Intelligence
+├─ Pending Rewards: +${pendingRewards} Intelligence
+└─ Current Month: ${agent.memory?.currentMonth || 'Unknown'}
 
 RECENT ACTIVITY:
 ├─ Dreams Today: ${dreamsTodayUsed}/${dreamsTodayAvailable} available
 ├─ Last Dream: ${lastDreamDate}
-├─ Active Conversations: ${activeConversations}
-└─ Memory Updates: ${memoryUpdates} this month`;
+├─ Dream Count: ${dreamCount} total
+└─ Conversation Count: ${conversationCount} total`;
 }

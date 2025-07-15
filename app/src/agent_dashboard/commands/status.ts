@@ -27,28 +27,28 @@ export function formatSystemStatus(dashboardData: any): string {
   const system = dashboardData.system;
   const agent = dashboardData.agent;
   
-  // Format wallet status
-  const walletStatus = system.wallet.isConnected ? '✅ Connected' : '❌ Disconnected';
+  // Format wallet status - TYLKO PRAWDZIWE DANE
+  const walletStatus = system.wallet.isConnected ? '[✓] Connected' : '[X] Disconnected';
   const walletAddress = system.wallet.isConnected ? system.wallet.shortAddress : 'Not connected';
-  const walletBalance = system.wallet.isConnected ? '1.25 OG' : 'N/A'; // Mock balance
+  const walletBalance = system.wallet.isConnected ? 'Available' : 'N/A'; // Balance needs to be fetched separately
   
-  // Format network status
-  const networkStatus = system.network.isConnected ? '✅ 0G Galileo Testnet' : '❌ Wrong network';
+  // Format network status - TYLKO PRAWDZIWE DANE
+  const networkStatus = system.network.isConnected ? '[✓] 0G Galileo Testnet' : '[X] Wrong network';
   
-  // Format contract status
-  const contractStatus = system.wallet.isConnected && system.network.isConnected ? '✅ Active' : '❌ Inactive';
-  const contractVersion = 'v1.2.0'; // Mock version
+  // Format contract status - TYLKO PRAWDZIWE DANE
+  const contractStatus = system.wallet.isConnected && system.network.isConnected ? '[✓] Active' : '[X] Inactive';
+  const contractNetwork = system.network.isConnected ? 'Galileo Testnet' : 'Unknown';
   
   // Format services status
-  const storageStatus = system.services.storage ? '✅ Available' : '❌ Unavailable';
-  const aiProcessingStatus = system.services.aiProcessing ? '✅ Available' : '❌ Unavailable';
-  const memorySystemStatus = system.services.memorySystem ? '✅ Active' : '❌ Inactive';
-  const dreamProcessingStatus = system.services.dreamProcessing ? '✅ Ready' : '❌ Not ready';
+  const storageStatus = system.services.storage ? '[✓] Available' : '[X] Unavailable';
+  const aiProcessingStatus = system.services.aiProcessing ? '[✓] Available' : '[X] Unavailable';
+  const memorySystemStatus = system.services.memorySystem ? '[✓] Active' : '[X] Inactive';
+  const dreamProcessingStatus = system.services.dreamProcessing ? '[✓] Ready' : '[X] Not ready';
   
   // Format permissions
-  const mintPermission = system.wallet.isConnected && system.network.isConnected ? '✅ Granted' : '❌ Denied';
-  const dreamPermission = agent.hasAgent ? '✅ Granted' : '❌ No agent';
-  const memoryPermission = agent.hasAgent ? '✅ Full Access' : '❌ No access';
+  const mintPermission = system.wallet.isConnected && system.network.isConnected ? '[✓] Granted' : '[X] Denied';
+  const dreamPermission = agent.hasAgent ? '[✓] Granted' : '[X] No agent';
+  const memoryPermission = agent.hasAgent ? '[✓] Full Access' : '[X] No access';
 
   return `═══════════════════════════════════════
            SYSTEM STATUS
@@ -62,7 +62,8 @@ WALLET:
 CONTRACTS:
 ├─ DreamscapeAgent: ${contractStatus}
 ├─ SimpleDreamVerifier: ${contractStatus}
-└─ Contract Version: ${contractVersion}
+├─ Network: ${contractNetwork}
+└─ Chain ID: ${system.network.chainId || 'Unknown'}
 
 SERVICES:
 ├─ 0G Storage: ${storageStatus}
