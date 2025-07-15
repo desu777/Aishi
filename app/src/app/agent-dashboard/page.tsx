@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Layout from '../components/layout/Layout';
-import CleanTerminal from './components/terminal/CleanTerminal';
-import ThemeToggle from './components/ui/ThemeToggle';
-import { useTheme } from '../contexts/ThemeContext';
+import Layout from '../../components/layout/Layout';
+import CleanTerminal from '../../agent_dashboard/components/terminal/CleanTerminal';
+import ThemeToggle from '../../agent_dashboard/components/ui/ThemeToggle';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Command } from 'lucide-react';
 
 export default function AgentDashboard() {
