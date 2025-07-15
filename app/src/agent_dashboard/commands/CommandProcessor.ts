@@ -1,5 +1,9 @@
 import { Command, CommandResult, CommandContext } from './types';
 import { mintCommand } from './mint';
+import { infoCommand } from './info';
+import { statsCommand } from './stats';
+import { statusCommand } from './status';
+import { memoryCommand } from './memory';
 
 export class CommandProcessor {
   private commands: Map<string, Command> = new Map();
@@ -10,6 +14,10 @@ export class CommandProcessor {
 
   constructor() {
     this.registerCommand(mintCommand);
+    this.registerCommand(infoCommand);
+    this.registerCommand(statsCommand);
+    this.registerCommand(statusCommand);
+    this.registerCommand(memoryCommand);
   }
 
   private registerCommand(command: Command): void {
@@ -58,6 +66,28 @@ export class CommandProcessor {
         success: true,
         output: '__CLEAR__', // Special marker for terminal to clear
         type: 'system'
+      };
+    }
+
+    // Handle help command specially
+    if (trimmedInput.toLowerCase() === 'help') {
+      const availableCommands = Array.from(this.commands.values());
+      const helpOutput = [
+        'Available commands:',
+        '',
+        ...availableCommands.map(cmd => `  ${cmd.name.padEnd(10)} - ${cmd.description}`),
+        '',
+        'System commands:',
+        '  help       - Show this help message',
+        '  clear      - Clear the terminal screen',
+        '',
+        'Usage: <command> [arguments]'
+      ].join('\n');
+      
+      return {
+        success: true,
+        output: helpOutput,
+        type: 'info'
       };
     }
 

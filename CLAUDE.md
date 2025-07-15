@@ -355,5 +355,5 @@ Jeśli nie jesteś w 100% z czego wynika błąd, przeszukaj sieć
 ##OGRANICZENIA WIEDZY
 Jeśli twoja wiedza na temat danej biblioteki jest starsza niż z 07.2025 przeszukaj sieć i znajdź najnowszą oraz stabilną wersje tej biblioteki oraz zbierz informacje jak jej używać przykład(wagmi a wagmi v2)
 
-
+### PRACUJEMY NAD DEVELOPMENT WIĘC NIE ROBIMY BUILD 
 

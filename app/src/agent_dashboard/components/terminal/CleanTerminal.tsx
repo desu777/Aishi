@@ -1,11 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { TerminalLine } from '../../commands/types';
 import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
 import { useAgentRead } from '../../../hooks/agentHooks/useAgentRead';
+import { useAgentDashboard } from '../../../hooks/useAgentDashboard';
+import { formatAgentInfo } from '../../commands/info';
+import { formatAgentStats } from '../../commands/stats';
+import { formatSystemStatus } from '../../commands/status';
+import { formatMemoryStatus } from '../../commands/memory';
 
 interface TerminalProps {
   darkMode?: boolean;
@@ -25,15 +30,11 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   className = ""
 }) => {
   const { theme, debugLog } = useTheme();
-  const [lines, setLines] = useState<TerminalLine[]>([
-    { 
-      type: 'system', 
-      content: 'Last login: Fri Dec 13 14:27:54 on dreamscape', 
-      timestamp: Date.now() 
-    }
-  ]);
+  const [lines, setLines] = useState<TerminalLine[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSystemLoading, setIsSystemLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [pendingMintName, setPendingMintName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -42,6 +43,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   // Agent hooks
   const { mintAgent, isLoading: isMinting, error: mintError, resetMint, isWalletConnected, hasCurrentBalance, isCorrectNetwork } = useAgentMint();
   const { hasAgent, agentData, isLoading: isLoadingAgent } = useAgentRead();
+  const dashboardData = useAgentDashboard();
 
   // Check if mobile for shorter title
   const [isMobile, setIsMobile] = useState(false);
@@ -57,12 +59,127 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  // System loading sequence with welcome message - runs only once
+  useEffect(() => {
+    const initializeSystem = async () => {
+      // Don't initialize if already initialized
+      if (isInitialized) {
+        return;
+      }
+      
+      // Wait for 2.5 seconds to show loading animation
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      
+      // Build welcome message
+      const welcomeMessages = buildWelcomeMessage();
+      
+      // Set welcome messages to terminal
+      setLines(welcomeMessages);
+      setIsSystemLoading(false);
+      setIsInitialized(true);
+    };
+
+    // Only run if not initialized yet
+    if (!isInitialized) {
+      initializeSystem();
+    }
+  }, [hasAgent, agentData, isLoadingAgent, isInitialized]);
+
+  // Build welcome message based on agent status
+  const buildWelcomeMessage = useCallback((): TerminalLine[] => {
+    const messages: TerminalLine[] = [];
+    const timestamp = Date.now();
+
+    if (hasAgent && agentData && !isLoadingAgent) {
+      // Agent is ready message
+      messages.push({
+        type: 'success',
+        content: `${agentData.agentName} is ready`,
+        timestamp
+      });
+
+      // Agent details line
+      const intelligenceLevel = Number(agentData.intelligenceLevel);
+      const dreamCount = Number(agentData.dreamCount);
+      const createdDate = new Date(Number(agentData.createdAt) * 1000).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      messages.push({
+        type: 'info',
+        content: `Intelligence: ${intelligenceLevel} lvl | Dreams: ${dreamCount} | Created: ${createdDate}`,
+        timestamp
+      });
+
+      // Network and status line
+      const dominantMood = agentData.personality?.dominantMood || 'Unknown';
+      const memoryAccess = agentData.memoryAccess?.monthsAccessible || 0;
+      
+      messages.push({
+        type: 'info',
+        content: `Network: 0G Galileo | Mood: ${dominantMood} | Memory: ${memoryAccess} months`,
+        timestamp
+      });
+
+      // Empty line
+      messages.push({
+        type: 'system',
+        content: '',
+        timestamp
+      });
+
+      // Help message
+      messages.push({
+        type: 'system',
+        content: "Type 'help' for available commands",
+        timestamp
+      });
+    } else if (isLoadingAgent) {
+      // Still loading agent data
+      messages.push({
+        type: 'system',
+        content: 'Loading agent data...',
+        timestamp
+      });
+    } else {
+      // No agent found
+      messages.push({
+        type: 'info',
+        content: 'Agent Dashboard is ready',
+        timestamp
+      });
+
+      messages.push({
+        type: 'info',
+        content: 'Network: 0G Galileo | Status: No agent minted',
+        timestamp
+      });
+
+      // Empty line
+      messages.push({
+        type: 'system',
+        content: '',
+        timestamp
+      });
+
+      messages.push({
+        type: 'system',
+        content: "Type 'mint <name>' to create your agent",
+        timestamp
+      });
+    }
+
+    return messages;
+  }, [hasAgent, agentData, isLoadingAgent]);
+
   // Generate dynamic title based on agent status
   const getTerminalTitle = (): string => {
     if (hasAgent && agentData?.agentName) {
-      return isMobile ? `${agentData.agentName} — zeroG` : `${agentData.agentName} — zeroG — 80x24`;
+      return isMobile ? `${agentData.agentName}OS — zeroG` : `${agentData.agentName}OS — zeroG — 80x24`;
     }
-    return title || (isMobile ? "Agent — zeroG" : "Agent Dashboard — zeroG — 80x24");
+    return title || (isMobile ? "Agent DashboardOS — zeroG" : "Agent DashboardOS — zeroG — 80x24");
   };
 
   // Focus input when terminal is clicked
@@ -115,6 +232,53 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       // Handle special clear command
       if (result.output === '__CLEAR__') {
         setLines([]);
+        setIsLoading(false);
+        setIsInitialized(false);
+        setIsSystemLoading(true);
+        return;
+      }
+
+      // Handle special info/stats/status/memory commands
+      if (result.output === 'AGENT_INFO_REQUEST') {
+        const infoOutput = formatAgentInfo(dashboardData);
+        addLine({
+          type: 'info',
+          content: infoOutput,
+          timestamp: Date.now()
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.output === 'AGENT_STATS_REQUEST') {
+        const statsOutput = formatAgentStats(dashboardData);
+        addLine({
+          type: 'info',
+          content: statsOutput,
+          timestamp: Date.now()
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.output === 'SYSTEM_STATUS_REQUEST') {
+        const statusOutput = formatSystemStatus(dashboardData);
+        addLine({
+          type: 'info',
+          content: statusOutput,
+          timestamp: Date.now()
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.output === 'MEMORY_STATUS_REQUEST') {
+        const memoryOutput = formatMemoryStatus(dashboardData);
+        addLine({
+          type: 'info',
+          content: memoryOutput,
+          timestamp: Date.now()
+        });
         setIsLoading(false);
         return;
       }
@@ -396,62 +560,84 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           fontFamily: 'inherit'
         }}
       >
-        {/* Terminal Lines */}
-        {lines.map((line, index) => (
-          <div key={index} style={{
-            marginBottom: '2px',
-            color: line.type === 'system' ? colors.system : 
-                   line.type === 'input' ? colors.prompt :
-                   line.type === 'error' ? '#ff6b6b' :
-                   line.type === 'success' ? '#51cf66' :
-                   line.type === 'warning' ? '#ffd43b' :
-                   line.type === 'info' ? theme.accent.primary :
-                   colors.text,
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word'
+        {/* Loading Animation or Terminal Lines */}
+        {isSystemLoading ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            color: colors.system,
+            marginBottom: '20px'
           }}>
-            {line.content}
-          </div>
-        ))}
-
-        {/* Current Input Line */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          marginTop: '4px'
-        }}>
-          <span style={{ color: colors.prompt, marginRight: '8px' }}>$</span>
-          <input
-            ref={inputRef}
-            type="text"
-            value={currentInput}
-            onChange={(e) => setCurrentInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={isLoading}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: colors.text,
-              fontSize: 'clamp(15px, 4vw, 18px)',
-              fontFamily: 'inherit',
-              flex: 1,
-              caretColor: theme.accent.primary
-            }}
-            placeholder={isLoading ? 'Processing...' : 'Type a command...'}
-          />
-          {isLoading && (
-            <span style={{
-              color: colors.system,
-              fontSize: 'clamp(14px, 3.5vw, 16px)',
-              marginLeft: '8px'
-            }}>
-              ⏳
+            <span>Loading</span>
+            <span 
+              className="loading-dots"
+              style={{
+                marginLeft: '5px',
+                animation: 'loadingDots 1.5s infinite'
+              }}
+            >
+              . . .
             </span>
-          )}
-        </div>
+          </div>
+        ) : (
+          lines.map((line, index) => (
+            <div key={index} style={{
+              marginBottom: '2px',
+              color: line.type === 'system' ? colors.system : 
+                     line.type === 'input' ? colors.prompt :
+                     line.type === 'error' ? '#ff6b6b' :
+                     line.type === 'success' ? '#51cf66' :
+                     line.type === 'warning' ? '#ffd43b' :
+                     line.type === 'info' ? theme.accent.primary :
+                     colors.text,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word'
+            }}>
+              {line.content}
+            </div>
+          ))
+        )}
 
-        {/* Cursor blink effect */}
+        {/* Current Input Line - Hidden during system loading */}
+        {!isSystemLoading && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            marginTop: '4px'
+          }}>
+            <span style={{ color: colors.prompt, marginRight: '8px' }}>$</span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={currentInput}
+              onChange={(e) => setCurrentInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={isLoading}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: colors.text,
+                fontSize: 'clamp(15px, 4vw, 18px)',
+                fontFamily: 'inherit',
+                flex: 1,
+                caretColor: theme.accent.primary
+              }}
+              placeholder={isLoading ? 'Processing...' : 'Type a command...'}
+            />
+            {isLoading && (
+              <span style={{
+                color: colors.system,
+                fontSize: 'clamp(14px, 3.5vw, 16px)',
+                marginLeft: '8px'
+              }}>
+                ⏳
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Cursor blink effect and loading animation */}
         <style jsx>{`
           input::placeholder {
             color: ${colors.system};
@@ -461,6 +647,13 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           @keyframes blink {
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0; }
+          }
+          
+          @keyframes loadingDots {
+            0% { opacity: 0; }
+            33% { opacity: 0.5; }
+            66% { opacity: 1; }
+            100% { opacity: 0; }
           }
         `}</style>
       </div>
