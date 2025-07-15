@@ -189,62 +189,236 @@ export default function AgentDashboard() {
               <div style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 'clamp(12px, 3vw, 16px)'
+                gap: 'clamp(16px, 4vw, 20px)'
               }}>
-                {/* Mint Command */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  padding: 'clamp(12px, 3vw, 16px)',
-                  backgroundColor: theme.bg.panel,
-                  border: `1px solid ${theme.border}`,
-                  borderRadius: '8px',
-                  transition: 'all 0.2s ease'
-                }}>
-                  <code style={{
+                {/* Agent Commands Section */}
+                <div>
+                  <h4 style={{
+                    margin: '0 0 clamp(8px, 2vw, 12px) 0',
                     color: theme.accent.primary,
-                    fontSize: 'clamp(0.9rem, 3vw, 1rem)',
-                    fontFamily: 'monospace',
+                    fontSize: 'clamp(1rem, 3.5vw, 1.1rem)',
                     fontWeight: 'bold'
                   }}>
-                    mint &lt;name&gt;
-                  </code>
-                  <span style={{
-                    color: theme.text.secondary,
-                    fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)',
-                    lineHeight: '1.4'
+                    Agent Commands
+                  </h4>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 'clamp(8px, 2vw, 12px)'
                   }}>
-                    Mint a new AI dream agent with the specified name
-                  </span>
+                    {/* Mint Command */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      padding: 'clamp(10px, 2.5vw, 14px)',
+                      backgroundColor: theme.bg.panel,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <code style={{
+                        color: theme.accent.primary,
+                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold'
+                      }}>
+                        mint &lt;name&gt;
+                      </code>
+                      <span style={{
+                        color: theme.text.secondary,
+                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
+                        lineHeight: '1.4'
+                      }}>
+                        Mint a new AI dream agent with the specified name
+                      </span>
+                    </div>
+
+                    {/* Info Command */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      padding: 'clamp(10px, 2.5vw, 14px)',
+                      backgroundColor: theme.bg.panel,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <code style={{
+                        color: theme.accent.primary,
+                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold'
+                      }}>
+                        info
+                      </code>
+                      <span style={{
+                        color: theme.text.secondary,
+                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
+                        lineHeight: '1.4'
+                      }}>
+                        Display comprehensive agent information and profile
+                      </span>
+                    </div>
+
+                    {/* Stats Command */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      padding: 'clamp(10px, 2.5vw, 14px)',
+                      backgroundColor: theme.bg.panel,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <code style={{
+                        color: theme.accent.primary,
+                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold'
+                      }}>
+                        stats
+                      </code>
+                      <span style={{
+                        color: theme.text.secondary,
+                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
+                        lineHeight: '1.4'
+                      }}>
+                        Display comprehensive agent statistics and metrics
+                      </span>
+                    </div>
+
+                    {/* Status Command */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      padding: 'clamp(10px, 2.5vw, 14px)',
+                      backgroundColor: theme.bg.panel,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <code style={{
+                        color: theme.accent.primary,
+                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold'
+                      }}>
+                        status
+                      </code>
+                      <span style={{
+                        color: theme.text.secondary,
+                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
+                        lineHeight: '1.4'
+                      }}>
+                        Display system health and connectivity status
+                      </span>
+                    </div>
+
+                    {/* Memory Command */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      padding: 'clamp(10px, 2.5vw, 14px)',
+                      backgroundColor: theme.bg.panel,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <code style={{
+                        color: theme.accent.primary,
+                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold'
+                      }}>
+                        memory
+                      </code>
+                      <span style={{
+                        color: theme.text.secondary,
+                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
+                        lineHeight: '1.4'
+                      }}>
+                        Display memory system information and status
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                
-                {/* Clear Command */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  padding: 'clamp(12px, 3vw, 16px)',
-                  backgroundColor: theme.bg.panel,
-                  border: `1px solid ${theme.border}`,
-                  borderRadius: '8px',
-                  transition: 'all 0.2s ease'
-                }}>
-                  <code style={{
+
+                {/* System Commands Section */}
+                <div>
+                  <h4 style={{
+                    margin: '0 0 clamp(8px, 2vw, 12px) 0',
                     color: theme.accent.primary,
-                    fontSize: 'clamp(0.9rem, 3vw, 1rem)',
-                    fontFamily: 'monospace',
+                    fontSize: 'clamp(1rem, 3.5vw, 1.1rem)',
                     fontWeight: 'bold'
                   }}>
-                    clear
-                  </code>
-                  <span style={{
-                    color: theme.text.secondary,
-                    fontSize: 'clamp(0.85rem, 2.5vw, 0.9rem)',
-                    lineHeight: '1.4'
+                    System Commands
+                  </h4>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 'clamp(8px, 2vw, 12px)'
                   }}>
-                    Clear terminal output and command history
-                  </span>
+                    {/* Help Command */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      padding: 'clamp(10px, 2.5vw, 14px)',
+                      backgroundColor: theme.bg.panel,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <code style={{
+                        color: theme.accent.primary,
+                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold'
+                      }}>
+                        help
+                      </code>
+                      <span style={{
+                        color: theme.text.secondary,
+                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
+                        lineHeight: '1.4'
+                      }}>
+                        Show available commands and usage information
+                      </span>
+                    </div>
+                    
+                    {/* Clear Command */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      padding: 'clamp(10px, 2.5vw, 14px)',
+                      backgroundColor: theme.bg.panel,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <code style={{
+                        color: theme.accent.primary,
+                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold'
+                      }}>
+                        clear
+                      </code>
+                      <span style={{
+                        color: theme.text.secondary,
+                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
+                        lineHeight: '1.4'
+                      }}>
+                        Clear terminal output and command history
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
               

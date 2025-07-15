@@ -17,7 +17,7 @@ export function formatHelpOutput(): TerminalLine[] {
     },
     {
       type: 'help-command',
-      content: '  mint       - Mint a new AI dream agent',
+      content: '  mint <name> - Mint a new AI dream agent',
       timestamp
     },
     {
