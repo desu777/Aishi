@@ -127,7 +127,7 @@ This system creates meaningful, evolving relationships between users and AI agen
 
 ##BEZPIECZEŃSTWO PLIKÓW .ENV: Z powodów bezpieczeństwa preferujemy przechowywanie wszystkich wrażliwych plików .env w osobnym folderze poza repozytorium. Projekt używa env_loader.py lub innego centralnego punktu ładowania zmiennych w zależności od używanego języka który automatycznie ładuje .env z zewnętrznej lokalizacji (poprzez zmienną ENV_FILE_PATH) lub z lokalnego fallback. Choć można używać .env lokalnie, zawsze preferujemy external path ze względów bezpieczeństwa. Ta zasada obowiązuje we wszystkich projektach - nigdy nie przechowuj wrażliwych danych w repozytorium, używaj zewnętrznych ścieżek konfigurowanych przez zmienne środowiskowe.
 
-##LOGI DEVELOPERSKIE: używaj sprawdzenia process.env.TEST_ENV === 'true' dla wyświetlania logów debugowych dla projektów które nie mają zdefiniowanej tej zmiennej. Jeśli mają odczytaj z .env.example i zawsze stosuj tą zmienną do logów.
+##LOGI DEVELOPERSKIE: używaj sprawdzenia process.env.NEXT_PUBLIC_DREAM_TEST= === 'true' dla wyświetlania logów debugowych dla projektów które nie mają zdefiniowanej tej zmiennej. Jeśli mają odczytaj z .env.example i zawsze stosuj tą zmienną do logów.
 
 ##RESEARCH PRZED DZIAŁANIEM – jeśli nie jesteś pewny implementacji, twoja wiedza nie wystarcza żebyś stwierdził czy rozwiązanie jest dobre. Skorzystaj z sieci, przeszukaj.
 

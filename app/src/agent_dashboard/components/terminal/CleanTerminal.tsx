@@ -8,6 +8,7 @@ import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
 import { useAgentRead } from '../../../hooks/agentHooks/useAgentRead';
 import { useAgentDashboard } from '../../../hooks/useAgentDashboard';
 import { useWallet } from '../../../hooks/useWallet';
+import { useBrokerBalance } from '../../../hooks/useBrokerBalance';
 import { formatAgentInfo } from '../../commands/info';
 import { formatAgentStats } from '../../commands/stats';
 import { formatSystemStatus } from '../../commands/status';
@@ -53,6 +54,9 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   
   // Wallet hook for broker commands
   const wallet = useWallet();
+  
+  // Broker balance hook
+  const { balance: brokerBalance, loading: brokerLoading } = useBrokerBalance();
   
   // Expose wallet context to global window for commands
   useEffect(() => {
@@ -120,11 +124,11 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
       // Network and status line
       const dominantMood = agentData.personality?.dominantMood || 'Unknown';
-      const memoryAccess = agentData.memoryAccess?.monthsAccessible || 0;
+      const balanceDisplay = brokerLoading ? 'Loading...' : `${brokerBalance} OG`;
       
       messages.push({
         type: 'info-labeled',
-        content: `Network: 0G Galileo | Mood: ${dominantMood} | Memory: ${memoryAccess} months`,
+        content: `Network: 0G Galileo | Mood: ${dominantMood} | Broker Balance: ${balanceDisplay}`,
         timestamp
       });
 
@@ -177,7 +181,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
 
     return messages;
-  }, [hasAgent, agentData, isLoadingAgent]);
+  }, [hasAgent, agentData, isLoadingAgent, brokerBalance, brokerLoading]);
 
   // System loading sequence with welcome message - runs only once
   useEffect(() => {
