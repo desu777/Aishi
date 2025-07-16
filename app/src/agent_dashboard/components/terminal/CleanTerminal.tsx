@@ -124,7 +124,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
       // Network and status line
       const dominantMood = agentData.personality?.dominantMood || 'Unknown';
-      const balanceDisplay = brokerLoading ? 'Loading...' : `${brokerBalance} OG`;
+      const balanceDisplay = brokerLoading ? 'Loading...' : `${brokerBalance.toFixed(4)} OG`;
       
       messages.push({
         type: 'info-labeled',
