@@ -41,6 +41,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   const [isSystemLoading, setIsSystemLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [pendingMintName, setPendingMintName] = useState<string | null>(null);
+  const [isValidCommand, setIsValidCommand] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const commandProcessorRef = useRef(new CommandProcessor());
@@ -256,6 +257,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       }
       executeEnhancedCommand(currentInput);
       setCurrentInput('');
+      setIsValidCommand(false);
       setHistoryIndex(-1);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -263,6 +265,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         const newIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
         setHistoryIndex(newIndex);
         setCurrentInput(commandHistory[newIndex]);
+        setIsValidCommand(validateCommand(commandHistory[newIndex]));
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -271,20 +274,41 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         if (newIndex >= commandHistory.length) {
           setHistoryIndex(-1);
           setCurrentInput('');
+          setIsValidCommand(false);
         } else {
           setHistoryIndex(newIndex);
           setCurrentInput(commandHistory[newIndex]);
+          setIsValidCommand(validateCommand(commandHistory[newIndex]));
         }
       }
     } else if (e.key === 'Escape') {
       setCurrentInput('');
+      setIsValidCommand(false);
       setHistoryIndex(-1);
     }
   };
 
+  // Validate command in real-time
+  const validateCommand = (input: string): boolean => {
+    const trimmed = input.trim();
+    if (!trimmed) return false;
+    
+    // System commands
+    if (['clear', 'help'].includes(trimmed.toLowerCase())) return true;
+    
+    // Regular commands
+    const parts = trimmed.split(' ');
+    const commandName = parts[0].toLowerCase();
+    
+    return commandProcessorRef.current.commands.has(commandName);
+  };
+
   // Handle input changes (reset history when typing)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentInput(e.target.value);
+    const value = e.target.value;
+    setCurrentInput(value);
+    setIsValidCommand(validateCommand(value));
+    
     if (historyIndex !== -1) {
       setHistoryIndex(-1); // Exit history mode when typing
     }
@@ -433,6 +457,19 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         addLine({
           type: 'warning',
           content: 'are u sure? yes/no',
+          timestamp: Date.now()
+        });
+      } else if (result.requiresConfirmation && result.confirmationPrompt) {
+        // General confirmation flow for all commands (not just mint)
+        addLine({
+          type: result.type,
+          content: result.output,
+          timestamp: Date.now()
+        });
+        
+        addLine({
+          type: 'warning',
+          content: result.confirmationPrompt,
           timestamp: Date.now()
         });
       } else if (result.output) {
@@ -792,7 +829,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
-                color: colors.text,
+                color: isValidCommand ? theme.accent.primary : colors.text,
                 fontSize: 'clamp(15px, 4vw, 18px)',
                 fontFamily: 'inherit',
                 flex: 1,

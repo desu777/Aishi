@@ -34,47 +34,25 @@ export const checkBalanceCommand: Command = {
 
       if (data.success) {
         const balance = data.data;
+        
+        // Format date properly
+        const lastUpdated = balance.lastUpdated ? 
+          new Date(balance.lastUpdated).toLocaleString() : 
+          'Not available';
+        
         const output = [
-          '💰 Broker Balance Information',
-          '═'.repeat(40),
-          `Address: ${balance.walletAddress}`,
-          `Current Balance: ${balance.balance} 0G`,
-          `Master Wallet: ${balance.masterWalletAddress}`,
-          `Last Updated: ${new Date(balance.lastUpdated).toLocaleString()}`,
-          ''
+          '═══════════════════════════════════════',
+          '         BROKER BALANCE INFORMATION',
+          '═══════════════════════════════════════',
+          `├─ Address: ${balance.walletAddress}`,
+          `├─ Current Balance: ${balance.balance} 0G`,
+          `└─ Last Updated: ${lastUpdated}`,
+          '',
+          '[TIP] Use "fund-broker <amount>" to add funds'
         ];
 
-        // Add recent transactions if available
-        if (balance.transactions && balance.transactions.length > 0) {
-          output.push('📜 Recent Transactions:');
-          output.push('─'.repeat(40));
-          
-          balance.transactions.slice(0, 5).forEach((tx: any, index: number) => {
-            const date = new Date(tx.timestamp).toLocaleString();
-            const typeIcon = tx.type === 'funding' ? '💵' : '🤖';
-            const amountDisplay = tx.type === 'funding' ? `+${tx.amount}` : `-${tx.amount}`;
-            
-            output.push(`${typeIcon} ${amountDisplay} 0G - ${tx.type} (${date})`);
-            if (tx.txHash) {
-              output.push(`   TX: ${tx.txHash.slice(0, 10)}...${tx.txHash.slice(-8)}`);
-            }
-            if (index < Math.min(4, balance.transactions.length - 1)) {
-              output.push('');
-            }
-          });
-          
-          if (balance.transactions.length > 5) {
-            output.push('');
-            output.push(`... and ${balance.transactions.length - 5} more transactions`);
-          }
-        } else {
-          output.push('📜 No transactions yet');
-          output.push('');
-          output.push('💡 Use "fund-broker <amount>" to add funds');
-        }
-
         if (process.env.TEST_ENV === 'true') {
-          console.log(`📊 Balance check for ${walletAddress}: ${balance.balance} 0G`);
+          console.log(`Balance check for ${walletAddress}: ${balance.balance} 0G`);
         }
 
         return {

@@ -42,18 +42,18 @@ export const createBrokerCommand: Command = {
       if (data.success) {
         const broker = data.data;
         const output = [
-          '✅ Broker created successfully!',
+          '═══════════════════════════════════════',
+          '       [✓] BROKER CREATED SUCCESSFULLY!',
+          '═══════════════════════════════════════',
+          `├─ Address: ${broker.walletAddress}`,
+          `├─ Balance: ${broker.balance} 0G`,
+          `└─ Created: ${new Date(broker.createdAt).toLocaleString()}`,
           '',
-          `Address: ${broker.walletAddress}`,
-          `Balance: ${broker.balance} 0G`,
-          `Master Wallet: ${broker.masterWalletAddress}`,
-          `Created: ${new Date(broker.createdAt).toLocaleString()}`,
-          '',
-          '💡 Use "fund-broker <amount>" to add funds to your broker'
+          '[TIP] Use "fund-broker <amount>" to add funds to your broker'
         ].join('\n');
 
         if (process.env.TEST_ENV === 'true') {
-          console.log(`🆕 Broker created for ${walletAddress}`);
+          console.log(`Broker created for ${walletAddress}`);
         }
 
         return {

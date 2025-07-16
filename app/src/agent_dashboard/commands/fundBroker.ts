@@ -108,7 +108,7 @@ export const fundBrokerCommand: Command = {
           }
 
           if (process.env.TEST_ENV === 'true') {
-            console.log(`💰 Transaction sent: ${txResult.txHash}`);
+            console.log(`Transaction sent: ${txResult.txHash}`);
           }
 
           // Notify backend
@@ -138,20 +138,20 @@ export const fundBrokerCommand: Command = {
           const explorerUrl = process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL || 'https://galileo.web3go.xyz';
           
           const output = [
-            '✅ Broker funded successfully!',
+            '═══════════════════════════════════════',
+            '       [✓] BROKER FUNDED SUCCESSFULLY!',
+            '═══════════════════════════════════════',
+            `├─ Transaction: ${txResult.txHash}`,
+            `├─ Explorer: ${explorerUrl}/tx/${txResult.txHash}`,
+            `├─ Address: ${broker.walletAddress}`,
+            `├─ New Balance: ${broker.balance} 0G`,
+            `└─ Amount Added: ${amountNum} 0G`,
             '',
-            `Transaction: ${txResult.txHash}`,
-            `Explorer: ${explorerUrl}/tx/${txResult.txHash}`,
-            '',
-            `Address: ${broker.walletAddress}`,
-            `New Balance: ${broker.balance} 0G`,
-            `Amount Added: ${amountNum} 0G`,
-            '',
-            '💡 Use "check-balance" to verify the updated balance'
+            '[TIP] Use "check-balance" to verify the updated balance'
           ].join('\n');
 
           if (process.env.TEST_ENV === 'true') {
-            console.log(`💰 Broker funded: ${walletAddress} with ${amountNum} 0G`);
+            console.log(`Broker funded: ${walletAddress} with ${amountNum} 0G`);
           }
 
           return {
