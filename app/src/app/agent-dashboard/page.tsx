@@ -179,7 +179,7 @@ export default function AgentDashboard() {
           <h1 style={{
             fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
             fontWeight: 'bold',
-            fontFamily: "'Orbitron', sans-serif",
+            fontFamily: "'Space Grotesk', sans-serif",
             background: theme.gradients.primary,
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -335,7 +335,7 @@ export default function AgentDashboard() {
                   margin: '0 0 clamp(16px, 4vw, 24px) 0',
                   color: theme.text.primary,
                   fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
-                  fontFamily: "'Orbitron', sans-serif",
+                  fontFamily: "'Space Grotesk', sans-serif",
                   fontWeight: 'bold',
                   textAlign: 'center'
                 }}>
