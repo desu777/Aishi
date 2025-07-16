@@ -66,7 +66,9 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       border: `1px solid ${theme.border}`,
       borderRadius: '8px',
       backgroundColor: theme.bg.panel,
-      overflow: 'hidden'
+      overflow: 'hidden',
+      position: 'relative',
+      zIndex: 1
     }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -82,7 +84,9 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           alignItems: 'center',
           gap: '8px',
           cursor: 'pointer',
-          transition: 'all 0.2s ease'
+          transition: 'all 0.2s ease',
+          position: 'relative',
+          zIndex: 2
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = theme.bg.main;
@@ -99,7 +103,10 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         <div style={{
           padding: 'clamp(12px, 3vw, 16px)',
           paddingTop: 0,
-          animation: 'slideDown 0.3s ease'
+          animation: 'slideDown 0.25s ease',
+          position: 'relative',
+          zIndex: 1,
+          animationFillMode: 'forwards'
         }}>
           {children}
         </div>
@@ -275,7 +282,8 @@ export default function AgentDashboard() {
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
               animation: 'slideIn 0.3s ease',
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              zIndex: 1001
             }}>
               {/* Video Background - Desktop only */}
               <video
@@ -306,7 +314,8 @@ export default function AgentDashboard() {
                 width: '100%',
                 height: '100%',
                 backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                zIndex: 0
+                zIndex: 0,
+                pointerEvents: 'none'
               }} />
               
               {/* Commands Content */}
@@ -318,7 +327,8 @@ export default function AgentDashboard() {
                 padding: 'clamp(20px, 4vw, 32px)',
                 display: 'flex',
                 flexDirection: 'column',
-                overflowY: 'auto'
+                overflowY: 'auto',
+                isolation: 'isolate'
               }}>
                 <h3 style={{
                   margin: '0 0 clamp(16px, 4vw, 24px) 0',
@@ -456,8 +466,16 @@ export default function AgentDashboard() {
         }
         
         @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { 
+            opacity: 0; 
+            transform: translateY(-8px);
+            zIndex: 1;
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0);
+            zIndex: 1;
+          }
         }
         
         @media (max-width: 768px) {
