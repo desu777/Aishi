@@ -600,7 +600,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       style={{
         width,
         height,
-        fontFamily: '"SF Mono", "Monaco", "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
+        fontFamily: '"JetBrains Mono", "SF Mono", "Monaco", "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
         borderRadius: '12px',
         overflow: 'hidden',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',

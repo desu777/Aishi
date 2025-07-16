@@ -29,7 +29,7 @@ const CommandItem: React.FC<CommandItemProps> = ({ command, description, theme }
       <code style={{
         color: theme.accent.primary,
         fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
-        fontFamily: 'monospace',
+        fontFamily: "'JetBrains Mono', monospace",
         fontWeight: 'bold'
       }}>
         {command}
@@ -179,6 +179,7 @@ export default function AgentDashboard() {
           <h1 style={{
             fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
             fontWeight: 'bold',
+            fontFamily: "'Orbitron', sans-serif",
             background: theme.gradients.primary,
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -334,6 +335,7 @@ export default function AgentDashboard() {
                   margin: '0 0 clamp(16px, 4vw, 24px) 0',
                   color: theme.text.primary,
                   fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
+                  fontFamily: "'Orbitron', sans-serif",
                   fontWeight: 'bold',
                   textAlign: 'center'
                 }}>
@@ -444,7 +446,7 @@ export default function AgentDashboard() {
                     padding: '2px 6px',
                     borderRadius: '4px',
                     fontSize: '0.9em',
-                    fontFamily: 'monospace'
+                    fontFamily: "'JetBrains Mono', monospace"
                   }}>Esc</kbd> or click outside to close
                 </div>
               </div>
