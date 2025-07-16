@@ -120,6 +120,7 @@ export default function AgentDashboard() {
   const [darkMode, setDarkMode] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   
   // Debug log na start
   debugLog('Agent Dashboard page loaded');
@@ -127,14 +128,19 @@ export default function AgentDashboard() {
   // Check if mobile on mount and resize
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 480);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Close terminal when switching to desktop
+      if (!mobile && isTerminalOpen) {
+        setIsTerminalOpen(false);
+      }
     };
     
     checkIsMobile();
     window.addEventListener('resize', checkIsMobile);
     
     return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
+  }, [isTerminalOpen]);
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
@@ -146,22 +152,31 @@ export default function AgentDashboard() {
     debugLog('Commands panel toggled', { showCommands: !showCommands });
   };
 
-  // Handle escape key to close commands modal
+  const toggleTerminal = () => {
+    setIsTerminalOpen(!isTerminalOpen);
+    debugLog('Terminal toggled', { isTerminalOpen: !isTerminalOpen });
+  };
+
+  // Handle escape key to close modals
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showCommands) {
-        setShowCommands(false);
+      if (e.key === 'Escape') {
+        if (isTerminalOpen) {
+          setIsTerminalOpen(false);
+        } else if (showCommands) {
+          setShowCommands(false);
+        }
       }
     };
 
-    if (showCommands) {
+    if (showCommands || isTerminalOpen) {
       document.addEventListener('keydown', handleEscape);
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [showCommands]);
+  }, [showCommands, isTerminalOpen]);
 
   return (
     <Layout>
@@ -239,17 +254,90 @@ export default function AgentDashboard() {
         </div>
 
         {/* Terminal */}
-        <div style={{
-          width: '100%',
-          height: 'clamp(400px, 60vh, 70vh)',
-          minHeight: '350px'
-        }}>
-          <CleanTerminal 
-            darkMode={darkMode}
-            width="100%"
-            height="100%"
-          />
-        </div>
+        {!isMobile ? (
+          // Desktop Terminal
+          <div style={{
+            width: '100%',
+            height: 'clamp(400px, 60vh, 70vh)',
+            minHeight: '350px'
+          }}>
+            <CleanTerminal 
+              darkMode={darkMode}
+              width="100%"
+              height="100%"
+            />
+          </div>
+        ) : (
+          // Mobile Terminal Preview
+          <div style={{
+            width: '100%',
+            height: 'clamp(400px, 60vh, 70vh)',
+            minHeight: '350px',
+            position: 'relative',
+            borderRadius: '12px',
+            overflow: 'hidden'
+          }}>
+            {/* Blurred Terminal Background */}
+            <div 
+              className="terminal-blur-overlay"
+              style={{
+                filter: 'blur(4px)',
+                pointerEvents: 'none',
+                width: '100%',
+                height: '100%'
+              }}>
+              <CleanTerminal 
+                darkMode={darkMode}
+                width="100%"
+                height="100%"
+              />
+            </div>
+            
+            {/* Open Terminal Button Overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(2px)'
+            }}>
+              <button
+                onClick={toggleTerminal}
+                className="terminal-open-button"
+                style={{
+                  padding: '16px 32px',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  color: theme.text.primary,
+                  backgroundColor: theme.bg.card,
+                  border: `2px solid ${theme.accent.primary}`,
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: `0 8px 24px ${theme.accent.primary}33`,
+                  fontFamily: "'Space Grotesk', sans-serif"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.accent.primary;
+                  e.currentTarget.style.color = '#000000';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.bg.card;
+                  e.currentTarget.style.color = theme.text.primary;
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                Open Terminal
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Commands Modal */}
         {showCommands && (
@@ -453,6 +541,82 @@ export default function AgentDashboard() {
             </div>
           </div>
         )}
+
+        {/* Mobile Terminal Fullscreen Modal */}
+        {isMobile && isTerminalOpen && (
+          <div 
+            className="terminal-modal"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: theme.bg.main,
+              zIndex: 1500,
+              display: 'flex',
+              flexDirection: 'column',
+              animation: 'terminalModalIn 0.3s ease'
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsTerminalOpen(false);
+              }
+            }}
+          >
+            {/* Close Button */}
+            <div style={{
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
+              zIndex: 1501
+            }}>
+              <button
+                onClick={() => setIsTerminalOpen(false)}
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  backgroundColor: theme.bg.card,
+                  border: `1px solid ${theme.border}`,
+                  color: theme.text.primary,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '20px',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.accent.primary;
+                  e.currentTarget.style.color = '#000000';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.bg.card;
+                  e.currentTarget.style.color = theme.text.primary;
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Fullscreen Terminal */}
+            <div style={{
+              width: '100%',
+              height: '100%',
+              padding: '16px',
+              paddingTop: '60px'
+            }}>
+              <CleanTerminal 
+                darkMode={darkMode}
+                width="100%"
+                height="100%"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mobile-specific styles */}
@@ -477,6 +641,17 @@ export default function AgentDashboard() {
             opacity: 1; 
             transform: translateY(0);
             zIndex: 1;
+          }
+        }
+        
+        @keyframes terminalModalIn {
+          from { 
+            opacity: 0; 
+            transform: scale(0.95);
+          }
+          to { 
+            opacity: 1; 
+            transform: scale(1);
           }
         }
         
@@ -505,6 +680,25 @@ export default function AgentDashboard() {
         @media (max-width: 320px) {
           .terminal-container {
             border-radius: 6px !important;
+          }
+        }
+        
+        /* Mobile Terminal Animations */
+        @media (max-width: 768px) {
+          .terminal-modal {
+            animation: terminalModalIn 0.3s ease !important;
+          }
+          
+          .terminal-blur-overlay {
+            transition: all 0.3s ease;
+          }
+          
+          .terminal-open-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          
+          .terminal-open-button:active {
+            transform: scale(0.95) !important;
           }
         }
       `}</style>
