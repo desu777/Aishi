@@ -47,6 +47,31 @@ export function formatHelpOutput(): TerminalLine[] {
     },
     {
       type: 'info',
+      content: '0G Compute broker commands:',
+      timestamp
+    },
+    {
+      type: 'help-command',
+      content: '  create-broker - Create a new 0G compute broker',
+      timestamp
+    },
+    {
+      type: 'help-command',
+      content: '  check-balance - Check broker balance and transactions',
+      timestamp
+    },
+    {
+      type: 'help-command',
+      content: '  fund-broker <amount> - Fund broker with specified amount',
+      timestamp
+    },
+    {
+      type: 'system',
+      content: '',
+      timestamp
+    },
+    {
+      type: 'info',
       content: 'System commands:',
       timestamp
     },

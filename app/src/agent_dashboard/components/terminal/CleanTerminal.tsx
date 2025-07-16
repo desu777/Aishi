@@ -7,6 +7,7 @@ import { TerminalLine } from '../../commands/types';
 import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
 import { useAgentRead } from '../../../hooks/agentHooks/useAgentRead';
 import { useAgentDashboard } from '../../../hooks/useAgentDashboard';
+import { useWallet } from '../../../hooks/useWallet';
 import { formatAgentInfo } from '../../commands/info';
 import { formatAgentStats } from '../../commands/stats';
 import { formatSystemStatus } from '../../commands/status';
@@ -48,6 +49,16 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   const { mintAgent, isLoading: isMinting, error: mintError, resetMint, isWalletConnected, hasCurrentBalance, isCorrectNetwork } = useAgentMint();
   const { hasAgent, agentData, isLoading: isLoadingAgent } = useAgentRead();
   const dashboardData = useAgentDashboard();
+  
+  // Wallet hook for broker commands
+  const wallet = useWallet();
+  
+  // Expose wallet context to global window for commands
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__DREAMSCAPE_WALLET_CONTEXT__ = wallet;
+    }
+  }, [wallet]);
 
   // Check if mobile for shorter title
   const [isMobile, setIsMobile] = useState(false);
@@ -303,7 +314,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       const result = await commandProcessorRef.current.executeCommand(trimmedCommand, {
         addLine,
         setLoading: setIsLoading,
-        currentUser: 'user'
+        currentUser: wallet.address || undefined
       });
 
       // Handle special clear command - only clear user commands, keep welcome
