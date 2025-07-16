@@ -5,7 +5,108 @@ import Layout from '../../components/layout/Layout';
 import CleanTerminal from '../../agent_dashboard/components/terminal/CleanTerminal';
 import ThemeToggle from '../../agent_dashboard/components/ui/ThemeToggle';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Command } from 'lucide-react';
+import { Command, ChevronRight, ChevronDown } from 'lucide-react';
+
+// CommandItem Component
+interface CommandItemProps {
+  command: string;
+  description: string;
+  theme: any;
+}
+
+const CommandItem: React.FC<CommandItemProps> = ({ command, description, theme }) => {
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px',
+      padding: 'clamp(8px, 2vw, 12px)',
+      backgroundColor: theme.bg.main,
+      border: `1px solid ${theme.border}`,
+      borderRadius: '6px',
+      transition: 'all 0.2s ease'
+    }}>
+      <code style={{
+        color: theme.accent.primary,
+        fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
+        fontFamily: 'monospace',
+        fontWeight: 'bold'
+      }}>
+        {command}
+      </code>
+      <span style={{
+        color: theme.text.secondary,
+        fontSize: 'clamp(0.75rem, 2vw, 0.8rem)',
+        lineHeight: '1.4'
+      }}>
+        {description}
+      </span>
+    </div>
+  );
+};
+
+// CollapsibleSection Component
+interface CollapsibleSectionProps {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ 
+  title, 
+  children, 
+  defaultOpen = false 
+}) => {
+  const { theme } = useTheme();
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  return (
+    <div style={{
+      marginBottom: 'clamp(12px, 3vw, 16px)',
+      border: `1px solid ${theme.border}`,
+      borderRadius: '8px',
+      backgroundColor: theme.bg.panel,
+      overflow: 'hidden'
+    }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          padding: 'clamp(12px, 3vw, 16px)',
+          backgroundColor: 'transparent',
+          border: 'none',
+          color: theme.text.primary,
+          fontSize: 'clamp(1rem, 3.5vw, 1.1rem)',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = theme.bg.main;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+      >
+        {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        <span style={{ color: theme.accent.primary }}>{title}</span>
+      </button>
+      
+      {isOpen && (
+        <div style={{
+          padding: 'clamp(12px, 3vw, 16px)',
+          paddingTop: 0,
+          animation: 'slideDown 0.3s ease'
+        }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function AgentDashboard() {
   const { theme, debugLog } = useTheme();
@@ -151,7 +252,7 @@ export default function AgentDashboard() {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -164,283 +265,178 @@ export default function AgentDashboard() {
               }
             }}
           >
-            <div style={{
-              backgroundColor: theme.bg.card,
+            <div className="commands-modal" style={{
               border: `1px solid ${theme.border}`,
-              borderRadius: '12px',
-              padding: 'clamp(20px, 5vw, 32px)',
-              width: 'clamp(300px, 90vw, 500px)',
+              borderRadius: '16px',
+              width: 'clamp(700px, 90vw, 900px)',
+              height: 'clamp(500px, 70vh, 80vh)',
               maxWidth: '90vw',
               maxHeight: '80vh',
-              overflowY: 'auto',
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-              animation: 'slideIn 0.3s ease'
+              animation: 'slideIn 0.3s ease',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
-              <h3 style={{
-                margin: '0 0 clamp(16px, 4vw, 24px) 0',
-                color: theme.text.primary,
-                fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
-                fontWeight: 'bold',
-                textAlign: 'center'
-              }}>
-                Available Commands
-              </h3>
+              {/* Video Background - Desktop only */}
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="commands-video"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  zIndex: -1,
+                  opacity: 0.3
+                }}
+              >
+                <source src="/pendi-bg.mp4" type="video/mp4" />
+              </video>
               
+              {/* Dark overlay for better text readability */}
               <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                zIndex: 0
+              }} />
+              
+              {/* Commands Content */}
+              <div style={{
+                position: 'relative',
+                zIndex: 1,
+                width: '100%',
+                height: '100%',
+                padding: 'clamp(20px, 4vw, 32px)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 'clamp(16px, 4vw, 20px)'
+                overflowY: 'auto'
               }}>
-                {/* Agent Commands Section */}
-                <div>
-                  <h4 style={{
-                    margin: '0 0 clamp(8px, 2vw, 12px) 0',
-                    color: theme.accent.primary,
-                    fontSize: 'clamp(1rem, 3.5vw, 1.1rem)',
-                    fontWeight: 'bold'
-                  }}>
-                    Agent Commands
-                  </h4>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 'clamp(8px, 2vw, 12px)'
-                  }}>
-                    {/* Mint Command */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      padding: 'clamp(10px, 2.5vw, 14px)',
-                      backgroundColor: theme.bg.panel,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '8px',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <code style={{
-                        color: theme.accent.primary,
-                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
-                        fontFamily: 'monospace',
-                        fontWeight: 'bold'
-                      }}>
-                        mint &lt;name&gt;
-                      </code>
-                      <span style={{
-                        color: theme.text.secondary,
-                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
-                        lineHeight: '1.4'
-                      }}>
-                        Mint a new AI dream agent with the specified name
-                      </span>
-                    </div>
-
-                    {/* Info Command */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      padding: 'clamp(10px, 2.5vw, 14px)',
-                      backgroundColor: theme.bg.panel,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '8px',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <code style={{
-                        color: theme.accent.primary,
-                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
-                        fontFamily: 'monospace',
-                        fontWeight: 'bold'
-                      }}>
-                        info
-                      </code>
-                      <span style={{
-                        color: theme.text.secondary,
-                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
-                        lineHeight: '1.4'
-                      }}>
-                        Display comprehensive agent information and profile
-                      </span>
-                    </div>
-
-                    {/* Stats Command */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      padding: 'clamp(10px, 2.5vw, 14px)',
-                      backgroundColor: theme.bg.panel,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '8px',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <code style={{
-                        color: theme.accent.primary,
-                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
-                        fontFamily: 'monospace',
-                        fontWeight: 'bold'
-                      }}>
-                        stats
-                      </code>
-                      <span style={{
-                        color: theme.text.secondary,
-                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
-                        lineHeight: '1.4'
-                      }}>
-                        Display comprehensive agent statistics and metrics
-                      </span>
-                    </div>
-
-                    {/* Status Command */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      padding: 'clamp(10px, 2.5vw, 14px)',
-                      backgroundColor: theme.bg.panel,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '8px',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <code style={{
-                        color: theme.accent.primary,
-                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
-                        fontFamily: 'monospace',
-                        fontWeight: 'bold'
-                      }}>
-                        status
-                      </code>
-                      <span style={{
-                        color: theme.text.secondary,
-                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
-                        lineHeight: '1.4'
-                      }}>
-                        Display system health and connectivity status
-                      </span>
-                    </div>
-
-                    {/* Memory Command */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      padding: 'clamp(10px, 2.5vw, 14px)',
-                      backgroundColor: theme.bg.panel,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '8px',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <code style={{
-                        color: theme.accent.primary,
-                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
-                        fontFamily: 'monospace',
-                        fontWeight: 'bold'
-                      }}>
-                        memory
-                      </code>
-                      <span style={{
-                        color: theme.text.secondary,
-                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
-                        lineHeight: '1.4'
-                      }}>
-                        Display memory system information and status
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* System Commands Section */}
-                <div>
-                  <h4 style={{
-                    margin: '0 0 clamp(8px, 2vw, 12px) 0',
-                    color: theme.accent.primary,
-                    fontSize: 'clamp(1rem, 3.5vw, 1.1rem)',
-                    fontWeight: 'bold'
-                  }}>
-                    System Commands
-                  </h4>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 'clamp(8px, 2vw, 12px)'
-                  }}>
-                    {/* Help Command */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      padding: 'clamp(10px, 2.5vw, 14px)',
-                      backgroundColor: theme.bg.panel,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '8px',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <code style={{
-                        color: theme.accent.primary,
-                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
-                        fontFamily: 'monospace',
-                        fontWeight: 'bold'
-                      }}>
-                        help
-                      </code>
-                      <span style={{
-                        color: theme.text.secondary,
-                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
-                        lineHeight: '1.4'
-                      }}>
-                        Show available commands and usage information
-                      </span>
-                    </div>
-                    
-                    {/* Clear Command */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      padding: 'clamp(10px, 2.5vw, 14px)',
-                      backgroundColor: theme.bg.panel,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '8px',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <code style={{
-                        color: theme.accent.primary,
-                        fontSize: 'clamp(0.85rem, 2.8vw, 0.95rem)',
-                        fontFamily: 'monospace',
-                        fontWeight: 'bold'
-                      }}>
-                        clear
-                      </code>
-                      <span style={{
-                        color: theme.text.secondary,
-                        fontSize: 'clamp(0.8rem, 2.3vw, 0.85rem)',
-                        lineHeight: '1.4'
-                      }}>
-                        Clear terminal output and command history
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Close hint */}
-              <div style={{
-                marginTop: 'clamp(16px, 4vw, 24px)',
-                padding: 'clamp(8px, 2vw, 12px)',
-                backgroundColor: theme.bg.main,
-                border: `1px solid ${theme.border}`,
-                borderRadius: '6px',
-                textAlign: 'center',
-                fontSize: 'clamp(0.8rem, 2vw, 0.85rem)',
-                color: theme.text.secondary
-              }}>
-                Press <kbd style={{
-                  backgroundColor: theme.bg.panel,
+                <h3 style={{
+                  margin: '0 0 clamp(16px, 4vw, 24px) 0',
                   color: theme.text.primary,
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  fontSize: '0.9em',
-                  fontFamily: 'monospace'
-                }}>Esc</kbd> or click outside to close
+                  fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
+                  Available Commands
+                </h3>
+                
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'clamp(8px, 2vw, 12px)',
+                  flex: 1
+                }}>
+                  {/* Agent Commands Section */}
+                  <CollapsibleSection title="Agent Commands" defaultOpen={false}>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 'clamp(8px, 2vw, 12px)'
+                    }}>
+                      <CommandItem 
+                        command="mint <name>"
+                        description="Mint a new AI dream agent with the specified name"
+                        theme={theme}
+                      />
+                      <CommandItem 
+                        command="info"
+                        description="Display comprehensive agent information and profile"
+                        theme={theme}
+                      />
+                      <CommandItem 
+                        command="stats"
+                        description="Display comprehensive agent statistics and metrics"
+                        theme={theme}
+                      />
+                      <CommandItem 
+                        command="status"
+                        description="Display system health and connectivity status"
+                        theme={theme}
+                      />
+                      <CommandItem 
+                        command="memory"
+                        description="Display memory system information and status"
+                        theme={theme}
+                      />
+                    </div>
+                  </CollapsibleSection>
+
+                  {/* Broker Commands Section */}
+                  <CollapsibleSection title="Broker Commands" defaultOpen={false}>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 'clamp(8px, 2vw, 12px)'
+                    }}>
+                      <CommandItem 
+                        command="create-broker"
+                        description="Create a new 0G compute broker"
+                        theme={theme}
+                      />
+                      <CommandItem 
+                        command="check-balance"
+                        description="Check broker balance and transaction history"
+                        theme={theme}
+                      />
+                      <CommandItem 
+                        command="fund-broker <amount>"
+                        description="Fund broker with specified amount of 0G tokens"
+                        theme={theme}
+                      />
+                    </div>
+                  </CollapsibleSection>
+
+                  {/* System Commands Section */}
+                  <CollapsibleSection title="System Commands" defaultOpen={false}>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 'clamp(8px, 2vw, 12px)'
+                    }}>
+                      <CommandItem 
+                        command="help"
+                        description="Show available commands and usage information"
+                        theme={theme}
+                      />
+                      <CommandItem 
+                        command="clear"
+                        description="Clear terminal output and command history"
+                        theme={theme}
+                      />
+                    </div>
+                  </CollapsibleSection>
+                </div>
+                
+                {/* Close hint */}
+                <div style={{
+                  marginTop: 'clamp(16px, 4vw, 24px)',
+                  padding: 'clamp(8px, 2vw, 12px)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: '6px',
+                  textAlign: 'center',
+                  fontSize: 'clamp(0.8rem, 2vw, 0.85rem)',
+                  color: theme.text.secondary
+                }}>
+                  Press <kbd style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    color: theme.text.primary,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontSize: '0.9em',
+                    fontFamily: 'monospace'
+                  }}>Esc</kbd> or click outside to close
+                </div>
               </div>
             </div>
           </div>
@@ -457,6 +453,27 @@ export default function AgentDashboard() {
         @keyframes slideIn {
           from { opacity: 0; transform: translateY(-20px) scale(0.95); }
           to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+          .commands-modal {
+            width: 95vw !important;
+            height: 90vh !important;
+            background-color: ${theme.bg.card} !important;
+          }
+          
+          .commands-video {
+            display: none !important;
+          }
+          
+          .commands-modal > div:nth-child(2) {
+            background-color: rgba(0, 0, 0, 0.1) !important;
+          }
         }
         
         @media (max-width: 480px) {
