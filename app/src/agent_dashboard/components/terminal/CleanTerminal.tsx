@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { FaBrain, FaDatabase, FaClock, FaLink, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { TerminalLine } from '../../commands/types';
 import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
@@ -53,6 +54,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   const [processingDream, setProcessingDream] = useState(false);
   const [pendingDreamSave, setPendingDreamSave] = useState<any>(null);
   const [thinkingAnimation, setThinkingAnimation] = useState(0);
+  const [thinkingTimer, setThinkingTimer] = useState(0);
+  const [savingDream, setSavingDream] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const commandProcessorRef = useRef(new CommandProcessor());
@@ -226,7 +229,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     if (contextStatus) {
       addLine({
         type: 'system',
-        content: `🧠 ${contextStatus}`,
+        content: (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FaBrain style={{ color: '#4A90E2' }} />
+            {contextStatus}
+          </span>
+        ),
         timestamp: Date.now()
       });
     }
@@ -236,7 +244,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     if (uploadStatus) {
       addLine({
         type: 'system',
-        content: `💾 ${uploadStatus}`,
+        content: (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FaDatabase style={{ color: '#28A745' }} />
+            {uploadStatus}
+          </span>
+        ),
         timestamp: Date.now()
       });
     }
@@ -246,7 +259,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     if (contractStatus) {
       addLine({
         type: 'system',
-        content: `⛓️ ${contractStatus}`,
+        content: (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FaLink style={{ color: '#17A2B8' }} />
+            {contractStatus}
+          </span>
+        ),
         timestamp: Date.now()
       });
     }
@@ -319,13 +337,23 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
   }, [lines]);
 
-  // Thinking animation
+  // Thinking animation and timer
   useEffect(() => {
     if (processingDream) {
-      const interval = setInterval(() => {
+      const animationInterval = setInterval(() => {
         setThinkingAnimation(prev => (prev + 1) % 4);
       }, 500);
-      return () => clearInterval(interval);
+      
+      const timerInterval = setInterval(() => {
+        setThinkingTimer(prev => prev + 1);
+      }, 1000);
+      
+      return () => {
+        clearInterval(animationInterval);
+        clearInterval(timerInterval);
+      };
+    } else {
+      setThinkingTimer(0);
     }
   }, [processingDream]);
 
@@ -663,7 +691,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         if (result.success) {
           addLine({
             type: 'success', 
-            content: `✅ Agent "${pendingMintName}" minted successfully!`,
+            content: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FaCheckCircle style={{ color: '#22C55E' }} />
+                Agent "{pendingMintName}" minted successfully!
+              </span>
+            ),
             timestamp: Date.now()
           });
           
@@ -677,14 +710,24 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         } else {
           addLine({
             type: 'error',
-            content: `❌ Minting failed: ${result.error}`,
+            content: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FaTimesCircle style={{ color: '#EF4444' }} />
+                Minting failed: {result.error}
+              </span>
+            ),
             timestamp: Date.now()
           });
         }
       } catch (error: any) {
         addLine({
           type: 'error',
-          content: `❌ Minting error: ${error.message || error}`,
+          content: (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FaTimesCircle style={{ color: '#EF4444' }} />
+              Minting error: {error.message || error}
+            </span>
+          ),
           timestamp: Date.now()
         });
       } finally {
@@ -759,12 +802,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
 
     try {
-      // Show thinking animation
-      addLine({
-        type: 'info',
-        content: `${agentData?.agentName} is thinking...`,
-        timestamp: Date.now()
-      });
+      // Thinking animation is now in placeholder only
 
       debugLog('Dream analysis workflow started', {
         effectiveTokenId,
@@ -872,6 +910,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     if (!pendingDreamSave) return;
 
     if (confirmed) {
+      setSavingDream(true);
+      
       addLine({
         type: 'info',
         content: 'Saving dream...',
@@ -896,6 +936,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           timestamp: Date.now()
         });
       }
+      
+      setSavingDream(false);
 
       // Reset and clean up
       resetDream();
@@ -911,6 +953,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       resetAI();
     }
 
+    setSavingDream(false);
     setPendingDreamSave(null);
   };
 
@@ -1211,7 +1254,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
               value={currentInput}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              disabled={isLoading || processingDream}
+              disabled={isLoading || processingDream || savingDream}
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -1221,11 +1264,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                 fontFamily: 'inherit',
                 flex: 1,
                 caretColor: theme.accent.primary,
-                opacity: (isLoading || processingDream) ? 0.5 : 1
+                opacity: (isLoading || processingDream || savingDream) ? 0.5 : 1
               }}
               placeholder={
                 isLoading ? 'Processing...' : 
-                processingDream ? `${agentData?.agentName || 'Agent'} is thinking${getThinkingAnimation()}` :
+                processingDream ? `${agentData?.agentName || 'Agent'} is thinking${getThinkingAnimation()} (${thinkingTimer}s)` :
+                savingDream ? 'Saving dream...' :
                 pendingDreamSave ? 'Answer y/n to save dream...' :
                 dreamInputMode ? 'Describe your dream...' : 
                 'Type a command...'
@@ -1237,7 +1281,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                 fontSize: 'clamp(14px, 3.5vw, 16px)',
                 marginLeft: '8px'
               }}>
-                ⏳
+                <FaClock style={{ color: '#F59E0B' }} />
               </span>
             )}
           </div>

@@ -181,7 +181,7 @@ export function useAgentDream() {
         setDreamState(prev => ({ 
           ...prev, 
           isLoadingContext: false,
-          contextStatus: 'Context built successfully from pre-loaded data!',
+          contextStatus: 'Context built successfully!',
           builtContext: context
         }));
 
