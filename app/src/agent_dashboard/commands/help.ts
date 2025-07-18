@@ -41,6 +41,11 @@ export function formatHelpOutput(): TerminalLine[] {
       timestamp
     },
     {
+      type: 'help-command',
+      content: '  dream      - Analyze your dream with AI (interactive mode)',
+      timestamp
+    },
+    {
       type: 'system',
       content: '',
       timestamp

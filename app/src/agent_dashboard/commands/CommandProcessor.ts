@@ -7,6 +7,7 @@ import { memoryCommand } from './memory';
 import { createBrokerCommand } from './createBroker';
 import { checkBalanceCommand } from './checkBalance';
 import { fundBrokerCommand } from './fundBroker';
+import { dreamCommand } from './dream';
 
 export class CommandProcessor {
   private commands: Map<string, Command> = new Map();
@@ -24,6 +25,7 @@ export class CommandProcessor {
     this.registerCommand(createBrokerCommand);
     this.registerCommand(checkBalanceCommand);
     this.registerCommand(fundBrokerCommand);
+    this.registerCommand(dreamCommand);
   }
 
   private registerCommand(command: Command): void {

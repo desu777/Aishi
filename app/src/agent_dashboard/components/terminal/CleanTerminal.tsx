@@ -14,6 +14,10 @@ import { formatAgentStats } from '../../commands/stats';
 import { formatSystemStatus } from '../../commands/status';
 import { formatMemoryStatus } from '../../commands/memory';
 import { formatHelpOutput } from '../../commands/help';
+// Dream analysis hooks
+import { useAgentDream } from '../../../hooks/agentHooks/useAgentDream';
+import { useAgentPrompt } from '../../../hooks/agentHooks/useAgentPrompt';
+import { useAgentAI } from '../../../hooks/agentHooks/useAgentAI';
 
 interface TerminalProps {
   darkMode?: boolean;
@@ -43,13 +47,19 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   const [isInitialized, setIsInitialized] = useState(false);
   const [pendingMintName, setPendingMintName] = useState<string | null>(null);
   const [isValidCommand, setIsValidCommand] = useState(false);
+  // Dream input mode state
+  const [dreamInputMode, setDreamInputMode] = useState(false);
+  const [dreamInputText, setDreamInputText] = useState('');
+  const [processingDream, setProcessingDream] = useState(false);
+  const [pendingDreamSave, setPendingDreamSave] = useState<any>(null);
+  const [thinkingAnimation, setThinkingAnimation] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const commandProcessorRef = useRef(new CommandProcessor());
   
   // Agent hooks
   const { mintAgent, isLoading: isMinting, error: mintError, resetMint, isWalletConnected, hasCurrentBalance, isCorrectNetwork } = useAgentMint();
-  const { hasAgent, agentData, isLoading: isLoadingAgent } = useAgentRead();
+  const { hasAgent, agentData, isLoading: isLoadingAgent, effectiveTokenId } = useAgentRead();
   const dashboardData = useAgentDashboard();
   
   // Wallet hook for broker commands
@@ -57,6 +67,34 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   
   // Broker balance hook
   const { balance: brokerBalance, loading: brokerLoading } = useBrokerBalance();
+  
+  // Dream analysis hooks
+  const { 
+    dreamText, 
+    setDreamText, 
+    isLoadingContext, 
+    contextStatus, 
+    builtContext, 
+    error: dreamError,
+    buildDreamContext,
+    isUploadingToStorage,
+    uploadStatus,
+    isProcessingContract,
+    contractStatus,
+    processStorageAndContract,
+    resetDream
+  } = useAgentDream();
+  
+  const { buildDreamAnalysisPrompt } = useAgentPrompt();
+  
+  const { 
+    isLoading: isLoadingAI, 
+    error: aiError, 
+    aiResponse, 
+    parsedResponse, 
+    resetAI, 
+    sendDreamAnalysis 
+  } = useAgentAI();
   
   // Expose wallet context to global window for commands
   useEffect(() => {
@@ -183,6 +221,58 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     return messages;
   }, [hasAgent, agentData, isLoadingAgent, brokerBalance, brokerLoading]);
 
+  // Progress indicators - monitor dream analysis statuses
+  useEffect(() => {
+    if (contextStatus) {
+      addLine({
+        type: 'system',
+        content: `🧠 ${contextStatus}`,
+        timestamp: Date.now()
+      });
+    }
+  }, [contextStatus]);
+
+  useEffect(() => {
+    if (uploadStatus) {
+      addLine({
+        type: 'system',
+        content: `💾 ${uploadStatus}`,
+        timestamp: Date.now()
+      });
+    }
+  }, [uploadStatus]);
+
+  useEffect(() => {
+    if (contractStatus) {
+      addLine({
+        type: 'system',
+        content: `⛓️ ${contractStatus}`,
+        timestamp: Date.now()
+      });
+    }
+  }, [contractStatus]);
+
+  // Error handling for dream workflow
+  useEffect(() => {
+    if (dreamError) {
+      addLine({
+        type: 'error',
+        content: `Dream Error: ${dreamError}`,
+        timestamp: Date.now()
+      });
+    }
+  }, [dreamError]);
+
+  useEffect(() => {
+    if (aiError) {
+      addLine({
+        type: 'error',
+        content: `AI Error: ${aiError}`,
+        timestamp: Date.now()
+      });
+    }
+  }, [aiError]);
+
   // System loading sequence with welcome message - runs only once
   useEffect(() => {
     const initializeSystem = async () => {
@@ -229,6 +319,22 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
   }, [lines]);
 
+  // Thinking animation
+  useEffect(() => {
+    if (processingDream) {
+      const interval = setInterval(() => {
+        setThinkingAnimation(prev => (prev + 1) % 4);
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [processingDream]);
+
+  // Get thinking animation dots
+  const getThinkingAnimation = () => {
+    const dots = ['.', '..', '...', ''];
+    return dots[thinkingAnimation];
+  };
+
   // Save command to history and localStorage
   const saveCommandToHistory = useCallback((command: string) => {
     const trimmedCommand = command.trim();
@@ -255,6 +361,32 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
   // Handle keyboard input including arrow navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Dream input mode handling
+    if (dreamInputMode) {
+      if (e.key === 'Enter') {
+        if (currentInput.trim()) {
+          // Start dream analysis workflow
+          executeDreamAnalysis(currentInput.trim());
+        }
+        setCurrentInput('');
+        return;
+      } else if (e.key === 'Escape') {
+        // Cancel dream input mode
+        setDreamInputMode(false);
+        setDreamInputText('');
+        setCurrentInput('');
+        addLine({
+          type: 'system',
+          content: 'Dream input mode cancelled.',
+          timestamp: Date.now()
+        });
+        return;
+      }
+      // Regular typing in dream mode - no special handling needed
+      return;
+    }
+
+    // Regular command mode handling
     if (e.key === 'Enter') {
       if (currentInput.trim()) {
         saveCommandToHistory(currentInput);
@@ -304,7 +436,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     const parts = trimmed.split(' ');
     const commandName = parts[0].toLowerCase();
     
-    return commandProcessorRef.current.commands.has(commandName);
+    return commandProcessorRef.current.getAvailableCommands().some(cmd => cmd.name === commandName);
   };
 
   // Handle input changes (reset history when typing)
@@ -348,6 +480,24 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       // Handle special clear command - only clear user commands, keep welcome
       if (result.output === '__CLEAR__') {
         setLines([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle dream input mode
+      if (result.output === 'DREAM_INPUT_MODE') {
+        setDreamInputMode(true);
+        setDreamInputText('');
+        addLine({
+          type: 'info',
+          content: 'Dream input mode activated. Describe your dream and press Enter to analyze.',
+          timestamp: Date.now()
+        });
+        addLine({
+          type: 'system',
+          content: 'Press Escape to cancel dream input mode.',
+          timestamp: Date.now()
+        });
         setIsLoading(false);
         return;
       }
@@ -551,10 +701,241 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
   };
 
+  // Dream analysis workflow - simplified UX
+  const executeDreamAnalysis = async (dreamInput: string) => {
+    // Exit dream input mode and enter processing mode
+    setDreamInputMode(false);
+    setProcessingDream(true);
+    
+    // Add dream input to terminal
+    addLine({
+      type: 'input',
+      content: `~ ${dreamInput}`,
+      timestamp: Date.now()
+    });
+
+    // Set dream text for useAgentDream (for future reference)
+    setDreamText(dreamInput);
+
+    // Check preconditions
+    if (!isWalletConnected) {
+      addLine({
+        type: 'error',
+        content: 'Wallet not connected. Please connect your wallet first.',
+        timestamp: Date.now()
+      });
+      setProcessingDream(false);
+      return;
+    }
+
+    if (!isCorrectNetwork) {
+      addLine({
+        type: 'error',
+        content: 'Wrong network. Please switch to 0G Galileo Testnet.',
+        timestamp: Date.now()
+      });
+      setProcessingDream(false);
+      return;
+    }
+
+    if (!hasAgent || !agentData || !effectiveTokenId || effectiveTokenId <= 0) {
+      addLine({
+        type: 'error',
+        content: 'No agent found or invalid token ID. Please mint an agent first.',
+        timestamp: Date.now()
+      });
+      setProcessingDream(false);
+      return;
+    }
+
+    if (!dreamInput.trim()) {
+      addLine({
+        type: 'error',
+        content: 'Dream text cannot be empty.',
+        timestamp: Date.now()
+      });
+      setProcessingDream(false);
+      return;
+    }
+
+    try {
+      // Show thinking animation
+      addLine({
+        type: 'info',
+        content: `${agentData?.agentName} is thinking...`,
+        timestamp: Date.now()
+      });
+
+      debugLog('Dream analysis workflow started', {
+        effectiveTokenId,
+        dreamInputLength: dreamInput.length,
+        hasAgentData: !!agentData,
+        agentName: agentData?.agentName,
+        dreamCount: agentData?.dreamCount?.toString()
+      });
+
+      // STEP 1: Build Context
+      addLine({
+        type: 'system',
+        content: 'Building context...',
+        timestamp: Date.now()
+      });
+
+      // Combine all data from useAgentRead (like in DreamAnalysisSection)
+      const combinedAgentData = agentData ? {
+        ...agentData,
+        memory: {
+          ...agentData.memory,
+          memoryDepth: 'current month only', // Default fallback
+          monthsAccessible: 1
+        }
+      } : undefined;
+
+      const context = await buildDreamContext(effectiveTokenId, combinedAgentData, dreamInput);
+      
+      if (!context) {
+        addLine({
+          type: 'error',
+          content: 'Failed to build context.',
+          timestamp: Date.now()
+        });
+        setProcessingDream(false);
+        return;
+      }
+
+      addLine({
+        type: 'system',
+        content: 'Analyzing...',
+        timestamp: Date.now()
+      });
+
+      const promptResult = buildDreamAnalysisPrompt(context);
+
+      const aiResult = await sendDreamAnalysis(promptResult);
+      
+      if (!aiResult) {
+        addLine({
+          type: 'error',
+          content: 'AI analysis failed.',
+          timestamp: Date.now()
+        });
+        setProcessingDream(false);
+        return;
+      }
+
+      // Display AI analysis as agent response
+      addLine({
+        type: 'info',
+        content: `${agentData?.agentName}: ${aiResult.fullAnalysis}`,
+        timestamp: Date.now()
+      });
+
+      // Show dream summary
+      if (aiResult.dreamData) {
+        addLine({
+          type: 'info',
+          content: `Dream #${aiResult.dreamData.id} | Intensity: ${aiResult.dreamData.intensity}/10 | Emotions: ${aiResult.dreamData.emotions.join(', ')}`,
+          timestamp: Date.now()
+        });
+      }
+
+      // Ask for confirmation to save
+      addLine({
+        type: 'system',
+        content: 'Do you want to save this dream? Type y/n',
+        timestamp: Date.now()
+      });
+
+      // Set pending save data and exit processing mode
+      setPendingDreamSave({
+        effectiveTokenId,
+        aiResult,
+        agentName: agentData?.agentName
+      });
+      setProcessingDream(false);
+
+    } catch (error: any) {
+      addLine({
+        type: 'error',
+        content: `Dream analysis failed: ${error.message || error}`,
+        timestamp: Date.now()
+      });
+      // Reset on error
+      setProcessingDream(false);
+      resetDream();
+      resetAI();
+    }
+  };
+
+  // Handler for dream save confirmation
+  const handleDreamSaveConfirmation = async (confirmed: boolean) => {
+    if (!pendingDreamSave) return;
+
+    if (confirmed) {
+      addLine({
+        type: 'info',
+        content: 'Saving dream...',
+        timestamp: Date.now()
+      });
+
+      const storageResult = await processStorageAndContract(
+        pendingDreamSave.effectiveTokenId, 
+        pendingDreamSave.aiResult
+      );
+      
+      if (!storageResult.success) {
+        addLine({
+          type: 'error',
+          content: `Storage/Contract failed: ${storageResult.error}`,
+          timestamp: Date.now()
+        });
+      } else {
+        addLine({
+          type: 'success',
+          content: `Dream saved successfully! ${storageResult.txHash ? `Tx: ${storageResult.txHash}` : ''}`,
+          timestamp: Date.now()
+        });
+      }
+
+      // Reset and clean up
+      resetDream();
+      resetAI();
+    } else {
+      addLine({
+        type: 'info',
+        content: 'Dream not saved.',
+        timestamp: Date.now()
+      });
+      // Reset without saving
+      resetDream();
+      resetAI();
+    }
+
+    setPendingDreamSave(null);
+  };
+
   // Enhanced command execution to handle mint confirmation
   const executeEnhancedCommand = async (command: string) => {
     const trimmedCommand = command.trim().toLowerCase();
     
+    // Handle dream save confirmation
+    if (pendingDreamSave) {
+      if (trimmedCommand === 'yes' || trimmedCommand === 'y') {
+        await handleDreamSaveConfirmation(true);
+        return;
+      } else if (trimmedCommand === 'no' || trimmedCommand === 'n') {
+        await handleDreamSaveConfirmation(false);
+        return;
+      } else {
+        addLine({
+          type: 'warning',
+          content: 'Please answer yes/no (y/n)',
+          timestamp: Date.now()
+        });
+        return;
+      }
+    }
+
     // Handle mint confirmation
     if (pendingMintName) {
       if (trimmedCommand === 'yes' || trimmedCommand === 'y') {
@@ -821,25 +1202,34 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             alignItems: 'center',
             marginTop: '4px'
           }}>
-            <span style={{ color: theme.accent.primary, marginRight: '8px' }}>$</span>
+            <span style={{ color: theme.accent.primary, marginRight: '8px' }}>
+              {dreamInputMode ? '~' : '$'}
+            </span>
             <input
               ref={inputRef}
               type="text"
               value={currentInput}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              disabled={false}
+              disabled={isLoading || processingDream}
               style={{
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
-                color: isValidCommand ? theme.accent.primary : colors.text,
+                color: dreamInputMode ? theme.accent.primary : (isValidCommand ? theme.accent.primary : colors.text),
                 fontSize: 'clamp(15px, 4vw, 18px)',
                 fontFamily: 'inherit',
                 flex: 1,
-                caretColor: theme.accent.primary
+                caretColor: theme.accent.primary,
+                opacity: (isLoading || processingDream) ? 0.5 : 1
               }}
-              placeholder={isLoading ? 'Processing...' : 'Type a command...'}
+              placeholder={
+                isLoading ? 'Processing...' : 
+                processingDream ? `${agentData?.agentName || 'Agent'} is thinking${getThinkingAnimation()}` :
+                pendingDreamSave ? 'Answer y/n to save dream...' :
+                dreamInputMode ? 'Describe your dream...' : 
+                'Type a command...'
+              }
             />
             {isLoading && (
               <span style={{

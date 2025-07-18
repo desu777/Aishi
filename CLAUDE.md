@@ -8,10 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 cd app
 npm run dev          # Development server on port 3003
-npm run build        # Production build
+npm run build        # Production build (not used in development)
 npm run start        # Start production server
-npm run lint         # ESLint checks
+npm run lint         # ESLint checks (not configured yet)
 ```
+
+**Note**: We don't use `npm run build` or `npm run lint` during development as they are not configured for our workflow.
 
 ### Smart Contracts (Hardhat)
 ```bash

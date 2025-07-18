@@ -126,7 +126,8 @@ export function useAgentDream() {
    */
   const buildDreamContext = async (
     tokenId: number,
-    agentData?: any // Optional pre-loaded agent data from useAgentRead
+    agentData?: any, // Optional pre-loaded agent data from useAgentRead
+    dreamTextOverride?: string // Optional dream text to override state
   ): Promise<DreamContext | null> => {
     if (!isConnected) {
       const error = 'Wallet not connected';
@@ -135,10 +136,15 @@ export function useAgentDream() {
       return null;
     }
 
-    if (!dreamState.dreamText.trim()) {
+    const effectiveDreamText = dreamTextOverride || dreamState.dreamText;
+    if (!effectiveDreamText.trim()) {
       const error = 'Dream text is required';
       setDreamState(prev => ({ ...prev, error }));
-      debugLog('Context building failed - no dream text');
+      debugLog('Context building failed - no dream text', { 
+        dreamTextOverride, 
+        dreamStateDreamText: dreamState.dreamText,
+        effectiveDreamText 
+      });
       return null;
     }
 
@@ -152,8 +158,9 @@ export function useAgentDream() {
     try {
       debugLog('Starting context building', { 
         tokenId, 
-        dreamLength: dreamState.dreamText.length,
-        hasPreloadedData: !!agentData
+        dreamLength: effectiveDreamText.length,
+        hasPreloadedData: !!agentData,
+        usingDreamTextOverride: !!dreamTextOverride
       });
 
       if (agentData) {
@@ -166,7 +173,7 @@ export function useAgentDream() {
         // Build context with pre-loaded data
         const context = await contextBuilder.buildContext(
           tokenId,
-          dreamState.dreamText,
+          effectiveDreamText,
           downloadFile,
           agentData
         );
@@ -218,7 +225,7 @@ export function useAgentDream() {
 
         const context = await contextBuilder.buildContext(
           tokenId,
-          dreamState.dreamText,
+          effectiveDreamText,
           downloadFile
         );
 
