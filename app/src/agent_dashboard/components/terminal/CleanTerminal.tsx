@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { FaBrain, FaDatabase, FaClock, FaLink, FaCheckCircle, FaTimesCircle, FaSave } from 'react-icons/fa';
+import { FaBrain, FaDatabase, FaClock, FaLink, FaCheckCircle, FaTimesCircle, FaSave, FaCalendar } from 'react-icons/fa';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { TerminalLine } from '../../commands/types';
 import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
@@ -21,6 +21,9 @@ import { useAgentPrompt } from '../../../hooks/agentHooks/useAgentPrompt';
 import { useAgentAI } from '../../../hooks/agentHooks/useAgentAI';
 // Chat hooks
 import { useAgentChatTerminal } from '../../../hooks/agentHooks/useAgentChatTerminal';
+// Consolidation hooks
+import { useAgentConsolidation } from '../../../hooks/agentHooks/useAgentConsolidation';
+import { useAgentMemoryCore } from '../../../hooks/agentHooks/useAgentMemoryCore';
 
 interface TerminalProps {
   darkMode?: boolean;
@@ -67,6 +70,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [waitingForTrainConfirm, setWaitingForTrainConfirm] = useState(false);
   const [isSavingConversation, setIsSavingConversation] = useState(false);
+  // Consolidation state
+  const [consolidationMode, setConsolidationMode] = useState(false);
+  const [waitingForConsolidationConfirm, setWaitingForConsolidationConfirm] = useState(false);
+  const [consolidationType, setConsolidationType] = useState<'monthly' | 'yearly' | null>(null);
+  const [isProcessingConsolidation, setIsProcessingConsolidation] = useState(false);
+  const [consolidationAlert, setConsolidationAlert] = useState<'none' | 'monthly' | 'yearly'>('none');
   const [dotsPattern, setDotsPattern] = useState(0); // 0='.', 1='..', 2='...', 3=''
   const [thinkingMessageId, setThinkingMessageId] = useState<number | null>(null);
   const [learningMessageId, setLearningMessageId] = useState<number | null>(null);
@@ -130,6 +139,27 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     clearError: clearTerminalChatError
   } = useAgentChatTerminal(effectiveTokenId);
   
+  // Consolidation hooks
+  const {
+    consolidationState,
+    isProcessing: isConsolidationProcessing,
+    canStartConsolidation,
+    checkConsolidationNeed,
+    performConsolidation,
+    resetConsolidation
+  } = useAgentConsolidation(effectiveTokenId);
+  
+  // Memory core hooks
+  const {
+    memoryCoreState,
+    isProcessing: isMemoryCoreProcessing,
+    canStartYearlyConsolidation,
+    checkYearlyReflection,
+    loadMonthlyConsolidations,
+    performYearlyConsolidation,
+    resetMemoryCore
+  } = useAgentMemoryCore(effectiveTokenId);
+  
   // Expose wallet context to global window for commands
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -178,6 +208,27 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         content: `${agentData.agentName} is ready`,
         timestamp
       });
+
+      // Consolidation alerts
+      if (consolidationState.needsConsolidation && consolidationState.currentMonth && consolidationState.currentYear) {
+        messages.push({
+          type: 'warning',
+          content: `Monthly consolidation needed (${consolidationState.currentMonth}/${consolidationState.currentYear}) - Click to start`,
+          timestamp,
+          clickable: true,
+          action: 'monthly-consolidation'
+        } as any);
+      }
+      
+      if (memoryCoreState.hasYearlyReflection) {
+        messages.push({
+          type: 'info',
+          content: `Yearly reflection available - Click to start (+5 INT bonus)`,
+          timestamp,
+          clickable: true,
+          action: 'yearly-consolidation'
+        } as any);
+      }
 
       // Agent details line
       const intelligenceLevel = Number(agentData.intelligenceLevel);
@@ -253,7 +304,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
 
     return messages;
-  }, [hasAgent, agentData, isLoadingAgent, brokerBalance, brokerLoading]);
+  }, [hasAgent, agentData, isLoadingAgent, brokerBalance, brokerLoading, consolidationState, memoryCoreState]);
 
   // Progress indicators - monitor dream analysis statuses (DISABLED - replaced with thinking animation)
   // useEffect(() => {
@@ -350,6 +401,36 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
   }, [hasAgent, agentData, isLoadingAgent, isInitialized, buildWelcomeMessage]);
 
+  // Auto-check consolidation needs
+  useEffect(() => {
+    const checkConsolidation = async () => {
+      if (hasAgent && agentData && effectiveTokenId && !consolidationState.isCheckingNeed) {
+        try {
+          await checkConsolidationNeed();
+        } catch (error) {
+          debugLog('Failed to check consolidation need', error);
+        }
+      }
+    };
+
+    checkConsolidation();
+  }, [hasAgent, agentData, effectiveTokenId, checkConsolidationNeed, debugLog, consolidationState.isCheckingNeed]);
+
+  // Auto-check yearly reflection availability
+  useEffect(() => {
+    const checkYearly = async () => {
+      if (hasAgent && agentData && effectiveTokenId && !memoryCoreState.isCheckingYearlyReflection) {
+        try {
+          await checkYearlyReflection();
+        } catch (error) {
+          debugLog('Failed to check yearly reflection', error);
+        }
+      }
+    };
+
+    checkYearly();
+  }, [hasAgent, agentData, effectiveTokenId, checkYearlyReflection, debugLog, memoryCoreState.isCheckingYearlyReflection]);
+
   // Generate dynamic title based on agent status
   const getTerminalTitle = (): string => {
     if (hasAgent && agentData?.agentName) {
@@ -361,6 +442,131 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   // Focus input when terminal is clicked
   const handleTerminalClick = () => {
     inputRef.current?.focus();
+  };
+
+  // Handle consolidation alert clicks
+  const handleConsolidationAlertClick = (action: string) => {
+    debugLog('Consolidation alert clicked', { action });
+    
+    if (action === 'monthly-consolidation') {
+      setConsolidationType('monthly');
+      setWaitingForConsolidationConfirm(true);
+      addLine({
+        type: 'warning',
+        content: 'Start monthly consolidation? (y/n)',
+        timestamp: Date.now()
+      });
+      setCurrentInput('');
+      inputRef.current?.focus();
+    } else if (action === 'yearly-consolidation') {
+      setConsolidationType('yearly');
+      setWaitingForConsolidationConfirm(true);
+      addLine({
+        type: 'info',
+        content: 'Start yearly reflection? (y/n)',
+        timestamp: Date.now()
+      });
+      setCurrentInput('');
+      inputRef.current?.focus();
+    }
+  };
+
+  // Start consolidation process based on type
+  const startConsolidationProcess = async () => {
+    if (!consolidationType) return;
+
+    setIsProcessingConsolidation(true);
+    setConsolidationMode(true);
+
+    try {
+      if (consolidationType === 'monthly') {
+        // Monthly consolidation
+        addLine({
+          type: 'info',
+          content: '',
+          timestamp: Date.now(),
+          icon: <FaCalendar style={{ marginRight: '8px', color: theme.accent.primary }} />,
+          loading: 'Loading monthly data...'
+        } as any);
+
+        // Start the consolidation process
+        await performConsolidation();
+
+        addLine({
+          type: 'success',
+          content: '',
+          timestamp: Date.now(),
+          icon: <FaCheckCircle style={{ marginRight: '8px', color: '#22c55e' }} />,
+          message: `Monthly consolidation completed! +${consolidationState.consolidationReward?.totalReward || 2} INT gained`
+        } as any);
+
+      } else if (consolidationType === 'yearly') {
+        // Yearly reflection - complete workflow
+        
+        // Step 1: Load monthly data
+        addLine({
+          type: 'info',
+          content: '',
+          timestamp: Date.now(),
+          icon: <FaCalendar style={{ marginRight: '8px', color: theme.accent.primary }} />,
+          loading: 'Loading monthly consolidations...'
+        } as any);
+
+        await loadMonthlyConsolidations(new Date().getFullYear() - 1);
+
+        // Step 2: Create memory core with LLM
+        addLine({
+          type: 'info',
+          content: '',
+          timestamp: Date.now(),
+          icon: <FaBrain style={{ marginRight: '8px', color: theme.accent.primary }} />,
+          loading: 'Creating yearly memory core...'
+        } as any);
+
+        // Step 3: Upload and update contract
+        addLine({
+          type: 'info',
+          content: '',
+          timestamp: Date.now(),
+          icon: <FaDatabase style={{ marginRight: '8px', color: theme.accent.primary }} />,
+          loading: 'Uploading to storage...'
+        } as any);
+
+        // Perform the actual yearly consolidation
+        await performYearlyConsolidation();
+        
+        addLine({
+          type: 'success',
+          content: '',
+          timestamp: Date.now(),
+          icon: <FaCheckCircle style={{ marginRight: '8px', color: '#22c55e' }} />,
+          message: 'Yearly reflection completed! +5 INT gained'
+        } as any);
+      }
+
+      // Reset states
+      setConsolidationType(null);
+      setConsolidationMode(false);
+      setIsProcessingConsolidation(false);
+      
+      // Refresh consolidation status
+      setTimeout(() => {
+        checkConsolidationNeed();
+        checkYearlyReflection();
+      }, 2000);
+
+    } catch (error) {
+      debugLog('Consolidation process failed', error);
+      addLine({
+        type: 'error',
+        content: `Consolidation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: Date.now()
+      });
+      
+      setConsolidationType(null);
+      setConsolidationMode(false);
+      setIsProcessingConsolidation(false);
+    }
   };
 
   // Auto-scroll to bottom
@@ -508,6 +714,34 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         } else if (answer === 'n' || answer === 'no') {
           setWaitingForTrainConfirm(false);
           exitChatMode();
+        } else {
+          addLine({
+            type: 'warning',
+            content: 'Please answer y/n',
+            timestamp: Date.now()
+          });
+        }
+        setCurrentInput('');
+        return;
+      }
+      return;
+    }
+
+    // Consolidation confirmation handling
+    if (waitingForConsolidationConfirm) {
+      if (e.key === 'Enter') {
+        const answer = currentInput.trim().toLowerCase();
+        if (answer === 'y' || answer === 'yes') {
+          setWaitingForConsolidationConfirm(false);
+          startConsolidationProcess();
+        } else if (answer === 'n' || answer === 'no') {
+          setWaitingForConsolidationConfirm(false);
+          setConsolidationType(null);
+          addLine({
+            type: 'system',
+            content: 'Consolidation cancelled.',
+            timestamp: Date.now()
+          });
         } else {
           addLine({
             type: 'warning',
@@ -1437,20 +1671,37 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           <>
             {/* Welcome Messages */}
             {welcomeLines.map((line, index) => (
-              <div key={`welcome-${index}`} style={{
-                marginBottom: '2px',
-                color: line.type === 'system' ? '#6b7280' : 
-                       line.type === 'input' ? theme.accent.primary :
-                       line.type === 'error' ? '#ef4444' :
-                       line.type === 'success' ? '#22c55e' :
-                       line.type === 'warning' ? '#f59e0b' :
-                       line.type === 'info' ? colors.text :
-                       line.type === 'help-command' ? '#ffffff' :
-                       line.type === 'info-labeled' ? colors.text :
-                       colors.text,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word'
-              }}>
+              <div 
+                key={`welcome-${index}`} 
+                onClick={(line as any).clickable ? () => handleConsolidationAlertClick((line as any).action) : undefined}
+                style={{
+                  marginBottom: '2px',
+                  color: line.type === 'system' ? '#6b7280' : 
+                         line.type === 'input' ? theme.accent.primary :
+                         line.type === 'error' ? '#ef4444' :
+                         line.type === 'success' ? '#22c55e' :
+                         line.type === 'warning' ? '#f59e0b' :
+                         line.type === 'info' ? colors.text :
+                         line.type === 'help-command' ? '#ffffff' :
+                         line.type === 'info-labeled' ? colors.text :
+                         colors.text,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  cursor: (line as any).clickable ? 'pointer' : 'default',
+                  transition: 'background-color 0.2s ease',
+                  padding: (line as any).clickable ? '4px 8px' : '0',
+                  borderRadius: (line as any).clickable ? '4px' : '0',
+                  ':hover': (line as any).clickable ? {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                  } : {}
+                }}
+                onMouseEnter={(line as any).clickable ? (e: any) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                } : undefined}
+                onMouseLeave={(line as any).clickable ? (e: any) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                } : undefined}
+              >
                 {line.type === 'info-labeled' ? (
                   <span>
                     {line.content.split(' | ').map((segment, index) => (
