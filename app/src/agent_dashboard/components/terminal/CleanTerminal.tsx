@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { validateCommand, generateDots, checkIfMobile, getTerminalColors } from './TerminalUtils';
+import { useTerminalState } from './useTerminalState';
 import { FaBrain, FaClock, FaCheckCircle, FaTimesCircle, FaSave } from 'react-icons/fa';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { TerminalLine } from '../../commands/types';
@@ -41,41 +42,27 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   className = ""
 }) => {
   const { theme, debugLog } = useTheme();
-  const [lines, setLines] = useState<TerminalLine[]>([]);
-  const [welcomeLines, setWelcomeLines] = useState<TerminalLine[]>([]);
-  const [currentInput, setCurrentInput] = useState('');
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSystemLoading, setIsSystemLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [pendingMintName, setPendingMintName] = useState<string | null>(null);
-  const [isValidCommand, setIsValidCommand] = useState(false);
-  // Dream input mode state
-  const [dreamInputMode, setDreamInputMode] = useState(false);
-  const [dreamInputText, setDreamInputText] = useState('');
-  const [processingDream, setProcessingDream] = useState(false);
-  const [pendingDreamSave, setPendingDreamSave] = useState<any>(null);
-  const [thinkingTimer, setThinkingTimer] = useState(0);
-  const [savingDream, setSavingDream] = useState(false);
-  const [evolvingDream, setEvolvingDream] = useState(false);
-  // Chat input mode state
-  const [chatInputMode, setChatInputMode] = useState(false);
-  const [waitingForChatConfirm, setWaitingForChatConfirm] = useState(false);
-  const [chatSession, setChatSession] = useState<any>(null);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [isInitializingChat, setIsInitializingChat] = useState(false);
-  const [isSendingMessage, setIsSendingMessage] = useState(false);
-  const [waitingForTrainConfirm, setWaitingForTrainConfirm] = useState(false);
-  const [isSavingConversation, setIsSavingConversation] = useState(false);
-  const [dotsPattern, setDotsPattern] = useState(0); // 0='.', 1='..', 2='...', 3=''
-  const [thinkingMessageId, setThinkingMessageId] = useState<number | null>(null);
-  const [learningMessageId, setLearningMessageId] = useState<number | null>(null);
-  const [evolutionMessageId, setEvolutionMessageId] = useState<number | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const terminalRef = useRef<HTMLDivElement>(null);
-  const commandProcessorRef = useRef(new CommandProcessor());
-  const dotsTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Use custom terminal state hook
+  const terminalState = useTerminalState();
+  const {
+    lines, setLines, welcomeLines, setWelcomeLines,
+    currentInput, setCurrentInput, commandHistory, setCommandHistory,
+    historyIndex, setHistoryIndex, isValidCommand, setIsValidCommand,
+    isLoading, setIsLoading, isSystemLoading, setIsSystemLoading,
+    isInitialized, setIsInitialized, pendingMintName, setPendingMintName,
+    dreamInputMode, setDreamInputMode, dreamInputText, setDreamInputText,
+    processingDream, setProcessingDream, pendingDreamSave, setPendingDreamSave,
+    thinkingTimer, setThinkingTimer, savingDream, setSavingDream,
+    evolvingDream, setEvolvingDream, chatInputMode, setChatInputMode,
+    waitingForChatConfirm, setWaitingForChatConfirm, chatSession, setChatSession,
+    chatMessages, setChatMessages, isInitializingChat, setIsInitializingChat,
+    isSendingMessage, setIsSendingMessage, waitingForTrainConfirm, setWaitingForTrainConfirm,
+    isSavingConversation, setIsSavingConversation, dotsPattern, setDotsPattern,
+    thinkingMessageId, setThinkingMessageId, learningMessageId, setLearningMessageId,
+    evolutionMessageId, setEvolutionMessageId, isMobile, setIsMobile,
+    inputRef, terminalRef, commandProcessorRef, dotsTimerRef, addLine
+  } = terminalState;
   
   // Agent hooks
   const { mintAgent, isLoading: isMinting, error: mintError, resetMint, isWalletConnected, hasCurrentBalance, isCorrectNetwork } = useAgentMint();
@@ -138,8 +125,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
   }, [wallet]);
 
-  // Check if mobile for shorter title
-  const [isMobile, setIsMobile] = useState(false);
+  // Mobile state is now handled by useTerminalState hook
   
   // Load command history from localStorage on mount
   useEffect(() => {
@@ -623,10 +609,6 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
   };
 
-  // Add line to terminal
-  const addLine = (line: TerminalLine) => {
-    setLines(prev => [...prev, line]);
-  };
 
   // Execute command using CommandProcessor
   const executeCommand = async (command: string) => {
