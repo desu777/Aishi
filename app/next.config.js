@@ -35,6 +35,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_COMPUTE_API_URL: process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api',
     NEXT_PUBLIC_DREAM_TEST: process.env.NEXT_PUBLIC_DREAM_TEST || 'true',
+    MEMORY_DEEP_ACTIVE: process.env.MEMORY_DEEP_ACTIVE || 'false',
   },
   
   webpack: (config, { isServer }) => {
