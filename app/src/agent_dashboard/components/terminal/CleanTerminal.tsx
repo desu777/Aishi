@@ -19,6 +19,8 @@ import { formatHelpOutput } from '../../commands/help';
 import { useAgentDream } from '../../../hooks/agentHooks/useAgentDream';
 import { useAgentPrompt } from '../../../hooks/agentHooks/useAgentPrompt';
 import { useAgentAI } from '../../../hooks/agentHooks/useAgentAI';
+// Chat hooks
+import { useAgentChatTerminal } from '../../../hooks/agentHooks/useAgentChatTerminal';
 
 interface TerminalProps {
   darkMode?: boolean;
@@ -56,6 +58,15 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   const [thinkingTimer, setThinkingTimer] = useState(0);
   const [savingDream, setSavingDream] = useState(false);
   const [evolvingDream, setEvolvingDream] = useState(false);
+  // Chat input mode state
+  const [chatInputMode, setChatInputMode] = useState(false);
+  const [waitingForChatConfirm, setWaitingForChatConfirm] = useState(false);
+  const [chatSession, setChatSession] = useState<any>(null);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [isInitializingChat, setIsInitializingChat] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [waitingForTrainConfirm, setWaitingForTrainConfirm] = useState(false);
+  const [isSavingConversation, setIsSavingConversation] = useState(false);
   const [dotsPattern, setDotsPattern] = useState(0); // 0='.', 1='..', 2='...', 3=''
   const [thinkingMessageId, setThinkingMessageId] = useState<number | null>(null);
   const [learningMessageId, setLearningMessageId] = useState<number | null>(null);
@@ -103,6 +114,21 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     resetAI, 
     sendDreamAnalysis 
   } = useAgentAI();
+  
+  // Chat terminal hooks
+  const {
+    session: terminalChatSession,
+    isInitializing: isInitializingTerminalChat,
+    initializeTerminalChatSession,
+    resetTerminalSession,
+    messages: terminalChatMessages,
+    sendTerminalMessage,
+    isSendingMessage: isSendingTerminalMessage,
+    saveTerminalConversation,
+    isSavingConversation: isSavingTerminalConversation,
+    error: terminalChatError,
+    clearError: clearTerminalChatError
+  } = useAgentChatTerminal(effectiveTokenId);
   
   // Expose wallet context to global window for commands
   useEffect(() => {
@@ -367,7 +393,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
   // Start/stop dots animation
   useEffect(() => {
-    if (processingDream || savingDream || evolvingDream) {
+    if (processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation) {
       // Start animation
       dotsTimerRef.current = setInterval(() => {
         setDotsPattern(prev => (prev + 1) % 4);
@@ -387,7 +413,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         clearInterval(dotsTimerRef.current);
       }
     };
-  }, [processingDream, savingDream, evolvingDream]);
+  }, [processingDream, savingDream, evolvingDream, isInitializingChat, isInitializingTerminalChat, isSendingMessage, isSendingTerminalMessage, isSavingConversation, isSavingTerminalConversation]);
 
   // Learning phase cleanup
   useEffect(() => {
@@ -445,6 +471,83 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
   // Handle keyboard input including arrow navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Chat confirmation handling
+    if (waitingForChatConfirm) {
+      if (e.key === 'Enter') {
+        const answer = currentInput.trim().toLowerCase();
+        if (answer === 'y' || answer === 'yes') {
+          setWaitingForChatConfirm(false);
+          initializeChatSession();
+        } else if (answer === 'n' || answer === 'no') {
+          setWaitingForChatConfirm(false);
+          addLine({
+            type: 'system',
+            content: 'Chat cancelled.',
+            timestamp: Date.now()
+          });
+        } else {
+          addLine({
+            type: 'warning',
+            content: 'Please answer y/n',
+            timestamp: Date.now()
+          });
+        }
+        setCurrentInput('');
+        return;
+      }
+      return;
+    }
+
+    // Chat train confirmation handling
+    if (waitingForTrainConfirm) {
+      if (e.key === 'Enter') {
+        const answer = currentInput.trim().toLowerCase();
+        if (answer === 'y' || answer === 'yes') {
+          setWaitingForTrainConfirm(false);
+          saveConversationFromTerminal();
+        } else if (answer === 'n' || answer === 'no') {
+          setWaitingForTrainConfirm(false);
+          exitChatMode();
+        } else {
+          addLine({
+            type: 'warning',
+            content: 'Please answer y/n',
+            timestamp: Date.now()
+          });
+        }
+        setCurrentInput('');
+        return;
+      }
+      return;
+    }
+
+    // Chat input mode handling
+    if (chatInputMode) {
+      if (e.key === 'Enter') {
+        const message = currentInput.trim();
+        if (message === 'end') {
+          // End chat and ask about training
+          setWaitingForTrainConfirm(true);
+          addLine({
+            type: 'info',
+            content: 'Do u wanna train your agent with this conversation? y/n',
+            timestamp: Date.now()
+          });
+        } else if (message) {
+          // Send message to agent
+          sendChatMessage(message);
+        }
+        setCurrentInput('');
+        return;
+      } else if (e.key === 'Escape') {
+        // Cancel chat mode
+        exitChatMode();
+        return;
+      }
+      // Regular typing in chat mode - no special handling needed
+      return;
+    }
+
     // Dream input mode handling
     if (dreamInputMode) {
       if (e.key === 'Enter') {
@@ -580,6 +683,18 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         addLine({
           type: 'system',
           content: 'Press Escape to cancel dream input mode.',
+          timestamp: Date.now()
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle chat input mode
+      if (result.output === 'CHAT_INPUT_MODE') {
+        setWaitingForChatConfirm(true);
+        addLine({
+          type: 'info',
+          content: 'Do u wanna chat with your agent? y/n',
           timestamp: Date.now()
         });
         setIsLoading(false);
@@ -1010,6 +1125,129 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     setEvolutionMessageId(null);
   };
 
+  // Chat workflow functions
+  const initializeChatSession = async () => {
+    setIsInitializingChat(true);
+    
+    try {
+      // Use the real terminal chat hook
+      const success = await initializeTerminalChatSession(agentData);
+      
+      if (success) {
+        setChatInputMode(true);
+        setChatSession(terminalChatSession);
+        setChatMessages(terminalChatMessages);
+        
+        addLine({
+          type: 'success',
+          content: `Chat session initialized with ${agentData?.agentName || 'Agent'}`,
+          timestamp: Date.now()
+        });
+      } else {
+        throw new Error(terminalChatError || 'Unknown initialization error');
+      }
+    } catch (error) {
+      addLine({
+        type: 'error',
+        content: `Failed to initialize chat session: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now()
+      });
+    } finally {
+      setIsInitializingChat(false);
+    }
+  };
+
+  const sendChatMessage = async (message: string) => {
+    if (!terminalChatSession) return;
+    
+    setIsSendingMessage(true);
+    
+    // Add user message to terminal
+    addLine({
+      type: 'input',
+      content: `~ ${message}`,
+      timestamp: Date.now()
+    });
+    
+    try {
+      // Use the real terminal chat hook to send message
+      const agentResponse = await sendTerminalMessage(message);
+      
+      if (agentResponse) {
+        // Add agent response to terminal
+        addLine({
+          type: 'output',
+          content: `${agentData?.agentName || 'Agent'}: ${agentResponse}`,
+          timestamp: Date.now()
+        });
+        
+        // Update local chat messages from hook
+        setChatMessages(terminalChatMessages);
+      } else {
+        throw new Error(terminalChatError || 'No response received');
+      }
+      
+    } catch (error) {
+      addLine({
+        type: 'error',
+        content: `Failed to send message: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now()
+      });
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
+  const saveConversationFromTerminal = async () => {
+    setIsSavingConversation(true);
+    
+    try {
+      // Use the real terminal chat hook to save conversation
+      const success = await saveTerminalConversation();
+      
+      if (success) {
+        addLine({
+          type: 'success',
+          content: `💾 ${agentData?.agentName || 'Agent'} learned from this conversation!`,
+          timestamp: Date.now()
+        });
+        
+        exitChatMode();
+      } else {
+        throw new Error(terminalChatError || 'Unknown save error');
+      }
+    } catch (error) {
+      addLine({
+        type: 'error',
+        content: `Failed to save conversation: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now()
+      });
+    } finally {
+      setIsSavingConversation(false);
+    }
+  };
+
+  const exitChatMode = () => {
+    setChatInputMode(false);
+    setWaitingForChatConfirm(false);
+    setWaitingForTrainConfirm(false);
+    setChatSession(null);
+    setChatMessages([]);
+    setIsInitializingChat(false);
+    setIsSendingMessage(false);
+    setIsSavingConversation(false);
+    
+    // Reset the terminal chat session
+    resetTerminalSession();
+    clearTerminalChatError();
+    
+    addLine({
+      type: 'system',
+      content: 'Chat session ended',
+      timestamp: Date.now()
+    });
+  };
+
   // Enhanced command execution to handle mint confirmation
   const executeEnhancedCommand = async (command: string) => {
     const trimmedCommand = command.trim().toLowerCase();
@@ -1299,7 +1537,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             marginTop: '4px'
           }}>
             <span style={{ color: theme.accent.primary, marginRight: '8px' }}>
-              {(processingDream || savingDream || evolvingDream) ? <FaBrain /> : dreamInputMode ? '~' : '$'}
+              {(processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation) ? <FaBrain /> : (dreamInputMode || chatInputMode) ? '~' : '$'}
             </span>
             <input
               ref={inputRef}
@@ -1307,24 +1545,30 @@ const CleanTerminal: React.FC<TerminalProps> = ({
               value={currentInput}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              disabled={isLoading || processingDream || savingDream || evolvingDream}
+              disabled={isLoading || processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation}
               style={{
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
-                color: dreamInputMode ? theme.accent.primary : (isValidCommand ? theme.accent.primary : colors.text),
+                color: (dreamInputMode || chatInputMode) ? theme.accent.primary : (isValidCommand ? theme.accent.primary : colors.text),
                 fontSize: 'clamp(15px, 4vw, 18px)',
                 fontFamily: 'inherit',
                 flex: 1,
                 caretColor: theme.accent.primary,
-                opacity: (isLoading || processingDream || savingDream || evolvingDream) ? 0.5 : 1
+                opacity: (isLoading || processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation) ? 0.5 : 1
               }}
               placeholder={
                 processingDream ? `${agentData?.agentName || 'Agent'} is thinking${getDots()}` :
                 evolvingDream ? `${agentData?.agentName || 'Agent'} is evolving${getDots()}` :
                 savingDream ? `${agentData?.agentName || 'Agent'} is learning${getDots()}` :
+                (isInitializingChat || isInitializingTerminalChat) ? `${agentData?.agentName || 'Agent'} is initializing session${getDots()}` :
+                (isSendingMessage || isSendingTerminalMessage) ? `${agentData?.agentName || 'Agent'} is thinking${getDots()}` :
+                (isSavingConversation || isSavingTerminalConversation) ? `${agentData?.agentName || 'Agent'} is learning${getDots()}` :
                 isLoading ? 'Processing...' :
                 pendingDreamSave ? 'Answer y/n to train agent...' :
+                waitingForChatConfirm ? 'Answer y/n to start chat...' :
+                waitingForTrainConfirm ? 'Answer y/n to train agent...' :
+                chatInputMode ? '(if u wanna end chat type \'end\')' :
                 dreamInputMode ? 'Describe your dream...' : 
                 'Type a command...'
               }
