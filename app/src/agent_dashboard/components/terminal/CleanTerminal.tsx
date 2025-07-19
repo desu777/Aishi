@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { FaBrain, FaDatabase, FaClock, FaLink, FaCheckCircle, FaTimesCircle, FaSave } from 'react-icons/fa';
+import { validateCommand, generateDots, checkIfMobile, getTerminalColors } from './TerminalUtils';
+import { FaBrain, FaClock, FaCheckCircle, FaTimesCircle, FaSave } from 'react-icons/fa';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { TerminalLine } from '../../commands/types';
 import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
@@ -156,14 +157,14 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   }, [debugLog]);
   
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 480);
+    const handleResize = () => {
+      setIsMobile(checkIfMobile());
     };
     
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
+    handleResize();
+    window.addEventListener('resize', handleResize);
     
-    return () => window.removeEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Build welcome message based on agent status
@@ -387,8 +388,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
   // Stable dots animation using useRef timer
   const getDots = () => {
-    const patterns = ['.', '..', '...', ''];
-    return patterns[dotsPattern];
+    return generateDots(dotsPattern);
   };
 
   // Start/stop dots animation
@@ -588,7 +588,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         const newIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
         setHistoryIndex(newIndex);
         setCurrentInput(commandHistory[newIndex]);
-        setIsValidCommand(validateCommand(commandHistory[newIndex]));
+        setIsValidCommand(validateCommand(commandHistory[newIndex], commandProcessorRef.current));
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -601,7 +601,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         } else {
           setHistoryIndex(newIndex);
           setCurrentInput(commandHistory[newIndex]);
-          setIsValidCommand(validateCommand(commandHistory[newIndex]));
+          setIsValidCommand(validateCommand(commandHistory[newIndex], commandProcessorRef.current));
         }
       }
     } else if (e.key === 'Escape') {
@@ -611,26 +611,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
   };
 
-  // Validate command in real-time
-  const validateCommand = (input: string): boolean => {
-    const trimmed = input.trim();
-    if (!trimmed) return false;
-    
-    // System commands
-    if (['clear', 'help'].includes(trimmed.toLowerCase())) return true;
-    
-    // Regular commands
-    const parts = trimmed.split(' ');
-    const commandName = parts[0].toLowerCase();
-    
-    return commandProcessorRef.current.getAvailableCommands().some(cmd => cmd.name === commandName);
-  };
 
   // Handle input changes (reset history when typing)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setCurrentInput(value);
-    setIsValidCommand(validateCommand(value));
+    setIsValidCommand(validateCommand(value, commandProcessorRef.current));
     
     if (historyIndex !== -1) {
       setHistoryIndex(-1); // Exit history mode when typing
@@ -862,12 +848,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         if (result.success) {
           addLine({
             type: 'success', 
-            content: (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FaCheckCircle style={{ color: '#22C55E' }} />
-                Agent "{pendingMintName}" minted successfully!
-              </span>
-            ),
+            content: `Agent "${pendingMintName}" minted successfully!`,
             timestamp: Date.now()
           });
           
@@ -881,24 +862,14 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         } else {
           addLine({
             type: 'error',
-            content: (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FaTimesCircle style={{ color: '#EF4444' }} />
-                Minting failed: {result.error}
-              </span>
-            ),
+            content: `Minting failed: ${result.error}`,
             timestamp: Date.now()
           });
         }
       } catch (error: any) {
         addLine({
           type: 'error',
-          content: (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FaTimesCircle style={{ color: '#EF4444' }} />
-              Minting error: {error.message || error}
-            </span>
-          ),
+          content: `Minting error: ${error.message || error}`,
           timestamp: Date.now()
         });
       } finally {
@@ -1208,12 +1179,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       if (success) {
         addLine({
           type: 'success',
-          content: (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FaSave style={{ color: '#44ff44' }} />
-              {agentData?.agentName || 'Agent'} learned from this conversation!
-            </span>
-          ),
+          content: `${agentData?.agentName || 'Agent'} learned from this conversation!`,
           timestamp: Date.now()
         });
         
@@ -1296,25 +1262,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     await executeCommand(command);
   };
 
-  // Terminal colors based on mode
-  const terminalColors = {
-    dark: {
-      bg: '#1e1e1e',
-      text: '#ffffff',
-      prompt: theme.accent.primary,
-      system: '#8a8a8a',
-      border: '#3a3a3a'
-    },
-    light: {
-      bg: '#ffffff',
-      text: '#000000', 
-      prompt: theme.accent.primary,
-      system: '#6a6a6a',
-      border: '#d1d1d1'
-    }
-  };
-
-  const colors = darkMode ? terminalColors.dark : terminalColors.light;
+  // Get terminal colors based on mode
+  const colors = getTerminalColors(darkMode, theme.accent.primary);
 
   debugLog('CleanTerminal rendered', { darkMode, linesCount: lines.length });
 
@@ -1591,7 +1540,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         )}
 
         {/* Cursor blink effect and animation styles */}
-        <style jsx>{`
+        <style>{`
           input::placeholder {
             color: ${colors.system};
             opacity: 0.6;

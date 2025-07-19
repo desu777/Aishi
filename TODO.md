@@ -1,0 +1,2 @@
+- poprawka odczytu głębokości memory w prompt building odnośnie chatowania, dream analysis działa 
+-  
