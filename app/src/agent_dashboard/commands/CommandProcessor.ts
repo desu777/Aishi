@@ -9,6 +9,16 @@ import { checkBalanceCommand } from './checkBalance';
 import { fundBrokerCommand } from './fundBroker';
 import { dreamCommand } from './dream';
 import { chatCommand } from './chat';
+import { consolidateCommand } from './consolidate';
+import { memoryCoreCommand } from './memory-core';
+import { consolidationStatusCommand } from './consolidation-status';
+import { 
+  testMockMonthlyCommand, 
+  testMockYearlyCommand, 
+  testConsolidationCommand, 
+  testMemoryCoreCommand, 
+  resetTestCommand 
+} from './test-consolidation';
 
 export class CommandProcessor {
   private commands: Map<string, Command> = new Map();
@@ -28,6 +38,14 @@ export class CommandProcessor {
     this.registerCommand(fundBrokerCommand);
     this.registerCommand(dreamCommand);
     this.registerCommand(chatCommand);
+    this.registerCommand(consolidateCommand);
+    this.registerCommand(memoryCoreCommand);
+    this.registerCommand(consolidationStatusCommand);
+    this.registerCommand(testMockMonthlyCommand);
+    this.registerCommand(testMockYearlyCommand);
+    this.registerCommand(testConsolidationCommand);
+    this.registerCommand(testMemoryCoreCommand);
+    this.registerCommand(resetTestCommand);
   }
 
   private registerCommand(command: Command): void {

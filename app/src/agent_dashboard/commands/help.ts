@@ -3,6 +3,7 @@ import { Command, TerminalLine } from './types';
 // Helper function to format help output with enhanced colors
 export function formatHelpOutput(): TerminalLine[] {
   const timestamp = Date.now();
+  const isTestMode = process.env.NEXT_PUBLIC_DREAM_TEST === 'true';
   
   return [
     {
@@ -57,6 +58,31 @@ export function formatHelpOutput(): TerminalLine[] {
     },
     {
       type: 'info',
+      content: 'Consolidation commands:',
+      timestamp
+    },
+    {
+      type: 'help-command',
+      content: '  consolidate         - Trigger monthly consolidation (dreams + conversations)',
+      timestamp
+    },
+    {
+      type: 'help-command',
+      content: '  memory-core         - Create yearly memory core (+5 INT bonus)',
+      timestamp
+    },
+    {
+      type: 'help-command',
+      content: '  consolidation-status - Check consolidation needs and availability',
+      timestamp
+    },
+    {
+      type: 'system',
+      content: '',
+      timestamp
+    },
+    {
+      type: 'info',
       content: '0G Compute broker commands:',
       timestamp
     },
@@ -80,6 +106,43 @@ export function formatHelpOutput(): TerminalLine[] {
       content: '',
       timestamp
     },
+    ...(isTestMode ? [
+      {
+        type: 'info' as const,
+        content: 'Test commands (DEBUG MODE):',
+        timestamp
+      },
+      {
+        type: 'help-command' as const,
+        content: '  test-mock-monthly   - Generate monthly mock data for testing',
+        timestamp
+      },
+      {
+        type: 'help-command' as const,
+        content: '  test-mock-yearly    - Generate yearly mock data for testing',
+        timestamp
+      },
+      {
+        type: 'help-command' as const,
+        content: '  test-consolidation  - Test monthly consolidation with mock data',
+        timestamp
+      },
+      {
+        type: 'help-command' as const,
+        content: '  test-memory-core    - Test yearly memory core with mock data',
+        timestamp
+      },
+      {
+        type: 'help-command' as const,
+        content: '  reset-test          - Reset test mode state',
+        timestamp
+      },
+      {
+        type: 'system' as const,
+        content: '',
+        timestamp
+      }
+    ] : []),
     {
       type: 'info',
       content: 'System commands:',

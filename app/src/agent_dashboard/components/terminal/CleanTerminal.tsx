@@ -24,6 +24,7 @@ import { useAgentChatTerminal } from '../../../hooks/agentHooks/useAgentChatTerm
 // Consolidation hooks
 import { useAgentConsolidation } from '../../../hooks/agentHooks/useAgentConsolidation';
 import { useAgentMemoryCore } from '../../../hooks/agentHooks/useAgentMemoryCore';
+import { useConsolidationTestMode } from '../../../hooks/agentHooks/useConsolidationTestMode';
 
 interface TerminalProps {
   darkMode?: boolean;
@@ -159,6 +160,18 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     performYearlyConsolidation,
     resetMemoryCore
   } = useAgentMemoryCore(effectiveTokenId);
+  
+  // Test mode hooks (conditional)
+  const {
+    testState,
+    mockData,
+    isGeneratingMocks,
+    isTestingConsolidation,
+    generateMockData,
+    testMonthlyConsolidation,
+    testYearlyConsolidation,
+    resetTestMode
+  } = useConsolidationTestMode(effectiveTokenId);
   
   // Expose wallet context to global window for commands
   useEffect(() => {
@@ -430,6 +443,123 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
     checkYearly();
   }, [hasAgent, agentData, effectiveTokenId, checkYearlyReflection, debugLog, memoryCoreState.isCheckingYearlyReflection]);
+
+  // Real-time progress tracking for monthly consolidation
+  useEffect(() => {
+    if (!consolidationMode || consolidationType !== 'monthly') return;
+
+    if (consolidationState.isProcessingWithLLM) {
+      addLine({
+        type: 'info',
+        content: 'Processing with AI...',
+        timestamp: Date.now()
+      });
+    } else if (consolidationState.isUploadingToStorage) {
+      addLine({
+        type: 'info',
+        content: 'Uploading to 0G Storage...',
+        timestamp: Date.now()
+      });
+    } else if (consolidationState.isUpdatingContract) {
+      addLine({
+        type: 'info',
+        content: 'Updating blockchain contract...',
+        timestamp: Date.now()
+      });
+    } else if (consolidationState.isClearingFiles) {
+      addLine({
+        type: 'info',
+        content: 'Clearing monthly files...',
+        timestamp: Date.now()
+      });
+    } else if (consolidationState.isCompleted && consolidationState.txHash) {
+      addLine({
+        type: 'success',
+        content: `Monthly consolidation completed! (+${consolidationState.consolidationReward?.totalReward || 0} INT)`,
+        timestamp: Date.now()
+      });
+      addLine({
+        type: 'info',
+        content: `Transaction: ${consolidationState.txHash}`,
+        timestamp: Date.now()
+      });
+    }
+  }, [
+    consolidationMode, 
+    consolidationType,
+    consolidationState.isProcessingWithLLM,
+    consolidationState.isUploadingToStorage,
+    consolidationState.isUpdatingContract,
+    consolidationState.isClearingFiles,
+    consolidationState.isCompleted,
+    consolidationState.txHash,
+    consolidationState.consolidationReward
+  ]);
+
+  // Real-time progress tracking for yearly consolidation
+  useEffect(() => {
+    if (!consolidationMode || consolidationType !== 'yearly') return;
+
+    if (memoryCoreState.isProcessingWithLLM) {
+      addLine({
+        type: 'info',
+        content: 'Creating yearly essence with AI...',
+        timestamp: Date.now()
+      });
+    } else if (memoryCoreState.isUploadingToStorage) {
+      addLine({
+        type: 'info',
+        content: 'Uploading memory core to 0G Storage...',
+        timestamp: Date.now()
+      });
+    } else if (memoryCoreState.isUpdatingContract) {
+      addLine({
+        type: 'info',
+        content: 'Updating memory core in contract...',
+        timestamp: Date.now()
+      });
+    } else if (memoryCoreState.isCompleted && memoryCoreState.txHash) {
+      addLine({
+        type: 'success',
+        content: 'Yearly memory core created successfully! (+5 Intelligence)',
+        timestamp: Date.now()
+      });
+      addLine({
+        type: 'info',
+        content: `Transaction: ${memoryCoreState.txHash}`,
+        timestamp: Date.now()
+      });
+    }
+  }, [
+    consolidationMode,
+    consolidationType,
+    memoryCoreState.isProcessingWithLLM,
+    memoryCoreState.isUploadingToStorage,
+    memoryCoreState.isUpdatingContract,
+    memoryCoreState.isCompleted,
+    memoryCoreState.txHash
+  ]);
+
+  // Error handling for both consolidation types
+  useEffect(() => {
+    if (consolidationState.error && consolidationMode && consolidationType === 'monthly') {
+      addLine({
+        type: 'error',
+        content: `Monthly consolidation error: ${consolidationState.error}`,
+        timestamp: Date.now()
+      });
+    }
+  }, [consolidationState.error, consolidationMode, consolidationType]);
+
+  useEffect(() => {
+    if (memoryCoreState.error && consolidationMode && consolidationType === 'yearly') {
+      addLine({
+        type: 'error',
+        content: `Yearly consolidation error: ${memoryCoreState.error}`,
+        timestamp: Date.now()
+      });
+    }
+  }, [memoryCoreState.error, consolidationMode, consolidationType]);
 
   // Generate dynamic title based on agent status
   const getTerminalTitle = (): string => {
@@ -876,6 +1006,433 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     setLines(prev => [...prev, line]);
   };
 
+  // Consolidation workflow handlers
+  const handleConsolidationStatus = async () => {
+    if (!effectiveTokenId) {
+      addLine({
+        type: 'error',
+        content: 'No agent found. Please mint an agent first.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    addLine({
+      type: 'info',
+      content: 'Checking consolidation status...',
+      timestamp: Date.now()
+    });
+
+    try {
+      // Check monthly consolidation need
+      await checkConsolidationNeed();
+      // Check yearly reflection availability  
+      await checkYearlyReflection();
+
+      // Display monthly consolidation status
+      addLine({
+        type: 'info',
+        content: `Monthly consolidation: ${consolidationState.needsConsolidation ? 'Required' : 'Not needed'}`,
+        timestamp: Date.now()
+      });
+
+      if (consolidationState.needsConsolidation) {
+        addLine({
+          type: 'info',
+          content: `Current period: ${consolidationState.currentMonth}/${consolidationState.currentYear}`,
+          timestamp: Date.now()
+        });
+        
+        if (consolidationState.consolidationReward) {
+          addLine({
+            type: 'info',
+            content: `Reward: ${consolidationState.consolidationReward.totalReward} INT (Base: ${consolidationState.consolidationReward.baseReward}, Streak: ${consolidationState.consolidationReward.streakBonus}, Early: ${consolidationState.consolidationReward.earlyBirdBonus})`,
+            timestamp: Date.now()
+          });
+        }
+
+        addLine({
+          type: 'success',
+          content: 'Use "consolidate" command to start monthly consolidation.',
+          timestamp: Date.now()
+        });
+      }
+
+      // Display yearly memory core status
+      addLine({
+        type: 'info',
+        content: `Yearly memory core: ${memoryCoreState.hasYearlyReflection ? 'Available' : 'Not available'}`,
+        timestamp: Date.now()
+      });
+
+      if (memoryCoreState.hasYearlyReflection) {
+        addLine({
+          type: 'success',
+          content: 'Use "memory-core" command to create yearly essence (+5 INT).',
+          timestamp: Date.now()
+        });
+      }
+
+    } catch (error) {
+      addLine({
+        type: 'error',
+        content: `Status check failed: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handleMonthlyConsolidation = async () => {
+    if (!effectiveTokenId) {
+      addLine({
+        type: 'error',
+        content: 'No agent found. Please mint an agent first.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    // Step 1: Check if consolidation is needed
+    if (!consolidationState.needsConsolidation) {
+      addLine({
+        type: 'error',
+        content: 'No consolidation needed for current period.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    addLine({
+      type: 'info',
+      content: 'Starting monthly consolidation...',
+      timestamp: Date.now()
+    });
+
+    try {
+      setConsolidationMode(true);
+      setConsolidationType('monthly');
+
+      // Step 2: Load monthly data
+      addLine({
+        type: 'info',
+        content: 'Loading monthly dreams and conversations...',
+        timestamp: Date.now()
+      });
+
+      await loadMonthlyData();
+
+      // Step 3: Check if we can start consolidation
+      if (!canStartConsolidation) {
+        addLine({
+          type: 'error',
+          content: 'Cannot start consolidation - no data available.',
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      // Step 4: Perform consolidation
+      addLine({
+        type: 'info',
+        content: `Processing ${consolidationState.monthlyDreams.length} dreams and ${consolidationState.monthlyConversations.length} conversations...`,
+        timestamp: Date.now()
+      });
+
+      await performConsolidation();
+
+      // Success handling will be done by progress tracking
+
+    } catch (error) {
+      addLine({
+        type: 'error',
+        content: `Consolidation failed: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now()
+      });
+    } finally {
+      setConsolidationMode(false);
+      setConsolidationType(null);
+    }
+  };
+
+  const handleYearlyConsolidation = async () => {
+    if (!effectiveTokenId) {
+      addLine({
+        type: 'error',
+        content: 'No agent found. Please mint an agent first.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    // Step 1: Check if yearly reflection is available
+    if (!memoryCoreState.hasYearlyReflection) {
+      addLine({
+        type: 'error',
+        content: 'Yearly reflection not available. Complete December consolidation first.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    addLine({
+      type: 'info',
+      content: 'Starting yearly memory core creation...',
+      timestamp: Date.now()
+    });
+
+    try {
+      setConsolidationMode(true);
+      setConsolidationType('yearly');
+
+      // Step 2: Load monthly consolidations
+      addLine({
+        type: 'info',
+        content: 'Loading monthly consolidations...',
+        timestamp: Date.now()
+      });
+
+      const currentYear = new Date().getFullYear();
+      await loadMonthlyConsolidations(currentYear - 1);
+
+      // Step 3: Check if we can start yearly consolidation
+      if (!canStartYearlyConsolidation) {
+        addLine({
+          type: 'error',
+          content: 'Cannot start yearly consolidation - insufficient monthly data.',
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      // Step 4: Perform yearly consolidation
+      addLine({
+        type: 'info',
+        content: `Processing ${memoryCoreState.monthlyDreamConsolidations.length} dream consolidations and ${memoryCoreState.monthlyConversationConsolidations.length} conversation consolidations...`,
+        timestamp: Date.now()
+      });
+
+      await performYearlyConsolidation();
+
+      // Success handling will be done by progress tracking
+
+    } catch (error) {
+      addLine({
+        type: 'error',
+        content: `Memory core creation failed: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now()
+      });
+    } finally {
+      setConsolidationMode(false);
+      setConsolidationType(null);
+    }
+  };
+
+  // Test mode handlers
+  const handleTestMockMonthly = async () => {
+    if (process.env.NEXT_PUBLIC_DREAM_TEST !== 'true') {
+      addLine({
+        type: 'error',
+        content: 'Test commands not available in production mode.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    if (!effectiveTokenId) {
+      addLine({
+        type: 'error',
+        content: 'No agent found. Please mint an agent first.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    addLine({
+      type: 'info',
+      content: 'Generating monthly mock data...',
+      timestamp: Date.now()
+    });
+
+    try {
+      await generateMockData('monthly');
+      
+      if (testState.mockDataGenerated) {
+        addLine({
+          type: 'success',
+          content: `Mock data generated: ${mockData.monthlyData?.dreams?.length || 0} dreams, ${mockData.monthlyData?.conversations?.length || 0} conversations`,
+          timestamp: Date.now()
+        });
+        addLine({
+          type: 'info',
+          content: 'Use "test-consolidation" to test the consolidation workflow.',
+          timestamp: Date.now()
+        });
+      }
+    } catch (error) {
+      addLine({
+        type: 'error',
+        content: `Mock generation failed: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handleTestMockYearly = async () => {
+    if (process.env.NEXT_PUBLIC_DREAM_TEST !== 'true') {
+      addLine({
+        type: 'error',
+        content: 'Test commands not available in production mode.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    addLine({
+      type: 'info',
+      content: 'Generating yearly mock data...',
+      timestamp: Date.now()
+    });
+
+    try {
+      await generateMockData('yearly');
+      addLine({
+        type: 'success',
+        content: `Mock data generated: 12 months of consolidated data for ${mockData.yearlyData?.year || 2024}`,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      addLine({
+        type: 'error',
+        content: `Mock generation failed: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handleTestConsolidation = async () => {
+    if (process.env.NEXT_PUBLIC_DREAM_TEST !== 'true') {
+      addLine({
+        type: 'error',
+        content: 'Test commands not available in production mode.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    if (!effectiveTokenId) {
+      addLine({
+        type: 'error',
+        content: 'No agent found. Please mint an agent first.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    if (!testState.mockDataGenerated) {
+      addLine({
+        type: 'error',
+        content: 'Generate mock data first using: test-mock-monthly',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    addLine({
+      type: 'info',
+      content: 'Testing monthly consolidation with real backend...',
+      timestamp: Date.now()
+    });
+
+    try {
+      await testMonthlyConsolidation();
+      
+      if (testState.consolidationCompleted && testState.txHash) {
+        addLine({
+          type: 'success',
+          content: `Test consolidation completed!`,
+          timestamp: Date.now()
+        });
+        addLine({
+          type: 'info',
+          content: `Transaction: ${testState.txHash}`,
+          timestamp: Date.now()
+        });
+        if (testState.storageHash) {
+          addLine({
+            type: 'info',
+            content: `Storage Hash: ${testState.storageHash}`,
+            timestamp: Date.now()
+          });
+        }
+      }
+    } catch (error) {
+      addLine({
+        type: 'error',
+        content: `Test consolidation failed: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handleTestMemoryCore = async () => {
+    if (process.env.NEXT_PUBLIC_DREAM_TEST !== 'true') {
+      addLine({
+        type: 'error',
+        content: 'Test commands not available in production mode.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    if (!testState.mockDataGenerated) {
+      addLine({
+        type: 'error',
+        content: 'Generate mock data first using: test-mock-yearly',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    addLine({
+      type: 'info',
+      content: 'Testing yearly memory core with real backend...',
+      timestamp: Date.now()
+    });
+
+    try {
+      await testYearlyConsolidation();
+      addLine({
+        type: 'success',
+        content: `Test memory core completed! TX: ${testState.txHash?.substring(0, 10)}...`,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      addLine({
+        type: 'error',
+        content: `Test memory core failed: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handleResetTest = async () => {
+    if (process.env.NEXT_PUBLIC_DREAM_TEST !== 'true') {
+      addLine({
+        type: 'error',
+        content: 'Test commands not available in production mode.',
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    resetTestMode();
+    addLine({
+      type: 'success',
+      content: 'Test mode state reset successfully.',
+      timestamp: Date.now()
+    });
+  };
+
   // Execute command using CommandProcessor
   const executeCommand = async (command: string) => {
     const trimmedCommand = command.trim();
@@ -895,7 +1452,10 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       const result = await commandProcessorRef.current.executeCommand(trimmedCommand, {
         addLine,
         setLoading: setIsLoading,
-        currentUser: wallet.address || undefined
+        currentUser: wallet.address || undefined,
+        effectiveTokenId: effectiveTokenId || undefined,
+        hasAgent,
+        agentData
       });
 
       // Handle special clear command - only clear user commands, keep welcome
@@ -931,6 +1491,58 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           content: 'Do u wanna chat with your agent? y/n',
           timestamp: Date.now()
         });
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle consolidation status mode
+      if (result.output === 'CONSOLIDATION_STATUS_MODE') {
+        handleConsolidationStatus();
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle monthly consolidation mode
+      if (result.output === 'CONSOLIDATION_MODE') {
+        handleMonthlyConsolidation();
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle yearly memory core mode
+      if (result.output === 'MEMORY_CORE_MODE') {
+        handleYearlyConsolidation();
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle test mode commands
+      if (result.output === 'TEST_MOCK_MONTHLY_MODE') {
+        handleTestMockMonthly();
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.output === 'TEST_MOCK_YEARLY_MODE') {
+        handleTestMockYearly();
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.output === 'TEST_CONSOLIDATION_MODE') {
+        handleTestConsolidation();
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.output === 'TEST_MEMORY_CORE_MODE') {
+        handleTestMemoryCore();
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.output === 'RESET_TEST_MODE') {
+        handleResetTest();
         setIsLoading(false);
         return;
       }
