@@ -56,6 +56,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   const [thinkingAnimation, setThinkingAnimation] = useState(0);
   const [thinkingTimer, setThinkingTimer] = useState(0);
   const [savingDream, setSavingDream] = useState(false);
+  const [learningAnimation, setLearningAnimation] = useState(0);
+  const [thinkingMessageId, setThinkingMessageId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const commandProcessorRef = useRef(new CommandProcessor());
@@ -224,51 +226,53 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     return messages;
   }, [hasAgent, agentData, isLoadingAgent, brokerBalance, brokerLoading]);
 
-  // Progress indicators - monitor dream analysis statuses
-  useEffect(() => {
-    if (contextStatus) {
-      addLine({
-        type: 'system',
-        content: (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FaBrain style={{ color: '#4A90E2' }} />
-            {contextStatus}
-          </span>
-        ),
-        timestamp: Date.now()
-      });
-    }
-  }, [contextStatus]);
+  // Progress indicators - monitor dream analysis statuses (DISABLED - replaced with thinking animation)
+  // useEffect(() => {
+  //   if (contextStatus) {
+  //     addLine({
+  //       type: 'system',
+  //       content: (
+  //         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+  //           <FaBrain style={{ color: '#4A90E2' }} />
+  //           {contextStatus}
+  //         </span>
+  //       ),
+  //       timestamp: Date.now()
+  //     });
+  //   }
+  // }, [contextStatus]);
 
-  useEffect(() => {
-    if (uploadStatus) {
-      addLine({
-        type: 'system',
-        content: (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FaDatabase style={{ color: '#28A745' }} />
-            {uploadStatus}
-          </span>
-        ),
-        timestamp: Date.now()
-      });
-    }
-  }, [uploadStatus]);
+  // Storage status monitoring (DISABLED - replaced with unified learning message)
+  // useEffect(() => {
+  //   if (uploadStatus) {
+  //     addLine({
+  //       type: 'system',
+  //       content: (
+  //         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+  //           <FaDatabase style={{ color: '#28A745' }} />
+  //           {uploadStatus}
+  //         </span>
+  //       ),
+  //       timestamp: Date.now()
+  //     });
+  //   }
+  // }, [uploadStatus]);
 
-  useEffect(() => {
-    if (contractStatus) {
-      addLine({
-        type: 'system',
-        content: (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FaLink style={{ color: '#17A2B8' }} />
-            {contractStatus}
-          </span>
-        ),
-        timestamp: Date.now()
-      });
-    }
-  }, [contractStatus]);
+  // Contract status monitoring (DISABLED - replaced with unified evolution message)
+  // useEffect(() => {
+  //   if (contractStatus) {
+  //     addLine({
+  //       type: 'system',
+  //       content: (
+  //         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+  //           <FaLink style={{ color: '#17A2B8' }} />
+  //           {contractStatus}
+  //         </span>
+  //       ),
+  //       timestamp: Date.now()
+  //     });
+  //   }
+  // }, [contractStatus]);
 
   // Error handling for dream workflow
   useEffect(() => {
@@ -362,6 +366,48 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     const dots = ['.', '..', '...', ''];
     return dots[thinkingAnimation];
   };
+
+  // Get learning animation dots
+  const getLearningAnimation = () => {
+    const dots = ['.', '..', '...', ''];
+    return dots[learningAnimation];
+  };
+
+  // Learning animation for saving phase
+  useEffect(() => {
+    if (savingDream) {
+      const learningInterval = setInterval(() => {
+        setLearningAnimation(prev => (prev + 1) % 4);
+      }, 500);
+      
+      return () => {
+        clearInterval(learningInterval);
+      };
+    }
+  }, [savingDream]);
+
+  // Update thinking message with real-time animation
+  useEffect(() => {
+    if (processingDream && thinkingMessageId && agentData?.agentName) {
+      // Update the thinking message line with current animation
+      setLines(prevLines => 
+        prevLines.map(line => 
+          line.timestamp === thinkingMessageId ? {
+            ...line,
+            content: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FaBrain style={{ color: '#8B5CF6' }} />
+                <span>
+                  {agentData.agentName} is thinking
+                  <span className="thinking-dots">{getThinkingAnimation()}</span>
+                </span>
+              </span>
+            )
+          } : line
+        )
+      );
+    }
+  }, [thinkingAnimation, processingDream, thinkingMessageId, agentData?.agentName, getThinkingAnimation]);
 
   // Save command to history and localStorage
   const saveCommandToHistory = useCallback((command: string) => {
@@ -757,6 +803,26 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       timestamp: Date.now()
     });
 
+    // Clear input immediately and add explicit thinking message
+    setCurrentInput('');
+    
+    // Add explicit thinking message with brain icon (will be updated with animation)
+    const thinkingId = Date.now();
+    setThinkingMessageId(thinkingId);
+    addLine({
+      type: 'system',
+      content: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <FaBrain style={{ color: '#8B5CF6' }} />
+          <span>
+            {agentData?.agentName || 'Agent'} is thinking
+            <span className="thinking-dots">{getThinkingAnimation()}</span>
+          </span>
+        </span>
+      ),
+      timestamp: thinkingId
+    });
+
     // Set dream text for useAgentDream (for future reference)
     setDreamText(dreamInput);
 
@@ -812,12 +878,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         dreamCount: agentData?.dreamCount?.toString()
       });
 
-      // STEP 1: Build Context
-      addLine({
-        type: 'system',
-        content: 'Building context...',
-        timestamp: Date.now()
-      });
+      // Show agent thinking message instead of technical details
+      // No separate building context messages - handled by thinking animation
 
       // Combine all data from useAgentRead (like in DreamAnalysisSection)
       const combinedAgentData = agentData ? {
@@ -841,11 +903,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         return;
       }
 
-      addLine({
-        type: 'system',
-        content: 'Analyzing...',
-        timestamp: Date.now()
-      });
+      // Analysis step is now part of thinking animation - no separate message
 
       const promptResult = buildDreamAnalysisPrompt(context);
 
@@ -861,26 +919,17 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         return;
       }
 
-      // Display AI analysis as agent response
+      // Display only AI analysis content (no technical dream data)
       addLine({
         type: 'info',
         content: `${agentData?.agentName}: ${aiResult.fullAnalysis}`,
         timestamp: Date.now()
       });
 
-      // Show dream summary
-      if (aiResult.dreamData) {
-        addLine({
-          type: 'info',
-          content: `Dream #${aiResult.dreamData.id} | Intensity: ${aiResult.dreamData.intensity}/10 | Emotions: ${aiResult.dreamData.emotions.join(', ')}`,
-          timestamp: Date.now()
-        });
-      }
-
-      // Ask for confirmation to save
+      // Ask for confirmation to save with agent-focused message
       addLine({
         type: 'system',
-        content: 'Do you want to save this dream? Type y/n',
+        content: `Do u wanna train ${agentData?.agentName} with your dream? Type y/n`,
         timestamp: Date.now()
       });
 
@@ -912,9 +961,21 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     if (confirmed) {
       setSavingDream(true);
       
+      // Clear input immediately when saving starts
+      setCurrentInput('');
+      
+      // Show unified learning message
       addLine({
-        type: 'info',
-        content: 'Saving dream...',
+        type: 'system',
+        content: (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FaBrain style={{ color: '#8B5CF6' }} />
+            <span>
+              {pendingDreamSave.agentName} is learning
+              <span className="learning-dots">{getLearningAnimation()}</span>
+            </span>
+          </span>
+        ),
         timestamp: Date.now()
       });
 
@@ -926,15 +987,35 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       if (!storageResult.success) {
         addLine({
           type: 'error',
-          content: `Storage/Contract failed: ${storageResult.error}`,
+          content: `Failed to save dream: ${storageResult.error}`,
           timestamp: Date.now()
         });
       } else {
-        addLine({
-          type: 'success',
-          content: `Dream saved successfully! ${storageResult.txHash ? `Tx: ${storageResult.txHash}` : ''}`,
-          timestamp: Date.now()
-        });
+        // Small delay before showing evolution message
+        setTimeout(() => {
+          addLine({
+            type: 'system',
+            content: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FaBrain style={{ color: '#A855F7' }} />
+                <span>
+                  {pendingDreamSave.agentName} is evolving
+                  <span className="evolution-dots">{getLearningAnimation()}</span>
+                </span>
+              </span>
+            ),
+            timestamp: Date.now()
+          });
+        }, 800);
+        
+        // Final success message with slight delay
+        setTimeout(() => {
+          addLine({
+            type: 'success',
+            content: `${pendingDreamSave.agentName} has learned from your dream!`,
+            timestamp: Date.now()
+          });
+        }, 1600);
       }
       
       setSavingDream(false);
@@ -1267,10 +1348,9 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                 opacity: (isLoading || processingDream || savingDream) ? 0.5 : 1
               }}
               placeholder={
-                isLoading ? 'Processing...' : 
-                processingDream ? `${agentData?.agentName || 'Agent'} is thinking${getThinkingAnimation()} (${thinkingTimer}s)` :
-                savingDream ? 'Saving dream...' :
-                pendingDreamSave ? 'Answer y/n to save dream...' :
+                // Clean input during all processing phases
+                (isLoading || processingDream || savingDream) ? '' :
+                pendingDreamSave ? 'Answer y/n to train agent...' :
                 dreamInputMode ? 'Describe your dream...' : 
                 'Type a command...'
               }
