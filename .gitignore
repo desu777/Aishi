@@ -62,5 +62,6 @@ temp/
 # 0gdrive-main folder
 0gdrive-main/
 0g-storage/
-storage/
 ffmpeg/ 
+# TypeScript incremental compilation cache
+tsconfig.tsbuildinfo
