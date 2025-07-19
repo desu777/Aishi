@@ -5,6 +5,8 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { validateCommand, generateDots, checkIfMobile, getTerminalColors } from './TerminalUtils';
 import { useTerminalState } from './useTerminalState';
 import { executeDreamAnalysis, handleDreamSaveConfirmation, type DreamWorkflowDependencies } from './TerminalDreamWorkflow';
+import { initializeChatSession, sendChatMessage, saveConversationFromTerminal, exitChatMode, type ChatWorkflowDependencies } from './TerminalChatWorkflow';
+import { saveCommandToHistory, executeCommand, executeEnhancedCommand, handleMintConfirmation, type CommandHandlerDependencies } from './TerminalCommandHandler';
 import { FaBrain, FaClock, FaCheckCircle, FaTimesCircle, FaSave } from 'react-icons/fa';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { TerminalLine } from '../../commands/types';
@@ -432,29 +434,6 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   //   }
   // }, [thinkingAnimation, processingDream, thinkingMessageId, agentData?.agentName, getThinkingAnimation]);
 
-  // Save command to history and localStorage
-  const saveCommandToHistory = useCallback((command: string) => {
-    const trimmedCommand = command.trim();
-    if (!trimmedCommand || trimmedCommand === 'clear') return;
-
-    setCommandHistory(prev => {
-      // Remove duplicates and add to end
-      const newHistory = prev.filter(cmd => cmd !== trimmedCommand);
-      newHistory.push(trimmedCommand);
-      
-      // Keep max 50 entries
-      const limitedHistory = newHistory.slice(-50);
-      
-      // Save to localStorage
-      try {
-        localStorage.setItem('dreamscape-terminal-history', JSON.stringify(limitedHistory));
-      } catch (error) {
-        debugLog('Failed to save command history:', error);
-      }
-      
-      return limitedHistory;
-    });
-  }, [debugLog]);
 
   // Handle keyboard input including arrow navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -464,7 +443,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         const answer = currentInput.trim().toLowerCase();
         if (answer === 'y' || answer === 'yes') {
           setWaitingForChatConfirm(false);
-          initializeChatSession();
+          initializeChatSession(chatWorkflowDeps);
         } else if (answer === 'n' || answer === 'no') {
           setWaitingForChatConfirm(false);
           addLine({
@@ -491,7 +470,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         const answer = currentInput.trim().toLowerCase();
         if (answer === 'y' || answer === 'yes') {
           setWaitingForTrainConfirm(false);
-          saveConversationFromTerminal();
+          saveConversationFromTerminal(chatWorkflowDeps);
         } else if (answer === 'n' || answer === 'no') {
           setWaitingForTrainConfirm(false);
           exitChatMode();
@@ -522,7 +501,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           });
         } else if (message) {
           // Send message to agent
-          sendChatMessage(message);
+          sendChatMessage(message, chatWorkflowDeps);
         }
         setCurrentInput('');
         return;
@@ -563,9 +542,9 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     // Regular command mode handling
     if (e.key === 'Enter') {
       if (currentInput.trim()) {
-        saveCommandToHistory(currentInput);
+        saveCommandToHistory(currentInput, commandHandlerDeps);
       }
-      executeEnhancedCommand(currentInput);
+      executeEnhancedCommand(currentInput, commandHandlerDeps);
       setCurrentInput('');
       setIsValidCommand(false);
       setHistoryIndex(-1);
@@ -611,263 +590,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   };
 
 
-  // Execute command using CommandProcessor
-  const executeCommand = async (command: string) => {
-    const trimmedCommand = command.trim();
-    
-    // Add input to history
-    addLine({ 
-      type: 'input', 
-      content: `$ ${trimmedCommand}`,
-      timestamp: Date.now()
-    });
 
-    if (!trimmedCommand) return;
-
-    try {
-      setIsLoading(true);
-      
-      const result = await commandProcessorRef.current.executeCommand(trimmedCommand, {
-        addLine,
-        setLoading: setIsLoading,
-        currentUser: wallet.address || undefined
-      });
-
-      // Handle special clear command - only clear user commands, keep welcome
-      if (result.output === '__CLEAR__') {
-        setLines([]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Handle dream input mode
-      if (result.output === 'DREAM_INPUT_MODE') {
-        setDreamInputMode(true);
-        setDreamInputText('');
-        addLine({
-          type: 'info',
-          content: 'Dream input mode activated. Describe your dream and press Enter to analyze.',
-          timestamp: Date.now()
-        });
-        addLine({
-          type: 'system',
-          content: 'Press Escape to cancel dream input mode.',
-          timestamp: Date.now()
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Handle chat input mode
-      if (result.output === 'CHAT_INPUT_MODE') {
-        setWaitingForChatConfirm(true);
-        addLine({
-          type: 'info',
-          content: 'Do u wanna chat with your agent? y/n',
-          timestamp: Date.now()
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Handle special info/stats/status/memory commands
-      if (result.output === 'AGENT_INFO_REQUEST') {
-        const infoOutput = formatAgentInfo(dashboardData);
-        addLine({
-          type: 'info',
-          content: infoOutput,
-          timestamp: Date.now()
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (result.output === 'AGENT_STATS_REQUEST') {
-        const statsOutput = formatAgentStats(dashboardData);
-        addLine({
-          type: 'info',
-          content: statsOutput,
-          timestamp: Date.now()
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (result.output === 'SYSTEM_STATUS_REQUEST') {
-        const statusOutput = formatSystemStatus(dashboardData);
-        addLine({
-          type: 'info',
-          content: statusOutput,
-          timestamp: Date.now()
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (result.output === 'MEMORY_STATUS_REQUEST') {
-        const memoryOutput = formatMemoryStatus(dashboardData);
-        addLine({
-          type: 'info',
-          content: memoryOutput,
-          timestamp: Date.now()
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (result.output === 'HELP_COMMAND_REQUEST') {
-        const helpLines = formatHelpOutput();
-        setLines(prev => [...prev, ...helpLines]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Handle mint command specifically
-      if (trimmedCommand.startsWith('mint ') && result.requiresConfirmation) {
-        const agentName = trimmedCommand.split(' ').slice(1).join(' ');
-        
-        // Check wallet and agent status first
-        if (!isWalletConnected) {
-          addLine({
-            type: 'error',
-            content: 'Wallet not connected. Please connect your wallet first.',
-            timestamp: Date.now()
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        if (!isCorrectNetwork) {
-          addLine({
-            type: 'error', 
-            content: 'Wrong network. Please switch to 0G Galileo Testnet.',
-            timestamp: Date.now()
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        if (hasAgent && agentData) {
-          addLine({
-            type: 'info',
-            content: `You already have an agent: "${agentData.agentName}" (Token ID: ${agentData.intelligenceLevel})`,
-            timestamp: Date.now()
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        if (!hasCurrentBalance) {
-          addLine({
-            type: 'error',
-            content: 'Insufficient balance. You need 0.1 OG to mint an agent.',
-            timestamp: Date.now()
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        // Store the agent name for confirmation
-        setPendingMintName(agentName);
-        
-        addLine({
-          type: 'info',
-          content: `Ready to mint agent "${agentName}"`,
-          timestamp: Date.now()
-        });
-        
-        addLine({
-          type: 'warning',
-          content: 'are u sure? yes/no',
-          timestamp: Date.now()
-        });
-      } else if (result.requiresConfirmation && result.confirmationPrompt) {
-        // General confirmation flow for all commands (not just mint)
-        addLine({
-          type: result.type,
-          content: result.output,
-          timestamp: Date.now()
-        });
-        
-        addLine({
-          type: 'warning',
-          content: result.confirmationPrompt,
-          timestamp: Date.now()
-        });
-      } else if (result.output) {
-        addLine({
-          type: result.type,
-          content: result.output,
-          timestamp: Date.now()
-        });
-      }
-      
-    } catch (error: any) {
-      addLine({
-        type: 'error',
-        content: `Error: ${error.message || error}`,
-        timestamp: Date.now()
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle mint confirmation
-  const handleMintConfirmation = async (confirmed: boolean) => {
-    if (!pendingMintName) return;
-    
-    if (confirmed) {
-      addLine({
-        type: 'success',
-        content: 'new era of your life begins now . . .',
-        timestamp: Date.now()
-      });
-      
-      try {
-        setIsLoading(true);
-        const result = await mintAgent(pendingMintName);
-        
-        if (result.success) {
-          addLine({
-            type: 'success', 
-            content: `Agent "${pendingMintName}" minted successfully!`,
-            timestamp: Date.now()
-          });
-          
-          if (result.txHash) {
-            addLine({
-              type: 'info',
-              content: `Transaction: ${result.txHash}`,
-              timestamp: Date.now()
-            });
-          }
-        } else {
-          addLine({
-            type: 'error',
-            content: `Minting failed: ${result.error}`,
-            timestamp: Date.now()
-          });
-        }
-      } catch (error: any) {
-        addLine({
-          type: 'error',
-          content: `Minting error: ${error.message || error}`,
-          timestamp: Date.now()
-        });
-      } finally {
-        setIsLoading(false);
-        setPendingMintName(null);
-      }
-    } else {
-      addLine({
-        type: 'info',
-        content: 'Mint cancelled',
-        timestamp: Date.now()
-      });
-      setPendingMintName(null);
-    }
-  };
 
   // Create dream workflow dependencies
   const dreamWorkflowDeps: DreamWorkflowDependencies = {
@@ -892,172 +615,58 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     pendingDreamSave
   };
 
-
-  // Chat workflow functions
-  const initializeChatSession = async () => {
-    setIsInitializingChat(true);
+  // Create chat workflow dependencies
+  const chatWorkflowDeps: ChatWorkflowDependencies = {
+    // State setters
+    setIsInitializingChat, setIsSendingMessage, setIsSavingConversation,
+    setChatInputMode, setWaitingForChatConfirm, setWaitingForTrainConfirm,
+    setChatSession, setChatMessages,
     
-    try {
-      // Use the real terminal chat hook
-      const success = await initializeTerminalChatSession(agentData);
-      
-      if (success) {
-        setChatInputMode(true);
-        setChatSession(terminalChatSession);
-        setChatMessages(terminalChatMessages);
-        
-        addLine({
-          type: 'success',
-          content: `Chat session initialized with ${agentData?.agentName || 'Agent'}`,
-          timestamp: Date.now()
-        });
-      } else {
-        throw new Error(terminalChatError || 'Unknown initialization error');
-      }
-    } catch (error) {
-      addLine({
-        type: 'error',
-        content: `Failed to initialize chat session: ${error instanceof Error ? error.message : String(error)}`,
-        timestamp: Date.now()
-      });
-    } finally {
-      setIsInitializingChat(false);
-    }
+    // Functions
+    addLine,
+    
+    // Chat hook functions
+    initializeTerminalChatSession, sendTerminalMessage, saveTerminalConversation,
+    resetTerminalSession, clearTerminalChatError,
+    
+    // Chat hook data
+    terminalChatSession, terminalChatMessages, terminalChatError,
+    
+    // Agent data
+    agentData
   };
 
-  const sendChatMessage = async (message: string) => {
-    if (!terminalChatSession) return;
+  // Create command handler dependencies
+  const commandHandlerDeps: CommandHandlerDependencies = {
+    // State setters
+    setIsLoading, setLines, setCommandHistory, setDreamInputMode, setDreamInputText,
+    setWaitingForChatConfirm, setPendingMintName,
     
-    setIsSendingMessage(true);
+    // Functions & refs
+    addLine, commandProcessorRef,
     
-    // Add user message to terminal
-    addLine({
-      type: 'input',
-      content: `~ ${message}`,
-      timestamp: Date.now()
-    });
+    // Hook functions
+    mintAgent,
     
-    try {
-      // Use the real terminal chat hook to send message
-      const agentResponse = await sendTerminalMessage(message);
-      
-      if (agentResponse) {
-        // Add agent response to terminal
-        addLine({
-          type: 'output',
-          content: `${agentData?.agentName || 'Agent'}: ${agentResponse}`,
-          timestamp: Date.now()
-        });
-        
-        // Update local chat messages from hook
-        setChatMessages(terminalChatMessages);
-      } else {
-        throw new Error(terminalChatError || 'No response received');
-      }
-      
-    } catch (error) {
-      addLine({
-        type: 'error',
-        content: `Failed to send message: ${error instanceof Error ? error.message : String(error)}`,
-        timestamp: Date.now()
-      });
-    } finally {
-      setIsSendingMessage(false);
-    }
+    // Agent data & status
+    agentData, dashboardData, wallet, isWalletConnected, hasCurrentBalance,
+    isCorrectNetwork, hasAgent,
+    
+    // Pending states
+    pendingMintName, pendingDreamSave,
+    
+    // Debug
+    debugLog,
+    
+    // Workflow dependencies
+    dreamWorkflowDeps, handleDreamSaveConfirmation,
+    
+    // Format functions
+    formatAgentInfo, formatAgentStats, formatSystemStatus, formatMemoryStatus, formatHelpOutput
   };
 
-  const saveConversationFromTerminal = async () => {
-    setIsSavingConversation(true);
-    
-    try {
-      // Use the real terminal chat hook to save conversation
-      const success = await saveTerminalConversation();
-      
-      if (success) {
-        addLine({
-          type: 'success',
-          content: `${agentData?.agentName || 'Agent'} learned from this conversation!`,
-          timestamp: Date.now()
-        });
-        
-        exitChatMode();
-      } else {
-        throw new Error(terminalChatError || 'Unknown save error');
-      }
-    } catch (error) {
-      addLine({
-        type: 'error',
-        content: `Failed to save conversation: ${error instanceof Error ? error.message : String(error)}`,
-        timestamp: Date.now()
-      });
-    } finally {
-      setIsSavingConversation(false);
-    }
-  };
 
-  const exitChatMode = () => {
-    setChatInputMode(false);
-    setWaitingForChatConfirm(false);
-    setWaitingForTrainConfirm(false);
-    setChatSession(null);
-    setChatMessages([]);
-    setIsInitializingChat(false);
-    setIsSendingMessage(false);
-    setIsSavingConversation(false);
-    
-    // Reset the terminal chat session
-    resetTerminalSession();
-    clearTerminalChatError();
-    
-    addLine({
-      type: 'system',
-      content: 'Chat session ended',
-      timestamp: Date.now()
-    });
-  };
 
-  // Enhanced command execution to handle mint confirmation
-  const executeEnhancedCommand = async (command: string) => {
-    const trimmedCommand = command.trim().toLowerCase();
-    
-    // Handle dream save confirmation
-    if (pendingDreamSave) {
-      if (trimmedCommand === 'yes' || trimmedCommand === 'y') {
-        await handleDreamSaveConfirmation(true, dreamWorkflowDeps);
-        return;
-      } else if (trimmedCommand === 'no' || trimmedCommand === 'n') {
-        await handleDreamSaveConfirmation(false, dreamWorkflowDeps);
-        return;
-      } else {
-        addLine({
-          type: 'warning',
-          content: 'Please answer yes/no (y/n)',
-          timestamp: Date.now()
-        });
-        return;
-      }
-    }
-
-    // Handle mint confirmation
-    if (pendingMintName) {
-      if (trimmedCommand === 'yes' || trimmedCommand === 'y') {
-        await handleMintConfirmation(true);
-        return;
-      } else if (trimmedCommand === 'no' || trimmedCommand === 'n') {
-        await handleMintConfirmation(false);
-        return;
-      } else {
-        addLine({
-          type: 'warning',
-          content: 'Please answer yes/no (y/n)',
-          timestamp: Date.now()
-        });
-        return;
-      }
-    }
-    
-    await executeCommand(command);
-  };
 
   // Get terminal colors based on mode
   const colors = getTerminalColors(darkMode, theme.accent.primary);
