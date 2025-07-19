@@ -46,6 +46,11 @@ export function formatHelpOutput(): TerminalLine[] {
       timestamp
     },
     {
+      type: 'help-command',
+      content: '  chat       - Start a conversation with your AI agent',
+      timestamp
+    },
+    {
       type: 'system',
       content: '',
       timestamp

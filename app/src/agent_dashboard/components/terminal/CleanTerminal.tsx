@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { FaBrain, FaDatabase, FaClock, FaLink, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaBrain, FaDatabase, FaClock, FaLink, FaCheckCircle, FaTimesCircle, FaSave } from 'react-icons/fa';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { TerminalLine } from '../../commands/types';
 import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
@@ -1208,7 +1208,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       if (success) {
         addLine({
           type: 'success',
-          content: `💾 ${agentData?.agentName || 'Agent'} learned from this conversation!`,
+          content: (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FaSave style={{ color: '#44ff44' }} />
+              {agentData?.agentName || 'Agent'} learned from this conversation!
+            </span>
+          ),
           timestamp: Date.now()
         });
         

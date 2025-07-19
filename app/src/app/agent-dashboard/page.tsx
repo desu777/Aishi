@@ -448,6 +448,16 @@ export default function AgentDashboard() {
                         description="Display memory system information and status"
                         theme={theme}
                       />
+                      <CommandItem 
+                        command="dream"
+                        description="Analyze your dream with AI - interactive dream input mode"
+                        theme={theme}
+                      />
+                      <CommandItem 
+                        command="chat"
+                        description="Start a conversation with your AI agent - interactive chat mode"
+                        theme={theme}
+                      />
                     </div>
                   </CollapsibleSection>
 
