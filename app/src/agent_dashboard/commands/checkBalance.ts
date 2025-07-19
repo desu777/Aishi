@@ -1,5 +1,12 @@
 import { Command, CommandResult, CommandContext } from './types';
 
+// Debug logging helper
+const debugLog = (message: string, data?: any) => {
+  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+    console.log(`[checkBalance] ${message}`, data || '');
+  }
+};
+
 export const checkBalanceCommand: Command = {
   name: 'check-balance',
   description: 'Check 0G compute broker balance and transaction history',
@@ -51,9 +58,7 @@ export const checkBalanceCommand: Command = {
           '[TIP] Use "fund-broker <amount>" to add funds'
         ];
 
-        if (process.env.TEST_ENV === 'true') {
-          console.log(`Balance check for ${walletAddress}: ${balance.balance} 0G`);
-        }
+        debugLog(`Balance check for ${walletAddress}`, `${balance.balance} 0G`);
 
         return {
           success: true,

@@ -1,5 +1,12 @@
 import { Command, CommandResult, CommandContext } from './types';
 
+// Debug logging helper
+const debugLog = (message: string, data?: any) => {
+  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+    console.log(`[fundBroker] ${message}`, data || '');
+  }
+};
+
 export const fundBrokerCommand: Command = {
   name: 'fund-broker',
   description: 'Fund 0G compute broker with specified amount',
@@ -107,9 +114,7 @@ export const fundBrokerCommand: Command = {
             };
           }
 
-          if (process.env.TEST_ENV === 'true') {
-            console.log(`Transaction sent: ${txResult.txHash}`);
-          }
+          debugLog('Transaction sent', txResult.txHash);
 
           // Notify backend
           const response = await fetch(`${API_URL}/fund`, {
@@ -150,9 +155,7 @@ export const fundBrokerCommand: Command = {
             '[TIP] Use "check-balance" to verify the updated balance'
           ].join('\n');
 
-          if (process.env.TEST_ENV === 'true') {
-            console.log(`Broker funded: ${walletAddress} with ${amountNum} 0G`);
-          }
+          debugLog(`Broker funded: ${walletAddress}`, `${amountNum} 0G`);
 
           return {
             success: true,

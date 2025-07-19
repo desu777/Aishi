@@ -1,5 +1,12 @@
 import { Command, CommandResult, CommandContext } from './types';
 
+// Debug logging helper
+const debugLog = (message: string, data?: any) => {
+  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+    console.log(`[createBroker] ${message}`, data || '');
+  }
+};
+
 export const createBrokerCommand: Command = {
   name: 'create-broker',
   description: 'Create a new 0G compute broker',
@@ -52,9 +59,7 @@ export const createBrokerCommand: Command = {
           '[TIP] Use "fund-broker <amount>" to add funds to your broker'
         ].join('\n');
 
-        if (process.env.TEST_ENV === 'true') {
-          console.log(`Broker created for ${walletAddress}`);
-        }
+        debugLog(`Broker created for ${walletAddress}`);
 
         return {
           success: true,
