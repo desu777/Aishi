@@ -504,6 +504,11 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           sendChatMessage(message, chatWorkflowDeps);
         }
         setCurrentInput('');
+        
+        // Auto-focus input after chat message
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
         return;
       } else if (e.key === 'Escape') {
         // Cancel chat mode
@@ -522,6 +527,11 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           executeDreamAnalysis(currentInput.trim(), dreamWorkflowDeps);
         }
         setCurrentInput('');
+        
+        // Auto-focus input after dream submission
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
         return;
       } else if (e.key === 'Escape') {
         // Cancel dream input mode
@@ -548,6 +558,11 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       setCurrentInput('');
       setIsValidCommand(false);
       setHistoryIndex(-1);
+      
+      // Auto-focus input after command execution
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (commandHistory.length > 0) {
