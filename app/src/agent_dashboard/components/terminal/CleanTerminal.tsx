@@ -53,14 +53,17 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   const [dreamInputText, setDreamInputText] = useState('');
   const [processingDream, setProcessingDream] = useState(false);
   const [pendingDreamSave, setPendingDreamSave] = useState<any>(null);
-  const [thinkingAnimation, setThinkingAnimation] = useState(0);
   const [thinkingTimer, setThinkingTimer] = useState(0);
   const [savingDream, setSavingDream] = useState(false);
-  const [learningAnimation, setLearningAnimation] = useState(0);
+  const [evolvingDream, setEvolvingDream] = useState(false);
+  const [dotsPattern, setDotsPattern] = useState(0); // 0='.', 1='..', 2='...', 3=''
   const [thinkingMessageId, setThinkingMessageId] = useState<number | null>(null);
+  const [learningMessageId, setLearningMessageId] = useState<number | null>(null);
+  const [evolutionMessageId, setEvolutionMessageId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const commandProcessorRef = useRef(new CommandProcessor());
+  const dotsTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Agent hooks
   const { mintAgent, isLoading: isMinting, error: mintError, resetMint, isWalletConnected, hasCurrentBalance, isCorrectNetwork } = useAgentMint();
@@ -344,16 +347,11 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   // Thinking animation and timer
   useEffect(() => {
     if (processingDream) {
-      const animationInterval = setInterval(() => {
-        setThinkingAnimation(prev => (prev + 1) % 4);
-      }, 500);
-      
       const timerInterval = setInterval(() => {
         setThinkingTimer(prev => prev + 1);
       }, 1000);
       
       return () => {
-        clearInterval(animationInterval);
         clearInterval(timerInterval);
       };
     } else {
@@ -361,53 +359,65 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
   }, [processingDream]);
 
-  // Get thinking animation dots
-  const getThinkingAnimation = () => {
-    const dots = ['.', '..', '...', ''];
-    return dots[thinkingAnimation];
+  // Stable dots animation using useRef timer
+  const getDots = () => {
+    const patterns = ['.', '..', '...', ''];
+    return patterns[dotsPattern];
   };
 
-  // Get learning animation dots
-  const getLearningAnimation = () => {
-    const dots = ['.', '..', '...', ''];
-    return dots[learningAnimation];
-  };
-
-  // Learning animation for saving phase
+  // Start/stop dots animation
   useEffect(() => {
-    if (savingDream) {
-      const learningInterval = setInterval(() => {
-        setLearningAnimation(prev => (prev + 1) % 4);
+    if (processingDream || savingDream || evolvingDream) {
+      // Start animation
+      dotsTimerRef.current = setInterval(() => {
+        setDotsPattern(prev => (prev + 1) % 4);
       }, 500);
-      
-      return () => {
-        clearInterval(learningInterval);
-      };
+    } else {
+      // Stop animation
+      if (dotsTimerRef.current) {
+        clearInterval(dotsTimerRef.current);
+        dotsTimerRef.current = null;
+      }
+      setDotsPattern(0); // Reset to '.'
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (dotsTimerRef.current) {
+        clearInterval(dotsTimerRef.current);
+      }
+    };
+  }, [processingDream, savingDream, evolvingDream]);
+
+  // Learning phase cleanup
+  useEffect(() => {
+    if (!savingDream) {
+      setLearningMessageId(null);
     }
   }, [savingDream]);
 
-  // Update thinking message with real-time animation
-  useEffect(() => {
-    if (processingDream && thinkingMessageId && agentData?.agentName) {
-      // Update the thinking message line with current animation
-      setLines(prevLines => 
-        prevLines.map(line => 
-          line.timestamp === thinkingMessageId ? {
-            ...line,
-            content: (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FaBrain style={{ color: '#8B5CF6' }} />
-                <span>
-                  {agentData.agentName} is thinking
-                  <span className="thinking-dots">{getThinkingAnimation()}</span>
-                </span>
-              </span>
-            )
-          } : line
-        )
-      );
-    }
-  }, [thinkingAnimation, processingDream, thinkingMessageId, agentData?.agentName, getThinkingAnimation]);
+  // Update thinking message with real-time animation (TEMPORARILY DISABLED TO FIX DUPLICATE)
+  // useEffect(() => {
+  //   if (processingDream && thinkingMessageId && agentData?.agentName) {
+  //     // Update the thinking message line with current animation
+  //     setLines(prevLines => 
+  //       prevLines.map(line => 
+  //         line.timestamp === thinkingMessageId ? {
+  //           ...line,
+  //           content: (
+  //             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+  //               <FaBrain style={{ color: '#8B5CF6' }} />
+  //               <span>
+  //                 {agentData.agentName} is thinking
+  //                 <span className="thinking-dots">{getThinkingAnimation()}</span>
+  //               </span>
+  //             </span>
+  //           )
+  //         } : line
+  //       )
+  //     );
+  //   }
+  // }, [thinkingAnimation, processingDream, thinkingMessageId, agentData?.agentName, getThinkingAnimation]);
 
   // Save command to history and localStorage
   const saveCommandToHistory = useCallback((command: string) => {
@@ -806,22 +816,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     // Clear input immediately and add explicit thinking message
     setCurrentInput('');
     
-    // Add explicit thinking message with brain icon (will be updated with animation)
-    const thinkingId = Date.now();
-    setThinkingMessageId(thinkingId);
-    addLine({
-      type: 'system',
-      content: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <FaBrain style={{ color: '#8B5CF6' }} />
-          <span>
-            {agentData?.agentName || 'Agent'} is thinking
-            <span className="thinking-dots">{getThinkingAnimation()}</span>
-          </span>
-        </span>
-      ),
-      timestamp: thinkingId
-    });
+    // Thinking message now only in input placeholder - no terminal message
 
     // Set dream text for useAgentDream (for future reference)
     setDreamText(dreamInput);
@@ -868,8 +863,6 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
 
     try {
-      // Thinking animation is now in placeholder only
-
       debugLog('Dream analysis workflow started', {
         effectiveTokenId,
         dreamInputLength: dreamInput.length,
@@ -964,20 +957,14 @@ const CleanTerminal: React.FC<TerminalProps> = ({
       // Clear input immediately when saving starts
       setCurrentInput('');
       
-      // Show unified learning message
-      addLine({
-        type: 'system',
-        content: (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FaBrain style={{ color: '#8B5CF6' }} />
-            <span>
-              {pendingDreamSave.agentName} is learning
-              <span className="learning-dots">{getLearningAnimation()}</span>
-            </span>
-          </span>
-        ),
-        timestamp: Date.now()
-      });
+      // Learning message now only in input placeholder - no terminal message
+
+      // Evolution message now only in input placeholder - no terminal message
+      // Set evolution state after a delay to show learning -> evolving transition
+      setTimeout(() => {
+        setEvolvingDream(true);
+        setSavingDream(false); // Switch from learning to evolving
+      }, 1200);
 
       const storageResult = await processStorageAndContract(
         pendingDreamSave.effectiveTokenId, 
@@ -991,34 +978,16 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           timestamp: Date.now()
         });
       } else {
-        // Small delay before showing evolution message
-        setTimeout(() => {
-          addLine({
-            type: 'system',
-            content: (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FaBrain style={{ color: '#A855F7' }} />
-                <span>
-                  {pendingDreamSave.agentName} is evolving
-                  <span className="evolution-dots">{getLearningAnimation()}</span>
-                </span>
-              </span>
-            ),
-            timestamp: Date.now()
-          });
-        }, 800);
-        
-        // Final success message with slight delay
-        setTimeout(() => {
-          addLine({
-            type: 'success',
-            content: `${pendingDreamSave.agentName} has learned from your dream!`,
-            timestamp: Date.now()
-          });
-        }, 1600);
+        // Final success message
+        addLine({
+          type: 'success',
+          content: `${pendingDreamSave.agentName} has learned from your dream!`,
+          timestamp: Date.now()
+        });
       }
       
       setSavingDream(false);
+      setEvolvingDream(false);
 
       // Reset and clean up
       resetDream();
@@ -1035,7 +1004,10 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
 
     setSavingDream(false);
+    setEvolvingDream(false);
     setPendingDreamSave(null);
+    setLearningMessageId(null);
+    setEvolutionMessageId(null);
   };
 
   // Enhanced command execution to handle mint confirmation
@@ -1327,7 +1299,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             marginTop: '4px'
           }}>
             <span style={{ color: theme.accent.primary, marginRight: '8px' }}>
-              {dreamInputMode ? '~' : '$'}
+              {(processingDream || savingDream || evolvingDream) ? <FaBrain /> : dreamInputMode ? '~' : '$'}
             </span>
             <input
               ref={inputRef}
@@ -1335,7 +1307,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
               value={currentInput}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              disabled={isLoading || processingDream || savingDream}
+              disabled={isLoading || processingDream || savingDream || evolvingDream}
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -1345,11 +1317,13 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                 fontFamily: 'inherit',
                 flex: 1,
                 caretColor: theme.accent.primary,
-                opacity: (isLoading || processingDream || savingDream) ? 0.5 : 1
+                opacity: (isLoading || processingDream || savingDream || evolvingDream) ? 0.5 : 1
               }}
               placeholder={
-                // Clean input during all processing phases
-                (isLoading || processingDream || savingDream) ? '' :
+                processingDream ? `${agentData?.agentName || 'Agent'} is thinking${getDots()}` :
+                evolvingDream ? `${agentData?.agentName || 'Agent'} is evolving${getDots()}` :
+                savingDream ? `${agentData?.agentName || 'Agent'} is learning${getDots()}` :
+                isLoading ? 'Processing...' :
                 pendingDreamSave ? 'Answer y/n to train agent...' :
                 dreamInputMode ? 'Describe your dream...' : 
                 'Type a command...'
@@ -1367,7 +1341,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           </div>
         )}
 
-        {/* Cursor blink effect and loading animation */}
+        {/* Cursor blink effect and animation styles */}
         <style jsx>{`
           input::placeholder {
             color: ${colors.system};
@@ -1385,6 +1359,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             66% { opacity: 1; }
             100% { opacity: 0; }
           }
+
+          /* Dots animations now handled by JavaScript for better compatibility */
         `}</style>
       </div>
     </div>
