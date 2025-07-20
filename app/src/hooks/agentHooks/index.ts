@@ -16,15 +16,5 @@ export { useAgentStats } from './useAgentStats';
 export { useAgentMemoryCore } from './useAgentMemoryCore';
 export { useConsolidationTestMode } from './useConsolidationTestMode';
 
-// Language detection utilities
-export { 
-  detectLanguage, 
-  getLanguageInstructions, 
-  formatDetectionResult,
-  detectAndGetInstructions,
-  getLanguageName,
-  isLanguageSupported,
-  getSupportedLanguages
-} from './utils/languageDetection';
 
 // All hooks are now exported and ready to use 

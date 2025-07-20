@@ -1,7 +1,6 @@
 'use client';
 
 import { ConversationContext, ChatMessage } from '../hooks/agentHooks/services/conversationContextBuilder';
-import { detectAndGetInstructions, getLanguageName } from '../hooks/agentHooks/utils/languageDetection';
 
 export interface ConversationPrompt {
   prompt: string;
@@ -55,25 +54,6 @@ export const buildConversationPrompt = (
     conversationHistoryLength: context.conversationHistory.length
   });
 
-  // 🔍 WYKRYCIE JĘZYKA Z WIADOMOŚCI UŻYTKOWNIKA (przed budową promptu)
-  const messageLanguageDetection = detectAndGetInstructions(userMessage);
-  debugLog('Message language detection', {
-    detectedLanguage: messageLanguageDetection.language,
-    confidence: messageLanguageDetection.detection.confidence,
-    isReliable: messageLanguageDetection.detection.isReliable,
-    userMessage: userMessage.substring(0, 50) + '...'
-  });
-
-  // Użyj wykrytego języka z wiadomości (podobnie jak w useAgentPrompt.ts)
-  const languageInstructions = messageLanguageDetection.instructions;
-  const detectedLanguageName = getLanguageName(messageLanguageDetection.language);
-  
-  debugLog('Language instructions prepared', {
-    language: messageLanguageDetection.language,
-    languageName: detectedLanguageName,
-    instructions: languageInstructions
-  });
-
   // 🆕 BUDUJ SEKCJE PROMPTU - rozszerzone
   const roleDefinition = buildRoleDefinitionSection(context);
   const ownerPersonalitySection = buildOwnerPersonalitySection(context);
@@ -89,9 +69,9 @@ export const buildConversationPrompt = (
   const privateThoughtTagClose = '</INNER_COT>';
 
   const prompt = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-${roleDefinition}
+LANGUAGE DETECTION: First, detect the language of the user's message. Then respond in that EXACT same language throughout your entire response.
 
-${languageInstructions}
+${roleDefinition}
 
 ${ownerPersonalitySection}
 
@@ -124,9 +104,6 @@ ${privateThoughtTagClose}`;
   debugLog('Conversation prompt built successfully', { 
     promptLength: prompt.length,
     agentName: context.agentProfile.name,
-    detectedLanguage: messageLanguageDetection.language,
-    detectedLanguageName: detectedLanguageName,
-    languageInstructions: languageInstructions,
     uniqueFeatures: context.uniqueFeatures.length,
     memoryDepth: context.memoryAccess.memoryDepth,
     dominantSymbols: getDominantSymbols(context).length

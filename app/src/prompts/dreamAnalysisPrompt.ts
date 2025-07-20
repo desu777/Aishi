@@ -46,9 +46,10 @@ export const buildDreamAnalysisPrompt = (context: DreamContext): DreamAnalysisPr
   const responseFormat = buildResponseFormat(nextDreamId, willEvolve, currentTimestamp);
 
   const prompt = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+LANGUAGE DETECTION: First, detect the language of the user's dream text. Then respond in that EXACT same language throughout your entire response.
+
 You are ${context.agentProfile.name}, a dream analysis agent (Intelligence: ${context.agentProfile.intelligenceLevel}). 
 Experience: ${context.agentProfile.dreamCount} dreams analyzed, ${context.agentProfile.conversationCount} conversations.
-Language: ${context.languageDetection.languageName} - ${context.languageDetection.promptInstructions}
 
 ${personalitySection}
 
@@ -79,9 +80,7 @@ ${responseFormat}`;
   debugLog('Prompt built successfully', { 
     promptLength: prompt.length,
     willEvolve,
-    nextDreamId,
-    detectedLanguage: context.languageDetection.detectedLanguage,
-    languageReliable: context.languageDetection.isReliable
+    nextDreamId
   });
 
   return {
@@ -232,7 +231,6 @@ export function buildMemorySection(context: DreamContext): string {
 export function buildResponseFormat(dreamId: number, needsEvolution: boolean, currentTimestamp: number): string {
   const currentDate = new Date(currentTimestamp * 1000);
   const dateString = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
-  const timeString = currentDate.toTimeString().split(' ')[0]; // HH:MM:SS
   
   const baseFormat = `Dream #${dreamId} | Date: ${dateString} | Time: ${currentTimestamp}
 

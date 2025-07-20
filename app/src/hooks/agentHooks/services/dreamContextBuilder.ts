@@ -2,21 +2,9 @@
 
 import { Contract } from 'ethers';
 import frontendContracts from '../../../abi/frontend-contracts.json';
-import { 
-  detectAndGetInstructions, 
-  getLanguageName,
-  formatDetectionResult
-} from '../utils/languageDetection';
 
 export interface DreamContext {
   userDream: string;
-  languageDetection: {
-    detectedLanguage: string;
-    languageName: string;
-    confidence: number;
-    isReliable: boolean;
-    promptInstructions: string;
-  };
   agentProfile: {
     name: string;
     intelligenceLevel: number;
@@ -161,17 +149,7 @@ export class DreamContextBuilder {
       const intelligence = contractData.agentData.intelligenceLevel;
       const monthsAccessible = contractData.memoryAccess.monthsAccessible;
       
-      // 3. Detect dream language
-      this.debugLog('Detecting dream language', { dreamText: userDream.substring(0, 100) + '...' });
-      const languageResult = detectAndGetInstructions(userDream);
-      
-      this.debugLog('Language detection completed', {
-        language: languageResult.language,
-        confidence: languageResult.detection.confidence,
-        isReliable: languageResult.detection.isReliable
-      });
-
-      // 4. Download historical data based on memory access
+      // 3. Download historical data based on memory access
       const historicalData = contractData.memoryStructure ? 
         await this.downloadHistoricalData(
           contractData.memoryStructure,
@@ -180,16 +158,9 @@ export class DreamContextBuilder {
         ) : 
         { dailyDreams: [], monthlyConsolidations: [], yearlyCore: null };
 
-      // 5. Build unified context
+      // 4. Build unified context
       const context: DreamContext = {
         userDream,
-        languageDetection: {
-          detectedLanguage: languageResult.language,
-          languageName: getLanguageName(languageResult.language),
-          confidence: languageResult.detection.confidence,
-          isReliable: languageResult.detection.isReliable,
-          promptInstructions: languageResult.instructions
-        },
         agentProfile: {
           name: contractData.agentData.agentName,
           intelligenceLevel: intelligence,
@@ -227,7 +198,6 @@ export class DreamContextBuilder {
       // DETAILED FINAL CONTEXT LOGGING
       this.debugLog('Final DreamContext FULL details', {
         userDream: context.userDream.substring(0, 100) + '...',
-        languageDetection: context.languageDetection,
         agentProfile: context.agentProfile,
         personality: context.personality,
         uniqueFeatures: context.uniqueFeatures,
