@@ -7,7 +7,7 @@ import { Address } from 'viem'
 
 // Debug function
 const debugLog = (message: string, data?: any) => {
-  if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
     console.log(`[useAgentRead] ${message}`, data ? data : '');
   }
 };

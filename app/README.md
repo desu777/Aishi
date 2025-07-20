@@ -16,7 +16,16 @@ app/
 │   ├── app/                   # Next.js 15 App Router pages
 │   │   ├── agent-dashboard/   # Agent terminal interface page
 │   │   ├── agent-test/        # Development testing interface
-│   │   │   └── components/    # Test interface components
+│   │   │   └── components/    # Test interface & dream analysis modules
+│   │   │       ├── DreamAnalysisSection.tsx      # Main orchestrator (332 lines)
+│   │   │       ├── DreamAnalysisTypes.ts         # Shared types & interfaces
+│   │   │       ├── DreamAIAnalysis.tsx           # AI analysis & response display
+│   │   │       ├── DreamContextBuilder.tsx       # Context preparation
+│   │   │       ├── DreamPromptBuilder.tsx        # AI prompt generation
+│   │   │       ├── DreamStorageManager.tsx       # Storage & contract processing
+│   │   │       ├── DreamTextInput.tsx            # Dream input handling
+│   │   │       ├── MemoryFileManager.tsx         # 0G Storage file operations
+│   │   │       └── [other test components...]    # Additional test interface components
 │   │   ├── api/               # API routes
 │   │   ├── compute/           # 0G Compute interface page
 │   │   ├── upload/            # File upload interface page
@@ -66,6 +75,25 @@ Terminal-style interface for interacting with AI agents:
 - **agent-test**: Development testing interface with component-specific controls
 - **compute**: 0G Compute Network interface
 - **upload**: File upload to 0G Storage
+
+### Dream Analysis System (`src/app/agent-test/components/`)
+Modular dream analysis interface refactored from a single 1,569-line component into focused modules:
+
+- **DreamAnalysisSection**: Main orchestrator with hooks and state management (332 lines)
+- **MemoryFileManager**: Download memory files from 0G Storage (535 lines)
+- **DreamTextInput**: Simple dream input with character count (103 lines)  
+- **DreamContextBuilder**: Agent context preparation with personality data (253 lines)
+- **DreamPromptBuilder**: AI prompt generation and display (173 lines)
+- **DreamAIAnalysis**: AI response handling and analysis display (364 lines)
+- **DreamStorageManager**: Storage upload and blockchain processing (159 lines)
+- **DreamAnalysisTypes**: Shared TypeScript interfaces (89 lines)
+
+**Key Benefits:**
+- **79% size reduction** of main component (1,569 → 332 lines)
+- **Single Responsibility Principle** - each component has one clear purpose
+- **Reusable Architecture** - components can be used independently
+- **Better Testability** - smaller, focused components easier to test
+- **Improved Maintainability** - easier navigation and development
 
 ### Hooks (`src/hooks/`)
 Custom React hooks for:
@@ -141,6 +169,9 @@ npm run lint
 ## Architecture Principles
 
 - **Modular Design**: Large components broken into focused modules (500-550 line limit)
+- **Component Composition**: Complex UI built from smaller, reusable components
+- **Dependency Injection**: Functions passed as props for better testability
+- **Shared Types**: Centralized TypeScript interfaces for consistency
 - **Hook-Based Logic**: Business logic separated into custom hooks
 - **Consistent Patterns**: Standardized debug logging and error handling
 - **Type Safety**: Full TypeScript coverage with strict types
