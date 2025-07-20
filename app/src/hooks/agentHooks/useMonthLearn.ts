@@ -40,6 +40,9 @@ interface MonthLearnState {
   conversationStorageHash: string | null;
   contractTxHash: string | null;
   isCompleted: boolean;
+  
+  // Timeout handling
+  hasWaitedForData: boolean;
 }
 
 export function useMonthLearn(tokenId?: number) {
@@ -59,7 +62,8 @@ export function useMonthLearn(tokenId?: number) {
     dreamStorageHash: null,
     conversationStorageHash: null,
     contractTxHash: null,
-    isCompleted: false
+    isCompleted: false,
+    hasWaitedForData: false
   });
 
   const { downloadFile } = useStorageDownload();
@@ -87,6 +91,24 @@ export function useMonthLearn(tokenId?: number) {
   useEffect(() => {
     debugLog('useMonthLearn hook initialized', { tokenId: operationalTokenId });
   }, [operationalTokenId, debugLog]);
+
+  // Add 30-second timeout before showing "Agent data not available" error
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setState(prev => ({
+        ...prev,
+        hasWaitedForData: true
+      }));
+      debugLog('30-second timeout reached - will show error if no agent data');
+    }, 30000); // 30 seconds
+
+    // Clear timeout if data becomes available or component unmounts
+    if (operationalTokenId && agentData?.memory) {
+      clearTimeout(timer);
+    }
+
+    return () => clearTimeout(timer);
+  }, [operationalTokenId, agentData?.memory, debugLog]);
 
   /**
    * Load monthly dreams and conversations data from 0G storage
@@ -786,7 +808,8 @@ export function useMonthLearn(tokenId?: number) {
       dreamStorageHash: null,
       conversationStorageHash: null,
       contractTxHash: null,
-      isCompleted: false
+      isCompleted: false,
+      hasWaitedForData: false
     });
     debugLog('Month-learn state reset');
   }, [debugLog]);
@@ -794,10 +817,13 @@ export function useMonthLearn(tokenId?: number) {
   // Check if we have valid agent data - conditional logic AFTER all hooks
   const hasValidAgentData = operationalTokenId && agentData?.memory;
   
+  // Only show error after timeout AND if data is still not available
+  const shouldShowDataError = !hasValidAgentData && state.hasWaitedForData;
+  
   return {
     // State
     ...state,
-    error: !hasValidAgentData ? 'Agent data not available' : state.error,
+    error: shouldShowDataError ? 'Agent data not available' : state.error,
     
     // Actions - conditional functions if no valid data
     loadMonthlyData: !hasValidAgentData ? async () => ({ success: false }) : loadMonthlyData,
