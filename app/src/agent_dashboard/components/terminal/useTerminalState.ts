@@ -65,6 +65,12 @@ export interface TerminalState {
   isSavingConversation: boolean;
   setIsSavingConversation: React.Dispatch<React.SetStateAction<boolean>>;
   
+  // Month learn workflow state
+  monthLearnMode: boolean;
+  setMonthLearnMode: React.Dispatch<React.SetStateAction<boolean>>;
+  isProcessingMonthLearn: boolean;
+  setIsProcessingMonthLearn: React.Dispatch<React.SetStateAction<boolean>>;
+  
   // Animation state
   dotsPattern: number;
   setDotsPattern: React.Dispatch<React.SetStateAction<number>>;
@@ -126,6 +132,10 @@ export const useTerminalState = (): TerminalState => {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [waitingForTrainConfirm, setWaitingForTrainConfirm] = useState(false);
   const [isSavingConversation, setIsSavingConversation] = useState(false);
+  
+  // Month learn workflow state
+  const [monthLearnMode, setMonthLearnMode] = useState(false);
+  const [isProcessingMonthLearn, setIsProcessingMonthLearn] = useState(false);
   
   // Animation state
   const [dotsPattern, setDotsPattern] = useState(0); // 0='.', 1='..', 2='...', 3=''
@@ -209,6 +219,12 @@ export const useTerminalState = (): TerminalState => {
     setWaitingForTrainConfirm,
     isSavingConversation,
     setIsSavingConversation,
+    
+    // Month learn workflow state
+    monthLearnMode,
+    setMonthLearnMode,
+    isProcessingMonthLearn,
+    setIsProcessingMonthLearn,
     
     // Animation state
     dotsPattern,

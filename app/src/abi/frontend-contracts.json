@@ -1,7 +1,7 @@
 {
   "galileo": {
     "SimpleDreamVerifier": {
-      "address": "0x4b308BA6d5B1e3F7543c69B798c639763BddDBd9",
+      "address": "0x52f48D1AA20c216857546CDC082E96269F1657DE",
       "abi": [
         {
           "inputs": [
@@ -83,7 +83,7 @@
       ]
     },
     "DreamscapeAgent": {
-      "address": "0x9b95dc1EE1E240a143E713A43d3eB364417e7D56",
+      "address": "0xA5ee5c79B69bd9e389d096f5683753AE0cC87df7",
       "abi": [
         {
           "inputs": [
@@ -2360,7 +2360,7 @@
         }
       ]
     },
-    "lastUpdate": "2025-07-12T12:16:43.412Z",
+    "lastUpdate": "2025-07-20T15:14:20.476Z",
     "chainId": 16601,
     "rpcUrl": "https://evmrpc-testnet.0g.ai"
   }

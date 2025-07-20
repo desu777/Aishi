@@ -51,6 +51,11 @@ export function formatHelpOutput(): TerminalLine[] {
       timestamp
     },
     {
+      type: 'help-command',
+      content: '  month-learn - Process monthly consolidation of dreams and conversations',
+      timestamp
+    },
+    {
       type: 'system',
       content: '',
       timestamp

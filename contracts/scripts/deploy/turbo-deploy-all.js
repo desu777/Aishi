@@ -247,7 +247,14 @@ async function main() {
   });
 }
 
-main().catch((error) => {
-  console.error("❌ TURBO DEPLOY FAILED:", error);
-  process.exitCode = 1;
-}); 
+// Export function for hardhat-deploy
+module.exports = async function (hre) {
+  try {
+    await main();
+  } catch (error) {
+    console.error("❌ TURBO DEPLOY FAILED:", error);
+    throw error;
+  }
+};
+
+module.exports.tags = ["DreamscapeAgent", "all"];

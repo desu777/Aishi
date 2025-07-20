@@ -11,6 +11,8 @@ export interface CommandHandlerDependencies {
   setDreamInputText: (val: string) => void;
   setWaitingForChatConfirm: (val: boolean) => void;
   setPendingMintName: (val: string | null) => void;
+  setMonthLearnMode: (val: boolean) => void;
+  setIsProcessingMonthLearn: (val: boolean) => void;
   
   // Functions & refs
   addLine: (line: TerminalLine) => void;
@@ -75,8 +77,8 @@ export const saveCommandToHistory = (command: string, deps: CommandHandlerDepend
 export const executeCommand = async (command: string, deps: CommandHandlerDependencies) => {
   const {
     addLine, setIsLoading, setLines, setDreamInputMode, setDreamInputText,
-    setWaitingForChatConfirm, setPendingMintName, commandProcessorRef,
-    wallet, agentData, dashboardData, isWalletConnected, isCorrectNetwork,
+    setWaitingForChatConfirm, setPendingMintName, setMonthLearnMode, setIsProcessingMonthLearn,
+    commandProcessorRef, wallet, agentData, dashboardData, isWalletConnected, isCorrectNetwork,
     hasAgent, hasCurrentBalance, formatAgentInfo, formatAgentStats,
     formatSystemStatus, formatMemoryStatus, formatHelpOutput
   } = deps;
@@ -132,6 +134,24 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
       addLine({
         type: 'info',
         content: 'Do u wanna chat with your agent? y/n',
+        timestamp: Date.now()
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Handle month learn mode
+    if (result.output === 'MONTH_LEARN_MODE') {
+      setMonthLearnMode(true);
+      setIsProcessingMonthLearn(true);
+      addLine({
+        type: 'info',
+        content: 'Starting monthly consolidation workflow...',
+        timestamp: Date.now()
+      });
+      addLine({
+        type: 'system',
+        content: 'This will consolidate your dreams and conversations from this month.',
         timestamp: Date.now()
       });
       setIsLoading(false);
