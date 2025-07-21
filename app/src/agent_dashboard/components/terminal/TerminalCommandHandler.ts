@@ -147,16 +147,6 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
     if (result.output === 'MONTH_LEARN_MODE') {
       setMonthLearnMode(true);
       setIsProcessingMonthLearn(true);
-      addLine({
-        type: 'info',
-        content: 'Starting monthly consolidation workflow...',
-        timestamp: Date.now()
-      });
-      addLine({
-        type: 'system',
-        content: 'This will consolidate your dreams and conversations from this month.',
-        timestamp: Date.now()
-      });
       setIsLoading(false);
       return;
     }
@@ -165,16 +155,6 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
     if (result.output === 'YEAR_LEARN_MODE') {
       setYearLearnMode(true);
       setIsProcessingYearLearn(true);
-      addLine({
-        type: 'info',
-        content: 'Starting yearly consolidation workflow...',
-        timestamp: Date.now()
-      });
-      addLine({
-        type: 'system',
-        content: 'This will consolidate your entire year into a memory core.',
-        timestamp: Date.now()
-      });
       setIsLoading(false);
       return;
     }

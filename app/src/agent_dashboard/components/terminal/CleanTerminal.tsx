@@ -399,7 +399,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         if (success) {
           addLine({
             type: 'success',
-            content: 'Monthly consolidation completed successfully!',
+            content: 'Consciousness upgrade protocol completed! (+2-8 intelligence)',
             timestamp: Date.now()
           });
         } else {
@@ -463,7 +463,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         if (success) {
           addLine({
             type: 'success',
-            content: 'Yearly consolidation completed successfully!',
+            content: 'Neural evolution protocol completed! (+5 intelligence)',
             timestamp: Date.now()
           });
         } else {

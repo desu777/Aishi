@@ -115,7 +115,7 @@ export function useYearLearn(tokenId?: number) {
     setState(prev => ({
       ...prev,
       isLoadingData: true,
-      statusMessage: 'Loading monthly consolidations from storage...'
+      statusMessage: `>> ${agentData?.agentName || 'Agent'} initiating annual memory core synthesis...`
     }));
 
     try {
@@ -284,7 +284,7 @@ export function useYearLearn(tokenId?: number) {
       ...prev,
       isGeneratingConsolidation: true,
       error: null,
-      statusMessage: 'Generating AI memory core...'
+      statusMessage: `>> ${agentData?.agentName || 'Agent'} evolving consciousness matrix...`
     }));
 
     try {
@@ -467,7 +467,7 @@ export function useYearLearn(tokenId?: number) {
         ...prev,
         isSavingToStorage: false,
         isUpdatingContract: true,
-        statusMessage: 'Updating smart contract...'
+        statusMessage: `>> ${agentData?.agentName || 'Agent'} embedding neural pathways...`
       }));
 
       // Update smart contract with new memory core hash

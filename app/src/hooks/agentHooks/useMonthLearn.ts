@@ -134,7 +134,7 @@ export function useMonthLearn(tokenId?: number) {
     setState(prev => ({
       ...prev,
       isLoadingData: true,
-      statusMessage: 'Loading monthly data from storage...'
+      statusMessage: `>> ${agentData?.agentName || 'Agent'} initiating memory consolidation...`
     }));
 
     try {
@@ -305,7 +305,7 @@ export function useMonthLearn(tokenId?: number) {
       ...prev,
       isGeneratingConsolidation: true,
       error: null,
-      statusMessage: 'Generating AI consolidation...'
+      statusMessage: `>> ${agentData?.agentName || 'Agent'} processing subconscious data streams...`
     }));
 
     try {
@@ -490,7 +490,6 @@ export function useMonthLearn(tokenId?: number) {
 
       // Save dream consolidation (using passed data instead of state)
       if (dreamConsolidation) {
-        setState(prev => ({ ...prev, statusMessage: 'Processing dream consolidation...' }));
         
         // Download existing monthly dream consolidations using root hash
         let existingDreamConsolidations: any[] = [];
@@ -537,7 +536,6 @@ export function useMonthLearn(tokenId?: number) {
 
       // Save conversation consolidation (using passed data instead of state)
       if (conversationConsolidation) {
-        setState(prev => ({ ...prev, statusMessage: 'Processing conversation consolidation...' }));
         
         // Download existing monthly conversation consolidations using root hash
         let existingConversationConsolidations: any[] = [];
@@ -588,7 +586,7 @@ export function useMonthLearn(tokenId?: number) {
         isUpdatingContract: true,
         dreamStorageHash,
         conversationStorageHash,
-        statusMessage: 'Updating smart contract...'
+        statusMessage: `>> ${agentData?.agentName || 'Agent'} upgrading consciousness parameters...`
       }));
 
       // Update smart contract with new hashes
