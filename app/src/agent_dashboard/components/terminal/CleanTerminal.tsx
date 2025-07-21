@@ -7,7 +7,7 @@ import { useTerminalState } from './useTerminalState';
 import { executeDreamAnalysis, handleDreamSaveConfirmation, type DreamWorkflowDependencies } from './TerminalDreamWorkflow';
 import { initializeChatSession, sendChatMessage, saveConversationFromTerminal, exitChatMode, type ChatWorkflowDependencies } from './TerminalChatWorkflow';
 import { saveCommandToHistory, executeCommand, executeEnhancedCommand, handleMintConfirmation, type CommandHandlerDependencies } from './TerminalCommandHandler';
-import { FaBrain, FaClock, FaCheckCircle, FaTimesCircle, FaSave, FaCalendarAlt, FaBullseye } from 'react-icons/fa';
+import { FaBrain, FaClock, FaCheckCircle, FaTimesCircle, FaSave, FaCalendarAlt, FaBullseye, FaMicrochip } from 'react-icons/fa';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { TerminalLine } from '../../commands/types';
 import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
@@ -240,7 +240,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         if (shouldShowMonthLearnPrompt) {
           messages.push({
             type: 'info',
-            content: "Monthly consolidation available! Use 'month-learn' command.",
+            content: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FaMicrochip style={{ color: '#8B5CF6' }} />
+                Monthly consolidation available! Use 'month-learn' command. (+2-8 intelligence)
+              </span>
+            ),
             timestamp
           });
         }
@@ -248,7 +253,12 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         if (shouldShowYearLearnPrompt) {
           messages.push({
             type: 'info', 
-            content: "Yearly consolidation available! Use 'year-learn' command.",
+            content: (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FaMicrochip style={{ color: '#8B5CF6' }} />
+                Yearly consolidation available! Use 'year-learn' command. (+5 intelligence)
+              </span>
+            ),
             timestamp
           });
         }

@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 export interface CommandResult {
   success: boolean;
   output: string;
@@ -10,7 +12,7 @@ export interface CommandResult {
 
 export interface TerminalLine {
   type: 'input' | 'output' | 'system' | 'success' | 'error' | 'warning' | 'info' | 'help-command' | 'info-labeled';
-  content: string;
+  content: string | ReactNode;
   timestamp: number;
 }
 
