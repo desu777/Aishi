@@ -47,13 +47,22 @@ class DatabaseService {
   private addConsolidationColumns(): void {
     // Check if consolidation columns exist, if not add them
     try {
-      const tableInfo = this.db.pragma('table_info(user_brokers)');
-      const columnNames = tableInfo.map((col: any) => col.name);
+      const tableInfo = this.db.pragma('table_info(user_brokers)') as Array<{ name: string; type: string; notnull: number; dflt_value: any; pk: number }>;
+      const columnNames = tableInfo.map(col => col.name);
       
       if (!columnNames.includes('consolidation_date')) {
+        // SQLite doesn't support CURRENT_TIMESTAMP as default in ALTER TABLE
+        // First add column without default
         this.db.exec(`
           ALTER TABLE user_brokers 
-          ADD COLUMN consolidation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+          ADD COLUMN consolidation_date TEXT
+        `);
+        
+        // Then update existing rows with current timestamp
+        this.db.exec(`
+          UPDATE user_brokers 
+          SET consolidation_date = datetime('now') 
+          WHERE consolidation_date IS NULL
         `);
         
         if (process.env.TEST_ENV === 'true') {
@@ -64,7 +73,14 @@ class DatabaseService {
       if (!columnNames.includes('month_learn')) {
         this.db.exec(`
           ALTER TABLE user_brokers 
-          ADD COLUMN month_learn TEXT NOT NULL DEFAULT 'noneed'
+          ADD COLUMN month_learn TEXT DEFAULT 'noneed'
+        `);
+        
+        // Update existing rows
+        this.db.exec(`
+          UPDATE user_brokers 
+          SET month_learn = 'noneed' 
+          WHERE month_learn IS NULL
         `);
         
         if (process.env.TEST_ENV === 'true') {
@@ -75,7 +91,14 @@ class DatabaseService {
       if (!columnNames.includes('year_learn')) {
         this.db.exec(`
           ALTER TABLE user_brokers 
-          ADD COLUMN year_learn TEXT NOT NULL DEFAULT 'noneed'
+          ADD COLUMN year_learn TEXT DEFAULT 'noneed'
+        `);
+        
+        // Update existing rows
+        this.db.exec(`
+          UPDATE user_brokers 
+          SET year_learn = 'noneed' 
+          WHERE year_learn IS NULL
         `);
         
         if (process.env.TEST_ENV === 'true') {
@@ -139,8 +162,8 @@ class DatabaseService {
   // User Broker Management
   createBroker(walletAddress: string): UserBroker {
     const stmt = this.db.prepare(`
-      INSERT INTO user_brokers (walletAddress, balance, createdAt, updatedAt) 
-      VALUES (?, 0, datetime('now'), datetime('now'))
+      INSERT INTO user_brokers (walletAddress, balance, createdAt, updatedAt, consolidation_date, month_learn, year_learn) 
+      VALUES (?, 0, datetime('now'), datetime('now'), datetime('now'), 'noneed', 'noneed')
     `);
     
     try {

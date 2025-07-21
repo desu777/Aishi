@@ -7,7 +7,7 @@ import { useTerminalState } from './useTerminalState';
 import { executeDreamAnalysis, handleDreamSaveConfirmation, type DreamWorkflowDependencies } from './TerminalDreamWorkflow';
 import { initializeChatSession, sendChatMessage, saveConversationFromTerminal, exitChatMode, type ChatWorkflowDependencies } from './TerminalChatWorkflow';
 import { saveCommandToHistory, executeCommand, executeEnhancedCommand, handleMintConfirmation, type CommandHandlerDependencies } from './TerminalCommandHandler';
-import { FaBrain, FaClock, FaCheckCircle, FaTimesCircle, FaSave } from 'react-icons/fa';
+import { FaBrain, FaClock, FaCheckCircle, FaTimesCircle, FaSave, FaCalendarAlt, FaBullseye } from 'react-icons/fa';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { TerminalLine } from '../../commands/types';
 import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
@@ -30,6 +30,8 @@ import { useAgentChatTerminal } from '../../../hooks/agentHooks/useAgentChatTerm
 import { useMonthLearn } from '../../../hooks/agentHooks/useMonthLearn';
 // Year learn hook
 import { useYearLearn } from '../../../hooks/agentHooks/useYearLearn';
+// Consolidation status hook
+import { useConsolidationStatus } from '../../../hooks/useConsolidationStatus';
 
 interface TerminalProps {
   darkMode?: boolean;
@@ -83,6 +85,9 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   
   // Broker balance hook
   const { balance: brokerBalance, loading: brokerLoading } = useBrokerBalance();
+  
+  // Consolidation status hook
+  const { shouldShowMonthLearnPrompt, shouldShowYearLearnPrompt, isLoading: isLoadingConsolidation } = useConsolidationStatus();
   
   // Dream analysis hooks
   const { 
@@ -147,8 +152,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     error: yearLearnError,
     isCompleted: yearLearnCompleted,
     executeYearLearn,
-    reset: resetYearLearn,
-    hasData: yearLearnHasData
+    reset: resetYearLearn
   } = useYearLearn(effectiveTokenId);
   
   // Expose wallet context to global window for commands
@@ -231,6 +235,25 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         timestamp
       });
 
+      // Consolidation status notifications
+      if (!isLoadingConsolidation) {
+        if (shouldShowMonthLearnPrompt) {
+          messages.push({
+            type: 'info',
+            content: "Monthly consolidation available! Use 'month-learn' command.",
+            timestamp
+          });
+        }
+        
+        if (shouldShowYearLearnPrompt) {
+          messages.push({
+            type: 'info', 
+            content: "Yearly consolidation available! Use 'year-learn' command.",
+            timestamp
+          });
+        }
+      }
+
       // Help message
       messages.push({
         type: 'system',
@@ -273,7 +296,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
 
     return messages;
-  }, [hasAgent, agentData, isLoadingAgent, brokerBalance, brokerLoading]);
+  }, [hasAgent, agentData, isLoadingAgent, brokerBalance, brokerLoading, shouldShowMonthLearnPrompt, shouldShowYearLearnPrompt, isLoadingConsolidation]);
 
   // Progress indicators - monitor dream analysis statuses (DISABLED - replaced with thinking animation)
   // useEffect(() => {
@@ -352,7 +375,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         debugLog('Starting month-learn workflow execution', {
           effectiveTokenId,
           hasAgent,
-          agentData: agentData ? { name: agentData.agentName, id: agentData.tokenId } : null
+          agentData: agentData ? { name: agentData.agentName, id: effectiveTokenId } : null
         });
         
         addLine({
@@ -416,7 +439,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         debugLog('Starting year-learn workflow execution', {
           effectiveTokenId,
           hasAgent,
-          agentData: agentData ? { name: agentData.agentName, id: agentData.tokenId } : null
+          agentData: agentData ? { name: agentData.agentName, id: effectiveTokenId } : null
         });
         
         addLine({
@@ -631,7 +654,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           saveConversationFromTerminal(chatWorkflowDeps);
         } else if (answer === 'n' || answer === 'no') {
           setWaitingForTrainConfirm(false);
-          exitChatMode();
+          exitChatMode(chatWorkflowDeps);
         } else {
           addLine({
             type: 'warning',
@@ -670,7 +693,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         return;
       } else if (e.key === 'Escape') {
         // Cancel chat mode
-        exitChatMode();
+        exitChatMode(chatWorkflowDeps);
         return;
       }
       // Regular typing in chat mode - no special handling needed
