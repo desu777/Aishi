@@ -50,7 +50,7 @@ No agent found. Type 'mint <name>' to create your agent.`;
   const conversationCount = Number(agent.conversationCount || 0);
   
   // Format consolidation info - TYLKO PRAWDZIWE DANE
-  const consolidationStreak = consolidation.consolidationStreak || 0;
+  const consolidationStreak = dashboardData.stats?.consolidationStreak || 0;
   const isUpToDate = consolidation.needsConsolidation !== true;
   const consolidationStatus = isUpToDate ? '[✓] Up to date' : '[!] Needs consolidation';
   const pendingRewards = consolidation.consolidationReward?.totalReward || 0;

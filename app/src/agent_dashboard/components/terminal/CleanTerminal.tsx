@@ -7,7 +7,7 @@ import { useTerminalState } from './useTerminalState';
 import { executeDreamAnalysis, handleDreamSaveConfirmation, type DreamWorkflowDependencies } from './TerminalDreamWorkflow';
 import { initializeChatSession, sendChatMessage, saveConversationFromTerminal, exitChatMode, type ChatWorkflowDependencies } from './TerminalChatWorkflow';
 import { saveCommandToHistory, executeCommand, executeEnhancedCommand, handleMintConfirmation, type CommandHandlerDependencies } from './TerminalCommandHandler';
-import { FaBrain, FaClock, FaCheckCircle, FaTimesCircle, FaSave, FaCalendarAlt, FaBullseye, FaMicrochip } from 'react-icons/fa';
+import { FaBrain, FaClock, FaCheckCircle, FaTimesCircle, FaSave, FaCalendarAlt, FaBullseye, FaMicrochip, FaCircle } from 'react-icons/fa';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { TerminalLine } from '../../commands/types';
 import { useAgentMint } from '../../../hooks/agentHooks/useAgentMint';
@@ -196,37 +196,48 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     const timestamp = Date.now();
 
     if (hasAgent && agentData && !isLoadingAgent) {
-      // Agent is ready message
+      // Agent is online message with cyberpunk styling
       messages.push({
         type: 'success',
-        content: `${agentData.agentName} is ready`,
+        content: (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FaCircle style={{ color: '#10B981', fontSize: '8px' }} />
+            {agentData.agentName} is online
+          </span>
+        ),
         timestamp
       });
 
-      // Agent details line
+      // Simplified essential info - responsive layout
       const intelligenceLevel = Number(agentData.intelligenceLevel);
-      const dreamCount = Number(agentData.dreamCount);
-      const createdDate = new Date(Number(agentData.createdAt) * 1000).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
+      const dominantMood = agentData.personality?.dominantMood || 'neutral';
+      const uniqueFeatures = agentData.personality?.uniqueFeatures?.length || 0;
 
-      messages.push({
-        type: 'info-labeled',
-        content: `Intelligence: ${intelligenceLevel} lvl | Dreams: ${dreamCount} | Created: ${createdDate}`,
-        timestamp
-      });
-
-      // Network and status line
-      const dominantMood = agentData.personality?.dominantMood || 'Unknown';
-      const balanceDisplay = brokerLoading ? 'Loading...' : `${brokerBalance.toFixed(4)} OG`;
-      
-      messages.push({
-        type: 'info-labeled',
-        content: `Network: 0G Galileo | Mood: ${dominantMood} | Broker Balance: ${balanceDisplay}`,
-        timestamp
-      });
+      if (isMobile) {
+        // Mobile: separate lines for better readability
+        messages.push({
+          type: 'info-labeled',
+          content: `Intelligence: ${intelligenceLevel} lvl`,
+          timestamp
+        });
+        messages.push({
+          type: 'info-labeled',
+          content: `Mood: ${dominantMood}`,
+          timestamp
+        });
+        messages.push({
+          type: 'info-labeled',
+          content: `Unique: ${uniqueFeatures} features`,
+          timestamp
+        });
+      } else {
+        // Desktop: single line with separators
+        messages.push({
+          type: 'info-labeled',
+          content: `Intelligence: ${intelligenceLevel} lvl | Mood: ${dominantMood} | Unique: ${uniqueFeatures} features`,
+          timestamp
+        });
+      }
 
       // Empty line
       messages.push({
@@ -242,8 +253,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             type: 'info',
             content: (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FaMicrochip style={{ color: '#8B5CF6' }} />
-                Monthly consolidation available! Use 'month-learn' command. (+2-8 intelligence)
+                <FaMicrochip style={{ color: '#8B5CF6', fontSize: isMobile ? '16px' : '14px' }} />
+                Neural synthesis ready → Process monthly consciousness data with 'month-learn' (+2-8 INT)
               </span>
             ),
             timestamp
@@ -255,8 +266,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             type: 'info', 
             content: (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FaMicrochip style={{ color: '#8B5CF6' }} />
-                Yearly consolidation available! Use 'year-learn' command. (+5 intelligence)
+                <FaMicrochip style={{ color: '#8B5CF6', fontSize: isMobile ? '16px' : '14px' }} />
+                Memory core crystallization → Upload consciousness matrix with 'year-learn' (+5 INT)
               </span>
             ),
             timestamp
