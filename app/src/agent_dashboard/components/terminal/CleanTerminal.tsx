@@ -28,6 +28,8 @@ import { useAgentAI } from '../../../hooks/agentHooks/useAgentAI';
 import { useAgentChatTerminal } from '../../../hooks/agentHooks/useAgentChatTerminal';
 // Month learn hook
 import { useMonthLearn } from '../../../hooks/agentHooks/useMonthLearn';
+// Year learn hook
+import { useYearLearn } from '../../../hooks/agentHooks/useYearLearn';
 
 interface TerminalProps {
   darkMode?: boolean;
@@ -64,7 +66,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     chatMessages, setChatMessages, isInitializingChat, setIsInitializingChat,
     isSendingMessage, setIsSendingMessage, waitingForTrainConfirm, setWaitingForTrainConfirm,
     isSavingConversation, setIsSavingConversation, monthLearnMode, setMonthLearnMode,
-    isProcessingMonthLearn, setIsProcessingMonthLearn, dotsPattern, setDotsPattern,
+    isProcessingMonthLearn, setIsProcessingMonthLearn, yearLearnMode, setYearLearnMode,
+    isProcessingYearLearn, setIsProcessingYearLearn, dotsPattern, setDotsPattern,
     thinkingMessageId, setThinkingMessageId, learningMessageId, setLearningMessageId,
     evolutionMessageId, setEvolutionMessageId, isMobile, setIsMobile,
     inputRef, terminalRef, commandProcessorRef, dotsTimerRef, addLine
@@ -135,6 +138,18 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     reset: resetMonthLearn,
     hasData: monthLearnHasData
   } = useMonthLearn(effectiveTokenId);
+  
+  // Year learn hook
+  const {
+    isLoading: isLoadingYearLearn,
+    isProcessing: isProcessingYearLearnData,
+    statusMessage: yearLearnStatus,
+    error: yearLearnError,
+    isCompleted: yearLearnCompleted,
+    executeYearLearn,
+    reset: resetYearLearn,
+    hasData: yearLearnHasData
+  } = useYearLearn(effectiveTokenId);
   
   // Expose wallet context to global window for commands
   useEffect(() => {
@@ -393,6 +408,70 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     }
   }, [monthLearnError]);
 
+  // Year learn workflow execution
+  useEffect(() => {
+    if (yearLearnMode && !isProcessingYearLearnData && !yearLearnCompleted && effectiveTokenId) {
+      // Start the year learn workflow
+      const executeWorkflow = async () => {
+        debugLog('Starting year-learn workflow execution', {
+          effectiveTokenId,
+          hasAgent,
+          agentData: agentData ? { name: agentData.agentName, id: agentData.tokenId } : null
+        });
+        
+        addLine({
+          type: 'system',
+          content: 'Executing yearly consolidation workflow...',
+          timestamp: Date.now()
+        });
+
+        const success = await executeYearLearn();
+        
+        if (success) {
+          addLine({
+            type: 'success',
+            content: 'Yearly consolidation completed successfully!',
+            timestamp: Date.now()
+          });
+        } else {
+          addLine({
+            type: 'error',
+            content: `Yearly consolidation failed: ${yearLearnError || 'Unknown error'}`,
+            timestamp: Date.now()
+          });
+        }
+
+        // Exit year learn mode
+        setYearLearnMode(false);
+        setIsProcessingYearLearn(false);
+      };
+
+      executeWorkflow();
+    }
+  }, [yearLearnMode, isProcessingYearLearnData, yearLearnCompleted, effectiveTokenId, hasAgent, agentData, executeYearLearn, yearLearnError, debugLog, setYearLearnMode, setIsProcessingYearLearn]);
+
+  // Year learn status updates
+  useEffect(() => {
+    if (yearLearnStatus && isProcessingYearLearnData) {
+      addLine({
+        type: 'info',
+        content: yearLearnStatus,
+        timestamp: Date.now()
+      });
+    }
+  }, [yearLearnStatus, isProcessingYearLearnData]);
+
+  // Year learn error handling
+  useEffect(() => {
+    if (yearLearnError) {
+      addLine({
+        type: 'error',
+        content: `Year Learn Error: ${yearLearnError}`,
+        timestamp: Date.now()
+      });
+    }
+  }, [yearLearnError]);
+
   // System loading sequence with welcome message - runs only once
   useEffect(() => {
     const initializeSystem = async () => {
@@ -461,7 +540,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
   // Start/stop dots animation
   useEffect(() => {
-    if (processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation || isProcessingMonthLearnData) {
+    if (processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation || isProcessingMonthLearnData || isProcessingYearLearnData) {
       // Start animation
       dotsTimerRef.current = setInterval(() => {
         setDotsPattern(prev => (prev + 1) % 4);
@@ -481,7 +560,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
         clearInterval(dotsTimerRef.current);
       }
     };
-  }, [processingDream, savingDream, evolvingDream, isInitializingChat, isInitializingTerminalChat, isSendingMessage, isSendingTerminalMessage, isSavingConversation, isSavingTerminalConversation, isProcessingMonthLearnData]);
+  }, [processingDream, savingDream, evolvingDream, isInitializingChat, isInitializingTerminalChat, isSendingMessage, isSendingTerminalMessage, isSavingConversation, isSavingTerminalConversation, isProcessingMonthLearnData, isProcessingYearLearnData]);
 
   // Learning phase cleanup
   useEffect(() => {
@@ -735,6 +814,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     // State setters
     setIsLoading, setLines, setCommandHistory, setDreamInputMode, setDreamInputText,
     setWaitingForChatConfirm, setPendingMintName, setMonthLearnMode, setIsProcessingMonthLearn,
+    setYearLearnMode, setIsProcessingYearLearn,
     
     // Functions & refs
     addLine, commandProcessorRef,
@@ -991,7 +1071,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             marginTop: '4px'
           }}>
             <span style={{ color: theme.accent.primary, marginRight: '8px' }}>
-              {(processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation || isProcessingMonthLearnData) ? <FaBrain /> : (dreamInputMode || chatInputMode) ? '~' : '$'}
+              {(processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation || isProcessingMonthLearnData || isProcessingYearLearnData) ? <FaBrain /> : (dreamInputMode || chatInputMode) ? '~' : '$'}
             </span>
             <input
               ref={inputRef}
@@ -999,7 +1079,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
               value={currentInput}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              disabled={isLoading || processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation || isProcessingMonthLearnData}
+              disabled={isLoading || processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation || isProcessingMonthLearnData || isProcessingYearLearnData}
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -1009,7 +1089,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                 fontFamily: 'inherit',
                 flex: 1,
                 caretColor: theme.accent.primary,
-                opacity: (isLoading || processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation || isProcessingMonthLearnData) ? 0.5 : 1
+                opacity: (isLoading || processingDream || savingDream || evolvingDream || isInitializingChat || isInitializingTerminalChat || isSendingMessage || isSendingTerminalMessage || isSavingConversation || isSavingTerminalConversation || isProcessingMonthLearnData || isProcessingYearLearnData) ? 0.5 : 1
               }}
               placeholder={
                 processingDream ? `${agentData?.agentName || 'Agent'} is thinking${getDots()}` :
@@ -1019,6 +1099,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                 (isSendingMessage || isSendingTerminalMessage) ? `${agentData?.agentName || 'Agent'} is thinking${getDots()}` :
                 (isSavingConversation || isSavingTerminalConversation) ? `${agentData?.agentName || 'Agent'} is learning${getDots()}` :
                 isProcessingMonthLearnData ? `${agentData?.agentName || 'Agent'} is consolidating monthly data${getDots()}` :
+                isProcessingYearLearnData ? `${agentData?.agentName || 'Agent'} is consolidating yearly data${getDots()}` :
                 isLoading ? 'Processing...' :
                 pendingDreamSave ? 'Answer y/n to train agent...' :
                 waitingForChatConfirm ? 'Answer y/n to start chat...' :

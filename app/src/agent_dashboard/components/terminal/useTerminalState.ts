@@ -71,6 +71,12 @@ export interface TerminalState {
   isProcessingMonthLearn: boolean;
   setIsProcessingMonthLearn: React.Dispatch<React.SetStateAction<boolean>>;
   
+  // Year learn workflow state
+  yearLearnMode: boolean;
+  setYearLearnMode: React.Dispatch<React.SetStateAction<boolean>>;
+  isProcessingYearLearn: boolean;
+  setIsProcessingYearLearn: React.Dispatch<React.SetStateAction<boolean>>;
+  
   // Animation state
   dotsPattern: number;
   setDotsPattern: React.Dispatch<React.SetStateAction<number>>;
@@ -136,6 +142,10 @@ export const useTerminalState = (): TerminalState => {
   // Month learn workflow state
   const [monthLearnMode, setMonthLearnMode] = useState(false);
   const [isProcessingMonthLearn, setIsProcessingMonthLearn] = useState(false);
+  
+  // Year learn workflow state
+  const [yearLearnMode, setYearLearnMode] = useState(false);
+  const [isProcessingYearLearn, setIsProcessingYearLearn] = useState(false);
   
   // Animation state
   const [dotsPattern, setDotsPattern] = useState(0); // 0='.', 1='..', 2='...', 3=''
@@ -225,6 +235,12 @@ export const useTerminalState = (): TerminalState => {
     setMonthLearnMode,
     isProcessingMonthLearn,
     setIsProcessingMonthLearn,
+    
+    // Year learn workflow state
+    yearLearnMode,
+    setYearLearnMode,
+    isProcessingYearLearn,
+    setIsProcessingYearLearn,
     
     // Animation state
     dotsPattern,

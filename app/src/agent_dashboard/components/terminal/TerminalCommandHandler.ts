@@ -13,6 +13,8 @@ export interface CommandHandlerDependencies {
   setPendingMintName: (val: string | null) => void;
   setMonthLearnMode: (val: boolean) => void;
   setIsProcessingMonthLearn: (val: boolean) => void;
+  setYearLearnMode: (val: boolean) => void;
+  setIsProcessingYearLearn: (val: boolean) => void;
   
   // Functions & refs
   addLine: (line: TerminalLine) => void;
@@ -78,6 +80,7 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
   const {
     addLine, setIsLoading, setLines, setDreamInputMode, setDreamInputText,
     setWaitingForChatConfirm, setPendingMintName, setMonthLearnMode, setIsProcessingMonthLearn,
+    setYearLearnMode, setIsProcessingYearLearn,
     commandProcessorRef, wallet, agentData, dashboardData, isWalletConnected, isCorrectNetwork,
     hasAgent, hasCurrentBalance, formatAgentInfo, formatAgentStats,
     formatSystemStatus, formatMemoryStatus, formatHelpOutput
@@ -152,6 +155,24 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
       addLine({
         type: 'system',
         content: 'This will consolidate your dreams and conversations from this month.',
+        timestamp: Date.now()
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Handle year learn mode
+    if (result.output === 'YEAR_LEARN_MODE') {
+      setYearLearnMode(true);
+      setIsProcessingYearLearn(true);
+      addLine({
+        type: 'info',
+        content: 'Starting yearly consolidation workflow...',
+        timestamp: Date.now()
+      });
+      addLine({
+        type: 'system',
+        content: 'This will consolidate your entire year into a memory core.',
         timestamp: Date.now()
       });
       setIsLoading(false);

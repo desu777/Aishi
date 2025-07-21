@@ -10,6 +10,7 @@ import { fundBrokerCommand } from './fundBroker';
 import { dreamCommand } from './dream';
 import { chatCommand } from './chat';
 import { monthLearnCommand } from './monthLearn';
+import { yearLearnCommand } from './yearLearn';
 
 export class CommandProcessor {
   private commands: Map<string, Command> = new Map();
@@ -30,6 +31,7 @@ export class CommandProcessor {
     this.registerCommand(dreamCommand);
     this.registerCommand(chatCommand);
     this.registerCommand(monthLearnCommand);
+    this.registerCommand(yearLearnCommand);
   }
 
   private registerCommand(command: Command): void {
