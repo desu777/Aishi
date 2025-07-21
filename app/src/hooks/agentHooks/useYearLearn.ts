@@ -399,7 +399,7 @@ export function useYearLearn(tokenId?: number) {
       ...prev,
       isSavingToStorage: true,
       error: null,
-      statusMessage: 'Saving memory core to storage...'
+      statusMessage: `>> ${agentData?.agentName || 'Agent'} crystallizing consciousness matrix...`
     }));
 
     try {

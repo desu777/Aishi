@@ -388,12 +388,6 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           agentData: agentData ? { name: agentData.agentName, id: effectiveTokenId } : null
         });
         
-        addLine({
-          type: 'system',
-          content: 'Executing monthly consolidation workflow...',
-          timestamp: Date.now()
-        });
-
         const success = await executeMonthLearn();
         
         if (success) {
@@ -452,12 +446,6 @@ const CleanTerminal: React.FC<TerminalProps> = ({
           agentData: agentData ? { name: agentData.agentName, id: effectiveTokenId } : null
         });
         
-        addLine({
-          type: 'system',
-          content: 'Executing yearly consolidation workflow...',
-          timestamp: Date.now()
-        });
-
         const success = await executeYearLearn();
         
         if (success) {
@@ -1131,8 +1119,8 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                 (isInitializingChat || isInitializingTerminalChat) ? `${agentData?.agentName || 'Agent'} is initializing session${getDots()}` :
                 (isSendingMessage || isSendingTerminalMessage) ? `${agentData?.agentName || 'Agent'} is thinking${getDots()}` :
                 (isSavingConversation || isSavingTerminalConversation) ? `${agentData?.agentName || 'Agent'} is learning${getDots()}` :
-                isProcessingMonthLearnData ? `${agentData?.agentName || 'Agent'} is consolidating monthly data${getDots()}` :
-                isProcessingYearLearnData ? `${agentData?.agentName || 'Agent'} is consolidating yearly data${getDots()}` :
+                isProcessingMonthLearnData ? `${agentData?.agentName || 'Agent'} is synthesizing neural pathways${getDots()}` :
+                isProcessingYearLearnData ? `${agentData?.agentName || 'Agent'} is evolving consciousness core${getDots()}` :
                 isLoading ? 'Processing...' :
                 pendingDreamSave ? 'Answer y/n to train agent...' :
                 waitingForChatConfirm ? 'Answer y/n to start chat...' :

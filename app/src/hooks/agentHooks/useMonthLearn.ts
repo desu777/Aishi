@@ -460,7 +460,7 @@ export function useMonthLearn(tokenId?: number) {
       ...prev,
       isSavingToStorage: true,
       error: null,
-      statusMessage: 'Saving consolidation to storage...'
+      statusMessage: `>> ${agentData?.agentName || 'Agent'} encoding neural patterns...`
     }));
 
     try {
