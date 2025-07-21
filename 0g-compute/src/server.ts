@@ -7,6 +7,7 @@ import aiService from './services/aiService';
 import masterWallet from './services/masterWallet';
 import virtualBrokers from './services/virtualBrokers';
 import queryManager from './services/queryManager';
+import consolidationChecker from './services/consolidationChecker';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -48,6 +49,10 @@ app.get('/', (req, res) => {
       'models': 'GET /api/models',
       'master-wallet-address': 'GET /api/master-wallet-address',
       'estimate-cost': 'POST /api/estimate-cost',
+      'consolidation-status': 'GET /api/consolidation/:walletAddress',
+      'consolidation-check': 'POST /api/consolidation/check',
+      'consolidation-start': 'POST /api/consolidation/start',
+      'consolidation-stop': 'POST /api/consolidation/stop',
       'transactions': 'GET /api/transactions/:walletAddress'
     }
   });
@@ -110,6 +115,11 @@ async function initializeServices() {
     const queueStatus = queryManager.getQueueStatus();
     console.log(`   Query Manager: Ready (Queue: ${queueStatus.queueLength}, Active: ${queueStatus.activeQueries}/${queueStatus.maxConcurrent})`);
     
+    // Start consolidation checker
+    const consolidationInterval = parseInt(process.env.CONSOLIDATION_CHECK_INTERVAL_MINUTES || '60');
+    consolidationChecker.startChecker(consolidationInterval);
+    console.log(`   Consolidation Checker: Started (interval: ${consolidationInterval} minutes)`);
+    
   } catch (error: any) {
     console.error('❌ Failed to initialize services:', error.message);
     process.exit(1);
@@ -125,6 +135,9 @@ async function gracefulShutdown() {
   
   try {
     // Cleanup services
+    console.log('🛑 Stopping Consolidation Checker...');
+    consolidationChecker.stopChecker();
+    
     console.log('🛑 Cleaning up Query Manager...');
     // QueryManager cleanup would happen here if needed
     

@@ -9,6 +9,9 @@ export interface UserBroker {
   balance: number;
   createdAt: string;
   updatedAt: string;
+  consolidation_date: string;
+  month_learn: 'need' | 'noneed';
+  year_learn: 'need' | 'noneed';
 }
 
 export interface Transaction {
@@ -41,6 +44,51 @@ class DatabaseService {
     }
   }
 
+  private addConsolidationColumns(): void {
+    // Check if consolidation columns exist, if not add them
+    try {
+      const tableInfo = this.db.pragma('table_info(user_brokers)');
+      const columnNames = tableInfo.map((col: any) => col.name);
+      
+      if (!columnNames.includes('consolidation_date')) {
+        this.db.exec(`
+          ALTER TABLE user_brokers 
+          ADD COLUMN consolidation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        `);
+        
+        if (process.env.TEST_ENV === 'true') {
+          console.log('✅ Added consolidation_date column to user_brokers');
+        }
+      }
+      
+      if (!columnNames.includes('month_learn')) {
+        this.db.exec(`
+          ALTER TABLE user_brokers 
+          ADD COLUMN month_learn TEXT NOT NULL DEFAULT 'noneed'
+        `);
+        
+        if (process.env.TEST_ENV === 'true') {
+          console.log('✅ Added month_learn column to user_brokers');
+        }
+      }
+      
+      if (!columnNames.includes('year_learn')) {
+        this.db.exec(`
+          ALTER TABLE user_brokers 
+          ADD COLUMN year_learn TEXT NOT NULL DEFAULT 'noneed'
+        `);
+        
+        if (process.env.TEST_ENV === 'true') {
+          console.log('✅ Added year_learn column to user_brokers');
+        }
+      }
+    } catch (error) {
+      if (process.env.TEST_ENV === 'true') {
+        console.error('❌ Error adding consolidation columns:', error);
+      }
+    }
+  }
+
   private initializeTables(): void {
     // Create user_brokers table
     this.db.exec(`
@@ -49,7 +97,10 @@ class DatabaseService {
         walletAddress TEXT UNIQUE NOT NULL,
         balance REAL NOT NULL DEFAULT 0,
         createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        updatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        consolidation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        month_learn TEXT NOT NULL DEFAULT 'noneed' CHECK (month_learn IN ('need', 'noneed')),
+        year_learn TEXT NOT NULL DEFAULT 'noneed' CHECK (year_learn IN ('need', 'noneed'))
       )
     `);
 
@@ -65,6 +116,9 @@ class DatabaseService {
         createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Add new columns to existing tables if they don't exist
+    this.addConsolidationColumns();
 
     // Create indexes for performance
     this.db.exec(`
@@ -196,6 +250,62 @@ class DatabaseService {
     `);
     
     return stmt.all(walletAddress, limit) as Transaction[];
+  }
+
+  // Consolidation Management
+  updateConsolidationStatus(walletAddress: string, monthLearn?: 'need' | 'noneed', yearLearn?: 'need' | 'noneed'): void {
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (monthLearn) {
+      updates.push('month_learn = ?');
+      values.push(monthLearn);
+    }
+    
+    if (yearLearn) {
+      updates.push('year_learn = ?');
+      values.push(yearLearn);
+    }
+    
+    if (updates.length === 0) return;
+
+    updates.push('updatedAt = datetime(\'now\')');
+    values.push(walletAddress);
+
+    const stmt = this.db.prepare(`
+      UPDATE user_brokers 
+      SET ${updates.join(', ')} 
+      WHERE walletAddress = ?
+    `);
+    
+    const result = stmt.run(...values);
+    
+    if (result.changes === 0) {
+      throw new Error(`No broker found for wallet: ${walletAddress}`);
+    }
+    
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`📅 Updated consolidation status for ${walletAddress}: month=${monthLearn}, year=${yearLearn}`);
+    }
+  }
+
+  getConsolidationStatus(walletAddress: string): { consolidation_date: string; month_learn: string; year_learn: string } | null {
+    const stmt = this.db.prepare(`
+      SELECT consolidation_date, month_learn, year_learn 
+      FROM user_brokers 
+      WHERE walletAddress = ?
+    `);
+    
+    return stmt.get(walletAddress) as { consolidation_date: string; month_learn: string; year_learn: string } | null;
+  }
+
+  getAllBrokersForConsolidationCheck(): Array<{ walletAddress: string; consolidation_date: string; month_learn: string; year_learn: string }> {
+    const stmt = this.db.prepare(`
+      SELECT walletAddress, consolidation_date, month_learn, year_learn 
+      FROM user_brokers
+    `);
+    
+    return stmt.all() as Array<{ walletAddress: string; consolidation_date: string; month_learn: string; year_learn: string }>;
   }
 
   // Statistics

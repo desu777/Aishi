@@ -465,10 +465,10 @@ contract DreamscapeAgent is
             emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
         }
 
-        // Optional: Clear monthly hashes after yearly consolidation
+        // Clear monthly hashes after yearly consolidation
         // This provides a clean slate for the new year
-        // mem.lastDreamMonthlyHash = bytes32(0);
-        // mem.lastConvMonthlyHash  = bytes32(0);
+        mem.lastDreamMonthlyHash = bytes32(0);
+        mem.lastConvMonthlyHash  = bytes32(0);
     }
 
     /* ───────────────────────────────────────────────── VIEW HELPERS ────────── */
@@ -529,24 +529,6 @@ contract DreamscapeAgent is
         return agentMemories[tokenId];
     }
 
-    /**
-     * @notice Check if consolidation is needed
-     * @param tokenId Agent to check
-     * @return isNeeded True if month has changed since last consolidation
-     * @return currentMonth Current month
-     * @return currentYear Current year
-     */
-    function needsConsolidation(uint256 tokenId) external view returns (
-        bool isNeeded,
-        uint8 currentMonth,
-        uint16 currentYear
-    ) {
-        require(agents[tokenId].owner != address(0), "agent !exist");
-        AgentMemory memory mem = agentMemories[tokenId];
-        currentMonth = _currentMonth();
-        currentYear = _currentYear();
-        isNeeded = (mem.currentMonth != currentMonth || mem.currentYear != currentYear);
-    }
 
     /**
      * @notice Get consolidation reward preview

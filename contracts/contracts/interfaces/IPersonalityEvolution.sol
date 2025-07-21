@@ -148,16 +148,6 @@ interface IPersonalityEvolution {
     function canProcessDreamToday(uint256 tokenId) 
         external view returns (bool canProcess);
 
-    /// @notice Check if consolidation is needed
-    /// @param tokenId Agent to check
-    /// @return isNeeded True if month has changed since last consolidation
-    /// @return currentMonth Current month
-    /// @return currentYear Current year
-    function needsConsolidation(uint256 tokenId) external view returns (
-        bool isNeeded,
-        uint8 currentMonth,
-        uint16 currentYear
-    );
 
     /// @notice Get consolidation reward preview
     /// @param tokenId Agent to check

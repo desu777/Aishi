@@ -3,6 +3,8 @@ import virtualBrokers from '../services/virtualBrokers';
 import aiService from '../services/aiService';
 import masterWallet from '../services/masterWallet';
 import queryManager from '../services/queryManager';
+import consolidationChecker from '../services/consolidationChecker';
+import DatabaseService from '../database/database';
 
 const router = express.Router();
 
@@ -307,6 +309,128 @@ router.get('/queue-status', (req, res) => {
     handleSuccess(res, queueStatus, 'Queue status retrieved successfully');
   } catch (error: any) {
     handleError(res, error, 'Failed to retrieve queue status');
+  }
+});
+
+/**
+ * GET /api/consolidation/:walletAddress
+ * Gets consolidation status for a broker
+ */
+router.get('/consolidation/:walletAddress', async (req, res) => {
+  try {
+    const { walletAddress } = req.params;
+    
+    if (!walletAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'walletAddress is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const consolidationStatus = DatabaseService.getConsolidationStatus(walletAddress);
+    
+    if (!consolidationStatus) {
+      return res.status(404).json({
+        success: false,
+        error: 'Broker not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`📅 API: Consolidation status for ${walletAddress}`);
+    }
+
+    handleSuccess(res, consolidationStatus, 'Consolidation status retrieved successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to retrieve consolidation status');
+  }
+});
+
+/**
+ * POST /api/consolidation/check
+ * Manually trigger consolidation check
+ */
+router.post('/consolidation/check', async (req, res) => {
+  try {
+    const results = await consolidationChecker.performConsolidationCheck();
+    
+    const summary = {
+      totalBrokers: results.length,
+      monthUpdates: results.filter(r => r.needsMonthLearning).length,
+      yearUpdates: results.filter(r => r.needsYearLearning).length,
+      updatedBrokers: results.filter(r => r.needsMonthLearning || r.needsYearLearning).map(r => r.walletAddress),
+      details: results
+    };
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🔍 API: Manual consolidation check completed - ${summary.monthUpdates} month, ${summary.yearUpdates} year updates`);
+    }
+
+    handleSuccess(res, summary, 'Consolidation check completed successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to perform consolidation check');
+  }
+});
+
+/**
+ * GET /api/consolidation/status
+ * Gets consolidation checker service status
+ */
+router.get('/consolidation/status', (req, res) => {
+  try {
+    const status = consolidationChecker.getStatus();
+    
+    if (process.env.TEST_ENV === 'true') {
+      console.log('📋 API: Consolidation checker status retrieved');
+    }
+
+    handleSuccess(res, status, 'Consolidation checker status retrieved successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to retrieve consolidation checker status');
+  }
+});
+
+/**
+ * POST /api/consolidation/start
+ * Start the consolidation checker
+ */
+router.post('/consolidation/start', (req, res) => {
+  try {
+    const { intervalMinutes } = req.body;
+    const interval = intervalMinutes ? parseInt(intervalMinutes) : 60;
+    
+    consolidationChecker.startChecker(interval);
+    
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`▶️  API: Consolidation checker started with ${interval} minute interval`);
+    }
+
+    handleSuccess(res, { 
+      isRunning: true, 
+      intervalMinutes: interval 
+    }, 'Consolidation checker started successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to start consolidation checker');
+  }
+});
+
+/**
+ * POST /api/consolidation/stop
+ * Stop the consolidation checker
+ */
+router.post('/consolidation/stop', (req, res) => {
+  try {
+    consolidationChecker.stopChecker();
+    
+    if (process.env.TEST_ENV === 'true') {
+      console.log('⏹️  API: Consolidation checker stopped');
+    }
+
+    handleSuccess(res, { isRunning: false }, 'Consolidation checker stopped successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to stop consolidation checker');
   }
 });
 
