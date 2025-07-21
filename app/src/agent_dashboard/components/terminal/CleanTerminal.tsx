@@ -253,7 +253,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             type: 'info',
             content: (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FaMicrochip style={{ color: '#8B5CF6', fontSize: isMobile ? '16px' : '14px' }} />
+                <FaMicrochip style={{ color: '#8B5CF6', fontSize: 'clamp(15px, 4vw, 18px)' }} />
                 Neural synthesis ready → Process monthly consciousness data with 'month-learn' (+2-8 INT)
               </span>
             ),
@@ -266,7 +266,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             type: 'info', 
             content: (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FaMicrochip style={{ color: '#8B5CF6', fontSize: isMobile ? '16px' : '14px' }} />
+                <FaMicrochip style={{ color: '#8B5CF6', fontSize: 'clamp(15px, 4vw, 18px)' }} />
                 Memory core crystallization → Upload consciousness matrix with 'year-learn' (+5 INT)
               </span>
             ),
