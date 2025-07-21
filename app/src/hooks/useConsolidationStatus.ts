@@ -83,8 +83,8 @@ export const useConsolidationStatus = (): UseConsolidationStatusReturn => {
   const canUseYearLearn = isYearTestMode || (status?.year_learn === 'need');
 
   // Determine if we should show prompts
-  const shouldShowMonthLearnPrompt = !isMonthTestMode && (status?.month_learn === 'need');
-  const shouldShowYearLearnPrompt = !isYearTestMode && (status?.year_learn === 'need');
+  const shouldShowMonthLearnPrompt = isMonthTestMode || (status?.month_learn === 'need');
+  const shouldShowYearLearnPrompt = isYearTestMode || (status?.year_learn === 'need');
 
   return {
     status,

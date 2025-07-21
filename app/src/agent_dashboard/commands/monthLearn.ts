@@ -71,7 +71,7 @@ export const monthLearnCommand: Command = {
       
       return {
         success: false,
-        output: `Monthly consolidation not available.${testModeInfo}${availability.error ? ` Error: ${availability.error}` : ''}`,
+        output: 'Monthly consciousness upgrade pending. Agent requires more experiential data for subconscious enhancement.',
         type: 'error'
       };
     }
