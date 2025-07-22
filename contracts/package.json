@@ -23,6 +23,7 @@
     "setup": "npm install && echo 'Setup complete. Environment detected automatically.'"
   },
   "dependencies": {
+    "@quant-finance/solidity-datetime": "^2.2.0",
     "axios": "^1.10.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -36,13 +37,13 @@
     "node-record-lpcm16": "^1.0.1",
     "openai": "^4.28.0"
   },
-      "devDependencies": {
-    "nodemon": "^3.0.1",
+  "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.6",
     "@openzeppelin/contracts": "^5.0.2",
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
     "hardhat": "^2.22.0",
     "hardhat-deploy": "^0.12.2",
-    "hardhat-deploy-ethers": "^0.4.1"
+    "hardhat-deploy-ethers": "^0.4.1",
+    "nodemon": "^3.0.1"
   }
 }

@@ -20,6 +20,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";  // protects against
 import "@openzeppelin/contracts/access/AccessControl.sol";   // role‑based admin system
 import "@openzeppelin/contracts/utils/Pausable.sol";         // emergency stop
 
+import "@quant-finance/solidity-datetime/contracts/DateTime.sol"; // Gas-efficient DateTime library
+
 /**
  * @title  DreamscapeAgent – iNFT with Hierarchical Memory & Personality Evolution
  * @notice Single‑per‑wallet autonomous agent that stores memories in a three‑layer
@@ -143,7 +145,6 @@ contract DreamscapeAgent is
 
     // Hierarchical memory
     event MemoryUpdated         (uint256 indexed tokenId, string memoryType, bytes32 newHash, bytes32 oldHash);
-    event ConsolidationNeeded   (uint256 indexed tokenId, uint8 month, uint16 year, string consolidationType);
     event ConsolidationCompleted(uint256 indexed tokenId, string period, uint256 bonus, string specialReward);
     event YearlyReflectionAvailable(uint256 indexed tokenId, uint16 year);
     event MemoryMilestone       (uint256 indexed tokenId, string achievement, uint256 totalInteractions);
@@ -494,7 +495,7 @@ contract DreamscapeAgent is
         
         if (intelligence >= 60) {
             monthsAccessible = 60;
-            memoryDepth = "5 years complete archive";
+            memoryDepth = "Lifetime";
         } else if (intelligence >= 48) {
             monthsAccessible = 48;
             memoryDepth = "4 years";
@@ -805,7 +806,7 @@ contract DreamscapeAgent is
             m.currentMonth = cm; m.currentYear = cy; return;
         }
         if (m.currentMonth != cm || m.currentYear != cy) {
-            emit ConsolidationNeeded(id, m.currentMonth, m.currentYear, "monthly");
+            // Month/year changed - update current period
             m.currentMonth = cm; m.currentYear = cy;
             // Note: currentDreamDailyHash and currentConvDailyHash are now cleared in consolidateMonth()
             if (block.timestamp > m.lastConsolidation + 37 days) consolidationStreak[id] = 0; // lose streak
@@ -840,67 +841,13 @@ contract DreamscapeAgent is
         return string(abi.encodePacked(n[m-1], " ", _uint2str(y)));
     }
 
-    /* ───── date helpers (fixed) ─────────────────────────────────────────── */
-    function _currentMonth() internal view returns (uint8)  { 
-        // Use proper date calculation instead of approximation
-        uint256 timestamp = block.timestamp;
-        uint256 daysSince1970 = timestamp / 86400; // seconds to days
-        
-        // Calculate years since 1970
-        uint256 year = 1970;
-        uint256 daysInYear;
-        
-        while (true) {
-            daysInYear = _isLeapYear(year) ? 366 : 365;
-            if (daysSince1970 >= daysInYear) {
-                daysSince1970 -= daysInYear;
-                year++;
-            } else {
-                break;
-            }
-        }
-        
-        // Calculate month within the year
-        uint256 dayOfYear = daysSince1970;
-        uint8[12] memory daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        
-        if (_isLeapYear(year)) {
-            daysInMonth[1] = 29; // February in leap year
-        }
-        
-        for (uint8 month = 1; month <= 12; month++) {
-            if (dayOfYear < daysInMonth[month - 1]) {
-                return month;
-            }
-            dayOfYear -= daysInMonth[month - 1];
-        }
-        
-        return 12; // Fallback to December
+    /* ───── date helpers (using BokkyPooBah's gas-efficient library) ─────── */
+    function _currentMonth() internal view returns (uint8) {
+        return uint8(DateTime.getMonth(block.timestamp));
     }
     
-    function _currentYear() internal view returns (uint16) { 
-        uint256 timestamp = block.timestamp;
-        uint256 daysSince1970 = timestamp / 86400; // seconds to days
-        
-        // Calculate years since 1970
-        uint256 year = 1970;
-        uint256 daysInYear;
-        
-        while (true) {
-            daysInYear = _isLeapYear(year) ? 366 : 365;
-            if (daysSince1970 >= daysInYear) {
-                daysSince1970 -= daysInYear;
-                year++;
-            } else {
-                break;
-            }
-        }
-        
-        return uint16(year);
-    }
-    
-    function _isLeapYear(uint256 year) internal pure returns (bool) {
-        return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    function _currentYear() internal view returns (uint16) {
+        return uint16(DateTime.getYear(block.timestamp));
     }
 
     /* ───── misc util ──────────────────────────────────────────────────────── */
