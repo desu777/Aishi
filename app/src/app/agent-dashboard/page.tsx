@@ -429,8 +429,8 @@ export default function AgentDashboard() {
                         theme={theme}
                       />
                       <CommandItem 
-                        command="info"
-                        description="Display comprehensive agent information and profile"
+                        command="agent-info"
+                        description="Display core agent information in cyberpunk style"
                         theme={theme}
                       />
                       <CommandItem 

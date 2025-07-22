@@ -16,6 +16,7 @@ import { useAgentDashboard } from '../../../hooks/useAgentDashboard';
 import { useWallet } from '../../../hooks/useWallet';
 import { useBrokerBalance } from '../../../hooks/useBrokerBalance';
 import { formatAgentInfo } from '../../commands/info';
+import { GlitchDigitalEntity } from '../digital-entity';
 import { formatAgentStats } from '../../commands/stats';
 import { formatSystemStatus } from '../../commands/status';
 import { formatMemoryStatus } from '../../commands/memory';
@@ -253,7 +254,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             type: 'info',
             content: (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FaMicrochip style={{ color: '#8B5CF6', fontSize: 'clamp(15px, 4vw, 18px)' }} />
+                <FaMicrochip style={{ color: '#8B5CF6', fontSize: 'clamp(20px, 5vw, 24px)' }} />
                 Neural synthesis ready → Process monthly consciousness data with 'month-learn' (+2-8 INT)
               </span>
             ),
@@ -266,7 +267,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             type: 'info', 
             content: (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FaMicrochip style={{ color: '#8B5CF6', fontSize: 'clamp(15px, 4vw, 18px)' }} />
+                <FaMicrochip style={{ color: '#8B5CF6', fontSize: 'clamp(20px, 5vw, 24px)' }} />
                 Memory core crystallization → Upload consciousness matrix with 'year-learn' (+5 INT)
               </span>
             ),

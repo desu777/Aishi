@@ -22,7 +22,7 @@ export function formatHelpOutput(): TerminalLine[] {
     },
     {
       type: 'help-command', 
-      content: '  info       - Display comprehensive agent information',
+      content: '  agent-info - Display core agent information in cyberpunk style',
       timestamp
     },
     {

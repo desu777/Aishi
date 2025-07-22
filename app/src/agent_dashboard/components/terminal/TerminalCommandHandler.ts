@@ -1,6 +1,8 @@
+import React from 'react';
 import { TerminalLine } from '../../commands/types';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { DreamWorkflowDependencies } from './TerminalDreamWorkflow';
+import { GlitchDigitalEntity } from '../digital-entity';
 
 export interface CommandHandlerDependencies {
   // State setters
@@ -161,10 +163,10 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
 
     // Handle special info/stats/status/memory commands
     if (result.output === 'DIGITAL_ENTITY_REQUEST') {
-      const infoOutput = formatAgentInfo(dashboardData);
+      // Use React component for enhanced cyberpunk experience with glitch animations
       addLine({
         type: 'info',
-        content: infoOutput,
+        content: React.createElement(GlitchDigitalEntity, { dashboardData }),
         timestamp: Date.now()
       });
       setIsLoading(false);
