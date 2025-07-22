@@ -60,7 +60,7 @@ export function formatAgentPersonality(dashboardData: any): string {
   
   // Format last dream date
   const lastDreamDate = personality.lastDreamDate ? 
-    new Date(Number(personality.lastDreamDate) * 1000).toLocaleDateString() : 'Never';
+    new Date(Number(personality.lastDreamDate || 0) * 1000).toLocaleDateString() : 'Never';
   
   // Format unique features (max 2 displayed)
   let featuresText = '';

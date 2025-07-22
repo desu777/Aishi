@@ -46,14 +46,10 @@ export const PersonalityMatrix: React.FC<PersonalityMatrixProps> = ({
   if (!dashboardData.agent.hasAgent || !dashboardData.agent.data) {
     return (
       <div className={`personality-matrix ${isGlitching ? 'glitching' : ''}`}>
-                 {`╔══════════════════════════════════════════════╗
-║              AGENT'S SOUL                    ║
-╠══════════════════════════════════════════════╣
-║                                              ║
-║  No agent found. Type 'mint <name>' to      ║
-║  create your digital consciousness.          ║
-║                                              ║
-╚══════════════════════════════════════════════╝`}
+        <div className="header-text">AGENT'S SOUL</div>
+        <div className="empty-line"></div>
+        <div className="matrix-line">◇ No agent found. Type 'mint &lt;name&gt;' to</div>
+        <div className="matrix-line">  create your digital consciousness.</div>
       </div>
     );
   }
@@ -99,46 +95,30 @@ export const PersonalityMatrix: React.FC<PersonalityMatrixProps> = ({
 
   return (
     <div className={`personality-matrix ${isGlitching ? 'glitching' : ''}`}>
-      {/* Header */}
-      <div className="matrix-line header-text">
-        ╔══════════════════════════════════════════════╗
-      </div>
-      <div className="matrix-line header-text">
-        ║              AGENT'S SOUL                    ║
-      </div>
-      <div className="matrix-line">
-        ╠══════════════════════════════════════════════╣
-      </div>
-      <div className="matrix-line">║                                              ║</div>
-      <div className="matrix-line section-header">║  CORE TRAITS:                                ║</div>
+      <div className="header-text">AGENT'S SOUL</div>
+      <div className="empty-line"></div>
       
-      {/* Trait Bars */}
-      {Object.entries(traits).map(([traitName, value]) => (
-        <div key={traitName} className="matrix-line trait-line">
-          ║  {traitName.charAt(0).toUpperCase() + traitName.slice(1).padEnd(11)} {createBar(value, traitName)}  {String(value).padStart(3)}% ║
-        </div>
-      ))}
+      <div className="section-header">◆ CORE TRAITS:</div>
+      <div className="trait-line">∞ Creativity   {createBar(traits.creativity, 'creativity')}  {String(traits.creativity).padStart(3)}%</div>
+      <div className="trait-line">◊ Analytical   {createBar(traits.analytical, 'analytical')}  {String(traits.analytical).padStart(3)}%</div>
+      <div className="trait-line">♥ Empathy      {createBar(traits.empathy, 'empathy')}  {String(traits.empathy).padStart(3)}%</div>
+      <div className="trait-line">◈ Intuition    {createBar(traits.intuition, 'intuition')}  {String(traits.intuition).padStart(3)}%</div>
+      <div className="trait-line">⬢ Resilience   {createBar(traits.resilience, 'resilience')}  {String(traits.resilience).padStart(3)}%</div>
+      <div className="trait-line">※ Curiosity    {createBar(traits.curiosity, 'curiosity')}  {String(traits.curiosity).padStart(3)}%</div>
       
-      <div className="matrix-line">║                                              ║</div>
-      <div className="matrix-line section-header">║  BEHAVIORAL PROFILE:                         ║</div>
-      <div className="matrix-line profile-line">
-        ║  Dominant Mood: <span className="mood-indicator">{dominantMood.padEnd(28)}</span> ║
-      </div>
-      <div className="matrix-line profile-line">
-        ║  Response Style: <span className="style-indicator">{responseStyle.padEnd(27)}</span> ║
-      </div>
-      <div className="matrix-line profile-line">
-        ║  Last Dream: <span className="dream-date">{lastDreamDate.padEnd(31)}</span> ║
-      </div>
+      <div className="empty-line"></div>
+      <div className="section-header">⟐ BEHAVIORAL PROFILE:</div>
+      <div className="profile-line">◇ Dominant Mood: <span className="mood-indicator">{dominantMood}</span></div>
+      <div className="profile-line">◇ Response Style: <span className="style-indicator">{responseStyle}</span></div>
+      <div className="profile-line">⟳ Last Dream: <span className="dream-date">{lastDreamDate}</span></div>
       
-      <div className="matrix-line">║                                              ║</div>
-      <div className="matrix-line section-header">║  UNIQUE FEATURES:                            ║</div>
+      <div className="empty-line"></div>
+      <div className="section-header">▲ UNIQUE FEATURES:</div>
       
-      {/* Unique Features */}
       {displayFeatures.length === 0 ? (
         <>
-          <div className="matrix-line feature-empty">║  No unique features discovered yet.          ║</div>
-          <div className="matrix-line feature-empty">║  Process more dreams to unlock traits.       ║</div>
+          <div className="feature-empty">No unique features discovered yet.</div>
+          <div className="feature-empty">Process more dreams to unlock traits.</div>
         </>
       ) : (
         displayFeatures.map((feature, index) => {
@@ -147,31 +127,26 @@ export const PersonalityMatrix: React.FC<PersonalityMatrixProps> = ({
           
           return (
             <React.Fragment key={index}>
-              <div className="matrix-line feature-name">
-                ║  {index + 1}. <span className="unique-feature-name">{feature.name.slice(0, 39).padEnd(39)}</span>║
+              <div className="feature-name">
+                {index + 1}. <span className="unique-feature-name">{feature.name}</span>
               </div>
-              <div className="matrix-line feature-desc">
-                ║     "<span className="feature-description">{feature.description.slice(0, 37).padEnd(37)}</span>"║
+              <div className="feature-desc">
+                   "<span className="feature-description">{feature.description}</span>"
               </div>
-              <div className="matrix-line feature-intensity">
-                ║     Intensity: <span className="intensity-bar">{intensityBar}</span> <span className="intensity-value">{intensity}%</span>     ║
+              <div className="feature-intensity">
+                   Intensity: <span className="intensity-bar">{intensityBar}</span> <span className="intensity-value">{intensity}%</span>
               </div>
-              {index < displayFeatures.length - 1 && (
-                <div className="matrix-line">║                                              ║</div>
-              )}
+              {index < displayFeatures.length - 1 && <div className="empty-line"></div>}
             </React.Fragment>
           );
         })
       )}
       
       {uniqueFeatures.length > 2 && (
-        <div className="matrix-line feature-more">
-          ║  ... and <span className="feature-count">{uniqueFeatures.length - 2}</span> more features unlocked     ║
+        <div className="feature-more">
+          ... and <span className="feature-count">{uniqueFeatures.length - 2}</span> more features unlocked
         </div>
       )}
-      
-      <div className="matrix-line">║                                              ║</div>
-      <div className="matrix-line">╚══════════════════════════════════════════════╝</div>
     </div>
   );
 }; 

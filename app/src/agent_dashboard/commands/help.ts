@@ -32,7 +32,7 @@ export function formatHelpOutput(): TerminalLine[] {
     },
     {
       type: 'help-command',
-      content: '  status     - Display system health and connectivity status',
+      content: '  achievements - Display agent milestones, achievements, and growth analytics',
       timestamp
     },
     {

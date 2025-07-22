@@ -10,6 +10,11 @@
   line-height: 1.3;
 }
 
+/* Empty line spacing */
+.empty-line {
+  height: 1.3em;
+}
+
 /* Base glow effect */
 .digital-entity::before {
   content: '';

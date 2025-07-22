@@ -39,14 +39,14 @@ export function formatAgentInfo(dashboardData: any): string {
   const agent = dashboardData.agent.data;
   
   // Format creation date
-  const createdDate = new Date(Number(agent.createdAt) * 1000).toLocaleDateString('en-US', {
+  const createdDate = new Date(Number(agent.createdAt || 0) * 1000).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
   });
 
   // Format last update - time ago
-  const lastUpdated = Number(agent.lastUpdated) * 1000;
+  const lastUpdated = Number(agent.lastUpdated || 0) * 1000;
   const now = Date.now();
   const timeDiff = now - lastUpdated;
   const daysAgo = Math.floor(timeDiff / (1000 * 60 * 60 * 24));

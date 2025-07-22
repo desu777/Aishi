@@ -25,74 +25,94 @@ export const memoryCommand: Command = {
 // Helper function to format memory status (will be used in terminal)
 export function formatMemoryStatus(dashboardData: any): string {
   if (!dashboardData.agent.hasAgent || !dashboardData.agent.data) {
-    return `═══════════════════════════════════════
-           MEMORY SYSTEM
-═══════════════════════════════════════
-
-No agent found. Type 'mint <name>' to create your agent.`;
+    return `╔══════════════════════════════════════════════╗
+║               MEMORY CORE                    ║
+╠══════════════════════════════════════════════╣
+║                                              ║
+║  No agent found. Type 'mint <name>' to      ║
+║  initialize memory core.                     ║
+║                                              ║
+╚══════════════════════════════════════════════╝`;
   }
 
   const agent = dashboardData.agent.data;
   const memory = dashboardData.memory;
-  const memoryAccess = memory.access || {};
-  const consolidation = memory.consolidation || {};
+  const memoryAccess = memory?.access || {};
+  const consolidation = memory?.consolidation || {};
   
-  // Format access levels
+  // Format access levels based on intelligence
   const memoryDepth = memoryAccess.memoryDepth || 'Unknown';
-  const monthsAccessible = memoryAccess.monthsAccessible || 0;
-  const intelligenceLevel = Number(agent.intelligenceLevel || 0);
-  const accessTier = intelligenceLevel >= 10 ? 'Expert' : 
-                    intelligenceLevel >= 5 ? 'Advanced' : 
-                    intelligenceLevel >= 2 ? 'Intermediate' : 'Beginner';
-
-  // Format storage info - TYLKO PRAWDZIWE DANE Z KONTRAKTU
-  const dreamCount = Number(agent.dreamCount || 0);
-  const conversationCount = Number(agent.conversationCount || 0);
+  const monthsAccessible = Number(memoryAccess.monthsAccessible || 0);
   
-  // Format consolidation info - TYLKO PRAWDZIWE DANE
-  const consolidationStreak = dashboardData.stats?.consolidationStreak || 0;
+  // Format consolidation data
+  const consolidationStreak = Number(dashboardData.stats?.consolidationStreak || 0);
   const isUpToDate = consolidation.needsConsolidation !== true;
-  const consolidationStatus = isUpToDate ? '[✓] Up to date' : '[!] Needs consolidation';
-  const pendingRewards = consolidation.consolidationReward?.totalReward || 0;
-  
-  // Format recent activity - TYLKO PRAWDZIWE DANE Z KONTRAKTU
-  const canProcessToday = agent.canProcessDreamToday || false;
-  const dreamsTodayAvailable = canProcessToday ? '1' : '0';
-  const dreamsTodayUsed = canProcessToday ? '0' : '1';
-  const lastDreamDate = agent.personality?.lastDreamDate ? 
-    new Date(Number(agent.personality.lastDreamDate) * 1000).toLocaleDateString() : 'Never';
+  const consolidationStatus = isUpToDate ? '✓ SYNCHRONIZED' : '! NEEDS SYNC';
+  const pendingRewards = Number(consolidation.consolidationReward?.totalReward || 0);
   
   // Memory hashes from contract
-  const currentDreamHash = agent.memory?.currentDreamDailyHash || 'None';
-  const currentConvHash = agent.memory?.currentConvDailyHash || 'None';
-  const memoryCoreHash = agent.memory?.memoryCoreHash || 'None';
+  const currentDreamHash = agent.memory?.currentDreamDailyHash || '';
+  const currentConvHash = agent.memory?.currentConvDailyHash || '';
+  const memoryCoreHash = agent.memory?.memoryCoreHash || '';
   const lastConsolidationDate = agent.memory?.lastConsolidation ? 
     new Date(Number(agent.memory.lastConsolidation) * 1000).toLocaleDateString() : 'Never';
+  const currentMonth = agent.memory?.currentMonth ? Number(agent.memory.currentMonth) : new Date().getMonth() + 1;
+  const currentYear = agent.memory?.currentYear ? Number(agent.memory.currentYear) : new Date().getFullYear();
 
-  return `═══════════════════════════════════════
-           MEMORY SYSTEM
-═══════════════════════════════════════
-ACCESS LEVELS:
-├─ Memory Depth: ${memoryDepth} (${monthsAccessible} months)
-├─ Available Months: ${monthsAccessible}
-├─ Intelligence Level: ${intelligenceLevel}
-└─ Access Tier: ${accessTier}
+  // Create visual memory access bar (months accessible / 60 max)
+  const createAccessBar = (months: number, maxMonths: number = 60) => {
+    const filled = Math.floor((months / maxMonths) * 20); // 0-20 chars
+    const empty = 20 - filled;
+    return '█'.repeat(filled) + '░'.repeat(empty);
+  };
 
-MEMORY HASHES:
-├─ Memory Core: ${memoryCoreHash.slice(0, 10)}...
-├─ Current Dream Daily: ${currentDreamHash.slice(0, 10)}...
-├─ Current Conv Daily: ${currentConvHash.slice(0, 10)}...
-└─ Last Consolidation: ${lastConsolidationDate}
+  // Format hash preview (first 8 chars or show status)
+  const formatHash = (hash: string, label: string) => {
+    if (!hash || hash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+      return `${label}: [EMPTY]`.padEnd(32);
+    }
+    const preview = hash.startsWith('0x') ? hash.slice(2, 10) : hash.slice(0, 8);
+    return `${label}: ${preview.toUpperCase()}`.padEnd(32);
+  };
 
-CONSOLIDATION:
-├─ Status: ${consolidationStatus}
-├─ Current Streak: ${consolidationStreak} months
-├─ Pending Rewards: +${pendingRewards} Intelligence
-└─ Current Month: ${agent.memory?.currentMonth || 'Unknown'}
+  // Create consolidation streak indicator with cyberpunk symbols
+  const createStreakIndicator = (streak: number) => {
+    if (streak >= 24) return '◆◆◆◆◆'; // Eternal Memory
+    if (streak >= 12) return '◆◆◆◆◇'; // Memory Master  
+    if (streak >= 6) return '◆◆◆◇◇';  // Memory Guardian
+    if (streak >= 3) return '◆◆◇◇◇';  // Memory Keeper
+    if (streak >= 1) return '◆◇◇◇◇';  // Active
+    return '◇◇◇◇◇';                  // Inactive
+  };
 
-RECENT ACTIVITY:
-├─ Dreams Today: ${dreamsTodayUsed}/${dreamsTodayAvailable} available
-├─ Last Dream: ${lastDreamDate}
-├─ Dream Count: ${dreamCount} total
-└─ Conversation Count: ${conversationCount} total`;
+  // Memory hierarchy status indicators
+  const dailyStatus = (currentDreamHash && currentConvHash) ? '●' : '◐';
+  const monthlyStatus = consolidation.needsConsolidation ? '◐' : '●';
+  const yearlyStatus = memoryCoreHash ? '●' : '○';
+
+  return `╔══════════════════════════════════════════════╗
+║               MEMORY CORE                    ║
+╠══════════════════════════════════════════════╣
+║                                              ║
+║  MEMORY ACCESS MATRIX:                       ║
+║  Depth Range: ${memoryDepth.padEnd(30)} ║
+║  Access Level ${createAccessBar(monthsAccessible)} ${String(monthsAccessible).padStart(2)}/60 ║
+║                                              ║
+║  HIERARCHY STATUS:                           ║
+║  ${dailyStatus} Daily Layer    │ Current period active      ║
+║  ${monthlyStatus} Monthly Layer  │ ${String(currentMonth).padStart(2)}/${currentYear} consolidation     ║
+║  ${yearlyStatus} Yearly Core    │ Long-term memory archive  ║
+║                                              ║
+║  STORAGE FRAGMENTS:                          ║
+║  ${formatHash(memoryCoreHash, 'CORE')}║
+║  ${formatHash(currentDreamHash, 'DREAMS')}║
+║  ${formatHash(currentConvHash, 'CONVOS')}║
+║                                              ║
+║  CONSOLIDATION ENGINE:                       ║
+║  Status: ${consolidationStatus.padEnd(31)} ║
+║  Streak: ${createStreakIndicator(consolidationStreak)} ${String(consolidationStreak).padStart(2)} months    ║
+║  Rewards: +${String(pendingRewards)} INT pending             ║
+║  Last Sync: ${lastConsolidationDate.padEnd(28)} ║
+║                                              ║
+╚══════════════════════════════════════════════╝`;
 }

@@ -2,7 +2,7 @@ import { Command, CommandResult, CommandContext } from './types';
 import { mintCommand } from './mint';
 import { agentInfoCommand } from './info';
 import { personalityCommand } from './personality';
-import { statusCommand } from './status';
+import { achievementsCommand } from './achievements';
 import { memoryCommand } from './memory';
 import { createBrokerCommand } from './createBroker';
 import { checkBalanceCommand } from './checkBalance';
@@ -23,7 +23,7 @@ export class CommandProcessor {
     this.registerCommand(mintCommand);
     this.registerCommand(agentInfoCommand);
     this.registerCommand(personalityCommand);
-    this.registerCommand(statusCommand);
+    this.registerCommand(achievementsCommand);
     this.registerCommand(memoryCommand);
     this.registerCommand(createBrokerCommand);
     this.registerCommand(checkBalanceCommand);

@@ -19,8 +19,8 @@ import { formatAgentInfo } from '../../commands/info';
 import { GlitchDigitalEntity } from '../digital-entity';
 import { formatAgentPersonality } from '../../commands/personality';
 import { PersonalityMatrix } from '../personality-matrix';
-import { formatSystemStatus } from '../../commands/status';
 import { formatMemoryStatus } from '../../commands/memory';
+import '../MemoryMatrixAnimations.css';
 import { formatHelpOutput } from '../../commands/help';
 // Dream analysis hooks
 import { useAgentDream } from '../../../hooks/agentHooks/useAgentDream';
@@ -870,7 +870,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     dreamWorkflowDeps, handleDreamSaveConfirmation,
     
     // Format functions
-          formatAgentInfo, formatAgentPersonality, formatSystemStatus, formatMemoryStatus, formatHelpOutput
+          formatAgentInfo, formatAgentPersonality, formatMemoryStatus, formatHelpOutput
   };
 
 

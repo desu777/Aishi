@@ -1,0 +1,346 @@
+/* Cyberpunk Achievements Matrix Animations - Purple Glitch Theme */
+
+.achievements-matrix {
+  font-family: 'Courier New', monospace;
+  color: #00ff88;
+  background: transparent;
+  position: relative;
+  white-space: pre;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+/* Empty line spacing */
+.empty-line {
+  height: 1.3em;
+}
+
+/* Base matrix glow effect - Achievement focused */
+.achievements-matrix::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(45deg, #8B5CF630, #00ff8820, #8B5CF630);
+  z-index: -1;
+  filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.achievements-matrix.glitching::before {
+  opacity: 1;
+}
+
+/* Matrix line base styling */
+.matrix-line {
+  margin-bottom: 1px;
+  transition: all 0.2s ease;
+}
+
+/* Header text styling - Theme violet */
+.header-text {
+  color: #8B5CF6;
+  font-weight: bold;
+  text-shadow: 0 0 8px #8B5CF6;
+}
+
+/* Section headers - Achievement green */
+.section-header {
+  color: #00ff88;
+  font-weight: bold;
+  text-shadow: 0 0 5px #00ff88;
+}
+
+/* Growth Analytics styling */
+.growth-line {
+  transition: all 0.2s ease;
+}
+
+.level-value {
+  color: #8B5CF6;
+  font-weight: bold;
+  text-shadow: 0 0 3px #8B5CF6;
+}
+
+.progress-bar {
+  color: #00ff88;
+  text-shadow: 0 0 2px #00ff88;
+  transition: all 0.3s ease;
+}
+
+.percent-value {
+  color: #E6E6E6;
+  font-weight: bold;
+}
+
+.rate-value, .count-value {
+  color: #8B5CF6;
+  font-weight: bold;
+  text-shadow: 0 0 2px #8B5CF6;
+}
+
+.date-value {
+  color: #9999A5;
+}
+
+/* Activity Progress styling */
+.activity-line {
+  transition: all 0.2s ease;
+}
+
+.activity-count {
+  color: #00ff88;
+  font-weight: bold;
+  text-shadow: 0 0 3px #00ff88;
+}
+
+.dream-count, .conv-count {
+  color: #8B5CF6;
+  font-weight: bold;
+  text-shadow: 0 0 2px #8B5CF6;
+}
+
+.milestone-target {
+  color: #9999A5;
+}
+
+/* Milestone styling */
+.milestone-icon {
+  text-shadow: 0 0 3px currentColor;
+  font-weight: bold;
+}
+
+.milestone-icon.achieved {
+  color: #00ff88;
+  animation: milestone-pulse 2s ease-in-out infinite;
+}
+
+.milestone-icon.pending {
+  color: #6B7280;
+}
+
+.milestone-name.achieved {
+  color: #E6E6E6;
+  font-weight: bold;
+}
+
+.milestone-name.pending {
+  color: #9999A5;
+}
+
+.milestone-status.achieved {
+  color: #00ff88;
+  text-shadow: 0 0 4px #00ff88;
+  font-weight: bold;
+}
+
+.milestone-req {
+  color: #8B5CF6;
+  text-shadow: 0 0 2px #8B5CF6;
+}
+
+/* Rewards styling */
+.rewards-line {
+  transition: all 0.2s ease;
+}
+
+.reward-value {
+  color: #8B5CF6;
+  font-weight: bold;
+  text-shadow: 0 0 4px #8B5CF6;
+}
+
+.streak-value {
+  color: #00ff88;
+  font-weight: bold;
+  text-shadow: 0 0 3px #00ff88;
+}
+
+/* Animation keyframes */
+@keyframes milestone-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+    text-shadow: 0 0 8px currentColor;
+  }
+}
+
+@keyframes progress-fill {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+    color: #E6E6E6;
+  }
+  30% {
+    color: #8B5CF6;
+    text-shadow: 0 0 12px #8B5CF6;
+  }
+  70% {
+    color: #00ff88;
+    text-shadow: 0 0 8px #00ff88;
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+    color: #00ff88;
+    text-shadow: 0 0 2px #00ff88;
+  }
+}
+
+@keyframes achievement-glitch {
+  0%, 100% {
+    color: #00ff88;
+    text-shadow: 0 0 2px #00ff88;
+  }
+  25% {
+    color: #8B5CF6;
+    text-shadow: -2px 0 #8B5CF6, 2px 0 #00ff88;
+    transform: translateX(-1px);
+  }
+  50% {
+    color: #E6E6E6;
+    text-shadow: 0 0 12px #E6E6E6;
+    transform: translateX(1px);
+  }
+  75% {
+    color: #8B5CF6;
+    text-shadow: 2px 0 #8B5CF6, -2px 0 #00ff88;
+    transform: translateX(-1px);
+  }
+}
+
+/* Achievement matrix box glitch - Purple themed */
+@keyframes achievement-box-glitch {
+  0%, 90%, 100% { 
+    clip-path: inset(0 0 0 0);
+    filter: hue-rotate(0deg);
+  }
+  92% { 
+    clip-path: inset(3px 0 5px 0);
+    filter: hue-rotate(15deg);
+  }
+  94% { 
+    clip-path: inset(5px 0 3px 0);
+    filter: hue-rotate(-15deg);
+  }
+  96% {
+    clip-path: inset(1px 0 7px 0);
+    filter: hue-rotate(20deg);
+  }
+  98% {
+    clip-path: inset(7px 0 1px 0);
+    filter: hue-rotate(-20deg);
+  }
+}
+
+/* Achievement matrix text glitch - Theme focused */
+@keyframes achievement-matrix-glitch {
+  0%, 100% { 
+    text-shadow: 0 0 5px currentColor;
+    transform: translateX(0);
+  }
+  20% { 
+    text-shadow: -1px 0 #8B5CF6, 1px 0 currentColor;
+    transform: translateX(-1px);
+  }
+  40% { 
+    text-shadow: 1px 0 #00ff88, -1px 0 currentColor;
+    transform: translateX(1px);
+  }
+  60% { 
+    text-shadow: 0 0 8px currentColor, 0 0 12px #8B5CF6;
+    transform: translateX(0);
+  }
+  80% {
+    text-shadow: -1px 0 #00ff88, 1px 0 currentColor, 0 0 5px #8B5CF6;
+  }
+}
+
+/* Glitch state animations */
+.achievements-matrix.glitching {
+  animation: achievement-box-glitch 1.0s ease-in-out;
+}
+
+.achievements-matrix.glitching .header-text {
+  animation: achievement-matrix-glitch 0.6s ease-in-out;
+}
+
+.achievements-matrix.glitching .section-header:nth-child(2n) {
+  animation: achievement-matrix-glitch 0.5s ease-in-out 0.1s;
+}
+
+.achievements-matrix.glitching .progress-bar {
+  animation: achievement-glitch 0.4s ease-in-out 0.2s;
+}
+
+.achievements-matrix.glitching .milestone-icon.achieved {
+  animation: milestone-pulse 0.3s ease-in-out 0.15s;
+}
+
+.achievements-matrix.glitching .reward-value {
+  animation: achievement-glitch 0.5s ease-in-out 0.25s;
+}
+
+/* Purple scan line effect */
+@keyframes achievement-scan {
+  0% {
+    top: 0%;
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+.achievements-matrix.glitching::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #8B5CF6, #00ff88, transparent);
+  animation: achievement-scan 1.4s ease-out;
+  z-index: 2;
+}
+
+/* Achievement line hover effects */
+.matrix-line:hover .progress-bar {
+  text-shadow: 0 0 8px currentColor, 0 0 12px currentColor;
+  transform: scaleX(1.02);
+}
+
+.matrix-line:hover .milestone-icon.achieved {
+  transform: scale(1.1);
+  text-shadow: 0 0 12px currentColor;
+}
+
+.matrix-line:hover .reward-value {
+  text-shadow: 0 0 8px currentColor, 0 0 12px currentColor;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .achievements-matrix {
+    font-size: 14px;
+    line-height: 1.25;
+  }
+}
+
+@media (max-width: 480px) {
+  .achievements-matrix {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+}
+
+/* Milestone achievement glow */
+.milestone-achieved:hover {
+  background: rgba(139, 92, 246, 0.05);
+}

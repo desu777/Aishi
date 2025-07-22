@@ -28,14 +28,10 @@ export const GlitchDigitalEntity: React.FC<GlitchDigitalEntityProps> = ({
   if (!dashboardData.agent.hasAgent || !dashboardData.agent.data) {
     return (
       <div className={`digital-entity ${isGlitching ? 'glitching' : ''}`}>
-        {`╔══════════════════════════════════════════════╗
-║              DIGITAL ENTITY                  ║
-╠══════════════════════════════════════════════╣
-║                                              ║
-║  No agent found. Use 'mint <name>' to       ║
-║  create your digital entity.                 ║
-║                                              ║
-╚══════════════════════════════════════════════╝`}
+        <div className="header-text">DIGITAL ENTITY</div>
+        <div className="empty-line"></div>
+        <div className="data-line">◇ No agent found. Use 'mint &lt;name&gt;' to</div>
+        <div className="data-line">  create your digital entity.</div>
       </div>
     );
   }
@@ -68,51 +64,29 @@ export const GlitchDigitalEntity: React.FC<GlitchDigitalEntityProps> = ({
   const totalEvolutions = Number(agent.totalEvolutions || 0);
   const intelligenceLevel = Number(agent.intelligenceLevel || 0);
 
-  // Pad strings to maintain box alignment
-  const padName = agent.agentName.padEnd(22);
-  const padId = `#${String(dashboardData.agent.tokenId).padStart(3, '0')}`;
-  const padOwner = ownerShort.padEnd(20);
-  const padInt = `${intelligenceLevel} LVL`.padStart(6);
-  const padCreated = createdDate.padEnd(18);
-  const padStatus = `${statusIcon}`;
-
-  const content = `╔══════════════════════════════════════════════╗
-║              DIGITAL ENTITY                  ║
-╠══════════════════════════════════════════════╣
-║                                              ║
-║  NAME: ${padName} ID: ${padId}      ║
-║  OWNER: ${padOwner} INT: ${padInt}  ║
-║  CREATED: ${padCreated} STATUS: ${padStatus}    ║
-║                                              ║
-║  NEURAL ACTIVITY:                            ║
-║  ├─ Dreams: ${String(dreamCount).padEnd(30)}║
-║  ├─ Conversations: ${String(conversationCount).padEnd(24)}║
-║  ├─ Evolutions: ${String(totalEvolutions).padEnd(27)}║
-║  └─ Last Update: ${timeAgo.padEnd(25)}║
-║                                              ║
-╚══════════════════════════════════════════════╝`;
+  // Format clean display values
+  const agentName = agent.agentName;
+  const tokenId = `#${String(dashboardData.agent.tokenId).padStart(3, '0')}`;
+  const intLevel = `${intelligenceLevel} LVL`;
 
   return (
     <div className={`digital-entity ${isGlitching ? 'glitching' : ''}`}>
-      {content.split('\n').map((line, index) => {
-        if (line.includes('DIGITAL ENTITY')) {
-          return <div key={index} className="header-text">{line}</div>;
-        } else if (line.includes('NEURAL ACTIVITY')) {
-          return <div key={index} className={`neural-activity ${isGlitching ? 'glitching' : ''}`}>{line}</div>;
-        } else if (line.includes('├─') || line.includes('└─')) {
-          return <div key={index} className="data-line">{line}</div>;
-        } else if (line.includes('STATUS:')) {
-          const statusParts = line.split(statusIcon);
-          return (
-            <div key={index} className="data-line">
-              {statusParts[0]}
-              <span className="status-indicator">{statusIcon}</span>
-              {statusParts[1]}
-            </div>
-          );
-        }
-        return <div key={index}>{line}</div>;
-      })}
+      <div className="header-text">DIGITAL ENTITY</div>
+      <div className="empty-line"></div>
+      
+      <div className="data-line">◇ NAME: {agentName}</div>
+      <div className="data-line">◇ ID: {tokenId}</div>
+      <div className="data-line">※ OWNER: {ownerShort}</div>
+      <div className="data-line">⬢ INTELLIGENCE: {intLevel}</div>
+      <div className="data-line">◈ CREATED: {createdDate}</div>
+      <div className="data-line">⟐ STATUS: <span className="status-indicator">{statusIcon}</span></div>
+      
+      <div className="empty-line"></div>
+      <div className={`neural-activity ${isGlitching ? 'glitching' : ''}`}>▲ NEURAL ACTIVITY:</div>
+      <div className="data-line">  ◊ Dreams: {dreamCount}</div>
+      <div className="data-line">  ※ Conversations: {conversationCount}</div>
+      <div className="data-line">  ⟳ Evolutions: {totalEvolutions}</div>
+      <div className="data-line">  ◆ Last Update: {timeAgo}</div>
     </div>
   );
 };

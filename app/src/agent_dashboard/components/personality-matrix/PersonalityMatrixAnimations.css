@@ -10,6 +10,11 @@
   line-height: 1.3;
 }
 
+/* Empty line spacing */
+.empty-line {
+  height: 1.3em;
+}
+
 /* Base matrix glow effect */
 .personality-matrix::before {
   content: '';
@@ -18,7 +23,7 @@
   left: -1px;
   right: -1px;
   bottom: -1px;
-  background: linear-gradient(45deg, #00ff8820, #8b00ff20, #00ff8820);
+  background: linear-gradient(45deg, #00ff8820, #8B5CF620, #00ff8820);
   z-index: -1;
   filter: blur(2px);
   opacity: 0;
@@ -44,9 +49,9 @@
 
 /* Section headers */
 .section-header {
-  color: #8b00ff;
+  color: #8B5CF6;
   font-weight: bold;
-  text-shadow: 0 0 3px #8b00ff;
+  text-shadow: 0 0 3px #8B5CF6;
 }
 
 /* Trait bar animations */
@@ -94,16 +99,16 @@
     text-shadow: 0 0 2px #00ff88;
   }
   25% {
-    color: #ff00ff;
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ff88;
+    color: #8B5CF6;
+    text-shadow: -1px 0 #8B5CF6, 1px 0 #00ff88;
   }
   50% {
-    color: #8b00ff;
-    text-shadow: 0 0 8px #8b00ff;
+    color: #8B5CF6;
+    text-shadow: 0 0 8px #8B5CF6;
   }
   75% {
     color: #40ff80;
-    text-shadow: 1px 0 #40ff80, -1px 0 #8b00ff;
+    text-shadow: 1px 0 #40ff80, -1px 0 #8B5CF6;
   }
 }
 
@@ -133,9 +138,9 @@
 
 /* Unique features styling - stonowane */
 .unique-feature-name {
-  color: #8b00ff;
+  color: #8B5CF6;
   font-weight: normal;
-  text-shadow: 0 0 1px #8b00ff;
+  text-shadow: 0 0 1px #8B5CF6;
 }
 
 .feature-description {
@@ -154,7 +159,7 @@
 }
 
 .feature-count {
-  color: #8b00ff;
+  color: #8B5CF6;
   font-weight: normal;
 }
 
@@ -170,11 +175,11 @@
     transform: translateX(0);
   }
   20% { 
-    text-shadow: -1px 0 #8b00ff, 1px 0 currentColor;
+    text-shadow: -1px 0 #8B5CF6, 1px 0 currentColor;
     transform: translateX(-1px);
   }
   40% { 
-    text-shadow: 1px 0 #ff00ff, -1px 0 currentColor;
+    text-shadow: 1px 0 #8B5CF6, -1px 0 currentColor;
     transform: translateX(1px);
   }
   60% { 
@@ -182,7 +187,7 @@
     transform: translateX(0);
   }
   80% {
-    text-shadow: -1px 0 #8b00ff, 1px 0 currentColor, 0 0 5px #ff00ff;
+    text-shadow: -1px 0 #8B5CF6, 1px 0 currentColor, 0 0 5px #8B5CF6;
   }
 }
 
@@ -241,7 +246,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #8b00ff, transparent);
+  background: linear-gradient(90deg, transparent, #8B5CF6, transparent);
   animation: personality-scan 1s ease-out;
   z-index: 2;
 }

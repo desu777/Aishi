@@ -4,6 +4,8 @@ import { CommandProcessor } from '../../commands/CommandProcessor';
 import { DreamWorkflowDependencies } from './TerminalDreamWorkflow';
 import { GlitchDigitalEntity } from '../digital-entity';
 import { PersonalityMatrix } from '../personality-matrix';
+import { MemoryMatrix } from '../memory-matrix';
+import { AchievementsMatrix } from '../achievements-matrix';
 
 export interface CommandHandlerDependencies {
   // State setters
@@ -185,11 +187,11 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
       return;
     }
 
-    if (result.output === 'SYSTEM_STATUS_REQUEST') {
-      const statusOutput = formatSystemStatus(dashboardData);
+    if (result.output === 'ACHIEVEMENTS_REQUEST') {
+      // Use React component for enhanced cyberpunk achievements matrix with animations
       addLine({
         type: 'info',
-        content: statusOutput,
+        content: React.createElement(AchievementsMatrix, { dashboardData }),
         timestamp: Date.now()
       });
       setIsLoading(false);
@@ -197,10 +199,10 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
     }
 
     if (result.output === 'MEMORY_STATUS_REQUEST') {
-      const memoryOutput = formatMemoryStatus(dashboardData);
+      // Use React component for enhanced cyberpunk memory matrix with animations
       addLine({
         type: 'info',
-        content: memoryOutput,
+        content: React.createElement(MemoryMatrix, { dashboardData }),
         timestamp: Date.now()
       });
       setIsLoading(false);
