@@ -160,7 +160,7 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
     }
 
     // Handle special info/stats/status/memory commands
-    if (result.output === 'AGENT_INFO_REQUEST') {
+    if (result.output === 'DIGITAL_ENTITY_REQUEST') {
       const infoOutput = formatAgentInfo(dashboardData);
       addLine({
         type: 'info',

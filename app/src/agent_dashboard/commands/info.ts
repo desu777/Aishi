@@ -1,16 +1,16 @@
 import { Command, CommandResult, CommandContext } from './types';
 import { useAgentDashboard } from '../../hooks/useAgentDashboard';
 
-export const infoCommand: Command = {
-  name: 'info',
-  description: 'Display comprehensive agent information',
-  usage: 'info',
+export const agentInfoCommand: Command = {
+  name: 'agent-info',
+  description: 'Display core agent information in cyberpunk style',
+  usage: 'agent-info',
   handler: async (args: string[], context: CommandContext): Promise<CommandResult> => {
     try {
       // Return special marker to trigger info display in terminal
       return {
         success: true,
-        output: 'AGENT_INFO_REQUEST',
+        output: 'DIGITAL_ENTITY_REQUEST',
         type: 'info'
       };
     } catch (error) {
@@ -23,19 +23,20 @@ export const infoCommand: Command = {
   }
 };
 
-// Helper function to format agent info (will be used in terminal)
+// Helper function to format agent info in cyberpunk style
 export function formatAgentInfo(dashboardData: any): string {
   if (!dashboardData.agent.hasAgent || !dashboardData.agent.data) {
-    return `═══════════════════════════════════════
-           AGENT INFORMATION
-═══════════════════════════════════════
-
-No agent found. Type 'mint <name>' to create your agent.`;
+    return `╔══════════════════════════════════════════════╗
+║              DIGITAL ENTITY                  ║
+╠══════════════════════════════════════════════╣
+║                                              ║
+║  No agent found. Use 'mint <name>' to       ║
+║  create your digital entity.                 ║
+║                                              ║
+╚══════════════════════════════════════════════╝`;
   }
 
   const agent = dashboardData.agent.data;
-  const personality = agent.personality || {};
-  const memory = dashboardData.memory.access || {};
   
   // Format creation date
   const createdDate = new Date(Number(agent.createdAt) * 1000).toLocaleDateString('en-US', {
@@ -44,64 +45,38 @@ No agent found. Type 'mint <name>' to create your agent.`;
     year: 'numeric'
   });
 
-  // Format personality traits
-  const traits = [
-    { name: 'Creativity', value: personality.creativity || 0 },
-    { name: 'Analytical', value: personality.analytical || 0 },
-    { name: 'Empathy', value: personality.empathy || 0 },
-    { name: 'Intuition', value: personality.intuition || 0 },
-    { name: 'Resilience', value: personality.resilience || 0 },
-    { name: 'Curiosity', value: personality.curiosity || 0 }
-  ];
+  // Format last update - time ago
+  const lastUpdated = Number(agent.lastUpdated) * 1000;
+  const now = Date.now();
+  const timeDiff = now - lastUpdated;
+  const daysAgo = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+  const timeAgo = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
 
-  // Format unique features
-  const uniqueFeatures = personality.uniqueFeatures || [];
-  const uniqueFeaturesCount = uniqueFeatures.length;
+  // Format shortened owner address
+  const ownerShort = `${agent.owner.slice(0, 6)}...${agent.owner.slice(-4)}`;
 
-  // Format memory info
-  const memoryAccess = memory.monthsAccessible || 0;
-  const memoryDepth = memory.memoryDepth || 'Unknown';
-  const currentDailyHash = agent.memory?.currentDreamDailyHash || 'None';
-  const lastConsolidation = agent.memory?.lastConsolidation ? 
-    new Date(Number(agent.memory.lastConsolidation) * 1000).toLocaleDateString() : 'Never';
-
+  // Status indicator based on personality initialization
+  const statusIcon = agent.personalityInitialized ? '●' : '○';
+  
   // Format activity stats
   const dreamCount = Number(agent.dreamCount || 0);
   const conversationCount = Number(agent.conversationCount || 0);
   const totalEvolutions = Number(agent.totalEvolutions || 0);
-  const lastDream = personality.lastDreamDate ? 
-    new Date(Number(personality.lastDreamDate) * 1000).toLocaleDateString() : 'Never';
+  const intelligenceLevel = Number(agent.intelligenceLevel || 0);
 
-  return `═══════════════════════════════════════
-           AGENT INFORMATION
-═══════════════════════════════════════
-Agent Name: ${agent.agentName}
-Token ID: ${dashboardData.agent.tokenId}
-Owner: ${agent.owner}
-Created: ${createdDate}
-Intelligence: ${Number(agent.intelligenceLevel)} lvl
-
-PERSONALITY TRAITS:
-├─ Creativity: ${traits[0].value}/100
-├─ Analytical: ${traits[1].value}/100
-├─ Empathy: ${traits[2].value}/100
-├─ Intuition: ${traits[3].value}/100
-├─ Resilience: ${traits[4].value}/100
-└─ Curiosity: ${traits[5].value}/100
-
-Dominant Mood: ${personality.dominantMood || 'Unknown'}
-Unique Features: ${uniqueFeaturesCount} active
-Evolution Level: ${totalEvolutions > 5 ? 'Advanced' : totalEvolutions > 2 ? 'Intermediate' : 'Beginner'}
-
-MEMORY SYSTEM:
-├─ Memory Access: ${memoryAccess} months
-├─ Memory Depth: ${memoryDepth}
-├─ Current Daily Hash: ${currentDailyHash.slice(0, 10)}...
-└─ Last Consolidation: ${lastConsolidation}
-
-ACTIVITY:
-├─ Dreams Processed: ${dreamCount}
-├─ Conversations: ${conversationCount}
-├─ Total Evolutions: ${totalEvolutions}
-└─ Last Dream: ${lastDream}`;
+  return `╔══════════════════════════════════════════════╗
+║              DIGITAL ENTITY                  ║
+╠══════════════════════════════════════════════╣
+║                                              ║
+║  NAME: ${agent.agentName.padEnd(20)} ID: #${String(dashboardData.agent.tokenId).padStart(3, '0')}     ║
+║  OWNER: ${ownerShort.padEnd(18)} INT: ${String(intelligenceLevel).padStart(2)} LVL  ║
+║  CREATED: ${createdDate.padEnd(17)} STATUS: ${statusIcon}    ║
+║                                              ║
+║  NEURAL ACTIVITY:                            ║
+║  ├─ Dreams: ${String(dreamCount).padEnd(29)}║
+║  ├─ Conversations: ${String(conversationCount).padEnd(23)}║
+║  ├─ Evolutions: ${String(totalEvolutions).padEnd(26)}║
+║  └─ Last Update: ${timeAgo.padEnd(24)}║
+║                                              ║
+╚══════════════════════════════════════════════╝`;
 }

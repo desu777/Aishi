@@ -1,6 +1,6 @@
 import { Command, CommandResult, CommandContext } from './types';
 import { mintCommand } from './mint';
-import { infoCommand } from './info';
+import { agentInfoCommand } from './info';
 import { statsCommand } from './stats';
 import { statusCommand } from './status';
 import { memoryCommand } from './memory';
@@ -21,7 +21,7 @@ export class CommandProcessor {
 
   constructor() {
     this.registerCommand(mintCommand);
-    this.registerCommand(infoCommand);
+    this.registerCommand(agentInfoCommand);
     this.registerCommand(statsCommand);
     this.registerCommand(statusCommand);
     this.registerCommand(memoryCommand);
