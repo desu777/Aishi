@@ -26,7 +26,7 @@ export const personalityCommand: Command = {
 export function formatAgentPersonality(dashboardData: any): string {
   if (!dashboardData.agent.hasAgent || !dashboardData.agent.data) {
     return `╔══════════════════════════════════════════════╗
-║            PERSONALITY MATRIX                ║
+║              AGENT'S SOUL                    ║
 ╠══════════════════════════════════════════════╣
 ║                                              ║
 ║  No agent found. Type 'mint <name>' to      ║
@@ -68,8 +68,8 @@ export function formatAgentPersonality(dashboardData: any): string {
   displayFeatures.forEach((feature: any, index: number) => {
     const intensity = Number(feature.intensity || 0);
     const intensityBar = '◆'.repeat(Math.floor(intensity / 10)) + '◇'.repeat(10 - Math.floor(intensity / 10));
-    featuresText += `║  ${(index + 1)}. ${feature.name.padEnd(35)}║\n`;
-    featuresText += `║     "${feature.description.slice(0, 40).padEnd(40)}"║\n`;
+    featuresText += `║  ${(index + 1)}. ${feature.name.slice(0, 39).padEnd(39)}║\n`;
+    featuresText += `║     "${feature.description.slice(0, 37).padEnd(37)}"║\n`;
     featuresText += `║     Intensity: ${intensityBar} ${intensity}%     ║\n`;
     if (index < displayFeatures.length - 1) featuresText += `║                                              ║\n`;
   });
@@ -81,7 +81,7 @@ export function formatAgentPersonality(dashboardData: any): string {
   }
 
   return `╔══════════════════════════════════════════════╗
-║            PERSONALITY MATRIX                ║
+║              AGENT'S SOUL                    ║
 ╠══════════════════════════════════════════════╣
 ║                                              ║
 ║  CORE TRAITS:                                ║

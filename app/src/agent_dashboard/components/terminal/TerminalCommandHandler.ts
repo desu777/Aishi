@@ -3,6 +3,7 @@ import { TerminalLine } from '../../commands/types';
 import { CommandProcessor } from '../../commands/CommandProcessor';
 import { DreamWorkflowDependencies } from './TerminalDreamWorkflow';
 import { GlitchDigitalEntity } from '../digital-entity';
+import { PersonalityMatrix } from '../personality-matrix';
 
 export interface CommandHandlerDependencies {
   // State setters

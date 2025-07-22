@@ -46,8 +46,8 @@ export const PersonalityMatrix: React.FC<PersonalityMatrixProps> = ({
   if (!dashboardData.agent.hasAgent || !dashboardData.agent.data) {
     return (
       <div className={`personality-matrix ${isGlitching ? 'glitching' : ''}`}>
-        {`╔══════════════════════════════════════════════╗
-║            PERSONALITY MATRIX                ║
+                 {`╔══════════════════════════════════════════════╗
+║              AGENT'S SOUL                    ║
 ╠══════════════════════════════════════════════╣
 ║                                              ║
 ║  No agent found. Type 'mint <name>' to      ║
@@ -97,12 +97,6 @@ export const PersonalityMatrix: React.FC<PersonalityMatrixProps> = ({
   // Format unique features (max 2 displayed)
   const displayFeatures = uniqueFeatures.slice(0, 2);
 
-  const content = `╔══════════════════════════════════════════════╗
-║            PERSONALITY MATRIX                ║
-╠══════════════════════════════════════════════╣
-║                                              ║
-║  CORE TRAITS:                                ║`;
-
   return (
     <div className={`personality-matrix ${isGlitching ? 'glitching' : ''}`}>
       {/* Header */}
@@ -110,7 +104,7 @@ export const PersonalityMatrix: React.FC<PersonalityMatrixProps> = ({
         ╔══════════════════════════════════════════════╗
       </div>
       <div className="matrix-line header-text">
-        ║            PERSONALITY MATRIX                ║
+        ║              AGENT'S SOUL                    ║
       </div>
       <div className="matrix-line">
         ╠══════════════════════════════════════════════╣
@@ -154,10 +148,10 @@ export const PersonalityMatrix: React.FC<PersonalityMatrixProps> = ({
           return (
             <React.Fragment key={index}>
               <div className="matrix-line feature-name">
-                ║  {index + 1}. <span className="unique-feature-name">{feature.name.padEnd(35)}</span>║
+                ║  {index + 1}. <span className="unique-feature-name">{feature.name.slice(0, 39).padEnd(39)}</span>║
               </div>
               <div className="matrix-line feature-desc">
-                ║     "<span className="feature-description">{feature.description.slice(0, 40).padEnd(40)}</span>"║
+                ║     "<span className="feature-description">{feature.description.slice(0, 37).padEnd(37)}</span>"║
               </div>
               <div className="matrix-line feature-intensity">
                 ║     Intensity: <span className="intensity-bar">{intensityBar}</span> <span className="intensity-value">{intensity}%</span>     ║

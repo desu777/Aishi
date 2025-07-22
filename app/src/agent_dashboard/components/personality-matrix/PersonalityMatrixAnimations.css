@@ -113,54 +113,54 @@
   transform: scaleX(1.02);
 }
 
-/* Behavioral profile indicators */
+/* Behavioral profile indicators - stonowane */
 .mood-indicator {
-  color: #ff6b6b;
-  text-shadow: 0 0 3px #ff6b6b;
-  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 0 1px #ffffff;
+  font-weight: normal;
 }
 
 .style-indicator {
-  color: #4ecdc4;
-  text-shadow: 0 0 3px #4ecdc4;
-  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 0 1px #ffffff;
+  font-weight: normal;
 }
 
 .dream-date {
-  color: #ffd93d;
-  text-shadow: 0 0 3px #ffd93d;
+  color: #a0a0a0;
+  text-shadow: none;
 }
 
-/* Unique features styling */
+/* Unique features styling - stonowane */
 .unique-feature-name {
-  color: #ff9500;
-  font-weight: bold;
-  text-shadow: 0 0 3px #ff9500;
+  color: #8b00ff;
+  font-weight: normal;
+  text-shadow: 0 0 1px #8b00ff;
 }
 
 .feature-description {
   color: #a0a0a0;
-  font-style: italic;
+  font-style: normal;
 }
 
 .intensity-bar {
-  color: #ff6b6b;
-  text-shadow: 0 0 2px #ff6b6b;
+  color: #00ff88;
+  text-shadow: none;
 }
 
 .intensity-value {
   color: #ffffff;
-  font-weight: bold;
+  font-weight: normal;
 }
 
 .feature-count {
   color: #8b00ff;
-  font-weight: bold;
+  font-weight: normal;
 }
 
 .feature-empty {
   color: #666666;
-  font-style: italic;
+  font-style: normal;
 }
 
 /* Glitch effects */
@@ -246,46 +246,19 @@
   z-index: 2;
 }
 
-/* Pulse effects for special elements */
+/* Pulse effects for special elements - stonowane */
 .mood-indicator {
-  animation: mood-pulse 3s ease-in-out infinite;
+  /* Brak animacji - spokojniejsze */
 }
 
-@keyframes mood-pulse {
-  0%, 100% {
-    text-shadow: 0 0 3px currentColor;
-  }
-  50% {
-    text-shadow: 0 0 8px currentColor, 0 0 12px currentColor;
-  }
-}
-
-/* Feature name glow animation */
+/* Feature name glow animation - stonowane */
 .unique-feature-name {
-  animation: feature-glow 4s ease-in-out infinite;
+  /* Brak animacji - spokojniejsze */
 }
 
-@keyframes feature-glow {
-  0%, 100% {
-    text-shadow: 0 0 3px currentColor;
-  }
-  50% {
-    text-shadow: 0 0 6px currentColor, 0 0 10px currentColor;
-  }
-}
-
-/* Intensity bar fill animation */
+/* Intensity bar fill animation - stonowane */
 .intensity-bar {
-  animation: intensity-pulse 2s ease-in-out infinite;
-}
-
-@keyframes intensity-pulse {
-  0%, 100% {
-    text-shadow: 0 0 2px currentColor;
-  }
-  50% {
-    text-shadow: 0 0 6px currentColor;
-  }
+  /* Brak animacji - spokojniejsze */
 }
 
 /* Responsive design */
