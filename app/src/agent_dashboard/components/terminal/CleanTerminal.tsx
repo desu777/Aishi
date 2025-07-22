@@ -17,7 +17,8 @@ import { useWallet } from '../../../hooks/useWallet';
 import { useBrokerBalance } from '../../../hooks/useBrokerBalance';
 import { formatAgentInfo } from '../../commands/info';
 import { GlitchDigitalEntity } from '../digital-entity';
-import { formatAgentStats } from '../../commands/stats';
+import { formatAgentPersonality } from '../../commands/personality';
+import { PersonalityMatrix } from '../personality-matrix';
 import { formatSystemStatus } from '../../commands/status';
 import { formatMemoryStatus } from '../../commands/memory';
 import { formatHelpOutput } from '../../commands/help';
@@ -869,7 +870,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     dreamWorkflowDeps, handleDreamSaveConfirmation,
     
     // Format functions
-    formatAgentInfo, formatAgentStats, formatSystemStatus, formatMemoryStatus, formatHelpOutput
+          formatAgentInfo, formatAgentPersonality, formatSystemStatus, formatMemoryStatus, formatHelpOutput
   };
 
 

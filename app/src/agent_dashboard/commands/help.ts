@@ -27,7 +27,7 @@ export function formatHelpOutput(): TerminalLine[] {
     },
     {
       type: 'help-command',
-      content: '  stats      - Display comprehensive agent statistics',
+      content: '  personality - Display personality of your agent',
       timestamp
     },
     {

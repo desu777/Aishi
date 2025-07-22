@@ -434,8 +434,8 @@ export default function AgentDashboard() {
                         theme={theme}
                       />
                       <CommandItem 
-                        command="stats"
-                        description="Display comprehensive agent statistics and metrics"
+                        command="personality"
+                        description="Display personality of your agent"
                         theme={theme}
                       />
                       <CommandItem 

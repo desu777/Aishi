@@ -47,7 +47,7 @@ export interface CommandHandlerDependencies {
   
   // Format functions
   formatAgentInfo: (data: any) => string;
-  formatAgentStats: (data: any) => string;
+  formatAgentPersonality: (data: any) => string;
   formatSystemStatus: (data: any) => string;
   formatMemoryStatus: (data: any) => string;
   formatHelpOutput: () => TerminalLine[];
@@ -84,7 +84,7 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
     setWaitingForChatConfirm, setPendingMintName, setMonthLearnMode, setIsProcessingMonthLearn,
     setYearLearnMode, setIsProcessingYearLearn,
     commandProcessorRef, wallet, agentData, dashboardData, isWalletConnected, isCorrectNetwork,
-    hasAgent, hasCurrentBalance, formatAgentInfo, formatAgentStats,
+    hasAgent, hasCurrentBalance, formatAgentInfo, formatAgentPersonality,
     formatSystemStatus, formatMemoryStatus, formatHelpOutput
   } = deps;
 
@@ -173,11 +173,11 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
       return;
     }
 
-    if (result.output === 'AGENT_STATS_REQUEST') {
-      const statsOutput = formatAgentStats(dashboardData);
+    if (result.output === 'AGENT_PERSONALITY_REQUEST') {
+      // Use React component for enhanced cyberpunk personality matrix with animations
       addLine({
         type: 'info',
-        content: statsOutput,
+        content: React.createElement(PersonalityMatrix, { dashboardData }),
         timestamp: Date.now()
       });
       setIsLoading(false);

@@ -1,7 +1,7 @@
 import { Command, CommandResult, CommandContext } from './types';
 import { mintCommand } from './mint';
 import { agentInfoCommand } from './info';
-import { statsCommand } from './stats';
+import { personalityCommand } from './personality';
 import { statusCommand } from './status';
 import { memoryCommand } from './memory';
 import { createBrokerCommand } from './createBroker';
@@ -22,7 +22,7 @@ export class CommandProcessor {
   constructor() {
     this.registerCommand(mintCommand);
     this.registerCommand(agentInfoCommand);
-    this.registerCommand(statsCommand);
+    this.registerCommand(personalityCommand);
     this.registerCommand(statusCommand);
     this.registerCommand(memoryCommand);
     this.registerCommand(createBrokerCommand);
