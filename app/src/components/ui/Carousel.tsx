@@ -3,12 +3,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, PanInfo, useMotionValue, useTransform } from "framer-motion";
 import { useTheme } from '../../contexts/ThemeContext';
+import { LucideIcon } from 'lucide-react';
 
 export interface CarouselItem {
   title: string;
   description: string;
   id: number;
-  icon: React.ReactElement;
+  icon: LucideIcon;
 }
 
 export interface CarouselProps {
@@ -227,7 +228,7 @@ export default function Carousel({
                   background: theme.gradients.primary,
                   boxShadow: `0 0 15px rgba(139, 92, 246, 0.3)`
                 }}>
-                  {React.cloneElement(item.icon, {
+                  {React.createElement(item.icon, {
                     size: 24,
                     color: 'white'
                   })}

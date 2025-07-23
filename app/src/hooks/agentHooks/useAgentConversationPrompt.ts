@@ -8,37 +8,8 @@ import {
   ConversationResponse
 } from '../../prompts/conversationPrompts';
 
-// Re-export interfaces for compatibility
-export interface ConversationPrompt {
-  prompt: string;
-  expectedFormat: {
-    isConversation: boolean;
-    needsStructuredResponse: boolean;
-  };
-}
-
-// 🆕 ROZSZERZONA STRUKTURA RESPONSE
-export interface ConversationResponse {
-  agent_response: string;
-  references: Array<{
-    type: 'dream' | 'conversation' | 'monthly' | 'yearly';
-    id: number;
-    date: string;
-    relevance: string;
-  }>;
-  emotional_mirror: {
-    detected_emotion: string;
-    matching_personality_trait: string;
-    symbolic_connection: string;
-  };
-  next_questions: string[];
-  conversation_summary: {
-    topic: string;
-    emotional_tone: string;
-    key_insights: string[];
-    analysis: string;
-  };
-}
+// Re-export types for compatibility
+export type { ConversationPrompt, ConversationResponse };
 
 export function useAgentConversationPrompt() {
   

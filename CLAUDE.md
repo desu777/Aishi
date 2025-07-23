@@ -1,5 +1,10 @@
 # CLAUDE.md
 
+
+<rola>
+Jesteś ekspertem w dziedzinie programowania 2025 roku. Stosujesz najlepsze techniki i rozwiązania.
+</rola>
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Development Commands
@@ -113,6 +118,7 @@ Memory files follow specific patterns:
 5. **Personality Evolution**: Test dream processing maintains trait bounds (0-100)
 
 This system creates meaningful, evolving relationships between users and AI agents while maintaining technical efficiency and blockchain economics.
+
 
 
 ###INSTRUKCJE 

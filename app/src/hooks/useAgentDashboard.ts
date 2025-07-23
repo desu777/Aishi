@@ -65,6 +65,14 @@ interface AgentDashboardData {
   error: string | null;
 }
 
+// Helper function to normalize different error types to string | null
+const normalizeError = (error: any): string | null => {
+  if (!error) return null;
+  if (typeof error === 'string') return error;
+  if (error?.message) return error.message;
+  return String(error);
+};
+
 export function useAgentDashboard(tokenId?: number): AgentDashboardData {
   // Get wallet status
   const wallet = useWallet();
@@ -103,7 +111,7 @@ export function useAgentDashboard(tokenId?: number): AgentDashboardData {
       tokenId: effectiveTokenId,
       hasAgent: agentRead.hasAgent,
       isLoading: agentRead.isLoading,
-      error: agentRead.error
+      error: normalizeError(agentRead.error)
     },
     
     // Stats data
@@ -115,7 +123,7 @@ export function useAgentDashboard(tokenId?: number): AgentDashboardData {
       pendingRewards: agentStats.pendingRewards,
       responseStyle: agentStats.responseStyle,
       isLoading: agentStats.isLoading,
-      error: agentStats.error
+      error: normalizeError(agentStats.error)
     },
     
     // System status
@@ -144,14 +152,24 @@ export function useAgentDashboard(tokenId?: number): AgentDashboardData {
       consolidation: consolidation,
       core: memoryCore,
       access: agentRead.memoryAccess,
-      isLoading: consolidation.isCheckingNeed || memoryCore.isLoading,
-      error: consolidation.error || memoryCore.error
+      isLoading: consolidation.consolidationState.isCheckingNeed || 
+                memoryCore.memoryCoreState.isCheckingYearlyReflection ||
+                memoryCore.memoryCoreState.isLoadingMonthlyData ||
+                memoryCore.isProcessing,
+      error: normalizeError(consolidation.consolidationState.error) || 
+             normalizeError(memoryCore.memoryCoreState.error)
     },
     
     // Overall loading state
-    isLoading: agentRead.isLoading || agentStats.isLoading || consolidation.isCheckingNeed || memoryCore.isLoading,
+    isLoading: agentRead.isLoading || agentStats.isLoading || consolidation.consolidationState.isCheckingNeed || 
+              memoryCore.memoryCoreState.isCheckingYearlyReflection ||
+              memoryCore.memoryCoreState.isLoadingMonthlyData ||
+              memoryCore.isProcessing,
     
     // Overall error state
-    error: agentRead.error || agentStats.error || consolidation.error || memoryCore.error
+    error: normalizeError(agentRead.error) || 
+           normalizeError(agentStats.error) || 
+           normalizeError(consolidation.consolidationState.error) || 
+           normalizeError(memoryCore.memoryCoreState.error)
   };
 }

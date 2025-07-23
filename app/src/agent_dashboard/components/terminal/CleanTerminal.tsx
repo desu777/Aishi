@@ -45,6 +45,19 @@ interface TerminalProps {
 
 // TerminalLine is now imported from types
 
+// Type-safe utility functions for handling string | ReactNode content
+const isStringContent = (content: React.ReactNode): content is string => {
+  return typeof content === 'string';
+};
+
+const safeStringSplit = (content: React.ReactNode, separator: string): string[] => {
+  return isStringContent(content) ? content.split(separator) : [];
+};
+
+const safeStringIncludes = (content: React.ReactNode, searchString: string): boolean => {
+  return isStringContent(content) ? content.includes(searchString) : false;
+};
+
 const CleanTerminal: React.FC<TerminalProps> = ({
   darkMode = true,
   title,
@@ -1014,9 +1027,9 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word'
               }}>
-                {line.type === 'info-labeled' ? (
+                {line.type === 'info-labeled' && isStringContent(line.content) ? (
                   <span>
-                    {line.content.split(' | ').map((segment, index) => (
+                    {safeStringSplit(line.content, ' | ').map((segment: string, index: number) => (
                       <span key={index}>
                         {segment.includes(':') ? (
                           <span>
@@ -1030,7 +1043,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                         ) : (
                           <span style={{ color: colors.text }}>{segment}</span>
                         )}
-                        {index < line.content.split(' | ').length - 1 && (
+                        {index < safeStringSplit(line.content, ' | ').length - 1 && (
                           <span style={{ color: theme.accent.primary }}> | </span>
                         )}
                       </span>
@@ -1058,18 +1071,18 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word'
               }}>
-                {line.type === 'help-command' ? (
+                {line.type === 'help-command' && isStringContent(line.content) ? (
                   <span>
                     <span style={{ color: theme.accent.primary }}>
-                      {line.content.split(' - ')[0]}
+                      {safeStringSplit(line.content, ' - ')[0]}
                     </span>
                     <span style={{ color: colors.text }}>
-                      {line.content.includes(' - ') ? ' - ' + line.content.split(' - ')[1] : ''}
+                      {safeStringIncludes(line.content, ' - ') ? ' - ' + safeStringSplit(line.content, ' - ')[1] : ''}
                     </span>
                   </span>
-                ) : line.type === 'info-labeled' ? (
+                ) : line.type === 'info-labeled' && isStringContent(line.content) ? (
                   <span>
-                    {line.content.split(' | ').map((segment, index) => (
+                    {safeStringSplit(line.content, ' | ').map((segment: string, index: number) => (
                       <span key={index}>
                         {segment.includes(':') ? (
                           <span>
@@ -1083,7 +1096,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
                         ) : (
                           <span style={{ color: colors.text }}>{segment}</span>
                         )}
-                        {index < line.content.split(' | ').length - 1 && (
+                        {index < safeStringSplit(line.content, ' | ').length - 1 && (
                           <span style={{ color: colors.text }}> | </span>
                         )}
                       </span>

@@ -177,18 +177,18 @@ export function useAgentRead(tokenId?: number) {
       (agentData as any).createdAt : (agentData as any)[2]) as bigint,
     lastUpdated: ((agentData as any).lastUpdated !== undefined ? 
       (agentData as any).lastUpdated : (agentData as any)[3]) as bigint,
-    intelligenceLevel: ((agentData as any).intelligenceLevel !== undefined ? 
-      (agentData as any).intelligenceLevel : (agentData as any)[4]) as bigint,
-    dreamCount: ((agentData as any).dreamCount !== undefined ? 
-      (agentData as any).dreamCount : (agentData as any)[5]) as bigint,
-    conversationCount: ((agentData as any).conversationCount !== undefined ? 
-      (agentData as any).conversationCount : (agentData as any)[6]) as bigint,
+    intelligenceLevel: Number((agentData as any).intelligenceLevel !== undefined ? 
+      (agentData as any).intelligenceLevel : (agentData as any)[4]),
+    dreamCount: Number((agentData as any).dreamCount !== undefined ? 
+      (agentData as any).dreamCount : (agentData as any)[5]),
+    conversationCount: Number((agentData as any).conversationCount !== undefined ? 
+      (agentData as any).conversationCount : (agentData as any)[6]),
     personalityInitialized: ((agentData as any).personalityInitialized !== undefined ? 
       (agentData as any).personalityInitialized : (agentData as any)[7]) as boolean,
-    totalEvolutions: ((agentData as any).totalEvolutions !== undefined ? 
-      (agentData as any).totalEvolutions : (agentData as any)[8]) as bigint,
-    lastEvolutionDate: ((agentData as any).lastEvolutionDate !== undefined ? 
-      (agentData as any).lastEvolutionDate : (agentData as any)[9]) as bigint,
+    totalEvolutions: Number((agentData as any).totalEvolutions !== undefined ? 
+      (agentData as any).totalEvolutions : (agentData as any)[8]),
+    lastEvolutionDate: Number((agentData as any).lastEvolutionDate !== undefined ? 
+      (agentData as any).lastEvolutionDate : (agentData as any)[9]),
     
     // Dane osobowości z getPersonalityTraits() - WAGMI V2 COMPATIBLE
     personality: {
@@ -208,14 +208,10 @@ export function useAgentRead(tokenId?: number) {
         (personalityTraits as any).dominantMood : (personalityTraits as any)[6]) as string,
       lastDreamDate: ((personalityTraits as any).lastDreamDate !== undefined ? 
         (personalityTraits as any).lastDreamDate : (personalityTraits as any)[7]) as bigint,
-      // Dodaj unikalne features z getPersonalityTraits()
+      // Dodaj unikalne features z getPersonalityTraits() - konwersja na string[]
       uniqueFeatures: ((personalityTraits as any).uniqueFeatures !== undefined ? 
-        (personalityTraits as any).uniqueFeatures : (personalityTraits as any)[8]) as Array<{
-        name: string;
-        description: string;
-        intensity: number;
-        addedAt: bigint;
-      }>,
+        (personalityTraits as any).uniqueFeatures : (personalityTraits as any)[8])
+        ?.map((feature: any) => feature.name) || [],
     },
     
     // Dane pamięci z getAgentMemory()
@@ -225,7 +221,7 @@ export function useAgentRead(tokenId?: number) {
       currentConvDailyHash: (memoryData as any).currentConvDailyHash as `0x${string}`,
       lastDreamMonthlyHash: (memoryData as any).lastDreamMonthlyHash as `0x${string}`,
       lastConvMonthlyHash: (memoryData as any).lastConvMonthlyHash as `0x${string}`,
-      lastConsolidation: (memoryData as any).lastConsolidation as bigint,
+      lastConsolidation: Number((memoryData as any).lastConsolidation),
       currentMonth: (memoryData as any).currentMonth as number,
       currentYear: (memoryData as any).currentYear as number,
     } : undefined

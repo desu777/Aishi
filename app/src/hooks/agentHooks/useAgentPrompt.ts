@@ -6,15 +6,8 @@ import {
   DreamAnalysisPrompt 
 } from '../../prompts/dreamAnalysisPrompt';
 
-// Re-export interface for compatibility
-export interface DreamAnalysisPrompt {
-  prompt: string;
-  expectedFormat: {
-    needsPersonalityEvolution: boolean;
-    dreamId: number;
-    includeImpactFields: boolean;
-  };
-}
+// Re-export type for compatibility
+export type { DreamAnalysisPrompt };
 
 export function useAgentPrompt() {
   

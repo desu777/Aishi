@@ -48,37 +48,37 @@ export default function Home() {
       id: 1,
       title: "Record Your Dreams",
       description: "Don't remember details? Record your dream right after waking up. Our AI (Whisper) will transcribe speech to text and analyze it for you.",
-      icon: <Mic />
+      icon: Mic
     },
     {
       id: 2,
       title: "Private Dream Archive", 
       description: "All your dreams and analyses are securely stored on decentralized 0G Storage network. Only you have access to them.",
-      icon: <Archive />
+      icon: Archive
     },
     {
       id: 3,
       title: "AI That Grows With You",
       description: "Your iNFT isn't just an image. It's an AI that learns from every dream, building a unique profile of your subconscious and increasing its value.",
-      icon: <BrainCircuit />
+      icon: BrainCircuit
     },
     {
       id: 4,
       title: "Personalized Guidance",
       description: "Agent doesn't just interpret dreams, but also tracks your progress, identifies emotional patterns and provides guidance for personal development.",
-      icon: <TrendingUp />
+      icon: TrendingUp
     },
     {
       id: 5,
       title: "Trade Your Intelligence",
       description: "The more dreams you process, the smarter and more valuable your agent becomes. Trained agents can be sold on the future marketplace.",
-      icon: <Repeat />
+      icon: Repeat
     },
     {
       id: 6,
       title: "DID U KNOW?",
       description: dreamStories[currentStoryIndex],
-      icon: <Lightbulb />
+      icon: Lightbulb
     }
   ];
   

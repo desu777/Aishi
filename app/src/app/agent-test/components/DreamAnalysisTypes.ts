@@ -64,8 +64,8 @@ export interface BuiltContext {
 }
 
 export interface ParsedResponse {
-  dreamData: {
-    id: string;
+  dreamData?: {
+    id: number;
     [key: string]: any;
   };
   personalityImpact?: any;

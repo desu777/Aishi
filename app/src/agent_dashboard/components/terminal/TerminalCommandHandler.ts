@@ -51,7 +51,6 @@ export interface CommandHandlerDependencies {
   // Format functions
   formatAgentInfo: (data: any) => string;
   formatAgentPersonality: (data: any) => string;
-  formatSystemStatus: (data: any) => string;
   formatMemoryStatus: (data: any) => string;
   formatHelpOutput: () => TerminalLine[];
 }
@@ -88,7 +87,7 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
     setYearLearnMode, setIsProcessingYearLearn,
     commandProcessorRef, wallet, agentData, dashboardData, isWalletConnected, isCorrectNetwork,
     hasAgent, hasCurrentBalance, formatAgentInfo, formatAgentPersonality,
-    formatSystemStatus, formatMemoryStatus, formatHelpOutput
+    formatMemoryStatus, formatHelpOutput
   } = deps;
 
   const trimmedCommand = command.trim();
@@ -169,7 +168,7 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
       // Use React component for enhanced cyberpunk experience with glitch animations
       addLine({
         type: 'info',
-        content: React.createElement(GlitchDigitalEntity, { dashboardData }),
+        content: React.createElement(GlitchDigitalEntity, { agentData, dashboardData }),
         timestamp: Date.now()
       });
       setIsLoading(false);
