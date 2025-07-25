@@ -77,6 +77,12 @@ export interface TerminalState {
   isProcessingYearLearn: boolean;
   setIsProcessingYearLearn: React.Dispatch<React.SetStateAction<boolean>>;
   
+  // Neural sync state
+  isNeuralSyncing: boolean;
+  setIsNeuralSyncing: React.Dispatch<React.SetStateAction<boolean>>;
+  neuralSyncProgress: number;
+  setNeuralSyncProgress: React.Dispatch<React.SetStateAction<number>>;
+  
   // Animation state
   dotsPattern: number;
   setDotsPattern: React.Dispatch<React.SetStateAction<number>>;
@@ -146,6 +152,10 @@ export const useTerminalState = (): TerminalState => {
   // Year learn workflow state
   const [yearLearnMode, setYearLearnMode] = useState(false);
   const [isProcessingYearLearn, setIsProcessingYearLearn] = useState(false);
+  
+  // Neural sync state
+  const [isNeuralSyncing, setIsNeuralSyncing] = useState(false);
+  const [neuralSyncProgress, setNeuralSyncProgress] = useState(0);
   
   // Animation state
   const [dotsPattern, setDotsPattern] = useState(0); // 0='.', 1='..', 2='...', 3=''
@@ -241,6 +251,12 @@ export const useTerminalState = (): TerminalState => {
     setYearLearnMode,
     isProcessingYearLearn,
     setIsProcessingYearLearn,
+    
+    // Neural sync state
+    isNeuralSyncing,
+    setIsNeuralSyncing,
+    neuralSyncProgress,
+    setNeuralSyncProgress,
     
     // Animation state
     dotsPattern,

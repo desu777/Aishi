@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { validateCommand, generateDots, checkIfMobile, getTerminalColors } from './TerminalUtils';
 import { useTerminalState } from './useTerminalState';
@@ -66,6 +67,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   className = ""
 }) => {
   const { theme, debugLog } = useTheme();
+  const router = useRouter();
   
   // Use custom terminal state hook
   const terminalState = useTerminalState();
@@ -84,7 +86,9 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     isSendingMessage, setIsSendingMessage, waitingForTrainConfirm, setWaitingForTrainConfirm,
     isSavingConversation, setIsSavingConversation, monthLearnMode, setMonthLearnMode,
     isProcessingMonthLearn, setIsProcessingMonthLearn, yearLearnMode, setYearLearnMode,
-    isProcessingYearLearn, setIsProcessingYearLearn, dotsPattern, setDotsPattern,
+    isProcessingYearLearn, setIsProcessingYearLearn, isNeuralSyncing, setIsNeuralSyncing,
+    neuralSyncProgress, setNeuralSyncProgress,
+    dotsPattern, setDotsPattern,
     thinkingMessageId, setThinkingMessageId, learningMessageId, setLearningMessageId,
     evolutionMessageId, setEvolutionMessageId, isMobile, setIsMobile,
     inputRef, terminalRef, commandProcessorRef, dotsTimerRef, addLine
@@ -174,10 +178,43 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).__DREAMSCAPE_WALLET_CONTEXT__ = wallet;
+      (window as any).__DREAMSCAPE_AGENT_DATA__ = { hasAgent, agentData };
     }
-  }, [wallet]);
+  }, [wallet, hasAgent, agentData]);
 
   // Mobile state is now handled by useTerminalState hook
+  
+  // Neural sync animation effect
+  useEffect(() => {
+    if (isNeuralSyncing) {
+      // Clear existing lines
+      setLines([]);
+      
+      // Start animation
+      const interval = setInterval(() => {
+        setNeuralSyncProgress(prev => {
+          const newProgress = prev + 2; // 2% every 50ms = ~2.5s total
+          
+          if (newProgress >= 100) {
+            clearInterval(interval);
+            
+            // Short delay before redirect
+            setTimeout(() => {
+              setIsNeuralSyncing(false);
+              setNeuralSyncProgress(0);
+              router.push('/companion-is-that-yours');
+            }, 500);
+            
+            return 100;
+          }
+          
+          return newProgress;
+        });
+      }, 50);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isNeuralSyncing, setLines, setNeuralSyncProgress, setIsNeuralSyncing, router]);
   
   // Load command history from localStorage on mount
   useEffect(() => {
@@ -861,7 +898,7 @@ const CleanTerminal: React.FC<TerminalProps> = ({
     // State setters
     setIsLoading, setLines, setCommandHistory, setDreamInputMode, setDreamInputText,
     setWaitingForChatConfirm, setPendingMintName, setMonthLearnMode, setIsProcessingMonthLearn,
-    setYearLearnMode, setIsProcessingYearLearn,
+    setYearLearnMode, setIsProcessingYearLearn, setIsNeuralSyncing, setNeuralSyncProgress,
     
     // Functions & refs
     addLine, commandProcessorRef,
@@ -891,6 +928,18 @@ const CleanTerminal: React.FC<TerminalProps> = ({
 
   // Get terminal colors based on mode
   const colors = getTerminalColors(darkMode, theme.accent.primary);
+
+  // Generate ASCII progress bar for neural sync
+  const generateProgressBar = (progress: number): string => {
+    const totalBars = 30;
+    const filledBars = Math.floor((progress / 100) * totalBars);
+    const emptyBars = totalBars - filledBars;
+    
+    const filled = '█'.repeat(filledBars);
+    const empty = '░'.repeat(emptyBars);
+    
+    return `[${filled}${empty}] ${progress}%`;
+  };
 
   debugLog('CleanTerminal rendered', { darkMode, linesCount: lines.length });
 
@@ -1008,6 +1057,28 @@ const CleanTerminal: React.FC<TerminalProps> = ({
             >
               . . .
             </span>
+          </div>
+        ) : isNeuralSyncing ? (
+          // Neural sync animation
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: theme.accent.primary,
+            fontSize: 'clamp(18px, 4vw, 24px)',
+            fontFamily: "'JetBrains Mono', monospace"
+          }}>
+            <div style={{ marginBottom: '20px' }}>
+              Neural network syncing...
+            </div>
+            <div style={{
+              fontSize: 'clamp(16px, 3.5vw, 20px)',
+              letterSpacing: '2px'
+            }}>
+              {generateProgressBar(neuralSyncProgress)}
+            </div>
           </div>
         ) : (
           <>

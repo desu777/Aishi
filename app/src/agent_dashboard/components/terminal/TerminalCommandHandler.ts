@@ -20,6 +20,8 @@ export interface CommandHandlerDependencies {
   setIsProcessingMonthLearn: (val: boolean) => void;
   setYearLearnMode: (val: boolean) => void;
   setIsProcessingYearLearn: (val: boolean) => void;
+  setIsNeuralSyncing: (val: boolean) => void;
+  setNeuralSyncProgress: (val: number) => void;
   
   // Functions & refs
   addLine: (line: TerminalLine) => void;
@@ -84,7 +86,7 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
   const {
     addLine, setIsLoading, setLines, setDreamInputMode, setDreamInputText,
     setWaitingForChatConfirm, setPendingMintName, setMonthLearnMode, setIsProcessingMonthLearn,
-    setYearLearnMode, setIsProcessingYearLearn,
+    setYearLearnMode, setIsProcessingYearLearn, setIsNeuralSyncing, setNeuralSyncProgress,
     commandProcessorRef, wallet, agentData, dashboardData, isWalletConnected, isCorrectNetwork,
     hasAgent, hasCurrentBalance, formatAgentInfo, formatAgentPersonality,
     formatMemoryStatus, formatHelpOutput
@@ -159,6 +161,14 @@ export const executeCommand = async (command: string, deps: CommandHandlerDepend
     if (result.output === 'YEAR_LEARN_MODE') {
       setYearLearnMode(true);
       setIsProcessingYearLearn(true);
+      setIsLoading(false);
+      return;
+    }
+
+    // Handle neural sync start
+    if (result.output === '__NEURAL_SYNC_START__') {
+      setIsNeuralSyncing(true);
+      setNeuralSyncProgress(0);
       setIsLoading(false);
       return;
     }
