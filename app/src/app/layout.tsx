@@ -4,6 +4,7 @@ import '../styles/globals.css';
 import '@rainbow-me/rainbowkit/styles.css';
 import { ReactNode } from 'react';
 import { Metadata } from 'next';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Dreamscape - AI Dream Agent',
@@ -22,6 +23,13 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
+      <head>
+        {/* Load Cubism Core for Live2D models */}
+        <Script 
+          src="/cubism/live2dcubismcore.min.js" 
+          strategy="beforeInteractive"
+        />
+      </head>
       <body>
         <ThemeProvider>
           <WalletProvider>

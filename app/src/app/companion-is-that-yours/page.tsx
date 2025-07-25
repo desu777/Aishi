@@ -3,17 +3,43 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaMicrophone, FaMicrophoneSlash, FaPlay, FaStop, FaArrowLeft } from 'react-icons/fa';
+import { Live2DModel, Live2DModelRef } from '@/components/live2d/Live2DModel';
+import { Live2DTestControls } from '@/components/live2d/Live2DTestControls';
 
 export default function CompanionPage() {
   const router = useRouter();
   const [isMicActive, setIsMicActive] = useState(false);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [inputText, setInputText] = useState('');
+  const [isModelReady, setIsModelReady] = useState(false);
+  const [availableMotions, setAvailableMotions] = useState<string[]>([]);
+  const [availableExpressions, setAvailableExpressions] = useState<string[]>([]);
+  const [windowSize, setWindowSize] = useState({ width: 800, height: 600 });
   const inputRef = useRef<HTMLInputElement>(null);
+  const modelRef = useRef<Live2DModelRef>(null);
 
-  // Focus input on mount
+  // Check if test mode is enabled
+  const isTestMode = process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true';
+
+  // Handle window size
   useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight - 200 // Account for UI controls
+      });
+    };
+
+    // Set initial size
+    handleResize();
+
+    // Add resize listener
+    window.addEventListener('resize', handleResize);
+
+    // Focus input
     inputRef.current?.focus();
+
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const toggleMic = () => {
@@ -22,13 +48,42 @@ export default function CompanionPage() {
 
   const toggleSession = () => {
     setIsSessionActive(!isSessionActive);
+    
+    // Example: Play different animations based on session state
+    if (modelRef.current && isModelReady) {
+      if (!isSessionActive) {
+        // Starting session
+        if (availableMotions.includes('bear cry')) {
+          modelRef.current.playMotion('bear cry');
+        }
+      } else {
+        // Stopping session
+        if (availableMotions.includes('sleep')) {
+          modelRef.current.playMotion('sleep');
+        }
+      }
+    }
   };
 
   const handleSendMessage = () => {
     if (inputText.trim()) {
       // TODO: Implement message sending
       console.log('Sending message:', inputText);
+      
+      // Example: Play eat animation when sending message
+      if (modelRef.current && isModelReady && availableMotions.includes('eat')) {
+        modelRef.current.playMotion('eat');
+      }
+      
       setInputText('');
+    }
+  };
+
+  const handleModelReady = () => {
+    setIsModelReady(true);
+    if (modelRef.current) {
+      setAvailableMotions(modelRef.current.getAvailableMotions());
+      setAvailableExpressions(modelRef.current.getAvailableExpressions());
     }
   };
 
@@ -77,7 +132,7 @@ export default function CompanionPage() {
         Back to Dashboard
       </button>
 
-      {/* Main Content Area - Empty for now (for Live2D) */}
+      {/* Main Content Area - Live2D Model */}
       <div style={{
         flex: 1,
         display: 'flex',
@@ -85,17 +140,24 @@ export default function CompanionPage() {
         justifyContent: 'center',
         position: 'relative'
       }}>
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.2)',
-          fontSize: '24px',
-          fontFamily: "'JetBrains Mono', monospace",
-          textAlign: 'center'
-        }}>
-          {/* Placeholder for Live2D Model */}
-          <div style={{ marginBottom: '20px' }}>Neural Interface Active</div>
-          <div style={{ fontSize: '16px', opacity: 0.5 }}>Model Loading...</div>
-        </div>
+        <Live2DModel
+          ref={modelRef}
+          modelPath="/pajama/pajama/bear Pajama.model3.json"
+          width={windowSize.width}
+          height={windowSize.height}
+          onReady={handleModelReady}
+          className="max-w-full max-h-full"
+        />
       </div>
+
+      {/* Test Controls - Only visible when NEXT_PUBLIC_LIVE2MODEL_TEST=true */}
+      {isTestMode && isModelReady && (
+        <Live2DTestControls
+          modelRef={modelRef}
+          availableMotions={availableMotions}
+          availableExpressions={availableExpressions}
+        />
+      )}
 
       {/* Bottom UI Controls */}
       <div style={{
