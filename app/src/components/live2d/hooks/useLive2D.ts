@@ -63,7 +63,8 @@ export const useLive2D = (options: UseLive2DOptions) => {
     }
 
     try {
-      const actualIndex = index ?? Math.floor(Math.random() * (modelRef.current.internalModel.motionManager.motionGroups[group]?.length || 0));
+      // Use the motion API with proper priority
+      const actualIndex = index ?? 0;
       await modelRef.current.motion(group, actualIndex, priority);
     } catch (error) {
       console.error('Failed to play motion:', error);
@@ -77,12 +78,20 @@ export const useLive2D = (options: UseLive2DOptions) => {
 
   const setExpression = useCallback((expressionId: string | number) => {
     if (!modelRef.current) return;
-    modelRef.current.expression(expressionId);
+    try {
+      modelRef.current.expression(expressionId);
+    } catch (error) {
+      console.warn('Failed to set expression:', error);
+    }
   }, []);
 
   const resetExpression = useCallback(() => {
     if (!modelRef.current) return;
-    modelRef.current.expression();
+    try {
+      modelRef.current.expression();
+    } catch (error) {
+      console.warn('Failed to reset expression:', error);
+    }
   }, []);
 
   const lookAt = useCallback((x: number, y: number) => {
@@ -97,18 +106,20 @@ export const useLive2D = (options: UseLive2DOptions) => {
 
   const startLipSync = useCallback((audioLevel: number) => {
     if (!modelRef.current) return;
-    const mouthParam = modelRef.current.internalModel.coreModel.getParameterIndex('ParamMouthOpenY');
-    if (mouthParam >= 0) {
-      modelRef.current.internalModel.coreModel.setParameterValueByIndex(mouthParam, audioLevel);
+    try {
+      modelRef.current.internalModel.coreModel.setParameterValueById('ParamMouthOpenY', audioLevel);
+    } catch (error) {
+      console.warn('Failed to start lip sync:', error);
     }
   }, []);
 
   const setLipSyncValue = useCallback((value: number) => {
     if (!modelRef.current) return;
     const clampedValue = Math.max(0, Math.min(1, value));
-    const mouthParam = modelRef.current.internalModel.coreModel.getParameterIndex('ParamMouthOpenY');
-    if (mouthParam >= 0) {
-      modelRef.current.internalModel.coreModel.setParameterValueByIndex(mouthParam, clampedValue);
+    try {
+      modelRef.current.internalModel.coreModel.setParameterValueById('ParamMouthOpenY', clampedValue);
+    } catch (error) {
+      console.warn('Failed to set lip sync value:', error);
     }
   }, []);
 
@@ -134,7 +145,90 @@ export const useLive2D = (options: UseLive2DOptions) => {
 
   const getAvailableExpressions = useCallback((): string[] => {
     if (!modelRef.current) return [];
-    return modelRef.current.internalModel.motionManager.expressionManager?.expressions.map((exp: any) => exp.name) || [];
+    
+    // Debug logging for expression manager structure
+    if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
+      console.log('[DEBUG] ExpressionManager structure:', {
+        motionManager: !!modelRef.current.internalModel.motionManager,
+        expressionManager: !!modelRef.current.internalModel.motionManager.expressionManager,
+        expressions: modelRef.current.internalModel.motionManager.expressionManager?.expressions,
+        settings: modelRef.current.internalModel.settings?.expressions,
+      });
+    }
+    
+    const expressionManager = modelRef.current.internalModel.motionManager.expressionManager;
+    
+    // Method 1: Try to get from expressionManager.expressions
+    if (expressionManager?.expressions) {
+      try {
+        if (Array.isArray(expressionManager.expressions)) {
+          const names = expressionManager.expressions.map((exp: any) => exp.name || exp.Name || exp);
+          if (names.length > 0) {
+            if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
+              console.log('[DEBUG] Got expressions from expressionManager.expressions:', names);
+            }
+            return names.filter(name => name && typeof name === 'string');
+          }
+        }
+      } catch (error) {
+        console.warn('[DEBUG] Failed to get expressions from expressionManager.expressions:', error);
+      }
+    }
+    
+    // Method 2: Try to get from settings.expressions
+    const settings = modelRef.current.internalModel.settings;
+    if (settings?.expressions && Array.isArray(settings.expressions)) {
+      try {
+        const names = settings.expressions.map((exp: any) => exp.Name || exp.name || exp);
+        if (names.length > 0) {
+          if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
+            console.log('[DEBUG] Got expressions from settings.expressions:', names);
+          }
+          return names.filter(name => name && typeof name === 'string');
+        }
+      } catch (error) {
+        console.warn('[DEBUG] Failed to get expressions from settings.expressions:', error);
+      }
+    }
+    
+    // Method 3: Try to get expression names from expressionManager directly
+    if (expressionManager) {
+      try {
+        // Check if expressionManager has a method to get expression names
+        if (typeof expressionManager.getExpressionNames === 'function') {
+          const names = expressionManager.getExpressionNames();
+          if (Array.isArray(names) && names.length > 0) {
+            if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
+              console.log('[DEBUG] Got expressions from getExpressionNames():', names);
+            }
+            return names;
+          }
+        }
+        
+        // Check other possible properties
+        const possibleProps = ['names', 'expressionNames', '_expressions', 'expressionMap'];
+        for (const prop of possibleProps) {
+          if (expressionManager[prop]) {
+            if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
+              console.log(`[DEBUG] Found expressions in ${prop}:`, expressionManager[prop]);
+            }
+            if (Array.isArray(expressionManager[prop])) {
+              return expressionManager[prop];
+            } else if (typeof expressionManager[prop] === 'object') {
+              return Object.keys(expressionManager[prop]);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('[DEBUG] Failed to get expressions from expressionManager methods:', error);
+      }
+    }
+    
+    if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
+      console.warn('[DEBUG] No expressions found through any method');
+    }
+    
+    return [];
   }, []);
 
   const getHitAreas = useCallback((): string[] => {
@@ -155,16 +249,23 @@ export const useLive2D = (options: UseLive2DOptions) => {
 
   const setParameterValue = useCallback((id: string, value: number, weight: number = 1) => {
     if (!modelRef.current) return;
-    const index = modelRef.current.internalModel.coreModel.getParameterIndex(id);
-    if (index >= 0) {
-      modelRef.current.internalModel.coreModel.setParameterValueByIndex(index, value, weight);
+    try {
+      // Use setParameterValueById for Cubism 4 models
+      modelRef.current.internalModel.coreModel.setParameterValueById(id, value, weight);
+    } catch (error) {
+      console.warn(`Failed to set parameter ${id}:`, error);
     }
   }, []);
 
   const getParameterValue = useCallback((id: string): number => {
     if (!modelRef.current) return 0;
-    const index = modelRef.current.internalModel.coreModel.getParameterIndex(id);
-    return index >= 0 ? modelRef.current.internalModel.coreModel.getParameterValueByIndex(index) : 0;
+    try {
+      // Use getParameterValueById for Cubism 4 models
+      return modelRef.current.internalModel.coreModel.getParameterValueById(id) || 0;
+    } catch (error) {
+      console.warn(`Failed to get parameter ${id}:`, error);
+      return 0;
+    }
   }, []);
 
   // Create model ref object
@@ -248,11 +349,45 @@ export const useLive2D = (options: UseLive2DOptions) => {
         // Add to stage
         app.stage.addChild(model);
 
+        // Add manual update to ticker as fallback
+        app.ticker.add((deltaTime) => {
+          if (modelRef.current) {
+            modelRef.current.update(deltaTime);
+          }
+        });
+
+        // Debug expression manager after model load
+        if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
+          console.log('[DEBUG] Model loaded, checking expression structure:', {
+            hasMotionManager: !!model.internalModel.motionManager,
+            hasExpressionManager: !!model.internalModel.motionManager.expressionManager,
+            settingsExpressions: model.internalModel.settings?.expressions?.length || 0,
+            motionGroups: Object.keys(model.internalModel.motionManager.motionGroups || {}),
+          });
+          
+          // Try to force expression manager initialization if it doesn't exist
+          if (!model.internalModel.motionManager.expressionManager && model.internalModel.settings?.expressions) {
+            console.log('[DEBUG] Attempting to initialize expression manager...');
+            try {
+              // Check if there's a method to initialize expressions
+              if (typeof model.internalModel.motionManager.createExpressionManager === 'function') {
+                model.internalModel.motionManager.createExpressionManager();
+                console.log('[DEBUG] Expression manager created successfully');
+              }
+            } catch (error) {
+              console.warn('[DEBUG] Failed to create expression manager:', error);
+            }
+          }
+        }
+
         // Start idle animation if autoPlay
         if (autoPlay) {
           const motions = getAvailableMotions();
           if (motions.includes('idle')) {
             playMotion('idle');
+          } else if (motions.length > 0) {
+            // If no idle motion, play the first available motion
+            playMotion(motions[0]);
           }
         }
 

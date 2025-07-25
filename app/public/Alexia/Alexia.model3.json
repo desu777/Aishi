@@ -75,7 +75,7 @@
 			}
 		],
 		"Motions": {
-			"": [
+			"Idle": [
 				{
 					"File": "dh.motion3.json"
 				}

@@ -10,7 +10,13 @@ import {
   FaEye,
   FaRandom,
   FaStop,
-  FaSyncAlt
+  FaSyncAlt,
+  FaGlasses,
+  FaTshirt,
+  FaHeart,
+  FaStar,
+  FaPalette,
+  FaCat
 } from 'react-icons/fa';
 import type { Live2DTestControlsProps, Live2DModelRef } from './utils/live2d-types';
 
@@ -24,7 +30,33 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
   const [selectedExpression, setSelectedExpression] = useState('');
   const [lipSyncValue, setLipSyncValue] = useState(0);
   const [isLipSyncActive, setIsLipSyncActive] = useState(false);
-  const [currentTab, setCurrentTab] = useState<'motions' | 'expressions' | 'lipsync' | 'params'>('motions');
+  const [currentTab, setCurrentTab] = useState<'motions' | 'expressions' | 'lipsync' | 'params' | 'special' | 'face'>('motions');
+  const [specialParams, setSpecialParams] = useState({
+    glasses: 0,
+    outfit: 0,
+    question: 0,
+    sweat: 0,
+    grin: 0,
+    starEyes: 0,
+    dizzy: 0,
+    angry: 0,
+    blush: 0,
+    cry: 0,
+    eyeColorR: 0,
+    eyeColorG: 0,
+  });
+  const [faceParams, setFaceParams] = useState({
+    tongue: 0,
+    mouthX: 0,
+    cheekPuff: 0,
+    mouthShrug: 0,
+    mouthFunnel: 0,
+    mouthPress: 0,
+    mouthWiden: 0,
+    jawOpen: 0,
+    eyeSquint: 0,
+    eyeSquint2: 0,
+  });
 
   // Play motion
   const handlePlayMotion = useCallback((motionGroup: string) => {
@@ -61,10 +93,10 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
   // Lip sync simulation
   const handleLipSyncChange = useCallback((value: number) => {
     setLipSyncValue(value);
-    if (modelRef.current && isLipSyncActive) {
+    if (modelRef.current) {
       modelRef.current.setLipSyncValue(value);
     }
-  }, [modelRef, isLipSyncActive]);
+  }, [modelRef]);
 
   // Toggle lip sync
   const toggleLipSync = useCallback(() => {
@@ -221,6 +253,20 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
         >
           <FaEye style={{ marginRight: '4px' }} />
           Parameters
+        </button>
+        <button
+          onClick={() => setCurrentTab('special')}
+          style={currentTab === 'special' ? activeTabStyle : tabStyle}
+        >
+          <FaStar style={{ marginRight: '4px' }} />
+          Special
+        </button>
+        <button
+          onClick={() => setCurrentTab('face')}
+          style={currentTab === 'face' ? activeTabStyle : tabStyle}
+        >
+          <FaCat style={{ marginRight: '4px' }} />
+          Face Track
         </button>
       </div>
 
@@ -441,7 +487,441 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
                   <li>ParamMouthOpenY (Lip sync)</li>
                   <li>ParamAngleX/Y/Z (Head rotation)</li>
                   <li>ParamBodyAngleX/Y/Z (Body rotation)</li>
+                  <li>ParamBreath (Breathing)</li>
+                  <li>Physics: Hair, clothes, tail, accessories</li>
                 </ul>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {currentTab === 'special' && (
+          <motion.div
+            key="special"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '12px',
+              maxHeight: '240px',
+              overflowY: 'auto',
+            }}>
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <FaGlasses /> Glasses: {specialParams.glasses}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.glasses}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, glasses: value }));
+                    modelRef.current?.setParameterValue('Param11', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+              
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <FaTshirt /> Outfit: {specialParams.outfit}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.outfit}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, outfit: value }));
+                    modelRef.current?.setParameterValue('Param16', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  ❓ Question: {specialParams.question}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.question}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, question: value }));
+                    modelRef.current?.setParameterValue('Param43', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  💦 Sweat: {specialParams.sweat}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.sweat}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, sweat: value }));
+                    modelRef.current?.setParameterValue('Param44', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  😊 Grin: {specialParams.grin}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.grin}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, grin: value }));
+                    modelRef.current?.setParameterValue('Param54', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  ⭐ Star Eyes: {specialParams.starEyes}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.starEyes}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, starEyes: value }));
+                    modelRef.current?.setParameterValue('Param55', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  😵 Dizzy: {specialParams.dizzy}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.dizzy}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, dizzy: value }));
+                    modelRef.current?.setParameterValue('Param56', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  😠 Angry: {specialParams.angry}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.angry}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, angry: value }));
+                    modelRef.current?.setParameterValue('Param57', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <FaHeart /> Blush: {specialParams.blush}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.blush}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, blush: value }));
+                    modelRef.current?.setParameterValue('Param58', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  😭 Cry: {specialParams.cry}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.cry}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, cry: value }));
+                    modelRef.current?.setParameterValue('Param59', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <FaPalette /> Eye Color R: {specialParams.eyeColorR}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.eyeColorR}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, eyeColorR: value }));
+                    modelRef.current?.setParameterValue('Param62', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <FaPalette /> Eye Color G: {specialParams.eyeColorG}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={specialParams.eyeColorG}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setSpecialParams(prev => ({ ...prev, eyeColorG: value }));
+                    modelRef.current?.setParameterValue('Param63', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {currentTab === 'face' && (
+          <motion.div
+            key="face"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '12px',
+              maxHeight: '240px',
+              overflowY: 'auto',
+            }}>
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  👅 Tongue: {faceParams.tongue}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={faceParams.tongue}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFaceParams(prev => ({ ...prev, tongue: value }));
+                    modelRef.current?.setParameterValue('Param46', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  Mouth X: {faceParams.mouthX}%
+                </label>
+                <input
+                  type="range"
+                  min="-100"
+                  max="100"
+                  value={faceParams.mouthX}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFaceParams(prev => ({ ...prev, mouthX: value }));
+                    modelRef.current?.setParameterValue('Param20', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  Cheek Puff: {faceParams.cheekPuff}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={faceParams.cheekPuff}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFaceParams(prev => ({ ...prev, cheekPuff: value }));
+                    modelRef.current?.setParameterValue('Param21', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  Mouth Shrug: {faceParams.mouthShrug}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={faceParams.mouthShrug}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFaceParams(prev => ({ ...prev, mouthShrug: value }));
+                    modelRef.current?.setParameterValue('Param48', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  Mouth Funnel: {faceParams.mouthFunnel}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={faceParams.mouthFunnel}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFaceParams(prev => ({ ...prev, mouthFunnel: value }));
+                    modelRef.current?.setParameterValue('Param45', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  Mouth Press: {faceParams.mouthPress}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={faceParams.mouthPress}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFaceParams(prev => ({ ...prev, mouthPress: value }));
+                    modelRef.current?.setParameterValue('Param47', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  Mouth Widen: {faceParams.mouthWiden}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={faceParams.mouthWiden}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFaceParams(prev => ({ ...prev, mouthWiden: value }));
+                    modelRef.current?.setParameterValue('Param49', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  Jaw Open: {faceParams.jawOpen}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={faceParams.jawOpen}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFaceParams(prev => ({ ...prev, jawOpen: value }));
+                    modelRef.current?.setParameterValue('Param50', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  Eye Squint 1: {faceParams.eyeSquint}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={faceParams.eyeSquint}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFaceParams(prev => ({ ...prev, eyeSquint: value }));
+                    modelRef.current?.setParameterValue('Param51', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
+                  Eye Squint 2: {faceParams.eyeSquint2}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={faceParams.eyeSquint2}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setFaceParams(prev => ({ ...prev, eyeSquint2: value }));
+                    modelRef.current?.setParameterValue('Param52', value / 100);
+                  }}
+                  style={{ width: '100%', height: '4px' }}
+                />
               </div>
             </div>
           </motion.div>
