@@ -30,7 +30,7 @@ export default function CompanionIsYours() {
     const handleResize = () => {
       setWindowSize({
         width: window.innerWidth,
-        height: window.innerHeight - 200 // Account for UI controls
+        height: window.innerHeight
       });
     };
 
@@ -136,85 +136,44 @@ export default function CompanionIsYours() {
         Back to Dashboard
       </button>
 
-      {/* Main Content */}
-      <main className="relative z-10 container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Title Section */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-4">
-              Meet Your Companion
-            </h1>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Your AI companion is here to chat, play, and keep you company. 
-              Interact with them and discover their unique personality!
-            </p>
-          </motion.div>
+      {/* Main Content - Full Screen Live2D */}
+      <main className="fixed inset-0 w-full h-full">
+        {/* Live2D Model - Full Screen */}
+        <Live2DModel
+          ref={modelRef}
+          modelPath="/Alexia/Alexia.model3.json"
+          width={windowSize.width}
+          height={windowSize.height}
+          scale={0.1}
+          transparent={true}
+          autoPlay={true}
+          className="w-full h-full"
+          onLoad={handleModelLoad}
+          onError={handleModelError}
+          onHit={handleModelHit}
+        />
 
-          {/* Live2D Model Container */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative max-w-4xl mx-auto mb-12"
-          >
-            <div className="relative bg-black/30 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-purple-500/20">
-              {/* Live2D Model */}
-              <div className="relative rounded-2xl overflow-hidden shadow-inner">
-                <Live2DModel
-                  ref={modelRef}
-                  modelPath="/Alexia/Alexia.model3.json"
-                  width={windowSize.width}
-                  height={windowSize.height}
-                  scale={0.8}
-                  autoPlay={true}
-                  className="rounded-2xl"
-                  onLoad={handleModelLoad}
-                  onError={handleModelError}
-                  onHit={handleModelHit}
-                />
-              </div>
+        {/* Test Controls - Only visible when NEXT_PUBLIC_LIVE2MODEL_TEST=true */}
+        {isTestMode && isModelReady && (
+          <Live2DTestControls
+            modelRef={modelRef}
+            availableMotions={availableMotions}
+            availableExpressions={availableExpressions}
+          />
+        )}
 
-              {/* Interaction Hints */}
-              {!isLoading && !modelError && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1 }}
-                  className="mt-6 text-center"
-                >
-                  <p className="text-gray-300 text-sm">
-                    💡 Tip: Click on your companion to see them react!
-                  </p>
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Test Controls - Only visible when NEXT_PUBLIC_LIVE2MODEL_TEST=true */}
-          {isTestMode && isModelReady && (
-            <Live2DTestControls
-              modelRef={modelRef}
-              availableMotions={availableMotions}
-              availableExpressions={availableExpressions}
-            />
-          )}
-
-          {/* Bottom UI Controls */}
+        {/* Bottom UI Controls */}
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '20px',
+          display: 'flex',
+          justifyContent: 'center',
+          zIndex: 50
+        }}>
           <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            padding: '20px',
-            display: 'flex',
-            justifyContent: 'center'
-          }}>
-            <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '16px',
@@ -318,23 +277,9 @@ export default function CompanionIsYours() {
               >
                 {isSessionActive ? <FaStop size={18} /> : <FaPlay size={18} />}
               </button>
-            </div>
           </div>
         </div>
       </main>
-
-      {/* Ambient glow effect */}
-      <div style={{
-        position: 'absolute',
-        bottom: '-100px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '600px',
-        height: '300px',
-        background: 'radial-gradient(ellipse at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%)',
-        filter: 'blur(60px)',
-        pointerEvents: 'none'
-      }} />
     </div>
   );
 }

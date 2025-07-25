@@ -37,6 +37,7 @@ export const createPixiApp = (options: {
   width: number;
   height: number;
   backgroundColor?: number;
+  transparent?: boolean;
   antialias?: boolean;
 }): PIXI.Application => {
   if (!checkWebGLSupport()) {
@@ -48,7 +49,8 @@ export const createPixiApp = (options: {
   const app = new PIXI.Application({
     width: options.width,
     height: options.height,
-    backgroundColor: options.backgroundColor || 0x000000,
+    backgroundColor: options.transparent ? undefined : (options.backgroundColor || 0x000000),
+    backgroundAlpha: options.transparent ? 0 : 1,
     antialias: options.antialias ?? true,
     preserveDrawingBuffer: false,
     powerPreference: 'high-performance',

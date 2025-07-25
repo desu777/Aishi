@@ -16,6 +16,7 @@ interface UseLive2DOptions {
   width: number;
   height: number;
   scale?: number;
+  transparent?: boolean;
   autoPlay?: boolean;
   onLoad?: () => void;
   onError?: (error: string) => void;
@@ -30,6 +31,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
     width,
     height,
     scale = 1,
+    transparent = false,
     autoPlay = true,
     onLoad,
     onError,
@@ -200,7 +202,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
         setError(null);
 
         // Create PIXI application
-        const app = createPixiApp({ width, height });
+        const app = createPixiApp({ width, height, transparent });
         appRef.current = app;
 
         // Add canvas to container
@@ -297,7 +299,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
         cleanupPixiApp(appRef.current);
       }
     };
-  }, [modelPath, width, height, scale, autoPlay]);
+  }, [modelPath, width, height, scale, transparent, autoPlay]);
 
   return {
     containerRef,

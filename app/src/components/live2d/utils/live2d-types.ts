@@ -9,6 +9,7 @@ export interface Live2DModelOptions {
   scale?: number;
   x?: number;
   y?: number;
+  transparent?: boolean;
   autoPlay?: boolean;
   className?: string;
   onLoad?: () => void;
