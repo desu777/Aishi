@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, MutableRefObject } from 'react';
 import * as PIXI from 'pixi.js';
 import { Live2DModel, MotionPriority } from 'pixi-live2d-display-lipsyncpatch/cubism4';
 
@@ -6,6 +6,7 @@ import { Live2DModel, MotionPriority } from 'pixi-live2d-display-lipsyncpatch/cu
 declare global {
   interface Window {
     PIXI: typeof PIXI;
+    Live2DCubismCore: any;
   }
 }
 
@@ -24,10 +25,17 @@ interface Live2DState {
   availableExpressions: string[];
 }
 
+// CRITICAL: Disable WebGL2 to avoid shader compilation errors
+PIXI.settings.PREFER_ENV = PIXI.ENV.WEBGL_LEGACY;
+PIXI.settings.FAIL_IF_MAJOR_PERFORMANCE_CAVEAT = false;
+
 export const useLive2D = ({ modelPath, width = 800, height = 600, autoPlay = true }: UseLive2DOptions) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Use a container ref instead of canvas ref to avoid React DOM conflicts
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const modelRef = useRef<Live2DModel | null>(null);
+  const isInitializedRef = useRef(false);
   
   const [state, setState] = useState<Live2DState>({
     isLoading: true,
@@ -77,51 +85,96 @@ export const useLive2D = ({ modelPath, width = 800, height = 600, autoPlay = tru
 
   // Initialize PIXI and load model
   useEffect(() => {
+    let mounted = true;
+    let canvas: HTMLCanvasElement | null = null;
+    
     const initializeLive2D = async () => {
-      // Check for SSR
-      if (typeof window === 'undefined') return;
-      if (!canvasRef.current) return;
-
-      // Check if app already exists (prevent double initialization)
-      if (appRef.current) {
-        console.warn('PIXI Application already initialized');
-        return;
-      }
-
-      // Check if Cubism Core is loaded
-      if (!(window as any).Live2DCubismCore) {
-        console.warn('Waiting for Cubism Core to load...');
-        // Retry after a short delay
-        setTimeout(() => {
-          initializeLive2D();
-        }, 100);
-        return;
-      }
-
       try {
+        // Check for SSR
+        if (typeof window === 'undefined') {
+          throw new Error('Window not available (SSR)');
+        }
+
+        // Wait for container to be mounted
+        if (!containerRef.current) {
+          throw new Error('Container ref not available');
+        }
+
+        // Check if already initialized
+        if (isInitializedRef.current) {
+          return;
+        }
+
+        // Check if Cubism Core is loaded
+        if (!window.Live2DCubismCore) {
+          // Try to wait for it
+          let attempts = 0;
+          while (!window.Live2DCubismCore && attempts < 20) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+          }
+          
+          if (!window.Live2DCubismCore) {
+            throw new Error('Live2DCubismCore not loaded after waiting');
+          }
+        }
+
         // Make PIXI available globally for Live2D
         window.PIXI = PIXI;
 
-        // Create PIXI application
+        // Create canvas element manually to avoid React DOM conflicts
+        canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.display = 'block';
+        
+        // CRITICAL: Create PIXI Application with conservative settings
         const app = new PIXI.Application({
-          view: canvasRef.current,
+          view: canvas,
           width,
           height,
           backgroundColor: 0x000000,
           backgroundAlpha: 0,
           antialias: true,
-          resolution: window.devicePixelRatio || 1,
-          autoDensity: true
+          resolution: 1, // Force resolution to 1 to avoid issues
+          autoDensity: false,
+          // WebGL1 specific settings to avoid shader errors
+          powerPreference: 'low-power',
+          preserveDrawingBuffer: false,
+          premultipliedAlpha: true,
+          // Force WebGL1
+          context: null,
+          forceCanvas: false
         });
 
+        // Verify app creation
+        if (!app || !app.renderer || !app.stage) {
+          throw new Error('Failed to create PIXI Application');
+        }
+
+        // Add canvas to container
+        containerRef.current.appendChild(canvas);
+        
         appRef.current = app;
+        canvasRef.current = canvas;
+        isInitializedRef.current = true;
 
         // Load the Live2D model
-        const model = await Live2DModel.from(modelPath, {
+        const encodedModelPath = encodeURI(modelPath);
+        
+        const model = await Live2DModel.from(encodedModelPath, {
           autoUpdate: true,
           autoHitTest: true,
           autoFocus: true
         });
+
+        if (!model) {
+          throw new Error('Live2D model loaded but is null');
+        }
+
+        if (!mounted) return;
 
         modelRef.current = model;
 
@@ -148,13 +201,14 @@ export const useLive2D = ({ modelPath, width = 800, height = 600, autoPlay = tru
 
         // Get expressions
         if (model.internalModel.motionManager.expressionManager?.expressions) {
-          model.internalModel.motionManager.expressionManager.expressions.forEach((exp: any, index: number) => {
+          model.internalModel.motionManager.expressionManager.expressions.forEach((exp: any) => {
             if (exp.name) {
               expressions.push(exp.name);
             }
           });
         }
 
+        // Update state on successful initialization
         setState({
           isLoading: false,
           error: null,
@@ -165,7 +219,11 @@ export const useLive2D = ({ modelPath, width = 800, height = 600, autoPlay = tru
 
         // Auto-play idle motion if enabled
         if (autoPlay && motions.includes('idle')) {
-          model.motion('idle');
+          setTimeout(() => {
+            if (mounted && model) {
+              model.motion('idle');
+            }
+          }, 100);
         }
 
         // Enable interaction
@@ -179,39 +237,65 @@ export const useLive2D = ({ modelPath, width = 800, height = 600, autoPlay = tru
 
       } catch (error) {
         console.error('Error loading Live2D model:', error);
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: error instanceof Error ? error.message : 'Failed to load model'
-        }));
+        if (mounted) {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Failed to load model'
+          }));
+        }
       }
     };
 
+    // Start initialization
     initializeLive2D();
 
-    // Cleanup
+    // Cleanup function
     return () => {
+      mounted = false;
+      
       if (appRef.current) {
-        // Use destroy(false) to avoid canvas destruction issues with React StrictMode
-        appRef.current.destroy(false);
+        try {
+          // Remove all children first
+          appRef.current.stage.removeChildren();
+          
+          // Destroy the app
+          appRef.current.destroy(true, {
+            children: true,
+            texture: true,
+            baseTexture: true
+          });
+        } catch (e) {
+          console.warn('Error during PIXI cleanup:', e);
+        }
         appRef.current = null;
       }
+      
+      // Remove canvas from DOM
+      if (canvas && canvas.parentNode) {
+        canvas.parentNode.removeChild(canvas);
+      }
+      
       modelRef.current = null;
+      canvasRef.current = null;
+      isInitializedRef.current = false;
     };
   }, [modelPath, width, height, autoPlay]);
 
   // Handle resize
   useEffect(() => {
+    if (!appRef.current || !canvasRef.current || !modelRef.current) return;
+
     const handleResize = () => {
-      if (appRef.current && canvasRef.current) {
+      if (appRef.current && canvasRef.current && modelRef.current) {
         appRef.current.renderer.resize(width, height);
+        canvasRef.current.width = width;
+        canvasRef.current.height = height;
         
-        if (modelRef.current) {
-          const scale = Math.min(width / modelRef.current.width, height / modelRef.current.height) * 0.8;
-          modelRef.current.scale.set(scale);
-          modelRef.current.x = width / 2;
-          modelRef.current.y = height / 2;
-        }
+        const scale = Math.min(width / modelRef.current.width, height / modelRef.current.height) * 0.8;
+        modelRef.current.scale.set(scale);
+        modelRef.current.x = width / 2;
+        modelRef.current.y = height / 2;
       }
     };
 
@@ -219,7 +303,7 @@ export const useLive2D = ({ modelPath, width = 800, height = 600, autoPlay = tru
   }, [width, height]);
 
   return {
-    canvasRef,
+    containerRef,
     ...state,
     playMotion,
     setExpression,
