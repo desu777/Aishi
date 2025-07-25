@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaMicrophone, FaMicrophoneSlash, FaPlay, FaStop, FaArrowLeft } from 'react-icons/fa';
 import { Live2DModel } from '@/components/live2d/Live2DModel';
+import { Live2DTestControls } from '@/components/live2d/Live2DTestControls';
+import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 import { motion } from 'framer-motion';
 
 export default function CompanionIsYours() {
@@ -16,6 +18,7 @@ export default function CompanionIsYours() {
   const [availableExpressions, setAvailableExpressions] = useState<string[]>([]);
   const [windowSize, setWindowSize] = useState({ width: 800, height: 600 });
   const inputRef = useRef<HTMLInputElement>(null);
+  const modelRef = useRef<Live2DModelRef>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [modelError, setModelError] = useState<string | null>(null);
 
@@ -56,20 +59,43 @@ export default function CompanionIsYours() {
       // TODO: Implement message sending
       console.log('Sending message:', inputText);
       
-      // Example: Play eat animation when sending message
-      if (modelRef.current && isModelReady && availableMotions.includes('eat')) {
-        modelRef.current.playMotion('eat');
+      // Example: Play animation when sending message
+      if (modelRef.current && isModelReady) {
+        // Play a random expression when sending message
+        const expressions = modelRef.current.getAvailableExpressions();
+        if (expressions.length > 0) {
+          const randomExpression = expressions[Math.floor(Math.random() * expressions.length)];
+          modelRef.current.setExpression(randomExpression);
+        }
       }
       
       setInputText('');
     }
   };
 
-  const handleModelReady = () => {
+  const handleModelLoad = () => {
     setIsModelReady(true);
+    setIsLoading(false);
     if (modelRef.current) {
       setAvailableMotions(modelRef.current.getAvailableMotions());
       setAvailableExpressions(modelRef.current.getAvailableExpressions());
+      console.log('Available motions:', modelRef.current.getAvailableMotions());
+      console.log('Available expressions:', modelRef.current.getAvailableExpressions());
+    }
+  };
+
+  const handleModelError = (error: string) => {
+    setModelError(error);
+    setIsLoading(false);
+    console.error('Live2D model error:', error);
+  };
+
+  const handleModelHit = (hitAreaNames: string[]) => {
+    console.log('Hit areas:', hitAreaNames);
+    // Play random motion when model is clicked
+    if (modelRef.current && availableMotions.length > 0) {
+      const randomMotion = availableMotions[Math.floor(Math.random() * availableMotions.length)];
+      modelRef.current.playMotion(randomMotion);
     }
   };
 
@@ -140,20 +166,16 @@ export default function CompanionIsYours() {
               {/* Live2D Model */}
               <div className="relative rounded-2xl overflow-hidden shadow-inner">
                 <Live2DModel
-                  modelPath="/pajama/pajama/bear Pajama.model3.json"
-                  width={800}
-                  height={600}
+                  ref={modelRef}
+                  modelPath="/Alexia/Alexia.model3.json"
+                  width={windowSize.width}
+                  height={windowSize.height}
+                  scale={0.8}
                   autoPlay={true}
                   className="rounded-2xl"
-                  onLoad={() => {
-                    setIsLoading(false);
-                    console.log('Live2D model loaded successfully');
-                  }}
-                  onError={(error) => {
-                    setModelError(error);
-                    setIsLoading(false);
-                    console.error('Live2D model error:', error);
-                  }}
+                  onLoad={handleModelLoad}
+                  onError={handleModelError}
+                  onHit={handleModelHit}
                 />
               </div>
 
