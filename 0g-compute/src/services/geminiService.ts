@@ -78,31 +78,19 @@ export class GeminiService {
       
       // Get generation config from environment and options
       const temperature = options?.temperature || parseFloat(process.env.GEMINI_TEMPERATURE || '0.8');
-      // If GEMINI_MAX_TOKENS is not set, don't limit tokens (undefined)
-      const maxOutputTokens = options?.maxTokens || 
-        (process.env.GEMINI_MAX_TOKENS ? parseInt(process.env.GEMINI_MAX_TOKENS) : undefined);
-      const responseMimeType = process.env.GEMINI_RESPONSE_MIME_TYPE || 'application/json';
-
+      
       // Build generation config
       const generationConfig: any = {
         temperature,
-        responseMimeType,
         candidateCount: 1,
       };
-      
-      // Only add maxOutputTokens if it's defined
-      if (maxOutputTokens !== undefined) {
-        generationConfig.maxOutputTokens = maxOutputTokens;
-      }
 
       // Log request details in test mode
       if (process.env.TEST_ENV === 'true') {
         console.log(`🤖 Gemini Request:`, {
           model: modelName,
           promptLength: prompt.length,
-          temperature,
-          maxOutputTokens,
-          responseMimeType
+          temperature
         });
       }
 
@@ -115,18 +103,8 @@ export class GeminiService {
       });
       const responseTime = Date.now() - startTime;
 
-      // Extract text from response
+      // Extract text from response - just pass it through
       let responseText = response.text;
-      
-      // If response mime type is JSON, try to parse it
-      let parsedResponse = responseText;
-      if (responseMimeType === 'application/json') {
-        try {
-          parsedResponse = JSON.parse(responseText);
-        } catch (parseError) {
-          console.warn('⚠️  Failed to parse JSON response, returning raw text');
-        }
-      }
 
       if (process.env.TEST_ENV === 'true') {
         console.log(`✅ Gemini Response received in ${responseTime}ms`);
@@ -134,7 +112,7 @@ export class GeminiService {
 
       return {
         success: true,
-        data: parsedResponse,
+        data: responseText,
         metadata: {
           model: modelName,
           responseTime,
