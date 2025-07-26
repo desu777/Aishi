@@ -8,6 +8,7 @@ import masterWallet from './services/masterWallet';
 import virtualBrokers from './services/virtualBrokers';
 import queryManager from './services/queryManager';
 import consolidationChecker from './services/consolidationChecker';
+import geminiService from './services/geminiService';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -53,7 +54,9 @@ app.get('/', (req, res) => {
       'consolidation-check': 'POST /api/consolidation/check',
       'consolidation-start': 'POST /api/consolidation/start',
       'consolidation-stop': 'POST /api/consolidation/stop',
-      'transactions': 'GET /api/transactions/:walletAddress'
+      'transactions': 'GET /api/transactions/:walletAddress',
+      'gemini': 'POST /api/gemini',
+      'gemini-status': 'GET /api/gemini/status'
     }
   });
 });
@@ -88,6 +91,10 @@ async function initializeServices() {
     // Initialize AI service (which initializes master wallet)
     console.log('🤖 Initializing AI Service...');
     await aiService.initialize();
+    
+    // Initialize Gemini service
+    console.log('🌟 Initializing Gemini AI Service...');
+    await geminiService.initialize();
     
     // Start transaction monitoring
     console.log('👁️  Starting transaction monitor...');
@@ -142,6 +149,7 @@ async function gracefulShutdown() {
     // QueryManager cleanup would happen here if needed
     
     await aiService.cleanup();
+    await geminiService.cleanup();
     await masterWallet.cleanup();
     
     console.log('✅ Services cleaned up successfully');

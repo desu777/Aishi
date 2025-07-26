@@ -5,6 +5,7 @@ import masterWallet from '../services/masterWallet';
 import queryManager from '../services/queryManager';
 import consolidationChecker from '../services/consolidationChecker';
 import DatabaseService from '../database/database';
+import geminiService from '../services/geminiService';
 
 const router = express.Router();
 
@@ -431,6 +432,74 @@ router.post('/consolidation/stop', (req, res) => {
     handleSuccess(res, { isRunning: false }, 'Consolidation checker stopped successfully');
   } catch (error: any) {
     handleError(res, error, 'Failed to stop consolidation checker');
+  }
+});
+
+/**
+ * POST /api/gemini
+ * Proxy endpoint for Gemini AI via Vertex AI
+ * Acts as a passthrough - frontend builds prompt, backend forwards to Gemini
+ */
+router.post('/gemini', async (req, res) => {
+  try {
+    const { prompt, temperature, maxTokens } = req.body;
+    
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'prompt is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Ensure Gemini service is initialized
+    if (!geminiService.isReady()) {
+      return res.status(503).json({
+        success: false,
+        error: 'Gemini AI service is not ready',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🤖 API: Gemini request received, prompt length: ${prompt.length}`);
+    }
+
+    // Forward request to Gemini
+    const result = await geminiService.generateContent(
+      prompt,
+      {
+        temperature,
+        maxTokens
+      }
+    );
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`✅ API: Gemini response received in ${result.metadata.responseTime}ms`);
+    }
+
+    // Return the response as-is (proxy behavior)
+    handleSuccess(res, result.data, 'Gemini response generated successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to generate Gemini response');
+  }
+});
+
+/**
+ * GET /api/gemini/status
+ * Check Gemini service status
+ */
+router.get('/gemini/status', (req, res) => {
+  try {
+    const status = geminiService.getStatus();
+    
+    if (process.env.TEST_ENV === 'true') {
+      console.log('📋 API: Gemini service status retrieved');
+    }
+
+    handleSuccess(res, status, 'Gemini service status retrieved successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to retrieve Gemini service status');
   }
 });
 
