@@ -1,6 +1,7 @@
 // TypeScript definitions for Live2D integration with pixi-live2d-display
 import type { Live2DModel as PixiLive2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4';
 import type { Application } from 'pixi.js';
+import type { EXPRESSION_PRESETS } from './expression-categories';
 
 export interface Live2DModelOptions {
   modelPath: string;
@@ -25,6 +26,12 @@ export interface Live2DModelRef {
   stopAllMotions: () => void;
   setExpression: (expressionId: string | number) => void;
   resetExpression: () => void;
+  
+  // Expression category management
+  toggleExpression: (expressionName: string) => boolean;
+  getActiveExpressions: () => string[];
+  isExpressionActive: (expressionName: string) => boolean;
+  applyFormPreset: (presetName: keyof typeof EXPRESSION_PRESETS) => void;
   
   // Interaction
   lookAt: (x: number, y: number) => void;

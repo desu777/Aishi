@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaPlay, 
@@ -20,6 +20,7 @@ import {
   FaTimes
 } from 'react-icons/fa';
 import type { Live2DTestControlsProps, Live2DModelRef, JellyfishModelExpressions, PhonemeMapping } from './utils/live2d-types';
+import { EXPRESSION_CATEGORIES, EXPRESSION_PRESETS } from './utils/expression-categories';
 
 export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
   modelRef,
@@ -31,8 +32,9 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
   const [selectedExpression, setSelectedExpression] = useState('');
   const [lipSyncValue, setLipSyncValue] = useState(0);
   const [isLipSyncActive, setIsLipSyncActive] = useState(false);
-  const [currentTab, setCurrentTab] = useState<'emotions' | 'accessories' | 'decorations' | 'lipsync' | 'physics' | 'special'>('emotions');
+  const [currentTab, setCurrentTab] = useState<'emotions' | 'accessories' | 'decorations' | 'lipsync' | 'physics' | 'special' | 'presets'>('emotions');
   const [isOpen, setIsOpen] = useState(true);
+  const [activeExpressions, setActiveExpressions] = useState<string[]>([]);
   // Expression mappings for 水母_vts model
   const expressionMapping: JellyfishModelExpressions = {
     // Emotions
@@ -70,7 +72,19 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
     wingsToggle: '翅膀切换',
   };
 
-  const [activeAccessories, setActiveAccessories] = useState<string[]>([]);
+  // Update active expressions from model
+  useEffect(() => {
+    if (modelRef.current) {
+      const updateActiveExpressions = () => {
+        const active = modelRef.current!.getActiveExpressions();
+        setActiveExpressions(active);
+      };
+      updateActiveExpressions();
+      // Poll for changes
+      const interval = setInterval(updateActiveExpressions, 500);
+      return () => clearInterval(interval);
+    }
+  }, [modelRef]);
   const [mouthFormValue, setMouthFormValue] = useState(0);
   // Advanced LipSync with phoneme mapping
   const phonemeMapping: Record<string, PhonemeMapping> = {
@@ -89,33 +103,38 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
     }
   }, [modelRef]);
 
-  // Set expression with accessory management
-  const handleSetExpression = useCallback((expression: string, isAccessory?: boolean) => {
+  // Toggle expression using category system
+  const handleToggleExpression = useCallback((expression: string) => {
     if (modelRef.current) {
-      if (isAccessory) {
-        // Toggle accessory
-        const index = activeAccessories.indexOf(expression);
-        if (index > -1) {
-          // Remove accessory
-          activeAccessories.splice(index, 1);
-          setActiveAccessories([...activeAccessories]);
-        } else {
-          // Add accessory
-          setActiveAccessories([...activeAccessories, expression]);
-          modelRef.current.setExpression(expression);
+      const isActive = modelRef.current.toggleExpression(expression);
+      if (!isActive) {
+        if (selectedExpression === expression) {
+          setSelectedExpression('');
         }
       } else {
-        // Regular expression
-        modelRef.current.setExpression(expression);
-        setSelectedExpression(expression);
+        // For exclusive categories, update selected expression
+        const category = Object.values(EXPRESSION_CATEGORIES).find(cat => 
+          cat.expressions.includes(expression) && cat.mode === 'exclusive'
+        );
+        if (category) {
+          setSelectedExpression(expression);
+        }
       }
     }
-  }, [modelRef, activeAccessories]);
+  }, [modelRef, selectedExpression]);
 
   // Reset expression
   const handleResetExpression = useCallback(() => {
     if (modelRef.current) {
       modelRef.current.resetExpression();
+      setSelectedExpression('');
+    }
+  }, [modelRef]);
+
+  // Apply form preset
+  const handleApplyPreset = useCallback((presetName: keyof typeof EXPRESSION_PRESETS) => {
+    if (modelRef.current) {
+      modelRef.current.applyFormPreset(presetName);
       setSelectedExpression('');
     }
   }, [modelRef]);
@@ -413,6 +432,13 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
           <FaPalette style={{ marginRight: '4px' }} />
           Special FX
         </button>
+        <button
+          onClick={() => setCurrentTab('presets')}
+          style={currentTab === 'presets' ? activeTabStyle : tabStyle}
+        >
+          <FaStar style={{ marginRight: '4px' }} />
+          Form Presets
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -451,15 +477,15 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
               }).map(([key, value]) => (
                 <button
                   key={key}
-                  onClick={() => handleSetExpression(expressionMapping[key as keyof JellyfishModelExpressions])}
+                  onClick={() => handleToggleExpression(expressionMapping[key as keyof JellyfishModelExpressions])}
                   style={{
                     padding: '12px',
-                    backgroundColor: selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions]
+                    backgroundColor: activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions])
                       ? 'rgba(139, 92, 246, 0.3)' 
                       : 'rgba(255, 255, 255, 0.05)',
-                    border: `2px solid ${selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions] ? '#8B5CF6' : 'rgba(255, 255, 255, 0.1)'}`,
+                    border: `2px solid ${activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#8B5CF6' : 'rgba(255, 255, 255, 0.1)'}`,
                     borderRadius: '8px',
-                    color: selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions] ? '#8B5CF6' : '#fff',
+                    color: activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#8B5CF6' : '#fff',
                     cursor: 'pointer',
                     fontSize: '12px',
                     fontFamily: "'JetBrains Mono', monospace",
@@ -470,13 +496,13 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
                     gap: '4px',
                   }}
                   onMouseEnter={(e) => {
-                    if (selectedExpression !== expressionMapping[key as keyof JellyfishModelExpressions]) {
+                    if (!activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions])) {
                       e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
                       e.currentTarget.style.transform = 'scale(1.05)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (selectedExpression !== expressionMapping[key as keyof JellyfishModelExpressions]) {
+                    if (!activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions])) {
                       e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                       e.currentTarget.style.transform = 'scale(1)';
                     }
@@ -519,15 +545,15 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
               }).map(([key, value]) => (
                 <button
                   key={key}
-                  onClick={() => handleSetExpression(expressionMapping[key as keyof JellyfishModelExpressions], true)}
+                  onClick={() => handleToggleExpression(expressionMapping[key as keyof JellyfishModelExpressions])}
                   style={{
                     padding: '12px',
-                    backgroundColor: activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions])
+                    backgroundColor: activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions])
                       ? 'rgba(34, 197, 94, 0.3)' 
                       : 'rgba(255, 255, 255, 0.05)',
-                    border: `2px solid ${activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#22C55E' : 'rgba(255, 255, 255, 0.1)'}`,
+                    border: `2px solid ${activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#22C55E' : 'rgba(255, 255, 255, 0.1)'}`,
                     borderRadius: '12px',
-                    color: activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#22C55E' : '#fff',
+                    color: activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#22C55E' : '#fff',
                     cursor: 'pointer',
                     fontSize: '14px',
                     fontFamily: "'JetBrains Mono', monospace",
@@ -546,7 +572,7 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
                 >
                   <span style={{ fontSize: '20px' }}>{typeof value.icon === 'string' ? value.icon : value.icon}</span>
                   <span style={{ fontSize: '11px' }}>{value.name}</span>
-                  {activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions]) && 
+                  {activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions]) && 
                     <span style={{ fontSize: '10px', color: '#22C55E' }}>Active</span>
                   }
                 </button>
@@ -576,15 +602,15 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
               }).map(([key, value]) => (
                 <button
                   key={key}
-                  onClick={() => handleSetExpression(expressionMapping[key as keyof JellyfishModelExpressions], true)}
+                  onClick={() => handleToggleExpression(expressionMapping[key as keyof JellyfishModelExpressions])}
                   style={{
                     padding: '12px',
-                    backgroundColor: activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions])
+                    backgroundColor: activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions])
                       ? 'rgba(251, 191, 36, 0.3)' 
                       : 'rgba(255, 255, 255, 0.05)',
-                    border: `2px solid ${activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#FBBf24' : 'rgba(255, 255, 255, 0.1)'}`,
+                    border: `2px solid ${activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#FBBf24' : 'rgba(255, 255, 255, 0.1)'}`,
                     borderRadius: '12px',
-                    color: activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#FBBf24' : '#fff',
+                    color: activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#FBBf24' : '#fff',
                     cursor: 'pointer',
                     fontSize: '14px',
                     fontFamily: "'JetBrains Mono', monospace",
@@ -870,15 +896,15 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
               }).map(([key, value]) => (
                 <button
                   key={key}
-                  onClick={() => handleSetExpression(expressionMapping[key as keyof JellyfishModelExpressions])}
+                  onClick={() => handleToggleExpression(expressionMapping[key as keyof JellyfishModelExpressions])}
                   style={{
                     padding: '12px',
-                    backgroundColor: selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions]
+                    backgroundColor: activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions])
                       ? 'rgba(168, 85, 247, 0.3)' 
                       : 'rgba(255, 255, 255, 0.05)',
-                    border: `2px solid ${selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions] ? '#A855F7' : 'rgba(255, 255, 255, 0.1)'}`,
+                    border: `2px solid ${activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#A855F7' : 'rgba(255, 255, 255, 0.1)'}`,
                     borderRadius: '12px',
-                    color: selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions] ? '#A855F7' : '#fff',
+                    color: activeExpressions.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#A855F7' : '#fff',
                     cursor: 'pointer',
                     fontSize: '14px',
                     fontFamily: "'JetBrains Mono', monospace",
@@ -916,6 +942,161 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
                 <li><strong>Touch Effect:</strong> Visual feedback for interactions</li>
                 <li><strong>Watermark:</strong> Subtle branding overlay effect</li>
               </ul>
+            </div>
+          </motion.div>
+        )}
+
+        {currentTab === 'presets' && (
+          <motion.div
+            key="presets"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}>
+              <h4 style={{
+                color: '#8B5CF6',
+                fontSize: '14px',
+                margin: '0 0 12px 0',
+                textAlign: 'center',
+              }}>
+                Character Form Presets
+              </h4>
+              
+              {/* Angel Preset */}
+              <button
+                onClick={() => handleApplyPreset('angel')}
+                style={{
+                  padding: '16px',
+                  backgroundColor: 'rgba(255, 215, 0, 0.2)',
+                  border: '2px solid #FFD700',
+                  borderRadius: '12px',
+                  color: '#FFD700',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 215, 0, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 215, 0, 0.2)';
+                }}
+              >
+                <span style={{ fontSize: '24px' }}>😇</span>
+                <span style={{ fontSize: '16px', fontWeight: 'bold' }}>Angel Form</span>
+                <span style={{ fontSize: '11px', textAlign: 'center', opacity: 0.8 }}>
+                  Halo + White Wings + Pure Colors
+                </span>
+              </button>
+
+              {/* Devil Preset */}
+              <button
+                onClick={() => handleApplyPreset('devil')}
+                style={{
+                  padding: '16px',
+                  backgroundColor: 'rgba(220, 38, 127, 0.2)',
+                  border: '2px solid #DC267F',
+                  borderRadius: '12px',
+                  color: '#DC267F',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.backgroundColor = 'rgba(220, 38, 127, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.backgroundColor = 'rgba(220, 38, 127, 0.2)';
+                }}
+              >
+                <span style={{ fontSize: '24px' }}>😈</span>
+                <span style={{ fontSize: '16px', fontWeight: 'bold' }}>Devil Form</span>
+                <span style={{ fontSize: '11px', textAlign: 'center', opacity: 0.8 }}>
+                  Devil Horns + Black Wings + Dark Colors
+                </span>
+              </button>
+
+              {/* Neutral Preset */}
+              <button
+                onClick={() => handleApplyPreset('neutral')}
+                style={{
+                  padding: '16px',
+                  backgroundColor: 'rgba(107, 114, 128, 0.2)',
+                  border: '2px solid #6B7280',
+                  borderRadius: '12px',
+                  color: '#6B7280',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.backgroundColor = 'rgba(107, 114, 128, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.backgroundColor = 'rgba(107, 114, 128, 0.2)';
+                }}
+              >
+                <span style={{ fontSize: '24px' }}>🧘</span>
+                <span style={{ fontSize: '16px', fontWeight: 'bold' }}>Neutral Form</span>
+                <span style={{ fontSize: '11px', textAlign: 'center', opacity: 0.8 }}>
+                  Remove All Form-Specific Elements
+                </span>
+              </button>
+
+              <div style={{
+                padding: '12px',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: '#999',
+                marginTop: '8px',
+              }}>
+                <p style={{ margin: '0 0 8px 0', color: '#8B5CF6', fontWeight: 'bold' }}>Active Expressions:</p>
+                {activeExpressions.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    {activeExpressions.map((expr, index) => (
+                      <span key={index} style={{
+                        padding: '4px 8px',
+                        backgroundColor: 'rgba(139, 92, 246, 0.3)',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        color: '#8B5CF6',
+                      }}>
+                        {expr}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '10px', opacity: 0.7 }}>No expressions active</span>
+                )}
+              </div>
             </div>
           </motion.div>
         )}

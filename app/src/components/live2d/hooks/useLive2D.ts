@@ -10,6 +10,8 @@ import {
   createPerformanceMonitor,
 } from '../utils/live2d-loader';
 import type { Live2DModelRef, Live2DPerformanceMetrics } from '../utils/live2d-types';
+import { ExpressionCategoryManager } from '../utils/ExpressionCategoryManager';
+import { EXPRESSION_PRESETS } from '../utils/expression-categories';
 
 interface UseLive2DOptions {
   modelPath: string;
@@ -44,6 +46,9 @@ export const useLive2D = (options: UseLive2DOptions) => {
   const appRef = useRef<PIXI.Application | null>(null);
   const modelRef = useRef<Live2DModel | null>(null);
   const performanceMonitorRef = useRef<ReturnType<typeof createPerformanceMonitor> | null>(null);
+  const expressionManagerRef = useRef<ExpressionCategoryManager>(
+    new ExpressionCategoryManager(process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true')
+  );
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +84,13 @@ export const useLive2D = (options: UseLive2DOptions) => {
   const setExpression = useCallback((expressionId: string | number) => {
     if (!modelRef.current) return;
     try {
-      modelRef.current.expression(expressionId);
+      // Use category manager for string expressions
+      if (typeof expressionId === 'string') {
+        expressionManagerRef.current.applyExpression(expressionId);
+      } else {
+        // Fallback for numeric indices
+        modelRef.current.expression(expressionId);
+      }
     } catch (error) {
       console.warn('Failed to set expression:', error);
     }
@@ -88,7 +99,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
   const resetExpression = useCallback(() => {
     if (!modelRef.current) return;
     try {
-      modelRef.current.expression();
+      expressionManagerRef.current.reset();
     } catch (error) {
       console.warn('Failed to reset expression:', error);
     }
@@ -268,12 +279,35 @@ export const useLive2D = (options: UseLive2DOptions) => {
     }
   }, []);
 
+  // Expression category methods
+  const toggleExpression = useCallback((expressionName: string): boolean => {
+    if (!modelRef.current) return false;
+    return expressionManagerRef.current.toggleExpression(expressionName);
+  }, []);
+
+  const getActiveExpressions = useCallback((): string[] => {
+    return expressionManagerRef.current.getActiveExpressions();
+  }, []);
+
+  const isExpressionActive = useCallback((expressionName: string): boolean => {
+    return expressionManagerRef.current.isExpressionActive(expressionName);
+  }, []);
+
+  const applyFormPreset = useCallback((presetName: keyof typeof EXPRESSION_PRESETS): void => {
+    if (!modelRef.current) return;
+    expressionManagerRef.current.applyFormPreset(presetName);
+  }, []);
+
   // Create model ref object
   const modelRefObject: Live2DModelRef = {
     playMotion,
     stopAllMotions,
     setExpression,
     resetExpression,
+    toggleExpression,
+    getActiveExpressions,
+    isExpressionActive,
+    applyFormPreset,
     lookAt,
     stopLookAt,
     hit,
@@ -355,6 +389,19 @@ export const useLive2D = (options: UseLive2DOptions) => {
             modelRef.current.update(deltaTime);
           }
         });
+
+        // Initialize expression category manager
+        expressionManagerRef.current.setModel(model);
+        
+        // Load expression parameters for category management
+        if (model.internalModel.settings?.expressions) {
+          const baseUrl = modelPath.substring(0, modelPath.lastIndexOf('/') + 1);
+          const expressions = model.internalModel.settings.expressions.map((expr: any) => ({
+            name: expr.Name || expr.name,
+            file: baseUrl + (expr.File || expr.file)
+          }));
+          await expressionManagerRef.current.loadExpressionParameters(expressions);
+        }
 
         // Debug expression manager after model load
         if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
