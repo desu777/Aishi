@@ -107,11 +107,21 @@ export const useLive2D = (options: UseLive2DOptions) => {
 
   const lookAt = useCallback((x: number, y: number) => {
     if (!modelRef.current) return;
+    
+    // Don't respond to lookAt calls in AI mode
+    const isAIMode = process.env.NEXT_PUBLIC_LIVE2MODEL_AI === 'true';
+    if (isAIMode) return;
+    
     modelRef.current.focus(x, y);
   }, []);
 
   const stopLookAt = useCallback(() => {
     if (!modelRef.current) return;
+    
+    // Don't respond to stopLookAt calls in AI mode
+    const isAIMode = process.env.NEXT_PUBLIC_LIVE2MODEL_AI === 'true';
+    if (isAIMode) return;
+    
     modelRef.current.focus(modelRef.current.x, modelRef.current.y);
   }, []);
 
@@ -348,8 +358,16 @@ export const useLive2D = (options: UseLive2DOptions) => {
           performanceMonitorRef.current = createPerformanceMonitor();
         }
 
-        // Load model
-        const model = await loadLive2DModel(modelPath);
+        // Check if AI mode is enabled
+        const isAIMode = process.env.NEXT_PUBLIC_LIVE2MODEL_AI === 'true';
+        
+        // Load model with AI-specific options
+        const model = await loadLive2DModel(modelPath, {
+          autoUpdate: true,
+          motionPreload: 'IDLE',
+          autoFocus: !isAIMode, // Disable auto cursor tracking in AI mode
+          autoHitTest: true, // Keep hit testing enabled
+        });
         
         if (!mounted) {
           model.destroy();
@@ -435,6 +453,29 @@ export const useLive2D = (options: UseLive2DOptions) => {
           } else if (motions.length > 0) {
             // If no idle motion, play the first available motion
             playMotion(motions[0]);
+          }
+        }
+
+        // Configure AI mode behavior
+        if (isAIMode) {
+          try {
+            // Set neutral eye position (looking straight at viewer)
+            model.internalModel.coreModel.setParameterValueById('ParamEyeBallX', 0);
+            model.internalModel.coreModel.setParameterValueById('ParamEyeBallY', 0);
+            
+            // Set neutral head position
+            model.internalModel.coreModel.setParameterValueById('ParamAngleX', 0);
+            model.internalModel.coreModel.setParameterValueById('ParamAngleY', 0);
+            model.internalModel.coreModel.setParameterValueById('ParamAngleZ', 0);
+            
+            // Ensure natural breathing is maintained (default value)
+            model.internalModel.coreModel.setParameterValueById('ParamBreath', 0.5);
+            
+            if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+              console.log('[AI MODE] ✓ Cursor tracking disabled, neutral position set');
+            }
+          } catch (error) {
+            console.warn('[AI MODE] Failed to set neutral position:', error);
           }
         }
 

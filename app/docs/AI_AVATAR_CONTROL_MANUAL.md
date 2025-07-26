@@ -202,7 +202,7 @@ AI must respond with the following JSON structure:
 ### Happy Greeting
 ```json
 {
-  "text": "Hello! So happy to see you! 😊",
+  "text": "Hello! So happy to see you! ",
   "emotions": {"base": "love", "eyeEffect": "star"},
   "mouth": {"openness": 60, "form": 80, "lipSync": true},
   "accessories": {"catEars": true},
@@ -216,7 +216,7 @@ AI must respond with the following JSON structure:
 ### Sad Response
 ```json
 {
-  "text": "Oh no... what happened? 😢",
+  "text": "Oh no... what happened? ",
   "emotions": {"base": "cry", "eyeEffect": "none"},
   "mouth": {"openness": 20, "form": -70, "lipSync": true},
   "accessories": {"tea": true},
@@ -230,7 +230,7 @@ AI must respond with the following JSON structure:
 ### Angel Form with Heart Gesture
 ```json
 {
-  "text": "Sending you love! 💕",
+  "text": "Sending you love! ",
   "formPreset": "angel",
   "emotions": {"base": "love"},
   "mouth": {"openness": 80, "form": 100, "lipSync": true},

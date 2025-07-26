@@ -75,6 +75,8 @@ export const loadLive2DModel = async (
   options?: {
     autoUpdate?: boolean;
     motionPreload?: string;
+    autoFocus?: boolean;
+    autoHitTest?: boolean;
   }
 ): Promise<Live2DModel> => {
   try {
@@ -87,6 +89,8 @@ export const loadLive2DModel = async (
     const model = await Live2DModel.from(modelPath, {
       autoUpdate: options?.autoUpdate ?? true,
       motionPreload: options?.motionPreload ?? 'IDLE',
+      autoFocus: options?.autoFocus ?? true,
+      autoHitTest: options?.autoHitTest ?? true,
     });
 
     // Set default properties
