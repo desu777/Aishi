@@ -28,6 +28,14 @@ export default function CompanionIsYours() {
   const isTestMode = process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true';
   const isAIMode = process.env.NEXT_PUBLIC_LIVE2MODEL_AI === 'true';
   const isShizukuTestMode = process.env.NEXT_PUBLIC_LIVE2MODEL_SHIZUKU_TEST === 'true';
+  
+  // Debug log AI mode status
+  console.log('[Companion Page] Mode Status:', {
+    isAIMode,
+    isTestMode,
+    isShizukuTestMode,
+    NEXT_PUBLIC_LIVE2MODEL_AI: process.env.NEXT_PUBLIC_LIVE2MODEL_AI
+  });
 
   // Initialize AI system (only in AI mode)
   const shizukuAI = useShizukuAI({

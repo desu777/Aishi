@@ -41,6 +41,15 @@ export const useLive2D = (options: UseLive2DOptions) => {
     onMotionFinish,
     onHit,
   } = options;
+  
+  // Debug log AI mode on hook initialization
+  const isAIMode = process.env.NEXT_PUBLIC_LIVE2MODEL_AI === 'true';
+  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+    console.log('[useLive2D] Hook initialized with AI Mode:', {
+      isAIMode,
+      NEXT_PUBLIC_LIVE2MODEL_AI: process.env.NEXT_PUBLIC_LIVE2MODEL_AI
+    });
+  }
 
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<PIXI.Application | null>(null);

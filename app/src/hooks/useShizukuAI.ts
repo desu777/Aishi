@@ -11,11 +11,13 @@ import {
   SHIZUKU_RESPONSE_SCHEMA 
 } from '@/prompts/shizuku';
 
-// Type definitions based on our JSON Schema
+// Enhanced type definitions based on new JSON Schema
 export interface ShizukuResponse {
   text: string;
+  mouth_open_timeline: number[];
   emotions: {
     base: string;
+    intensity: number;
     eyeEffect: string;
   };
   mouth: {
@@ -23,31 +25,12 @@ export interface ShizukuResponse {
     form: number;
     lipSync: boolean;
   };
-  accessories: {
-    eyepatch: boolean;
-    jacket: boolean;
-    wings: boolean;
-    gaming: boolean;
-    mic: boolean;
-    tea: boolean;
-    catEars: boolean;
-    devil: boolean;
-    halo: boolean;
-  };
+  handItem: string;
   decorations: {
-    flowers: boolean;
-    crossPin: boolean;
-    linePin: boolean;
-    bow: boolean;
-  };
-  specialFX: {
-    heart: boolean;
-    board: boolean;
-    colorChange: boolean;
-    touch: boolean;
-    watermark: boolean;
-    haloColorChange: boolean;
-    wingsToggle: boolean;
+    blush: string;
+    tears: string;
+    anger_mark: boolean;
+    sweat: string;
   };
   physics: {
     headMovement: { x: number; y: number; z: number };
@@ -55,7 +38,11 @@ export interface ShizukuResponse {
     breathing: number;
     eyeTracking: { x: number; y: number };
   };
-  formPreset: string | null;
+  physics_timeline?: Array<{
+    headMovement?: { x?: number; y?: number; z?: number };
+    bodyMovement?: { x?: number; y?: number; z?: number };
+    duration: number;
+  }>;
 }
 
 interface UseShizukuAIOptions {
@@ -79,6 +66,17 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
     maxTokens = 2048,
     enableTestMode = process.env.NEXT_PUBLIC_LIVE2MODEL_SHIZUKU_TEST === 'true'
   } = options;
+  
+  // Debug log initialization
+  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+    console.log('[useShizukuAI] Hook initialized:', {
+      backendUrl,
+      enableTestMode,
+      isAIMode: process.env.NEXT_PUBLIC_LIVE2MODEL_AI,
+      temperature,
+      maxTokens
+    });
+  }
 
   const [state, setState] = useState<ShizukuAIState>({
     isLoading: false,
@@ -109,9 +107,59 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
       
       const parsed = JSON.parse(jsonStr);
       
-      // Validate required fields
+      // Flexible parsing to handle different response formats
+      // AI might return mouth_open_timeline in different places
+      if (!parsed.mouth_open_timeline && parsed.mouth?.mouth_open_timeline) {
+        parsed.mouth_open_timeline = parsed.mouth.mouth_open_timeline;
+      }
+      
+      // Handle hand_item in different locations
+      if (!parsed.handItem) {
+        if (parsed.hand_item) {
+          parsed.handItem = parsed.hand_item;
+        } else if (parsed.accessories?.hand_item) {
+          parsed.handItem = parsed.accessories.hand_item;
+        } else {
+          parsed.handItem = 'none';
+        }
+      }
+      
+      // Ensure decorations have proper structure
+      if (!parsed.decorations || typeof parsed.decorations !== 'object') {
+        parsed.decorations = {
+          blush: 'none',
+          tears: 'none',
+          anger_mark: false,
+          sweat: 'none'
+        };
+      }
+      
+      // Validate core required fields
       if (!parsed.text || !parsed.emotions || !parsed.physics) {
         throw new Error('Missing required fields in AI response');
+      }
+      
+      // If mouth_open_timeline is still missing, generate default
+      if (!parsed.mouth_open_timeline) {
+        console.warn('[Shizuku AI] mouth_open_timeline missing, generating default');
+        parsed.mouth_open_timeline = Array(parsed.text.length).fill(20);
+      }
+      
+      // Validate mouth_open_timeline length matches text length
+      if (parsed.mouth_open_timeline.length !== parsed.text.length) {
+        console.warn(`[Shizuku AI] mouth_open_timeline length (${parsed.mouth_open_timeline.length}) doesn't match text length (${parsed.text.length})`);
+        // Auto-fix by padding or truncating
+        const targetLength = parsed.text.length;
+        if (parsed.mouth_open_timeline.length < targetLength) {
+          // Pad with average values
+          const avg = parsed.mouth_open_timeline.reduce((a, b) => a + b, 0) / parsed.mouth_open_timeline.length;
+          while (parsed.mouth_open_timeline.length < targetLength) {
+            parsed.mouth_open_timeline.push(Math.round(avg));
+          }
+        } else {
+          // Truncate to match
+          parsed.mouth_open_timeline = parsed.mouth_open_timeline.slice(0, targetLength);
+        }
       }
       
       // Return with type safety
@@ -121,27 +169,26 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
       console.error('[Shizuku AI] Failed to parse response:', error);
       console.error('[Shizuku AI] Raw response:', rawResponse);
       
-      // Return fallback response
+      // Return fallback response with new schema
+      const fallbackText = "Sorry, I'm a bit confused right now...";
       return {
-        text: "抱歉，我现在有点困惑... (Sorry, I'm a bit confused right now...)",
-        emotions: { base: "dizzy", eyeEffect: "none" },
+        text: fallbackText,
+        mouth_open_timeline: Array(fallbackText.length).fill(15), // Generate timeline for fallback
+        emotions: { base: "dizzy", intensity: 0.6, eyeEffect: "none" },
         mouth: { openness: 30, form: -20, lipSync: true },
-        accessories: {
-          eyepatch: false, jacket: true, wings: false, gaming: false,
-          mic: false, tea: false, catEars: false, devil: false, halo: false
-        },
-        decorations: { flowers: false, crossPin: false, linePin: false, bow: false },
-        specialFX: {
-          heart: false, board: false, colorChange: false, touch: false,
-          watermark: false, haloColorChange: false, wingsToggle: false
+        handItem: "none",
+        decorations: {
+          blush: "none",
+          tears: "none", 
+          anger_mark: false,
+          sweat: "light"
         },
         physics: {
           headMovement: { x: 0, y: -5, z: -2 },
           bodyMovement: { x: 0, y: 0, z: 0 },
           breathing: 0.4,
           eyeTracking: { x: 0, y: 0 }
-        },
-        formPreset: null
+        }
       };
     }
   }, []);
@@ -194,6 +241,17 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
 
       const result = await response.json();
       
+      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+        console.log('[Shizuku AI] Raw backend response:', {
+          success: result.success,
+          dataType: typeof result.data,
+          dataLength: typeof result.data === 'string' ? result.data.length : 'N/A',
+          error: result.error,
+          // Log first 200 chars of response
+          preview: typeof result.data === 'string' ? result.data.substring(0, 200) + '...' : result.data
+        });
+      }
+      
       if (!result.success) {
         throw new Error(result.error || 'Failed to get AI response');
       }
@@ -229,8 +287,12 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
       if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
         console.log('[Shizuku AI] ✓ Response parsed successfully:', {
           text: shizukuResponse.text,
+          mouth_timeline_length: shizukuResponse.mouth_open_timeline.length,
           emotion: shizukuResponse.emotions.base,
-          breathing: shizukuResponse.physics.breathing
+          emotion_intensity: shizukuResponse.emotions.intensity,
+          hand_item: shizukuResponse.handItem,
+          breathing: shizukuResponse.physics.breathing,
+          has_physics_timeline: !!shizukuResponse.physics_timeline
         });
       }
 
@@ -252,27 +314,26 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
 
       console.error('[Shizuku AI] Error:', errorMessage);
       
-      // Return error response
+      // Return error response with new schema
+      const errorText = `Sorry, I encountered an issue: ${errorMessage}`;
       return parseShizukuResponse(JSON.stringify({
-        text: `抱歉，我遇到了一个问题: ${errorMessage}`,
-        emotions: { base: "cry", eyeEffect: "none" },
+        text: errorText,
+        mouth_open_timeline: Array(errorText.length).fill(10), // Generate timeline for error
+        emotions: { base: "crying", intensity: 0.7, eyeEffect: "none" },
         mouth: { openness: 20, form: -50, lipSync: true },
-        accessories: {
-          eyepatch: false, jacket: true, wings: false, gaming: false,
-          mic: false, tea: false, catEars: false, devil: false, halo: false
-        },
-        decorations: { flowers: false, crossPin: false, linePin: false, bow: false },
-        specialFX: {
-          heart: false, board: false, colorChange: false, touch: false,
-          watermark: false, haloColorChange: false, wingsToggle: false
+        handItem: "none",
+        decorations: {
+          blush: "none",
+          tears: "flowing",
+          anger_mark: false,
+          sweat: "nervous"
         },
         physics: {
           headMovement: { x: 0, y: -10, z: -3 },
           bodyMovement: { x: 0, y: 0, z: 0 },
           breathing: 0.3,
           eyeTracking: { x: 0, y: 0 }
-        },
-        formPreset: null
+        }
       }));
     }
   }, [backendUrl, temperature, maxTokens, enableTestMode, state.conversationHistory, parseShizukuResponse]);

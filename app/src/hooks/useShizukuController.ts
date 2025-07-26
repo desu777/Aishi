@@ -9,12 +9,12 @@ import { useCallback, useRef } from 'react';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 import type { ShizukuResponse } from '@/hooks/useShizukuAI';
 
-// Expression mapping based on AI_AVATAR_CONTROL_MANUAL.md
+// Enhanced expression mapping for new emotion system
 const EMOTION_MAP = {
   love: '爱心眼',
-  star: '星星眼', 
+  starry: '星星眼', 
   angry: '生气',
-  cry: '哭哭',
+  crying: '哭哭',
   dark: '黑脸',
   blush: '脸红',
   blank: '空白眼',
@@ -22,39 +22,43 @@ const EMOTION_MAP = {
   none: null
 };
 
-const ACCESSORY_MAP = {
-  eyepatch: '眼罩',
-  jacket: '外套',
-  wings: '翅膀',
+// Hand items mapping (AI-controlled)
+const HAND_ITEM_MAP = {
   gaming: '游戏机',
-  mic: '麦克风',
+  microphone: '麦克风',
   tea: '茶杯',
-  catEars: '猫耳',
-  devil: '恶魔角',
-  halo: '光环'
-};
-
-const DECORATION_MAP = {
-  flowers: '花花',
-  crossPin: '十字发夹',
-  linePin: '一字发夹',
-  bow: '蝴蝶结'
-};
-
-const SPECIAL_FX_MAP = {
   heart: '比心',
   board: '写字板',
-  colorChange: '换色',
-  touch: '点触',
-  watermark: '水印',
-  haloColorChange: '光环换色',
-  wingsToggle: '翅膀切换'
+  none: null
+};
+
+// Enhanced decorations with intensity levels
+const DECORATION_INTENSITY_MAP = {
+  blush: {
+    none: null,
+    light: '脸红_轻',
+    medium: '脸红',
+    heavy: '脸红_重'
+  },
+  tears: {
+    none: null,
+    light: '眼泪_轻',
+    flowing: '眼泪',
+    streaming: '眼泪_重'
+  },
+  sweat: {
+    none: null,
+    light: '汗滴_轻',
+    nervous: '汗滴',
+    heavy: '汗滴_重'
+  }
 };
 
 interface UseShizukuControllerOptions {
   enableDebugLogs?: boolean;
   smoothTransitions?: boolean;
   transitionDuration?: number;
+  speechRate?: number; // ms per character for mouth_open_timeline playback
 }
 
 export const useShizukuController = (
@@ -64,11 +68,14 @@ export const useShizukuController = (
   const {
     enableDebugLogs = process.env.NEXT_PUBLIC_DREAM_TEST === 'true',
     smoothTransitions = true,
-    transitionDuration = 500
+    transitionDuration = 500,
+    speechRate = 120 // ms per character
   } = options;
 
   const lastAppliedStateRef = useRef<ShizukuResponse | null>(null);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mouthTimelineTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const physicsTimelineTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Smooth parameter transition utility
   const smoothSetParameter = useCallback((
@@ -103,25 +110,124 @@ export const useShizukuController = (
     requestAnimationFrame(animate);
   }, [modelRef, smoothTransitions, transitionDuration]);
 
-  // Apply emotion expressions (base + eyeEffect)
-  const applyEmotions = useCallback((emotions: ShizukuResponse['emotions']) => {
-    if (!modelRef.current) return;
+  // NEW: Play mouth_open_timeline for character-level lip sync
+  const playMouthTimeline = useCallback((timeline: number[], text: string) => {
+    if (!modelRef.current || !timeline.length) return;
 
-    try {
-      // Apply base emotion (exclusive)
-      const baseExpression = EMOTION_MAP[emotions.base as keyof typeof EMOTION_MAP];
-      if (baseExpression) {
-        modelRef.current.setExpression(baseExpression);
-      } else if (emotions.base === 'none') {
-        modelRef.current.resetExpression();
+    // Clear any existing mouth timeline
+    if (mouthTimelineTimeoutRef.current) {
+      clearTimeout(mouthTimelineTimeoutRef.current);
+    }
+
+    let currentIndex = 0;
+    
+    const playNextFrame = () => {
+      if (currentIndex >= timeline.length || !modelRef.current) return;
+
+      const mouthValue = timeline[currentIndex] / 100; // Convert 0-40 to 0-0.4
+      smoothSetParameter('ParamMouthOpenY', mouthValue, 50); // Fast transitions for speech
+
+      if (enableDebugLogs && currentIndex < 10) { // Log first 10 chars to avoid spam
+        console.log(`[Mouth Timeline] Char "${text[currentIndex]}" -> ${timeline[currentIndex]}% (${mouthValue})`);
       }
 
-      // Note: eyeEffect overlays are handled by the expression system automatically
-      // The Live2D model combines multiple expressions additively
+      currentIndex++;
+      
+      if (currentIndex < timeline.length) {
+        mouthTimelineTimeoutRef.current = setTimeout(playNextFrame, speechRate);
+      } else {
+        // Timeline finished, return to base mouth openness
+        setTimeout(() => {
+          if (modelRef.current) {
+            smoothSetParameter('ParamMouthOpenY', 0, transitionDuration);
+          }
+        }, speechRate);
+      }
+    };
+
+    playNextFrame();
+  }, [modelRef, speechRate, enableDebugLogs, smoothSetParameter, transitionDuration]);
+
+  // NEW: Play physics_timeline for complex animations
+  const playPhysicsTimeline = useCallback((timeline: Array<{
+    headMovement?: { x?: number; y?: number; z?: number };
+    bodyMovement?: { x?: number; y?: number; z?: number };
+    duration: number;
+  }>) => {
+    if (!modelRef.current || !timeline.length) return;
+
+    // Clear any existing physics timeline
+    if (physicsTimelineTimeoutRef.current) {
+      clearTimeout(physicsTimelineTimeoutRef.current);
+    }
+
+    let currentIndex = 0;
+
+    const playNextStep = () => {
+      if (currentIndex >= timeline.length || !modelRef.current) return;
+
+      const step = timeline[currentIndex];
+      
+      // Apply head movement if specified
+      if (step.headMovement) {
+        if (step.headMovement.x !== undefined) smoothSetParameter('ParamAngleX', step.headMovement.x, step.duration);
+        if (step.headMovement.y !== undefined) smoothSetParameter('ParamAngleY', step.headMovement.y, step.duration);
+        if (step.headMovement.z !== undefined) smoothSetParameter('ParamAngleZ', step.headMovement.z, step.duration);
+      }
+
+      // Apply body movement if specified
+      if (step.bodyMovement) {
+        if (step.bodyMovement.x !== undefined) smoothSetParameter('ParamBodyAngleX', step.bodyMovement.x, step.duration);
+        if (step.bodyMovement.y !== undefined) smoothSetParameter('ParamBodyAngleY', step.bodyMovement.y, step.duration);
+        if (step.bodyMovement.z !== undefined) smoothSetParameter('ParamBodyAngleZ', step.bodyMovement.z, step.duration);
+      }
+
+      if (enableDebugLogs) {
+        console.log(`[Physics Timeline] Step ${currentIndex + 1}/${timeline.length}:`, step);
+      }
+
+      currentIndex++;
+      
+      if (currentIndex < timeline.length) {
+        physicsTimelineTimeoutRef.current = setTimeout(playNextStep, step.duration);
+      }
+    };
+
+    playNextStep();
+  }, [modelRef, enableDebugLogs, smoothSetParameter]);
+
+  // Apply emotion expressions with intensity support
+  const applyEmotions = useCallback((emotions: ShizukuResponse['emotions']) => {
+    if (!modelRef.current || emotions.base === 'none') return;
+
+    try {
+      const baseExpression = EMOTION_MAP[emotions.base as keyof typeof EMOTION_MAP];
+      if (baseExpression) {
+        // Apply base emotion
+        modelRef.current.setExpression(baseExpression);
+        
+        // Apply intensity if the model supports expression intensity
+        // This is a future enhancement - for now we just log it
+        if (emotions.intensity !== undefined && emotions.intensity !== 1.0) {
+          // Could be implemented as expression parameter scaling
+          if (enableDebugLogs) {
+            console.log(`[Emotion Intensity] ${emotions.base} at ${emotions.intensity * 100}%`);
+          }
+        }
+      }
+
+      // Apply eye effects if specified and not none
+      if (emotions.eyeEffect !== 'none') {
+        const eyeExpression = EMOTION_MAP[emotions.eyeEffect as keyof typeof EMOTION_MAP];
+        if (eyeExpression) {
+          modelRef.current.setExpression(eyeExpression);
+        }
+      }
 
       if (enableDebugLogs) {
         console.log('[Shizuku Controller] Applied emotions:', {
           base: emotions.base,
+          intensity: emotions.intensity,
           eyeEffect: emotions.eyeEffect,
           expression: baseExpression
         });
@@ -157,55 +263,57 @@ export const useShizukuController = (
     }
   }, [modelRef, enableDebugLogs, smoothSetParameter]);
 
-  // Apply accessories (with conflict resolution)
-  const applyAccessories = useCallback((accessories: ShizukuResponse['accessories']) => {
-    if (!modelRef.current) return;
+  // NEW: Apply hand items (AI-controlled, mutually exclusive)
+  const applyHandItem = useCallback((handItem: string) => {
+    if (!modelRef.current || handItem === 'none') return;
 
     try {
-      // Handle devil/halo conflict (from AI_AVATAR_CONTROL_MANUAL.md)
-      let resolvedAccessories = { ...accessories };
-      if (accessories.devil && accessories.halo) {
-        // Prefer the one that changed from last state, or default to halo
-        const lastState = lastAppliedStateRef.current?.accessories;
-        if (lastState?.devil === false && accessories.devil === true) {
-          resolvedAccessories.halo = false; // Devil wins
-        } else {
-          resolvedAccessories.devil = false; // Halo wins
-        }
+      const expressionName = HAND_ITEM_MAP[handItem as keyof typeof HAND_ITEM_MAP];
+      if (expressionName) {
+        modelRef.current.setExpression(expressionName);
       }
-
-      // Apply each accessory
-      Object.entries(resolvedAccessories).forEach(([key, value]) => {
-        const expressionName = ACCESSORY_MAP[key as keyof typeof ACCESSORY_MAP];
-        if (expressionName) {
-          if (value) {
-            modelRef.current?.setExpression(expressionName);
-          } else {
-            // Remove accessory - this depends on the expression system
-            // In practice, we might need to call resetExpression for specific accessories
-          }
-        }
-      });
 
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] Applied accessories:', resolvedAccessories);
+        console.log('[Shizuku Controller] Applied hand item:', handItem);
       }
     } catch (error) {
-      console.warn('[Shizuku Controller] Failed to apply accessories:', error);
+      console.warn('[Shizuku Controller] Failed to apply hand item:', error);
     }
   }, [modelRef, enableDebugLogs]);
 
-  // Apply decorations (additive)
+  // Enhanced decorations with intensity levels
   const applyDecorations = useCallback((decorations: ShizukuResponse['decorations']) => {
     if (!modelRef.current) return;
 
     try {
-      Object.entries(decorations).forEach(([key, value]) => {
-        const expressionName = DECORATION_MAP[key as keyof typeof DECORATION_MAP];
-        if (expressionName && value) {
-          modelRef.current?.setExpression(expressionName);
+      // Apply blush with intensity
+      if (decorations.blush !== 'none') {
+        const blushExpression = DECORATION_INTENSITY_MAP.blush[decorations.blush as keyof typeof DECORATION_INTENSITY_MAP.blush];
+        if (blushExpression) {
+          modelRef.current.setExpression(blushExpression);
         }
-      });
+      }
+
+      // Apply tears with intensity  
+      if (decorations.tears !== 'none') {
+        const tearExpression = DECORATION_INTENSITY_MAP.tears[decorations.tears as keyof typeof DECORATION_INTENSITY_MAP.tears];
+        if (tearExpression) {
+          modelRef.current.setExpression(tearExpression);
+        }
+      }
+
+      // Apply sweat with intensity
+      if (decorations.sweat !== 'none') {
+        const sweatExpression = DECORATION_INTENSITY_MAP.sweat[decorations.sweat as keyof typeof DECORATION_INTENSITY_MAP.sweat];
+        if (sweatExpression) {
+          modelRef.current.setExpression(sweatExpression);
+        }
+      }
+
+      // Apply anger mark (boolean)
+      if (decorations.anger_mark) {
+        modelRef.current.setExpression('愤怒标记');
+      }
 
       if (enableDebugLogs) {
         console.log('[Shizuku Controller] Applied decorations:', decorations);
@@ -215,25 +323,6 @@ export const useShizukuController = (
     }
   }, [modelRef, enableDebugLogs]);
 
-  // Apply special effects (additive)
-  const applySpecialFX = useCallback((specialFX: ShizukuResponse['specialFX']) => {
-    if (!modelRef.current) return;
-
-    try {
-      Object.entries(specialFX).forEach(([key, value]) => {
-        const expressionName = SPECIAL_FX_MAP[key as keyof typeof SPECIAL_FX_MAP];
-        if (expressionName && value) {
-          modelRef.current?.setExpression(expressionName);
-        }
-      });
-
-      if (enableDebugLogs) {
-        console.log('[Shizuku Controller] Applied special FX:', specialFX);
-      }
-    } catch (error) {
-      console.warn('[Shizuku Controller] Failed to apply special FX:', error);
-    }
-  }, [modelRef, enableDebugLogs]);
 
   // Apply physics parameters (head, body, breathing, eyes)
   const applyPhysics = useCallback((physics: ShizukuResponse['physics']) => {
@@ -294,43 +383,61 @@ export const useShizukuController = (
       return;
     }
 
-    // Clear any existing transition
+    // Clear any existing transitions and timelines
     if (transitionTimeoutRef.current) {
       clearTimeout(transitionTimeoutRef.current);
+    }
+    if (mouthTimelineTimeoutRef.current) {
+      clearTimeout(mouthTimelineTimeoutRef.current);
+    }
+    if (physicsTimelineTimeoutRef.current) {
+      clearTimeout(physicsTimelineTimeoutRef.current);
     }
 
     try {
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] Applying Shizuku response:', {
+        console.log('[Shizuku Controller] Applying enhanced Shizuku response:', {
           text: response.text.substring(0, 50) + '...',
+          mouth_timeline_length: response.mouth_open_timeline.length,
           emotion: response.emotions.base,
+          emotion_intensity: response.emotions.intensity,
+          hand_item: response.handItem,
+          has_physics_timeline: !!response.physics_timeline,
           breathing: response.physics.breathing
         });
       }
 
-      // Apply in order based on VTubeStudio priority system:
-      // 1. Form preset (highest priority, overrides others)
-      if (response.formPreset) {
-        applyFormPreset(response.formPreset);
-      }
-
-      // 2. Expressions (emotions, accessories, decorations, special FX)
+      // Apply in enhanced order:
+      // 1. Emotions with intensity (highest visual priority)
       applyEmotions(response.emotions);
-      applyAccessories(response.accessories);
-      applyDecorations(response.decorations);
-      applySpecialFX(response.specialFX);
 
-      // 3. Physics parameters (head, body, breathing)
+      // 2. Decorations with intensity levels
+      applyDecorations(response.decorations);
+
+      // 3. Hand items (AI-controlled accessories)
+      applyHandItem(response.handItem);
+
+      // 4. Physics parameters (always applied for "life")
       applyPhysics(response.physics);
 
-      // 4. Mouth parameters (lowest priority for expressions)
+      // 5. Base mouth parameters (before timeline)
       applyMouth(response.mouth);
 
-      // Store the last applied state for conflict resolution
+      // 6. NEW: Start mouth_open_timeline playback for lip sync
+      if (response.mouth_open_timeline && response.mouth_open_timeline.length > 0) {
+        playMouthTimeline(response.mouth_open_timeline, response.text);
+      }
+
+      // 7. NEW: Start physics_timeline if provided (for complex animations)
+      if (response.physics_timeline && response.physics_timeline.length > 0) {
+        playPhysicsTimeline(response.physics_timeline);
+      }
+
+      // Store the last applied state
       lastAppliedStateRef.current = response;
 
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] ✓ Successfully applied all parameters');
+        console.log('[Shizuku Controller] ✓ Successfully applied all enhanced parameters');
       }
 
     } catch (error) {
@@ -339,13 +446,13 @@ export const useShizukuController = (
   }, [
     modelRef, 
     enableDebugLogs,
-    applyFormPreset,
     applyEmotions,
-    applyAccessories,
     applyDecorations,
-    applySpecialFX,
+    applyHandItem,
     applyPhysics,
-    applyMouth
+    applyMouth,
+    playMouthTimeline,
+    playPhysicsTimeline
   ]);
 
   // Reset to neutral state
@@ -386,13 +493,18 @@ export const useShizukuController = (
     resetToNeutral,
     lastAppliedState: lastAppliedStateRef.current,
     
+    // NEW: Timeline playback functions
+    playMouthTimeline,
+    playPhysicsTimeline,
+    
     // Individual parameter application functions (for fine control)
     applyEmotions,
     applyMouth,
-    applyAccessories,
+    applyHandItem,
     applyDecorations,
-    applySpecialFX,
     applyPhysics,
+    
+    // Legacy function kept for compatibility
     applyFormPreset
   };
 };
