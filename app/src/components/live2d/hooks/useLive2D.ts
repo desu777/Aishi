@@ -471,11 +471,30 @@ export const useLive2D = (options: UseLive2DOptions) => {
             // Ensure natural breathing is maintained (default value)
             model.internalModel.coreModel.setParameterValueById('ParamBreath', 0.5);
             
+            // Ensure automatic blinking is enabled
+            if (model.internalModel.eyeBlink) {
+              model.internalModel.eyeBlink.setBlinkingInterval(2.5); // Natural blink interval
+            }
+            
             if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
               console.log('[AI MODE] ✓ Cursor tracking disabled, neutral position set');
+              console.log('[AI MODE] ✓ Eye blink enabled:', !!model.internalModel.eyeBlink);
             }
           } catch (error) {
             console.warn('[AI MODE] Failed to set neutral position:', error);
+          }
+        } else {
+          // Normal mode - ensure blinking is also enabled
+          try {
+            if (model.internalModel.eyeBlink) {
+              model.internalModel.eyeBlink.setBlinkingInterval(2.5); // Natural blink interval
+            }
+            
+            if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+              console.log('[NORMAL MODE] ✓ Cursor tracking enabled, eye blink enabled:', !!model.internalModel.eyeBlink);
+            }
+          } catch (error) {
+            console.warn('[NORMAL MODE] Failed to configure blinking:', error);
           }
         }
 

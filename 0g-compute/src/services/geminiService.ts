@@ -85,6 +85,8 @@ export class GeminiService {
         candidateCount: 1,
       };
 
+      // JSON Schema removed - using markdown fallback approach for reliability
+
       // Log request details in test mode
       if (process.env.TEST_ENV === 'true') {
         console.log(`🤖 Gemini Request:`, {
