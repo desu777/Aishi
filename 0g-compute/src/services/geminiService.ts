@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/genai';
 import '../config/envLoader';
 
 /**
@@ -6,7 +5,8 @@ import '../config/envLoader';
  * Acts as a proxy between frontend and Google's Gemini models
  */
 export class GeminiService {
-  private genAI: GoogleGenerativeAI | null = null;
+  private genAI: any = null;
+  private GoogleGenAI: any = null;
   private isInitialized = false;
 
   /**
@@ -32,9 +32,16 @@ export class GeminiService {
       process.env.GOOGLE_CLOUD_PROJECT = process.env.VERTEX_AI_PROJECT;
       process.env.GOOGLE_CLOUD_LOCATION = process.env.VERTEX_AI_LOCATION;
 
-      // Initialize GoogleGenerativeAI client
-      // When GOOGLE_GENAI_USE_VERTEXAI is set, it will use ADC (Application Default Credentials)
-      this.genAI = new GoogleGenerativeAI();
+      // Dynamic import for ESM module
+      const genaiModule = await import('@google/genai');
+      this.GoogleGenAI = genaiModule.GoogleGenAI;
+
+      // Initialize GoogleGenAI client with Vertex AI parameters
+      this.genAI = new this.GoogleGenAI({
+        vertexai: true,
+        project: process.env.VERTEX_AI_PROJECT,
+        location: process.env.VERTEX_AI_LOCATION
+      });
       
       this.isInitialized = true;
       console.log('✅ Gemini AI Service initialized successfully');
@@ -88,12 +95,6 @@ export class GeminiService {
         generationConfig.maxOutputTokens = maxOutputTokens;
       }
 
-      // Get the generative model
-      const model = this.genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig,
-      });
-
       // Log request details in test mode
       if (process.env.TEST_ENV === 'true') {
         console.log(`🤖 Gemini Request:`, {
@@ -105,14 +106,17 @@ export class GeminiService {
         });
       }
 
-      // Generate content
+      // Generate content using the new API
       const startTime = Date.now();
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      const response = await this.genAI.models.generateContent({
+        model: modelName,
+        contents: prompt,
+        config: generationConfig
+      });
       const responseTime = Date.now() - startTime;
 
       // Extract text from response
-      let responseText = response.text();
+      let responseText = response.text;
       
       // If response mime type is JSON, try to parse it
       let parsedResponse = responseText;
@@ -134,9 +138,9 @@ export class GeminiService {
         metadata: {
           model: modelName,
           responseTime,
-          promptTokenCount: result.response.usageMetadata?.promptTokenCount || 0,
-          candidatesTokenCount: result.response.usageMetadata?.candidatesTokenCount || 0,
-          totalTokenCount: result.response.usageMetadata?.totalTokenCount || 0,
+          promptTokenCount: response.usageMetadata?.promptTokenCount || 0,
+          candidatesTokenCount: response.usageMetadata?.candidatesTokenCount || 0,
+          totalTokenCount: response.usageMetadata?.totalTokenCount || 0,
         }
       };
 
@@ -185,6 +189,7 @@ export class GeminiService {
    */
   async cleanup(): Promise<void> {
     this.genAI = null;
+    this.GoogleGenAI = null;
     this.isInitialized = false;
     console.log('🛑 Gemini AI Service cleaned up');
   }
