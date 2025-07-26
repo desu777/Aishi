@@ -73,6 +73,59 @@ export interface Live2DTestControlsProps {
   showPerformance?: boolean;
 }
 
+// Model-specific types for 水母_vts
+export interface JellyfishExpressionCategory {
+  emotions: string[];
+  accessories: string[];
+  decorations: string[];
+  special: string[];
+}
+
+export interface JellyfishModelExpressions {
+  // Emotions
+  love: string;      // 爱心眼
+  star: string;      // 星星眼
+  angry: string;     // 生气
+  cry: string;       // 哭哭
+  dark: string;      // 黑脸
+  blush: string;     // 脸红
+  blank: string;     // 空白眼
+  dizzy: string;     // 蚊香眼
+  
+  // Accessories
+  eyepatch: string;  // 眼罩
+  jacket: string;    // 外套
+  wings: string;     // 翅膀
+  gaming: string;    // 游戏机
+  mic: string;       // 麦克风
+  tea: string;       // 茶杯
+  catEars: string;   // 猫耳
+  devil: string;     // 恶魔角
+  halo: string;      // 光环
+  
+  // Decorations
+  flowers: string;   // 花花
+  crossPin: string;  // 十字发夹
+  linePin: string;   // 一字发夹
+  bow: string;       // 蝴蝶结
+  
+  // Special
+  heart: string;     // 比心
+  board: string;     // 写字板
+  colorChange: string; // 换色
+  touch: string;     // 点触
+  watermark: string; // 水印
+  
+  // Additional variants
+  haloColorChange: string; // 光环换色
+  wingsToggle: string;     // 翅膀切换
+}
+
+export interface PhonemeMapping {
+  openY: number;
+  form: number;
+}
+
 // Error types
 export class Live2DLoadError extends Error {
   constructor(public modelPath: string, public originalError: Error) {

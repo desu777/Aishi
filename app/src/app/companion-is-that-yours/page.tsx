@@ -141,10 +141,10 @@ export default function CompanionIsYours() {
         {/* Live2D Model - Full Screen */}
         <Live2DModel
           ref={modelRef}
-          modelPath="/Alexia/Alexia.model3.json"
+          modelPath="/水母_vts/水母.model3.json"
           width={windowSize.width}
           height={windowSize.height}
-          scale={0.1}
+          scale={0.18}
           transparent={true}
           autoPlay={true}
           className="w-full h-full"

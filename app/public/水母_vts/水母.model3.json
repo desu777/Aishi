@@ -1,0 +1,60 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "水母.moc3",
+		"Textures": [
+			"水母.8192/texture_00.png",
+			"水母.8192/texture_01.png"
+		],
+		"Physics": "水母.physics3.json",
+		"DisplayInfo": "水母.cdi3.json"
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": [
+				"ParamEyeLOpen",
+				"ParamEyeROpen"
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": [
+				"ParamMouthOpenY",
+				"ParamMouthForm"
+			]
+		}
+	],
+	"Expressions": [
+		{"Name": "爱心眼", "File": "爱心眼.exp3.json"},
+		{"Name": "星星眼", "File": "星星眼.exp3.json"},
+		{"Name": "生气", "File": "生气.exp3.json"},
+		{"Name": "哭哭", "File": "哭哭.exp3.json"},
+		{"Name": "黑脸", "File": "黑脸.exp3.json"},
+		{"Name": "脸红", "File": "脸红.exp3.json"},
+		{"Name": "空白眼", "File": "空白眼.exp3.json"},
+		{"Name": "蚊香眼", "File": "蚊香眼.exp3.json"},
+		{"Name": "眼罩", "File": "眼罩.exp3.json"},
+		{"Name": "外套", "File": "外套.exp3.json"},
+		{"Name": "翅膀", "File": "翅膀.exp3.json"},
+		{"Name": "翅膀切换", "File": "翅膀切换.exp3.json"},
+		{"Name": "游戏机", "File": "游戏机.exp3.json"},
+		{"Name": "麦克风", "File": "麦克风.exp3.json"},
+		{"Name": "茶杯", "File": "茶杯.exp3.json"},
+		{"Name": "猫耳", "File": "猫耳.exp3.json"},
+		{"Name": "恶魔角", "File": "恶魔角.exp3.json"},
+		{"Name": "光环", "File": "光环.exp3.json"},
+		{"Name": "光环换色", "File": "光环换色.exp3.json"},
+		{"Name": "花花", "File": "花花.exp3.json"},
+		{"Name": "十字发夹", "File": "十字发夹.exp3.json"},
+		{"Name": "一字发夹", "File": "一字发夹.exp3.json"},
+		{"Name": "蝴蝶结", "File": "蝴蝶结.exp3.json"},
+		{"Name": "比心", "File": "比心.exp3.json"},
+		{"Name": "写字板", "File": "写字板.exp3.json"},
+		{"Name": "换色", "File": "换色.exp3.json"},
+		{"Name": "点触", "File": "点触.exp3.json"},
+		{"Name": "水印", "File": "水印.exp3.json"}
+	]
+}

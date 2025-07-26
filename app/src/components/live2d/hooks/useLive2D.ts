@@ -326,7 +326,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
 
         // Set model properties
         model.x = width / 2;
-        model.y = height / 2;
+        model.y = height * 0.75; // Position model lower on screen (75% of height)
         model.scale.set(scale);
 
         // Add event listeners

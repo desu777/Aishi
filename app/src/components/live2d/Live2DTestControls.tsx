@@ -16,9 +16,10 @@ import {
   FaHeart,
   FaStar,
   FaPalette,
-  FaCat
+  FaCat,
+  FaTimes
 } from 'react-icons/fa';
-import type { Live2DTestControlsProps, Live2DModelRef } from './utils/live2d-types';
+import type { Live2DTestControlsProps, Live2DModelRef, JellyfishModelExpressions, PhonemeMapping } from './utils/live2d-types';
 
 export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
   modelRef,
@@ -30,33 +31,55 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
   const [selectedExpression, setSelectedExpression] = useState('');
   const [lipSyncValue, setLipSyncValue] = useState(0);
   const [isLipSyncActive, setIsLipSyncActive] = useState(false);
-  const [currentTab, setCurrentTab] = useState<'motions' | 'expressions' | 'lipsync' | 'params' | 'special' | 'face'>('motions');
-  const [specialParams, setSpecialParams] = useState({
-    glasses: 0,
-    outfit: 0,
-    question: 0,
-    sweat: 0,
-    grin: 0,
-    starEyes: 0,
-    dizzy: 0,
-    angry: 0,
-    blush: 0,
-    cry: 0,
-    eyeColorR: 0,
-    eyeColorG: 0,
-  });
-  const [faceParams, setFaceParams] = useState({
-    tongue: 0,
-    mouthX: 0,
-    cheekPuff: 0,
-    mouthShrug: 0,
-    mouthFunnel: 0,
-    mouthPress: 0,
-    mouthWiden: 0,
-    jawOpen: 0,
-    eyeSquint: 0,
-    eyeSquint2: 0,
-  });
+  const [currentTab, setCurrentTab] = useState<'emotions' | 'accessories' | 'decorations' | 'lipsync' | 'physics' | 'special'>('emotions');
+  const [isOpen, setIsOpen] = useState(true);
+  // Expression mappings for 水母_vts model
+  const expressionMapping: JellyfishModelExpressions = {
+    // Emotions
+    love: '爱心眼',
+    star: '星星眼',
+    angry: '生气',
+    cry: '哭哭',
+    dark: '黑脸',
+    blush: '脸红',
+    blank: '空白眼',
+    dizzy: '蚊香眼',
+    // Accessories
+    eyepatch: '眼罩',
+    jacket: '外套',
+    wings: '翅膀',
+    gaming: '游戏机',
+    mic: '麦克风',
+    tea: '茶杯',
+    catEars: '猫耳',
+    devil: '恶魔角',
+    halo: '光环',
+    // Decorations
+    flowers: '花花',
+    crossPin: '十字发夹',
+    linePin: '一字发夹',
+    bow: '蝴蝶结',
+    // Special
+    heart: '比心',
+    board: '写字板',
+    colorChange: '换色',
+    touch: '点触',
+    watermark: '水印',
+    // Additional variants
+    haloColorChange: '光环换色',
+    wingsToggle: '翅膀切换',
+  };
+
+  const [activeAccessories, setActiveAccessories] = useState<string[]>([]);
+  const [mouthFormValue, setMouthFormValue] = useState(0);
+  // Advanced LipSync with phoneme mapping
+  const phonemeMapping: Record<string, PhonemeMapping> = {
+    'A': { openY: 0.8, form: 0.2 },
+    'I': { openY: 0.3, form: -0.5 },
+    'U': { openY: 0.4, form: 0.8 },
+    'E': { openY: 0.5, form: -0.3 },
+    'O': { openY: 0.6, form: 0.6 },
+  };
 
   // Play motion
   const handlePlayMotion = useCallback((motionGroup: string) => {
@@ -66,13 +89,28 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
     }
   }, [modelRef]);
 
-  // Set expression
-  const handleSetExpression = useCallback((expression: string) => {
+  // Set expression with accessory management
+  const handleSetExpression = useCallback((expression: string, isAccessory?: boolean) => {
     if (modelRef.current) {
-      modelRef.current.setExpression(expression);
-      setSelectedExpression(expression);
+      if (isAccessory) {
+        // Toggle accessory
+        const index = activeAccessories.indexOf(expression);
+        if (index > -1) {
+          // Remove accessory
+          activeAccessories.splice(index, 1);
+          setActiveAccessories([...activeAccessories]);
+        } else {
+          // Add accessory
+          setActiveAccessories([...activeAccessories, expression]);
+          modelRef.current.setExpression(expression);
+        }
+      } else {
+        // Regular expression
+        modelRef.current.setExpression(expression);
+        setSelectedExpression(expression);
+      }
     }
-  }, [modelRef]);
+  }, [modelRef, activeAccessories]);
 
   // Reset expression
   const handleResetExpression = useCallback(() => {
@@ -90,28 +128,44 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
     }
   }, [modelRef]);
 
-  // Lip sync simulation
-  const handleLipSyncChange = useCallback((value: number) => {
+  // Advanced lip sync with mouth form
+  const handleLipSyncChange = useCallback((value: number, formValue?: number) => {
     setLipSyncValue(value);
     if (modelRef.current) {
       modelRef.current.setLipSyncValue(value);
+      if (formValue !== undefined) {
+        setMouthFormValue(formValue);
+        modelRef.current.setParameterValue('ParamMouthForm', formValue);
+      }
     }
   }, [modelRef]);
 
-  // Toggle lip sync
+  // Toggle advanced lip sync with phoneme simulation
   const toggleLipSync = useCallback(() => {
     if (modelRef.current) {
       if (!isLipSyncActive) {
         setIsLipSyncActive(true);
-        // Simulate talking animation
-        let value = 0;
+        // Simulate talking with phonemes
+        const phonemes = ['A', 'I', 'U', 'E', 'O'];
+        let index = 0;
+        
         const interval = setInterval(() => {
-          value = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
-          setLipSyncValue(value);
+          const phoneme = phonemes[index % phonemes.length];
+          const mapping = phonemeMapping[phoneme];
+          
+          // Apply smooth transition
+          const transition = Math.sin(Date.now() * 0.01) * 0.2 + 0.8;
+          
+          setLipSyncValue(mapping.openY * transition);
+          setMouthFormValue(mapping.form);
+          
           if (modelRef.current) {
-            modelRef.current.setLipSyncValue(value);
+            modelRef.current.setLipSyncValue(mapping.openY * transition);
+            modelRef.current.setParameterValue('ParamMouthForm', mapping.form);
           }
-        }, 50);
+          
+          if (Math.random() > 0.85) index++; // Random phoneme changes
+        }, 100);
         
         // Store interval ID for cleanup
         (window as any).__lipSyncInterval = interval;
@@ -121,10 +175,12 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
           clearInterval((window as any).__lipSyncInterval);
         }
         modelRef.current.stopLipSync();
+        modelRef.current.setParameterValue('ParamMouthForm', 0);
         setLipSyncValue(0);
+        setMouthFormValue(0);
       }
     }
-  }, [modelRef, isLipSyncActive]);
+  }, [modelRef, isLipSyncActive, phonemeMapping]);
 
   // Test hit areas
   const handleTestHit = useCallback(() => {
@@ -137,15 +193,20 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
   }, [modelRef]);
 
   const tabStyle = {
-    padding: '8px 16px',
+    padding: '10px 16px',
     backgroundColor: 'transparent',
     border: 'none',
     color: '#fff',
     cursor: 'pointer',
-    fontSize: '14px',
+    fontSize: '13px',
     fontFamily: "'JetBrains Mono', monospace",
     transition: 'all 0.3s ease',
     borderRadius: '8px',
+    width: '100%',
+    textAlign: 'left',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
   };
 
   const activeTabStyle = {
@@ -154,44 +215,123 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
     color: '#8B5CF6',
   };
 
+  const scrollbarStyles = `
+    <style>
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.3);
+        border-radius: 3px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(139, 92, 246, 0.5);
+      }
+    </style>
+  `;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.4 }}
-      style={{
-        position: 'fixed',
-        bottom: '120px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '90%',
-        maxWidth: '800px',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        backdropFilter: 'blur(20px)',
-        borderRadius: '16px',
-        border: '1px solid rgba(139, 92, 246, 0.3)',
-        padding: '20px',
-        zIndex: 50,
-      }}
-    >
+    <>
+      {/* Toggle Button */}
+      {!isOpen && (
+        <motion.button
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          onClick={() => setIsOpen(true)}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            width: '48px',
+            height: '48px',
+            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+            border: '1px solid rgba(139, 92, 246, 0.5)',
+            borderRadius: '8px',
+            color: '#8B5CF6',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <FaPlay size={16} />
+        </motion.button>
+      )}
+
+      {/* Main Panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: 320 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 320 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
+              bottom: '20px',
+              width: '320px',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '16px',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              padding: '20px',
+              zIndex: 50,
+              display: 'flex',
+              flexDirection: 'column',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+            }}
+          >
       {/* Header */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         marginBottom: '20px',
       }}>
-        <h3 style={{
-          color: '#8B5CF6',
-          fontSize: '18px',
-          fontWeight: 'bold',
-          margin: 0,
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '12px',
         }}>
-          Live2D Test Controls
-        </h3>
+          <h3 style={{
+            color: '#8B5CF6',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            margin: 0,
+          }}>
+            Live2D Controls
+          </h3>
+          <button
+            onClick={() => setIsOpen(false)}
+            style={{
+              width: '24px',
+              height: '24px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              opacity: 0.7,
+              transition: 'opacity 0.2s',
+              padding: 0,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; }}
+          >
+            <FaTimes size={14} />
+          </button>
+        </div>
         <div style={{
           display: 'flex',
           gap: '8px',
+          justifyContent: 'center',
         }}>
           <button
             onClick={handleStopMotions}
@@ -199,10 +339,12 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
               ...tabStyle,
               backgroundColor: 'rgba(239, 68, 68, 0.2)',
               color: '#EF4444',
+              fontSize: '12px',
+              padding: '6px 12px',
             }}
           >
-            <FaStop style={{ marginRight: '4px' }} />
-            Stop All
+            <FaStop size={12} style={{ marginRight: '4px' }} />
+            Stop
           </button>
           <button
             onClick={handleResetExpression}
@@ -210,9 +352,11 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
               ...tabStyle,
               backgroundColor: 'rgba(34, 197, 94, 0.2)',
               color: '#22C55E',
+              fontSize: '12px',
+              padding: '6px 12px',
             }}
           >
-            <FaSyncAlt style={{ marginRight: '4px' }} />
+            <FaSyncAlt size={12} style={{ marginRight: '4px' }} />
             Reset
           </button>
         </div>
@@ -221,60 +365,67 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
       {/* Tabs */}
       <div style={{
         display: 'flex',
+        flexDirection: 'column',
         gap: '8px',
         marginBottom: '16px',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         paddingBottom: '8px',
       }}>
         <button
-          onClick={() => setCurrentTab('motions')}
-          style={currentTab === 'motions' ? activeTabStyle : tabStyle}
+          onClick={() => setCurrentTab('emotions')}
+          style={currentTab === 'emotions' ? activeTabStyle : tabStyle}
         >
-          <FaPlay style={{ marginRight: '4px' }} />
-          Motions
+          <FaHeart style={{ marginRight: '4px' }} />
+          Emotions
         </button>
         <button
-          onClick={() => setCurrentTab('expressions')}
-          style={currentTab === 'expressions' ? activeTabStyle : tabStyle}
+          onClick={() => setCurrentTab('accessories')}
+          style={currentTab === 'accessories' ? activeTabStyle : tabStyle}
         >
-          <FaSmile style={{ marginRight: '4px' }} />
-          Expressions
+          <FaTshirt style={{ marginRight: '4px' }} />
+          Accessories
+        </button>
+        <button
+          onClick={() => setCurrentTab('decorations')}
+          style={currentTab === 'decorations' ? activeTabStyle : tabStyle}
+        >
+          <FaStar style={{ marginRight: '4px' }} />
+          Decorations
         </button>
         <button
           onClick={() => setCurrentTab('lipsync')}
           style={currentTab === 'lipsync' ? activeTabStyle : tabStyle}
         >
           <FaVolumeUp style={{ marginRight: '4px' }} />
-          Lip Sync
+          Advanced LipSync
         </button>
         <button
-          onClick={() => setCurrentTab('params')}
-          style={currentTab === 'params' ? activeTabStyle : tabStyle}
+          onClick={() => setCurrentTab('physics')}
+          style={currentTab === 'physics' ? activeTabStyle : tabStyle}
         >
           <FaEye style={{ marginRight: '4px' }} />
-          Parameters
+          Physics Debug
         </button>
         <button
           onClick={() => setCurrentTab('special')}
           style={currentTab === 'special' ? activeTabStyle : tabStyle}
         >
-          <FaStar style={{ marginRight: '4px' }} />
-          Special
-        </button>
-        <button
-          onClick={() => setCurrentTab('face')}
-          style={currentTab === 'face' ? activeTabStyle : tabStyle}
-        >
-          <FaCat style={{ marginRight: '4px' }} />
-          Face Track
+          <FaPalette style={{ marginRight: '4px' }} />
+          Special FX
         </button>
       </div>
 
       {/* Tab Content */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        marginTop: '16px',
+      }}>
       <AnimatePresence mode="wait">
-        {currentTab === 'motions' && (
+        {currentTab === 'emotions' && (
           <motion.div
-            key="motions"
+            key="emotions"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
@@ -282,49 +433,66 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
           >
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '8px',
-              maxHeight: '200px',
+              maxHeight: '400px',
               overflowY: 'auto',
+              paddingRight: '8px',
             }}>
-              {availableMotions.map((motion) => (
+              {Object.entries({
+                love: { icon: '💖', name: 'Love' },
+                star: { icon: '⭐', name: 'Starry' },
+                angry: { icon: '😠', name: 'Angry' },
+                cry: { icon: '😭', name: 'Crying' },
+                dark: { icon: '😑', name: 'Dark' },
+                blush: { icon: '😊', name: 'Blush' },
+                blank: { icon: '😶', name: 'Blank' },
+                dizzy: { icon: '😵', name: 'Dizzy' },
+              }).map(([key, value]) => (
                 <button
-                  key={motion}
-                  onClick={() => handlePlayMotion(motion)}
+                  key={key}
+                  onClick={() => handleSetExpression(expressionMapping[key as keyof JellyfishModelExpressions])}
                   style={{
-                    padding: '8px 12px',
-                    backgroundColor: selectedMotion === motion 
+                    padding: '12px',
+                    backgroundColor: selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions]
                       ? 'rgba(139, 92, 246, 0.3)' 
                       : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${selectedMotion === motion ? '#8B5CF6' : 'rgba(255, 255, 255, 0.1)'}`,
+                    border: `2px solid ${selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions] ? '#8B5CF6' : 'rgba(255, 255, 255, 0.1)'}`,
                     borderRadius: '8px',
-                    color: selectedMotion === motion ? '#8B5CF6' : '#fff',
+                    color: selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions] ? '#8B5CF6' : '#fff',
                     cursor: 'pointer',
-                    fontSize: '14px',
+                    fontSize: '12px',
                     fontFamily: "'JetBrains Mono', monospace",
                     transition: 'all 0.3s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
                   }}
                   onMouseEnter={(e) => {
-                    if (selectedMotion !== motion) {
+                    if (selectedExpression !== expressionMapping[key as keyof JellyfishModelExpressions]) {
                       e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.transform = 'scale(1.05)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (selectedMotion !== motion) {
+                    if (selectedExpression !== expressionMapping[key as keyof JellyfishModelExpressions]) {
                       e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                      e.currentTarget.style.transform = 'scale(1)';
                     }
                   }}
                 >
-                  {motion}
+                  <span style={{ fontSize: '20px' }}>{value.icon}</span>
+                  <span style={{ fontSize: '11px' }}>{value.name}</span>
                 </button>
               ))}
             </div>
           </motion.div>
         )}
 
-        {currentTab === 'expressions' && (
+        {currentTab === 'accessories' && (
           <motion.div
-            key="expressions"
+            key="accessories"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
@@ -332,40 +500,109 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
           >
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '8px',
-              maxHeight: '200px',
+              maxHeight: '400px',
               overflowY: 'auto',
+              paddingRight: '8px',
             }}>
-              {availableExpressions.map((expression) => (
+              {Object.entries({
+                eyepatch: { icon: <FaGlasses />, name: 'Eyepatch' },
+                jacket: { icon: <FaTshirt />, name: 'Jacket' },
+                wings: { icon: '🪶', name: 'Wings' },
+                gaming: { icon: '🎮', name: 'Gaming' },
+                mic: { icon: '🎤', name: 'Microphone' },
+                tea: { icon: '☕', name: 'Tea Cup' },
+                catEars: { icon: <FaCat />, name: 'Cat Ears' },
+                devil: { icon: '😈', name: 'Devil Horns' },
+                halo: { icon: '😇', name: 'Halo' },
+              }).map(([key, value]) => (
                 <button
-                  key={expression}
-                  onClick={() => handleSetExpression(expression)}
+                  key={key}
+                  onClick={() => handleSetExpression(expressionMapping[key as keyof JellyfishModelExpressions], true)}
                   style={{
-                    padding: '8px 12px',
-                    backgroundColor: selectedExpression === expression 
-                      ? 'rgba(139, 92, 246, 0.3)' 
+                    padding: '12px',
+                    backgroundColor: activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions])
+                      ? 'rgba(34, 197, 94, 0.3)' 
                       : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${selectedExpression === expression ? '#8B5CF6' : 'rgba(255, 255, 255, 0.1)'}`,
-                    borderRadius: '8px',
-                    color: selectedExpression === expression ? '#8B5CF6' : '#fff',
+                    border: `2px solid ${activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#22C55E' : 'rgba(255, 255, 255, 0.1)'}`,
+                    borderRadius: '12px',
+                    color: activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#22C55E' : '#fff',
                     cursor: 'pointer',
                     fontSize: '14px',
                     fontFamily: "'JetBrains Mono', monospace",
                     transition: 'all 0.3s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}
                   onMouseEnter={(e) => {
-                    if (selectedExpression !== expression) {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                    }
+                    e.currentTarget.style.transform = 'scale(1.05)';
                   }}
                   onMouseLeave={(e) => {
-                    if (selectedExpression !== expression) {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                    }
+                    e.currentTarget.style.transform = 'scale(1)';
                   }}
                 >
-                  {expression}
+                  <span style={{ fontSize: '20px' }}>{typeof value.icon === 'string' ? value.icon : value.icon}</span>
+                  <span style={{ fontSize: '11px' }}>{value.name}</span>
+                  {activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions]) && 
+                    <span style={{ fontSize: '10px', color: '#22C55E' }}>Active</span>
+                  }
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {currentTab === 'decorations' && (
+          <motion.div
+            key="decorations"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '8px',
+            }}>
+              {Object.entries({
+                flowers: { icon: '🌸', name: 'Flowers' },
+                crossPin: { icon: '✖️', name: 'Cross Pin' },
+                linePin: { icon: '➖', name: 'Line Pin' },
+                bow: { icon: '🎀', name: 'Bow' },
+              }).map(([key, value]) => (
+                <button
+                  key={key}
+                  onClick={() => handleSetExpression(expressionMapping[key as keyof JellyfishModelExpressions], true)}
+                  style={{
+                    padding: '12px',
+                    backgroundColor: activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions])
+                      ? 'rgba(251, 191, 36, 0.3)' 
+                      : 'rgba(255, 255, 255, 0.05)',
+                    border: `2px solid ${activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#FBBf24' : 'rgba(255, 255, 255, 0.1)'}`,
+                    borderRadius: '12px',
+                    color: activeAccessories.includes(expressionMapping[key as keyof JellyfishModelExpressions]) ? '#FBBf24' : '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  <span style={{ fontSize: '20px' }}>{value.icon}</span>
+                  <span style={{ fontSize: '11px' }}>{value.name}</span>
                 </button>
               ))}
             </div>
@@ -409,39 +646,100 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
                 {isLipSyncActive ? 'Stop Lip Sync' : 'Start Lip Sync'}
               </button>
               
-              <div>
-                <label style={{
-                  color: '#fff',
-                  fontSize: '14px',
-                  marginBottom: '8px',
-                  display: 'block',
-                }}>
-                  Manual Control: {Math.round(lipSyncValue * 100)}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={lipSyncValue * 100}
-                  onChange={(e) => handleLipSyncChange(Number(e.target.value) / 100)}
-                  disabled={isLipSyncActive}
-                  style={{
-                    width: '100%',
-                    height: '6px',
-                    borderRadius: '3px',
-                    outline: 'none',
-                    cursor: isLipSyncActive ? 'not-allowed' : 'pointer',
-                    opacity: isLipSyncActive ? 0.5 : 1,
-                  }}
-                />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{
+                    color: '#fff',
+                    fontSize: '14px',
+                    marginBottom: '8px',
+                    display: 'block',
+                  }}>
+                    Mouth Open: {Math.round(lipSyncValue * 100)}%
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={lipSyncValue * 100}
+                    onChange={(e) => handleLipSyncChange(Number(e.target.value) / 100)}
+                    disabled={isLipSyncActive}
+                    style={{
+                      width: '100%',
+                      height: '6px',
+                      borderRadius: '3px',
+                      outline: 'none',
+                      cursor: isLipSyncActive ? 'not-allowed' : 'pointer',
+                      opacity: isLipSyncActive ? 0.5 : 1,
+                    }}
+                  />
+                </div>
+                
+                <div style={{ flex: 1 }}>
+                  <label style={{
+                    color: '#fff',
+                    fontSize: '14px',
+                    marginBottom: '8px',
+                    display: 'block',
+                  }}>
+                    Mouth Form: {Math.round(mouthFormValue * 100)}%
+                  </label>
+                  <input
+                    type="range"
+                    min="-100"
+                    max="100"
+                    value={mouthFormValue * 100}
+                    onChange={(e) => handleLipSyncChange(lipSyncValue, Number(e.target.value) / 100)}
+                    disabled={isLipSyncActive}
+                    style={{
+                      width: '100%',
+                      height: '6px',
+                      borderRadius: '3px',
+                      outline: 'none',
+                      cursor: isLipSyncActive ? 'not-allowed' : 'pointer',
+                      opacity: isLipSyncActive ? 0.5 : 1,
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div style={{
+                padding: '12px',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: '#999',
+              }}>
+                <p style={{ margin: '0 0 8px 0' }}>Phoneme Mapping:</p>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {Object.entries(phonemeMapping).map(([phoneme, mapping]) => (
+                    <button
+                      key={phoneme}
+                      onClick={() => handleLipSyncChange(mapping.openY, mapping.form)}
+                      disabled={isLipSyncActive}
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                        border: '1px solid #8B5CF6',
+                        borderRadius: '6px',
+                        color: '#8B5CF6',
+                        cursor: isLipSyncActive ? 'not-allowed' : 'pointer',
+                        opacity: isLipSyncActive ? 0.5 : 1,
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {phoneme}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>
         )}
 
-        {currentTab === 'params' && (
+        {currentTab === 'physics' && (
           <motion.div
-            key="params"
+            key="physics"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
@@ -452,44 +750,97 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
               flexDirection: 'column',
               gap: '12px',
             }}>
-              <button
-                onClick={handleTestHit}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                  border: '1px solid #8B5CF6',
-                  borderRadius: '8px',
-                  color: '#8B5CF6',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontFamily: "'JetBrains Mono', monospace",
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                }}
-              >
-                <FaMouse />
-                Test Random Hit Area
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  onClick={handleTestHit}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                    border: '1px solid #8B5CF6',
+                    borderRadius: '8px',
+                    color: '#8B5CF6',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <FaMouse />
+                  Test Hit Areas
+                </button>
+                
+                <button
+                  onClick={() => {
+                    if (modelRef.current) {
+                      const x = Math.random() * 2 - 1;
+                      const y = Math.random() * 2 - 1;
+                      const z = Math.random() * 2 - 1;
+                      modelRef.current.setParameterValue('ParamAngleX', x * 30);
+                      modelRef.current.setParameterValue('ParamAngleY', y * 30);
+                      modelRef.current.setParameterValue('ParamAngleZ', z * 10);
+                    }
+                  }}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                    border: '1px solid #22C55E',
+                    borderRadius: '8px',
+                    color: '#22C55E',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <FaRandom />
+                  Random Physics
+                </button>
+              </div>
               
               <div style={{
-                padding: '12px',
+                padding: '10px',
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
                 borderRadius: '8px',
-                fontSize: '12px',
+                fontSize: '11px',
                 color: '#999',
+                maxHeight: '300px',
+                overflowY: 'auto',
               }}>
-                <p style={{ margin: '0 0 8px 0' }}>Available Parameters:</p>
-                <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                  <li>ParamEyeLOpen / ParamEyeROpen (Eye blink)</li>
-                  <li>ParamMouthOpenY (Lip sync)</li>
-                  <li>ParamAngleX/Y/Z (Head rotation)</li>
-                  <li>ParamBodyAngleX/Y/Z (Body rotation)</li>
-                  <li>ParamBreath (Breathing)</li>
-                  <li>Physics: Hair, clothes, tail, accessories</li>
-                </ul>
+                <p style={{ margin: '0 0 8px 0', color: '#8B5CF6', fontWeight: 'bold' }}>水母 Model Physics (50 Groups):</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px' }}>
+                  <div>
+                    <strong>Core Parameters:</strong>
+                    <ul style={{ margin: '4px 0', paddingLeft: '20px', fontSize: '11px' }}>
+                      <li>ParamAngleX/Y/Z - Head rotation</li>
+                      <li>ParamBodyAngleX/Y/Z - Body rotation</li>
+                      <li>ParamEyeBallX/Y - Eye tracking</li>
+                      <li>ParamBrowLY/RY - Eyebrow movement</li>
+                      <li>ParamMouthOpenY/Form - Mouth control</li>
+                      <li>ParamBreath - Breathing effect</li>
+                      <li>ParamCheek - Cheek puffing</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <strong>Physics Groups:</strong>
+                    <ul style={{ margin: '4px 0', paddingLeft: '20px', fontSize: '11px' }}>
+                      <li>Hair physics (multiple strands)</li>
+                      <li>Jellyfish tentacles</li>
+                      <li>Clothing physics</li>
+                      <li>Accessory physics</li>
+                      <li>Wing movement</li>
+                      <li>Halo floating</li>
+                      <li>600+ mesh deformers</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -506,427 +857,74 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '12px',
-              maxHeight: '240px',
-              overflowY: 'auto',
+              gap: '8px',
             }}>
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <FaGlasses /> Glasses: {specialParams.glasses}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.glasses}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, glasses: value }));
-                    modelRef.current?.setParameterValue('Param11', value / 100);
+              {Object.entries({
+                heart: { icon: '💝', name: 'Heart Gesture' },
+                board: { icon: '📝', name: 'Writing Board' },
+                colorChange: { icon: '🎨', name: 'Color Shift' },
+                touch: { icon: '👆', name: 'Touch Effect' },
+                watermark: { icon: '💧', name: 'Watermark' },
+                haloColorChange: { icon: '🌈', name: 'Halo Color' },
+                wingsToggle: { icon: '🦋', name: 'Wings Toggle' },
+              }).map(([key, value]) => (
+                <button
+                  key={key}
+                  onClick={() => handleSetExpression(expressionMapping[key as keyof JellyfishModelExpressions])}
+                  style={{
+                    padding: '12px',
+                    backgroundColor: selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions]
+                      ? 'rgba(168, 85, 247, 0.3)' 
+                      : 'rgba(255, 255, 255, 0.05)',
+                    border: `2px solid ${selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions] ? '#A855F7' : 'rgba(255, 255, 255, 0.1)'}`,
+                    borderRadius: '12px',
+                    color: selectedExpression === expressionMapping[key as keyof JellyfishModelExpressions] ? '#A855F7' : '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-              
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <FaTshirt /> Outfit: {specialParams.outfit}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.outfit}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, outfit: value }));
-                    modelRef.current?.setParameterValue('Param16', value / 100);
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
                   }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  ❓ Question: {specialParams.question}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.question}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, question: value }));
-                    modelRef.current?.setParameterValue('Param43', value / 100);
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
                   }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  💦 Sweat: {specialParams.sweat}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.sweat}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, sweat: value }));
-                    modelRef.current?.setParameterValue('Param44', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  😊 Grin: {specialParams.grin}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.grin}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, grin: value }));
-                    modelRef.current?.setParameterValue('Param54', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  ⭐ Star Eyes: {specialParams.starEyes}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.starEyes}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, starEyes: value }));
-                    modelRef.current?.setParameterValue('Param55', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  😵 Dizzy: {specialParams.dizzy}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.dizzy}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, dizzy: value }));
-                    modelRef.current?.setParameterValue('Param56', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  😠 Angry: {specialParams.angry}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.angry}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, angry: value }));
-                    modelRef.current?.setParameterValue('Param57', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <FaHeart /> Blush: {specialParams.blush}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.blush}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, blush: value }));
-                    modelRef.current?.setParameterValue('Param58', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  😭 Cry: {specialParams.cry}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.cry}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, cry: value }));
-                    modelRef.current?.setParameterValue('Param59', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <FaPalette /> Eye Color R: {specialParams.eyeColorR}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.eyeColorR}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, eyeColorR: value }));
-                    modelRef.current?.setParameterValue('Param62', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <FaPalette /> Eye Color G: {specialParams.eyeColorG}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={specialParams.eyeColorG}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSpecialParams(prev => ({ ...prev, eyeColorG: value }));
-                    modelRef.current?.setParameterValue('Param63', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
+                >
+                  <span style={{ fontSize: '20px' }}>{value.icon}</span>
+                  <span style={{ fontSize: '10px', textAlign: 'center' }}>{value.name}</span>
+                </button>
+              ))}
+            </div>
+            
+            <div style={{
+              padding: '12px',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '8px',
+              fontSize: '12px',
+              color: '#999',
+            }}>
+              <p style={{ margin: '0 0 8px 0', color: '#A855F7', fontWeight: 'bold' }}>Special Effects Features:</p>
+              <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '11px' }}>
+                <li><strong>Heart Gesture:</strong> Cute hand gesture with heart effects</li>
+                <li><strong>Writing Board:</strong> Interactive whiteboard prop for expressions</li>
+                <li><strong>Color Shift:</strong> Dynamic color changing effects</li>
+                <li><strong>Touch Effect:</strong> Visual feedback for interactions</li>
+                <li><strong>Watermark:</strong> Subtle branding overlay effect</li>
+              </ul>
             </div>
           </motion.div>
         )}
 
-        {currentTab === 'face' && (
-          <motion.div
-            key="face"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '12px',
-              maxHeight: '240px',
-              overflowY: 'auto',
-            }}>
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  👅 Tongue: {faceParams.tongue}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={faceParams.tongue}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setFaceParams(prev => ({ ...prev, tongue: value }));
-                    modelRef.current?.setParameterValue('Param46', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  Mouth X: {faceParams.mouthX}%
-                </label>
-                <input
-                  type="range"
-                  min="-100"
-                  max="100"
-                  value={faceParams.mouthX}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setFaceParams(prev => ({ ...prev, mouthX: value }));
-                    modelRef.current?.setParameterValue('Param20', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  Cheek Puff: {faceParams.cheekPuff}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={faceParams.cheekPuff}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setFaceParams(prev => ({ ...prev, cheekPuff: value }));
-                    modelRef.current?.setParameterValue('Param21', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  Mouth Shrug: {faceParams.mouthShrug}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={faceParams.mouthShrug}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setFaceParams(prev => ({ ...prev, mouthShrug: value }));
-                    modelRef.current?.setParameterValue('Param48', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  Mouth Funnel: {faceParams.mouthFunnel}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={faceParams.mouthFunnel}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setFaceParams(prev => ({ ...prev, mouthFunnel: value }));
-                    modelRef.current?.setParameterValue('Param45', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  Mouth Press: {faceParams.mouthPress}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={faceParams.mouthPress}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setFaceParams(prev => ({ ...prev, mouthPress: value }));
-                    modelRef.current?.setParameterValue('Param47', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  Mouth Widen: {faceParams.mouthWiden}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={faceParams.mouthWiden}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setFaceParams(prev => ({ ...prev, mouthWiden: value }));
-                    modelRef.current?.setParameterValue('Param49', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  Jaw Open: {faceParams.jawOpen}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={faceParams.jawOpen}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setFaceParams(prev => ({ ...prev, jawOpen: value }));
-                    modelRef.current?.setParameterValue('Param50', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  Eye Squint 1: {faceParams.eyeSquint}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={faceParams.eyeSquint}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setFaceParams(prev => ({ ...prev, eyeSquint: value }));
-                    modelRef.current?.setParameterValue('Param51', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ color: '#fff', fontSize: '12px', marginBottom: '4px' }}>
-                  Eye Squint 2: {faceParams.eyeSquint2}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={faceParams.eyeSquint2}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setFaceParams(prev => ({ ...prev, eyeSquint2: value }));
-                    modelRef.current?.setParameterValue('Param52', value / 100);
-                  }}
-                  style={{ width: '100%', height: '4px' }}
-                />
-              </div>
-            </div>
+      </AnimatePresence>
+      </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </>
   );
 };
