@@ -54,6 +54,18 @@ export interface ShizukuResponse {
     specialFeatures?: { animalEars?: number; wings?: number };
     duration: number;
   }>;
+  advanced_physics_timeline?: Array<{
+    headMovement?: { x?: number; y?: number; z?: number };
+    bodyMovement?: { x?: number; y?: number; z?: number };
+    eyeOpening?: { left?: number; right?: number };
+    eyebrowMovement?: { leftY?: number; rightY?: number; leftForm?: number; rightForm?: number };
+    hairDynamics?: { front?: number; side?: number; back?: number; accessories?: number };
+    bodyDynamics?: { chest?: number; skirt?: number; legs?: number };
+    specialFeatures?: { animalEars?: number; wings?: number };
+    breathing?: number;
+    eyeTracking?: { x?: number; y?: number };
+    duration: number;
+  }>;
 }
 
 interface UseShizukuAIOptions {

@@ -126,6 +126,11 @@ export function useShizukuControllerEnhanced() {
       applyPhysicsTimeline(modelRef, response.physics_timeline);
     }
 
+    // Apply advanced physics timeline if present (priority over basic timeline)
+    if (response.advanced_physics_timeline && response.advanced_physics_timeline.length > 0) {
+      applyAdvancedPhysicsTimeline(modelRef, response.advanced_physics_timeline);
+    }
+
   }, [clearCurrentTimelines]);
 
   // Enhanced physics application with all 50 settings
@@ -372,6 +377,52 @@ export function useShizukuControllerEnhanced() {
     };
 
     applyNextPhysics();
+  }, [applyEnhancedPhysics]);
+
+  // Apply advanced physics timeline for smooth keyframe animations
+  const applyAdvancedPhysicsTimeline = useCallback((modelRef: Live2DModelRef, timeline: any[]) => {
+    if (!modelRef.current || timeline.length === 0) return;
+
+    let index = 0;
+    const applyNextAdvancedPhysics = () => {
+      if (!modelRef.current || index >= timeline.length) return;
+
+      const physicsStep = timeline[index];
+      if (physicsStep) {
+        // Apply all available physics parameters from this keyframe
+        const completePhysics = {
+          headMovement: physicsStep.headMovement || { x: 0, y: 0, z: 0 },
+          bodyMovement: physicsStep.bodyMovement || { x: 0, y: 0, z: 0 },
+          breathing: physicsStep.breathing || 0.4,
+          eyeTracking: physicsStep.eyeTracking || { x: 0, y: 0 },
+          eyeOpening: physicsStep.eyeOpening || { left: 1, right: 1 },
+          eyebrowMovement: physicsStep.eyebrowMovement || { leftY: 0, rightY: 0, leftForm: 0, rightForm: 0 },
+          hairDynamics: physicsStep.hairDynamics || { front: 0.3, side: 0.3, back: 0.3, accessories: 0.2 },
+          bodyDynamics: physicsStep.bodyDynamics || { chest: 0.4, skirt: 0.2, legs: 0 },
+          specialFeatures: physicsStep.specialFeatures || { animalEars: 0.5, wings: 0 }
+        };
+        
+        // Apply complete physics state
+        applyEnhancedPhysics(modelRef, completePhysics);
+
+        if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+          console.log(`[Advanced Physics Timeline] Keyframe ${index + 1}/${timeline.length}:`, {
+            duration: physicsStep.duration,
+            eyeOpening: physicsStep.eyeOpening,
+            headMovement: physicsStep.headMovement,
+            hairDynamics: physicsStep.hairDynamics
+          });
+        }
+      }
+
+      index++;
+      if (index < timeline.length) {
+        const duration = physicsStep.duration || 150;
+        physicsTimelineRef.current = setTimeout(applyNextAdvancedPhysics, duration);
+      }
+    };
+
+    applyNextAdvancedPhysics();
   }, [applyEnhancedPhysics]);
 
   return {

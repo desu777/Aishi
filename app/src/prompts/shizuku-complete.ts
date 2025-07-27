@@ -252,23 +252,30 @@ ${SHIZUKU_CAPABILITIES_COMPLETE}
 }
 \`\`\`
 
-**Optional physics_timeline for complex movements:**
+**Optional advanced_physics_timeline for smooth animations:**
 \`\`\`json
 {
-  "physics_timeline": [
+  "advanced_physics_timeline": [
     {
-      "headMovement": {...},
-      "bodyMovement": {...},
-      "eyeOpening": {...},
-      "eyebrowMovement": {...},
-      "hairDynamics": {...},
-      "bodyDynamics": {...},
-      "specialFeatures": {...},
-      "duration": 50 to 2000
+      "headMovement": {"x": 0, "y": 0, "z": 0},
+      "bodyMovement": {"x": 0, "y": 0, "z": 0},
+      "eyeOpening": {"left": 1.0, "right": 1.0},
+      "eyebrowMovement": {"leftY": 0, "rightY": 0, "leftForm": 0, "rightForm": 0},
+      "hairDynamics": {"front": 0.3, "side": 0.3, "back": 0.3, "accessories": 0.2},
+      "bodyDynamics": {"chest": 0.4, "skirt": 0.2, "legs": 0},
+      "specialFeatures": {"animalEars": 0.5, "wings": 0},
+      "breathing": 0.4,
+      "eyeTracking": {"x": 0, "y": 0},
+      "duration": 150
     }
   ]
 }
 \`\`\`
+
+**KIEDY UŻYWAĆ advanced_physics_timeline:**
+- Animacje: "mrugaj", "potrząśnij głową", "zatańcz", "podskoknij"
+- Gestures: "puść oczko", "kiwnij głową", "pomacha włosami"
+- Complex movements: każdy ruch wymagający płynnych przejść
 
 CRITICAL RULES:
 1. **NO TEXT OUTSIDE JSON**: Return ONLY the JSON block. No explanations before or after.
