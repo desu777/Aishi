@@ -8,6 +8,7 @@ import { Live2DTestControls } from '@/components/live2d/Live2DTestControls';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 import { useShizukuAI } from '@/hooks/useShizukuAI';
 import { useShizukuController } from '@/hooks/useShizukuController';
+import { useShizukuControllerEnhanced } from '@/hooks/useShizukuControllerEnhanced';
 import { motion } from 'framer-motion';
 
 export default function CompanionIsYours() {
@@ -28,18 +29,21 @@ export default function CompanionIsYours() {
   const isTestMode = process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true';
   const isAIMode = process.env.NEXT_PUBLIC_LIVE2MODEL_AI === 'true';
   const isShizukuTestMode = process.env.NEXT_PUBLIC_LIVE2MODEL_SHIZUKU_TEST === 'true';
+  const isEnhancedPhysics = process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true';
   
   // Debug log AI mode status
   console.log('[Companion Page] Mode Status:', {
     isAIMode,
     isTestMode,
     isShizukuTestMode,
+    isEnhancedPhysics,
     NEXT_PUBLIC_LIVE2MODEL_AI: process.env.NEXT_PUBLIC_LIVE2MODEL_AI
   });
 
   // Initialize AI system (only in AI mode)
   const shizukuAI = useShizukuAI({
-    enableTestMode: isShizukuTestMode
+    enableTestMode: isShizukuTestMode,
+    useEnhancedPhysics: isEnhancedPhysics
   });
 
   // Initialize Live2D controller
@@ -47,6 +51,9 @@ export default function CompanionIsYours() {
     enableDebugLogs: true,
     smoothTransitions: true
   });
+  
+  // Initialize Enhanced Live2D controller for full physics
+  const shizukuControllerEnhanced = useShizukuControllerEnhanced();
 
   // Handle window size
   useEffect(() => {
@@ -90,7 +97,13 @@ export default function CompanionIsYours() {
         
         // Apply AI response to Live2D model
         if (modelRef.current && isModelReady) {
-          shizukuController.applyShizukuResponse(response);
+          if (isEnhancedPhysics) {
+            // Use enhanced controller for full 50 physics settings
+            shizukuControllerEnhanced.applyResponseToModel(modelRef, response);
+          } else {
+            // Use standard controller for basic physics
+            shizukuController.applyShizukuResponse(response);
+          }
         }
         
         if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {

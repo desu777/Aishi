@@ -7,9 +7,9 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { 
-  buildShizukuPrompt,
-  SHIZUKU_RESPONSE_SCHEMA 
+  buildShizukuPrompt
 } from '@/prompts/shizuku';
+import { SHIZUKU_MASTER_PROMPT_COMPLETE } from '@/prompts/shizuku-complete';
 
 // Enhanced type definitions based on new JSON Schema
 export interface ShizukuResponse {
@@ -37,10 +37,21 @@ export interface ShizukuResponse {
     bodyMovement: { x: number; y: number; z: number };
     breathing: number;
     eyeTracking: { x: number; y: number };
+    // Enhanced physics parameters
+    eyeOpening?: { left: number; right: number };
+    eyebrowMovement?: { leftY: number; rightY: number; leftForm: number; rightForm: number };
+    hairDynamics?: { front: number; side: number; back: number; accessories: number };
+    bodyDynamics?: { chest: number; skirt: number; legs: number };
+    specialFeatures?: { animalEars: number; wings: number };
   };
   physics_timeline?: Array<{
     headMovement?: { x?: number; y?: number; z?: number };
     bodyMovement?: { x?: number; y?: number; z?: number };
+    eyeOpening?: { left?: number; right?: number };
+    eyebrowMovement?: { leftY?: number; rightY?: number; leftForm?: number; rightForm?: number };
+    hairDynamics?: { front?: number; side?: number; back?: number; accessories?: number };
+    bodyDynamics?: { chest?: number; skirt?: number; legs?: number };
+    specialFeatures?: { animalEars?: number; wings?: number };
     duration: number;
   }>;
 }
@@ -50,6 +61,7 @@ interface UseShizukuAIOptions {
   temperature?: number;
   maxTokens?: number;
   enableTestMode?: boolean;
+  useEnhancedPhysics?: boolean; // New option to enable full physics
 }
 
 interface ShizukuAIState {
@@ -64,7 +76,8 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
     backendUrl = process.env.NEXT_PUBLIC_0G_COMPUTE_URL || 'http://localhost:3001',
     temperature = 0.8,
     maxTokens = 2048,
-    enableTestMode = process.env.NEXT_PUBLIC_LIVE2MODEL_SHIZUKU_TEST === 'true'
+    enableTestMode = process.env.NEXT_PUBLIC_LIVE2MODEL_SHIZUKU_TEST === 'true',
+    useEnhancedPhysics = process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true'
   } = options;
   
   // Debug log initialization
@@ -152,7 +165,7 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
         const targetLength = parsed.text.length;
         if (parsed.mouth_open_timeline.length < targetLength) {
           // Pad with average values
-          const avg = parsed.mouth_open_timeline.reduce((a, b) => a + b, 0) / parsed.mouth_open_timeline.length;
+          const avg = parsed.mouth_open_timeline.reduce((a: number, b: number) => a + b, 0) / parsed.mouth_open_timeline.length;
           while (parsed.mouth_open_timeline.length < targetLength) {
             parsed.mouth_open_timeline.push(Math.round(avg));
           }
@@ -187,7 +200,12 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
           headMovement: { x: 0, y: -5, z: -2 },
           bodyMovement: { x: 0, y: 0, z: 0 },
           breathing: 0.4,
-          eyeTracking: { x: 0, y: 0 }
+          eyeTracking: { x: 0, y: 0 },
+          eyeOpening: { left: 0.6, right: 0.6 },
+          eyebrowMovement: { leftY: -0.3, rightY: -0.3, leftForm: -0.5, rightForm: -0.5 },
+          hairDynamics: { front: 0.1, side: 0.1, back: 0.1, accessories: 0.1 },
+          bodyDynamics: { chest: 0.3, skirt: 0.1, legs: 0 },
+          specialFeatures: { animalEars: 0.2, wings: 0 }
         }
       };
     }
@@ -210,7 +228,9 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
 
     try {
       // Build prompt with user message and conversation history
-      const prompt = buildShizukuPrompt(userMessage, state.conversationHistory);
+      const prompt = useEnhancedPhysics 
+        ? SHIZUKU_MASTER_PROMPT_COMPLETE + `\n\n## Historia rozmowy\n${state.conversationHistory.slice(-3).join('\n')}\n\n## Wiadomość użytkownika\n${userMessage}`
+        : buildShizukuPrompt(userMessage, state.conversationHistory);
 
       if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
         console.log('[Shizuku AI] Sending prompt to Gemini:', {
@@ -332,7 +352,12 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
           headMovement: { x: 0, y: -10, z: -3 },
           bodyMovement: { x: 0, y: 0, z: 0 },
           breathing: 0.3,
-          eyeTracking: { x: 0, y: 0 }
+          eyeTracking: { x: 0, y: 0 },
+          eyeOpening: { left: 0.5, right: 0.5 },
+          eyebrowMovement: { leftY: -0.5, rightY: -0.5, leftForm: -0.7, rightForm: -0.7 },
+          hairDynamics: { front: 0.1, side: 0.1, back: 0.1, accessories: 0 },
+          bodyDynamics: { chest: 0.2, skirt: 0, legs: 0 },
+          specialFeatures: { animalEars: 0.1, wings: 0 }
         }
       }));
     }
