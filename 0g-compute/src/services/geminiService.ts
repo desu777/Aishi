@@ -49,6 +49,15 @@ export class GeminiService {
       console.log(`   Location: ${process.env.VERTEX_AI_LOCATION}`);
       console.log(`   Model: ${process.env.GEMINI_MODEL || 'gemini-2.5-flash'}`);
       console.log(`   Using service account: ${process.env.GOOGLE_APPLICATION_CREDENTIALS}`);
+      
+      // Log thinking configuration
+      const enableThinking = process.env.GEMINI_ENABLE_THINKING === 'true';
+      if (enableThinking) {
+        const thinkingBudget = Math.max(0, Math.min(parseInt(process.env.GEMINI_THINKING_BUDGET || '0'), 24576));
+        console.log(`   🧠 Thinking enabled: budget=${thinkingBudget} tokens`);
+      } else {
+        console.log(`   🧠 Thinking disabled (for maximum speed)`);
+      }
     } catch (error: any) {
       console.error('❌ Failed to initialize Gemini AI Service:', error.message);
       throw error;
@@ -85,6 +94,25 @@ export class GeminiService {
         candidateCount: 1,
       };
 
+      // OPTIONAL: Add thinking configuration if enabled (for speed optimization)
+      const enableThinking = process.env.GEMINI_ENABLE_THINKING === 'true';
+      if (enableThinking) {
+        const thinkingBudget = parseInt(process.env.GEMINI_THINKING_BUDGET || '0');
+        const includeThoughts = process.env.GEMINI_INCLUDE_THOUGHTS === 'true';
+        
+        // Validate thinking budget (0-24576 range for Gemini 2.5 Flash)
+        const validatedBudget = Math.max(0, Math.min(thinkingBudget, 24576));
+        
+        generationConfig.thinkingConfig = {
+          thinkingBudget: validatedBudget,
+          includeThoughts
+        };
+
+        if (process.env.TEST_ENV === 'true') {
+          console.log(`🧠 Thinking enabled: budget=${validatedBudget}, includeThoughts=${includeThoughts}`);
+        }
+      }
+
       // JSON Schema removed - using markdown fallback approach for reliability
 
       // Log request details in test mode
@@ -92,7 +120,9 @@ export class GeminiService {
         console.log(`🤖 Gemini Request:`, {
           model: modelName,
           promptLength: prompt.length,
-          temperature
+          temperature,
+          thinkingEnabled: enableThinking,
+          ...(enableThinking && { thinkingConfig: generationConfig.thinkingConfig })
         });
       }
 
@@ -155,12 +185,19 @@ export class GeminiService {
     project: string | undefined;
     location: string | undefined;
     model: string | undefined;
+    thinkingEnabled: boolean;
+    thinkingBudget?: number;
   } {
+    const enableThinking = process.env.GEMINI_ENABLE_THINKING === 'true';
     return {
       isReady: this.isInitialized,
       project: process.env.VERTEX_AI_PROJECT,
       location: process.env.VERTEX_AI_LOCATION,
       model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      thinkingEnabled: enableThinking,
+      ...(enableThinking && { 
+        thinkingBudget: Math.max(0, Math.min(parseInt(process.env.GEMINI_THINKING_BUDGET || '0'), 24576))
+      })
     };
   }
 
