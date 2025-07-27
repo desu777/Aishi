@@ -241,7 +241,7 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
     try {
       // Build prompt with user message and conversation history
       const prompt = useEnhancedPhysics 
-        ? SHIZUKU_MASTER_PROMPT_COMPLETE + `\n\n## Historia rozmowy\n${state.conversationHistory.slice(-3).join('\n')}\n\n## Wiadomość użytkownika\n${userMessage}`
+        ? SHIZUKU_MASTER_PROMPT_COMPLETE + `\n\n## CONVERSATION_HISTORY\n${state.conversationHistory.slice(-3).join('\n')}\n\n## USER_MESSAGE\n${userMessage}`
         : buildShizukuPrompt(userMessage, state.conversationHistory);
 
       if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {

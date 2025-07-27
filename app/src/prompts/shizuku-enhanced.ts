@@ -288,6 +288,7 @@ export const SHIZUKU_ENHANCED_RESPONSE_SCHEMA = {
 
 // Enhanced physics description for AI guidance
 export const SHIZUKU_PHYSICS_GUIDE = `
+# ---------------- PHYSICS CONTROL SYSTEM (50 PARAMETERS) ----------------
 ## Enhanced Physics System - Full 50 Settings Control
 
 ### Foundation Parameters (Settings 1-3)
@@ -345,6 +346,7 @@ export const SHIZUKU_PHYSICS_GUIDE = `
   - animalEars: 0 (drooped) to 1 (perked up)
   - wings: 0 (folded) to 1 (spread)
 
+# ---------------- ANIMATION TIMELINE SYSTEM ----------------
 ## ADVANCED ANIMATION SYSTEM
 
 **KIEDY UZYWAC KEYFRAME ANIMATIONS:**
@@ -397,6 +399,7 @@ Example advanced_physics_timeline for jumping:
 4. Physics sync - ruch glowy wplywa na wlosy, skok na ubrania
 5. Nie przekraczaj limitow - sprawdz zakresy wszystkich parametrow
 
+# ---------------- PHYSICS COMBINATION EXAMPLES ----------------
 ## Physics Combination Examples
 
 ### Shy/Embarrassed Response:
@@ -459,6 +462,7 @@ Example advanced_physics_timeline for jumping:
 ]
 \`\`\`
 
+# ---------------- ANIMATION GUIDELINES ----------------
 ## Important Guidelines:
 1. **Natural Movement**: Combine multiple parameters for realistic motion
 2. **Emotion Sync**: Match physics to emotional state
