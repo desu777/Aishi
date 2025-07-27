@@ -91,24 +91,27 @@ export function useShizukuControllerEnhanced() {
 
     clearCurrentTimelines();
 
+    // CRITICAL FIX: Clear expressions once at the beginning
+    modelRef.current.resetExpression();
+
     // Apply enhanced physics
     if (response.physics) {
       applyEnhancedPhysics(modelRef, response.physics as EnhancedPhysics);
     }
 
-    // Apply emotions with intensity
-    if (response.emotions) {
-      applyEmotionWithIntensity(modelRef, response.emotions);
-    }
-
-    // Apply enhanced decorations
+    // Apply enhanced decorations FIRST (background effects)
     if (response.decorations) {
       applyEnhancedDecorations(modelRef, response.decorations);
     }
 
-    // Apply hand item
+    // Apply hand item SECOND (accessories)
     if (response.handItem) {
       applyHandItem(modelRef, response.handItem);
+    }
+
+    // Apply emotions LAST (highest priority, shouldn't be overridden)
+    if (response.emotions) {
+      applyEmotionWithIntensity(modelRef, response.emotions);
     }
 
     // Apply mouth shape and timeline
@@ -249,10 +252,7 @@ export function useShizukuControllerEnhanced() {
   const applyEmotionWithIntensity = useCallback((modelRef: Live2DModelRef, emotions: any) => {
     if (!modelRef.current) return;
 
-    // Clear current emotion  
-    if (currentEmotionRef.current) {
-      modelRef.current.resetExpression();
-    }
+    // FIXED: Don't clear expressions here - already cleared in main function
 
     // Apply new emotion (Live2D uses setExpression, not setExpressionValue)
     const emotionKey = EMOTION_MAP[emotions.base as keyof typeof EMOTION_MAP];
@@ -260,10 +260,12 @@ export function useShizukuControllerEnhanced() {
       modelRef.current.setExpression(emotionKey);
       currentEmotionRef.current = emotionKey;
       
-      // Log intensity for debugging (Live2D expressions don't support intensity scaling)
-      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log(`[Enhanced Controller] Applied emotion ${emotions.base} with intensity ${emotions.intensity}`);
+      // Enhanced debug logging
+      if (process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true') {
+        console.log(`[Enhanced Controller] ✓ Applied emotion "${emotions.base}" (${emotionKey}) with intensity ${emotions.intensity}`);
       }
+    } else if (process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true') {
+      console.warn(`[Enhanced Controller] ⚠️ No emotion mapping found for: ${emotions.base}`);
     }
 
     // Apply eye effect if different from base
@@ -271,6 +273,9 @@ export function useShizukuControllerEnhanced() {
       const eyeEffectKey = EMOTION_MAP[emotions.eyeEffect as keyof typeof EMOTION_MAP];
       if (eyeEffectKey) {
         modelRef.current.setExpression(eyeEffectKey);
+        if (process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true') {
+          console.log(`[Enhanced Controller] ✓ Applied eye effect "${emotions.eyeEffect}" (${eyeEffectKey})`);
+        }
       }
     }
   }, []);
@@ -279,8 +284,7 @@ export function useShizukuControllerEnhanced() {
   const applyEnhancedDecorations = useCallback((modelRef: Live2DModelRef, decorations: any) => {
     if (!modelRef.current) return;
 
-    // Clear current decorations
-    modelRef.current.resetExpression();
+    // FIXED: Don't clear expressions here - only clear decoration tracking
     currentDecorationsRef.current.clear();
 
     // Apply new decorations with intensity
@@ -405,7 +409,7 @@ export function useShizukuControllerEnhanced() {
         // Apply complete physics state
         applyEnhancedPhysics(modelRef, completePhysics);
 
-        if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+        if (process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true') {
           console.log(`[Advanced Physics Timeline] Keyframe ${index + 1}/${timeline.length}:`, {
             duration: physicsStep.duration,
             eyeOpening: physicsStep.eyeOpening,
