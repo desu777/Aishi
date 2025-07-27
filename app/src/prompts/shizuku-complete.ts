@@ -266,7 +266,7 @@ ${SHIZUKU_CAPABILITIES_COMPLETE}
       "specialFeatures": {"animalEars": 0.5, "wings": 0},
       "breathing": 0.4,
       "eyeTracking": {"x": 0, "y": 0},
-      "duration": 150
+      "duration": 300
     }
   ]
 }

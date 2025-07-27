@@ -124,14 +124,13 @@ export function useShizukuControllerEnhanced() {
       applyMouthTimeline(modelRef, response.mouth_open_timeline);
     }
 
-    // Apply physics timeline if present
-    if (response.physics_timeline && response.physics_timeline.length > 0) {
-      applyPhysicsTimeline(modelRef, response.physics_timeline);
-    }
-
-    // Apply advanced physics timeline if present (priority over basic timeline)
+    // FIXED: Apply only ONE timeline - advanced has priority
     if (response.advanced_physics_timeline && response.advanced_physics_timeline.length > 0) {
+      // Advanced timeline takes precedence
       applyAdvancedPhysicsTimeline(modelRef, response.advanced_physics_timeline);
+    } else if (response.physics_timeline && response.physics_timeline.length > 0) {
+      // Fallback to basic timeline only if no advanced timeline
+      applyPhysicsTimeline(modelRef, response.physics_timeline);
     }
 
   }, [clearCurrentTimelines]);
@@ -351,6 +350,12 @@ export function useShizukuControllerEnhanced() {
   const applyPhysicsTimeline = useCallback((modelRef: Live2DModelRef, timeline: any[]) => {
     if (!modelRef.current || timeline.length === 0) return;
 
+    // FIXED: Clear any existing physics timeline before starting new one
+    if (physicsTimelineRef.current) {
+      clearTimeout(physicsTimelineRef.current);
+      physicsTimelineRef.current = null;
+    }
+
     let index = 0;
     const applyNextPhysics = () => {
       if (!modelRef.current || index >= timeline.length) return;
@@ -375,7 +380,7 @@ export function useShizukuControllerEnhanced() {
 
       index++;
       if (index < timeline.length) {
-        const duration = physicsStep.duration || 200;
+        const duration = physicsStep.duration || 300;
         physicsTimelineRef.current = setTimeout(applyNextPhysics, duration);
       }
     };
@@ -386,6 +391,12 @@ export function useShizukuControllerEnhanced() {
   // Apply advanced physics timeline for smooth keyframe animations
   const applyAdvancedPhysicsTimeline = useCallback((modelRef: Live2DModelRef, timeline: any[]) => {
     if (!modelRef.current || timeline.length === 0) return;
+
+    // FIXED: Clear any existing physics timeline before starting new one
+    if (physicsTimelineRef.current) {
+      clearTimeout(physicsTimelineRef.current);
+      physicsTimelineRef.current = null;
+    }
 
     let index = 0;
     const applyNextAdvancedPhysics = () => {
@@ -410,18 +421,18 @@ export function useShizukuControllerEnhanced() {
         applyEnhancedPhysics(modelRef, completePhysics);
 
         if (process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true') {
-          console.log(`[Advanced Physics Timeline] Keyframe ${index + 1}/${timeline.length}:`, {
-            duration: physicsStep.duration,
+          console.log(`[Advanced Physics Timeline] 🎬 Keyframe ${index + 1}/${timeline.length} (${physicsStep.duration || 300}ms):`, {
             eyeOpening: physicsStep.eyeOpening,
             headMovement: physicsStep.headMovement,
-            hairDynamics: physicsStep.hairDynamics
+            hairDynamics: physicsStep.hairDynamics,
+            bodyDynamics: physicsStep.bodyDynamics
           });
         }
       }
 
       index++;
       if (index < timeline.length) {
-        const duration = physicsStep.duration || 150;
+        const duration = physicsStep.duration || 300;
         physicsTimelineRef.current = setTimeout(applyNextAdvancedPhysics, duration);
       }
     };

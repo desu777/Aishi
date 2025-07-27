@@ -276,7 +276,7 @@ export const SHIZUKU_ENHANCED_RESPONSE_SCHEMA = {
               y: { type: "number", minimum: -1, maximum: 1 }
             }
           },
-          duration: { type: "number", minimum: 40, maximum: 1000, description: "Duration of this keyframe in milliseconds" }
+          duration: { type: "number", minimum: 100, maximum: 1500, description: "Duration of this keyframe in milliseconds" }
         },
         required: ["duration"]
       },
@@ -359,41 +359,41 @@ Gdy uzytkownik prosi o konkretne animacje/ruchy, uzyj advanced_physics_timeline 
 ### Mrugniecie lewym okiem:
 Example advanced_physics_timeline for eye blink:
 [
-  {"eyeOpening": {"left": 1.0, "right": 1.0}, "duration": 100},
-  {"eyeOpening": {"left": 0.7, "right": 1.0}, "duration": 80},
-  {"eyeOpening": {"left": 0.2, "right": 1.0}, "duration": 60},
-  {"eyeOpening": {"left": 0.0, "right": 1.0}, "duration": 50},
-  {"eyeOpening": {"left": 0.3, "right": 1.0}, "duration": 70},
-  {"eyeOpening": {"left": 0.8, "right": 1.0}, "duration": 90},
-  {"eyeOpening": {"left": 1.0, "right": 1.0}, "duration": 120}
+  {"eyeOpening": {"left": 1.0, "right": 1.0}, "duration": 200},
+  {"eyeOpening": {"left": 0.7, "right": 1.0}, "duration": 150},
+  {"eyeOpening": {"left": 0.2, "right": 1.0}, "duration": 120},
+  {"eyeOpening": {"left": 0.0, "right": 1.0}, "duration": 100},
+  {"eyeOpening": {"left": 0.3, "right": 1.0}, "duration": 130},
+  {"eyeOpening": {"left": 0.8, "right": 1.0}, "duration": 170},
+  {"eyeOpening": {"left": 1.0, "right": 1.0}, "duration": 250}
 ]
 
 ### Potrzasniecie glowa:
 Example advanced_physics_timeline for head shake:
 [
-  {"headMovement": {"x": 0, "y": 0, "z": 0}, "hairDynamics": {"front": 0.3, "side": 0.3, "back": 0.3}, "duration": 100},
-  {"headMovement": {"x": -8, "y": 1, "z": -2}, "hairDynamics": {"front": 0.6, "side": 0.7, "back": 0.5}, "duration": 120},
-  {"headMovement": {"x": 10, "y": -1, "z": 3}, "hairDynamics": {"front": 0.8, "side": 0.9, "back": 0.7}, "duration": 110},
-  {"headMovement": {"x": -7, "y": 1, "z": -1}, "hairDynamics": {"front": 0.7, "side": 0.8, "back": 0.6}, "duration": 130},
-  {"headMovement": {"x": 4, "y": 0, "z": 1}, "hairDynamics": {"front": 0.5, "side": 0.6, "back": 0.4}, "duration": 140},
-  {"headMovement": {"x": -2, "y": 0, "z": 0}, "hairDynamics": {"front": 0.4, "side": 0.4, "back": 0.3}, "duration": 150},
-  {"headMovement": {"x": 0, "y": 0, "z": 0}, "hairDynamics": {"front": 0.3, "side": 0.3, "back": 0.3}, "duration": 200}
+  {"headMovement": {"x": 0, "y": 0, "z": 0}, "hairDynamics": {"front": 0.3, "side": 0.3, "back": 0.3}, "duration": 200},
+  {"headMovement": {"x": -8, "y": 1, "z": -2}, "hairDynamics": {"front": 0.6, "side": 0.7, "back": 0.5}, "duration": 250},
+  {"headMovement": {"x": 10, "y": -1, "z": 3}, "hairDynamics": {"front": 0.8, "side": 0.9, "back": 0.7}, "duration": 220},
+  {"headMovement": {"x": -7, "y": 1, "z": -1}, "hairDynamics": {"front": 0.7, "side": 0.8, "back": 0.6}, "duration": 280},
+  {"headMovement": {"x": 4, "y": 0, "z": 1}, "hairDynamics": {"front": 0.5, "side": 0.6, "back": 0.4}, "duration": 300},
+  {"headMovement": {"x": -2, "y": 0, "z": 0}, "hairDynamics": {"front": 0.4, "side": 0.4, "back": 0.3}, "duration": 320},
+  {"headMovement": {"x": 0, "y": 0, "z": 0}, "hairDynamics": {"front": 0.3, "side": 0.3, "back": 0.3}, "duration": 400}
 ]
 
 ### Podskakiwanie z radosci:
 Example advanced_physics_timeline for jumping:
 [
-  {"headMovement": {"x": 0, "y": 0, "z": 0}, "bodyMovement": {"x": 0, "y": 0}, "bodyDynamics": {"chest": 0.4, "skirt": 0.2, "legs": 0}, "hairDynamics": {"front": 0.3, "side": 0.3, "back": 0.3}, "eyebrowMovement": {"leftY": 0, "rightY": 0, "leftForm": 0, "rightForm": 0}, "duration": 150},
-  {"headMovement": {"x": 0, "y": 6, "z": 0}, "bodyMovement": {"x": 0, "y": 4}, "bodyDynamics": {"chest": 0.7, "skirt": 0.5, "legs": 0.3}, "hairDynamics": {"front": 0.6, "side": 0.7, "back": 0.5}, "eyebrowMovement": {"leftY": 0.3, "rightY": 0.3, "leftForm": 0.5, "rightForm": 0.5}, "duration": 180},
-  {"headMovement": {"x": 0, "y": 10, "z": 0}, "bodyMovement": {"x": 0, "y": 7}, "bodyDynamics": {"chest": 0.9, "skirt": 0.8, "legs": 0.5}, "hairDynamics": {"front": 0.8, "side": 0.9, "back": 0.7}, "eyebrowMovement": {"leftY": 0.5, "rightY": 0.5, "leftForm": 0.7, "rightForm": 0.7}, "duration": 200},
-  {"headMovement": {"x": 0, "y": 6, "z": 0}, "bodyMovement": {"x": 0, "y": 4}, "bodyDynamics": {"chest": 0.7, "skirt": 0.5, "legs": 0.3}, "hairDynamics": {"front": 0.6, "side": 0.7, "back": 0.5}, "eyebrowMovement": {"leftY": 0.3, "rightY": 0.3, "leftForm": 0.5, "rightForm": 0.5}, "duration": 180},
-  {"headMovement": {"x": 0, "y": 0, "z": 0}, "bodyMovement": {"x": 0, "y": 0}, "bodyDynamics": {"chest": 0.4, "skirt": 0.2, "legs": 0}, "hairDynamics": {"front": 0.3, "side": 0.3, "back": 0.3}, "eyebrowMovement": {"leftY": 0, "rightY": 0, "leftForm": 0, "rightForm": 0}, "duration": 250}
+  {"headMovement": {"x": 0, "y": 0, "z": 0}, "bodyMovement": {"x": 0, "y": 0}, "bodyDynamics": {"chest": 0.4, "skirt": 0.2, "legs": 0}, "hairDynamics": {"front": 0.3, "side": 0.3, "back": 0.3}, "eyebrowMovement": {"leftY": 0, "rightY": 0, "leftForm": 0, "rightForm": 0}, "duration": 300},
+  {"headMovement": {"x": 0, "y": 6, "z": 0}, "bodyMovement": {"x": 0, "y": 4}, "bodyDynamics": {"chest": 0.7, "skirt": 0.5, "legs": 0.3}, "hairDynamics": {"front": 0.6, "side": 0.7, "back": 0.5}, "eyebrowMovement": {"leftY": 0.3, "rightY": 0.3, "leftForm": 0.5, "rightForm": 0.5}, "duration": 350},
+  {"headMovement": {"x": 0, "y": 10, "z": 0}, "bodyMovement": {"x": 0, "y": 7}, "bodyDynamics": {"chest": 0.9, "skirt": 0.8, "legs": 0.5}, "hairDynamics": {"front": 0.8, "side": 0.9, "back": 0.7}, "eyebrowMovement": {"leftY": 0.5, "rightY": 0.5, "leftForm": 0.7, "rightForm": 0.7}, "duration": 400},
+  {"headMovement": {"x": 0, "y": 6, "z": 0}, "bodyMovement": {"x": 0, "y": 4}, "bodyDynamics": {"chest": 0.7, "skirt": 0.5, "legs": 0.3}, "hairDynamics": {"front": 0.6, "side": 0.7, "back": 0.5}, "eyebrowMovement": {"leftY": 0.3, "rightY": 0.3, "leftForm": 0.5, "rightForm": 0.5}, "duration": 350},
+  {"headMovement": {"x": 0, "y": 0, "z": 0}, "bodyMovement": {"x": 0, "y": 0}, "bodyDynamics": {"chest": 0.4, "skirt": 0.2, "legs": 0}, "hairDynamics": {"front": 0.3, "side": 0.3, "back": 0.3}, "eyebrowMovement": {"leftY": 0, "rightY": 0, "leftForm": 0, "rightForm": 0}, "duration": 500}
 ]
 
 **KLUCZOWE ZASADY KEYFRAME ANIMATIONS:**
 1. Zawsze zaczynaj i konczij w pozycji neutralnej
 2. Plynne przejscia - kazda klatka subtelnie rozna od poprzedniej
-3. Realistic timing - szybkie ruchy 40-100ms, spokojne 150-300ms
+3. Realistic timing - szybkie ruchy 100-200ms, spokojne 250-500ms, bardzo spokojne 300-800ms
 4. Physics sync - ruch glowy wplywa na wlosy, skok na ubrania
 5. Nie przekraczaj limitow - sprawdz zakresy wszystkich parametrow
 
