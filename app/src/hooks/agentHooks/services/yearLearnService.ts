@@ -55,14 +55,14 @@ export const sendYearlyConsolidation = async (
 
   try {
     debugLog('Preparing yearly consolidation fetch request', {
-      url: `${apiUrl}/analyze-dream`,
+      url: `${apiUrl}/0g-compute`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       bodySize: JSON.stringify({ walletAddress, query: prompt }).length
     });
 
     // Send request to 0g-compute API
-    const response = await fetch(`${apiUrl}/analyze-dream`, {
+    const response = await fetch(`${apiUrl}/0g-compute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

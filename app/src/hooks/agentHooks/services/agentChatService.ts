@@ -181,7 +181,7 @@ export const chatWithAI = async (
       messageLength: userMessage.length 
     });
 
-    const response = await fetch(`${COMPUTE_CONFIG.backendUrl}/analyze-dream`, {
+    const response = await fetch(`${COMPUTE_CONFIG.backendUrl}/0g-compute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

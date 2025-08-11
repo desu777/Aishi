@@ -46,7 +46,7 @@ app.get('/', (req, res) => {
       'create-broker': 'POST /api/create-broker',
       'fund': 'POST /api/fund',
       'balance': 'GET /api/balance/:walletAddress',
-      'analyze-dream': 'POST /api/analyze-dream',
+      '0g-compute': 'POST /api/0g-compute',
       'models': 'GET /api/models',
       'master-wallet-address': 'GET /api/master-wallet-address',
       'estimate-cost': 'POST /api/estimate-cost',

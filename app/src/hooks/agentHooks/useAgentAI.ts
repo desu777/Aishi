@@ -136,7 +136,7 @@ export function useAgentAI() {
       debugLog('API URL configured', { apiUrl });
 
       // Send request to 0g-compute API
-      const response = await fetch(`${apiUrl}/analyze-dream`, {
+      const response = await fetch(`${apiUrl}/0g-compute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

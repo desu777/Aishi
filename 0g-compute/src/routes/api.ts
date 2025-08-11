@@ -121,10 +121,10 @@ router.get('/balance/:walletAddress', async (req, res) => {
 });
 
 /**
- * POST /api/analyze-dream
- * Main endpoint for AI dream analysis
+ * POST /api/0g-compute
+ * Main endpoint for 0G Network AI processing (dreams, chats, etc.)
  */
-router.post('/analyze-dream', async (req, res) => {
+router.post('/0g-compute', async (req, res) => {
   try {
     const { walletAddress, query } = req.body;
     

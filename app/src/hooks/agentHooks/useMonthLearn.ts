@@ -360,7 +360,7 @@ export function useMonthLearn(tokenId?: number) {
       
       const apiUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
       
-      const response = await fetch(`${apiUrl}/analyze-dream`, {
+      const response = await fetch(`${apiUrl}/0g-compute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

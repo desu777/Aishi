@@ -112,7 +112,7 @@ export function useAgentConversation() {
       debugLog('API URL configured', { apiUrl });
 
       // Send request to 0g-compute API (same endpoint, different parsing)
-      const response = await fetch(`${apiUrl}/analyze-dream`, {
+      const response = await fetch(`${apiUrl}/0g-compute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

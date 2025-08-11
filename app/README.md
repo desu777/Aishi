@@ -169,7 +169,7 @@ The Month-Learn system provides comprehensive monthly consolidation of agent dre
 
 **Phase 2: AI Consolidation**
 - Uses unified prompt system with personality context integration
-- Sends single API request to `/analyze-dream` endpoint (same as dream workflow)
+- Sends single API request to `/0g-compute` endpoint (same as dream workflow)
 - Supports both test mode (fixed January 2024) and production dates
 - Parses structured AI response with section markers
 
@@ -299,7 +299,7 @@ npm run lint
 - **Modular Design**: Large components broken into focused modules (500-550 line limit)
 - **Component Composition**: Complex UI built from smaller, reusable components
 - **3-Phase Workflow Pattern**: Load → Process → Save pattern used across dream, chat, and month-learn systems
-- **Unified AI Integration**: Consistent API endpoint usage (`/analyze-dream`) with structured prompt/response patterns
+- **Unified AI Integration**: Consistent API endpoint usage (`/0g-compute`) with structured prompt/response patterns
 - **Dependency Injection**: Functions passed as props for better testability
 - **Shared Types**: Centralized TypeScript interfaces for consistency
 - **Hook-Based Logic**: Business logic separated into custom hooks

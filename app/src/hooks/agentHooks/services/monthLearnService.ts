@@ -125,14 +125,14 @@ export const sendUnifiedMonthLearnConsolidation = async (
 
   try {
     debugLog('Preparing unified fetch request', {
-      url: `${apiUrl}/analyze-dream`,
+      url: `${apiUrl}/0g-compute`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       bodySize: JSON.stringify({ walletAddress, query: prompt }).length
     });
 
     // Send single request to 0g-compute API
-    const response = await fetch(`${apiUrl}/analyze-dream`, {
+    const response = await fetch(`${apiUrl}/0g-compute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

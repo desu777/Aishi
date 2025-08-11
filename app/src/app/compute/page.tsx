@@ -164,7 +164,7 @@ export default function ComputeTest() {
     setResult(null);
     
     try {
-      const data = await apiCall('/analyze-dream', {
+      const data = await apiCall('/0g-compute', {
         method: 'POST',
         body: JSON.stringify({
           walletAddress: address,
