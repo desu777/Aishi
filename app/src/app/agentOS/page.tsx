@@ -81,19 +81,25 @@ export default function AgentOSPage() {
           marginBottom: '20px',
           textAlign: 'center'
         }}>
-          <h1 style={{
-            fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
-            fontWeight: 'bold',
-            fontFamily: "'Space Grotesk', sans-serif",
-            background: theme.gradients.primary,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+          <pre style={{
+            fontFamily: 'monospace',
+            fontSize: 'clamp(8px, 1.2vw, 12px)',
+            color: theme.accent.primary,
+            textAlign: 'center' as const,
             margin: 0,
-            marginBottom: '8px',
-            lineHeight: '1.2'
+            marginBottom: '12px',
+            lineHeight: 1.1,
+            opacity: 0.9,
+            letterSpacing: '1px',
+            fontWeight: 'bold'
           }}>
-            Agent Dashboard
-          </h1>
+{` █████╗  ██████╗ ███████╗███╗   ██╗████████╗    ██████╗ ███████╗
+██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝   ██╔═══██╗██╔════╝
+███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║      ██║   ██║███████╗
+██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║      ██║   ██║╚════██║
+██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║      ╚██████╔╝███████║
+╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝       ╚═════╝ ╚══════╝`}
+          </pre>
           <p style={{
             fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
             color: theme.text.secondary,

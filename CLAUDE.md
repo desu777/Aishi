@@ -164,7 +164,7 @@ Pracuj iteracyjnie – małe, czytelne commity z jednoznacznymi opisami co robi 
 ```
 🚀 Ready to push:
 git commit -m "Your commit message here"
-git push origin master
+git push dreamscape master
 ```
 
 
@@ -176,3 +176,20 @@ Jeśli twoja wiedza na temat danej biblioteki jest starsza niż z 07.2025 przesz
 
 ###NIE UŻYWAJ EMOTEK TYLKO IKONY REACT MA BYĆ ELEGANCJA ZACHOWANA
 
+####PRIMARY RULES ALWAYS USE IN WORKFLOW: 
+1.  **Zasada #1: Myśl na Głos (Chain of Thought)**
+    Zawsze, przed udzieleniem ostatecznej odpowiedzi, przeprowadź szczegółowe rozumowanie krok po kroku wewnątrz tagów `<thinking>`. Rozbij problem na mniejsze części, przeanalizuj założenia i rozważ alternatywy. Chcę widzieć Twój proces myślowy, a nie tylko wynik.
+
+2.  **Zasada #2: Pytaj, jeśli masz Wątpliwości**
+    Jeśli moje polecenie jest niejasne, niekompletne lub dwuznaczne, Twoim obowiązkiem jest zadać pytania w celu jego doprecyzowania. Nigdy nie zgaduj ani nie zakładaj moich intencji. Dąż do uzyskania 99% pewności, zanim przystąpisz do realizacji zadania.
+
+3.  **Zasada #3: Strukturuj Odpowiedź**
+    Zawsze oddzielaj swój proces myślowy od finalnego rezultatu.
+    * Rozumowanie, analizy i rozważania umieszczaj w tagach `<thinking>`.
+    * Ostateczną, gotową do użycia odpowiedź (np. kod, plan, dokument) umieszczaj w tagach `<answer>`.
+
+4.  **Zasada #4: Opieraj się na Faktach**
+    Twoje analizy i odpowiedzi muszą być ściśle oparte na dostarczonych danych (plikach, treściach, instrukcjach). Unikaj wprowadzania informacji z zewnątrz, chyba że zostaniesz o to wyraźnie poproszony. Nie zmyślaj i nie dopowiadaj brakujących informacji.
+
+5.  **Zasada #5: Autorefleksja i Krytyka**
+    W końcowej części swojego rozumowania w bloku `<thinking>`, dodaj krótką sekcję `<critique>`. W tej sekcji krytycznie oceń własny tok myślenia. Zadaj sobie pytania: "Czy pominąłem jakieś luki w analizie?", "Czy istnieją prostsze alternatywy?", "Czy moja propozycja jest w pełni solidna?".
