@@ -33,7 +33,7 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
     position: isMobile ? 'fixed' : 'fixed',
     top: 0,
     left: 0,
-    zIndex: 50,
+    zIndex: 100,
     transition: 'all 0.3s ease',
     transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
     boxShadow: isMobile && isOpen ? '0 0 15px rgba(0, 0, 0, 0.1)' : 'none',

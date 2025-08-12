@@ -125,6 +125,9 @@ const Layout = ({ children }: LayoutProps) => {
         {/* Header */}
         <Header toggleSidebar={toggleSidebar} isMobile={isMobile} />
         
+        {/* Spacer for fixed header */}
+        <div style={{ height: '80px' }} />
+        
         {/* Page Content */}
         <div style={{ padding: '20px', maxWidth: '100%' }}>
           {children}

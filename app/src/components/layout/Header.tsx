@@ -14,6 +14,7 @@ interface HeaderProps {
 const Header = ({ toggleSidebar, isMobile }: HeaderProps) => {
   const { theme, debugLog } = useTheme();
   const [scrolled, setScrolled] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(240);
   
   // Scroll listener for dynamic header transparency
   useEffect(() => {
@@ -21,6 +22,10 @@ const Header = ({ toggleSidebar, isMobile }: HeaderProps) => {
       const isScrolled = window.scrollY > 20;
       setScrolled(isScrolled);
     };
+    
+    // Check if sidebar is collapsed from localStorage
+    const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+    setSidebarWidth(collapsed ? 80 : 240);
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -32,18 +37,22 @@ const Header = ({ toggleSidebar, isMobile }: HeaderProps) => {
         display: 'flex', 
         flexDirection: 'column',
         padding: '20px',
+        paddingLeft: !isMobile ? `${sidebarWidth + 20}px` : '20px',
         boxShadow: scrolled 
           ? `0 1px 3px rgba(0, 0, 0, 0.1), inset 0 -1px 0 rgba(139, 92, 246, 0.1)` 
           : 'none',
         gap: '10px',
-        position: 'sticky',
+        position: 'fixed',
         top: 0,
-        zIndex: 10,
+        left: 0,
+        right: 0,
+        width: '100%',
+        zIndex: 50,
         backgroundColor: scrolled 
-          ? 'rgba(10, 10, 10, 0.95)' 
-          : 'rgba(10, 10, 10, 0.3)',
-        backdropFilter: scrolled ? 'blur(15px) saturate(180%)' : 'blur(10px)',
-        transition: 'background-color 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease'
+          ? 'rgba(10, 10, 10, 0.4)' 
+          : 'rgba(10, 10, 10, 0.2)',
+        backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'blur(8px)',
+        transition: 'background-color 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease, padding-left 0.3s ease'
       }}
     >
       {/* Top row - Menu button and wallet */}
