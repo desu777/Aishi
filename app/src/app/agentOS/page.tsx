@@ -8,6 +8,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { Command } from 'lucide-react';
 import { CommandsModal } from './components/CommandsModal';
 import { TerminalModal } from './components/TerminalModal';
+import SplitText from '../../components/ui/SplitText';
 
 export default function AgentOSPage() {
   const { theme, debugLog } = useTheme();
@@ -100,14 +101,40 @@ export default function AgentOSPage() {
 ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║      ╚██████╔╝███████║
 ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝       ╚═════╝ ╚══════╝`}
           </pre>
-          <p style={{
-            fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
-            color: theme.text.secondary,
+          <div style={{
             margin: '0 0 16px 0',
-            lineHeight: '1.4'
+            minHeight: '2em',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
-            Terminal interface for your AI dream agent
-          </p>
+            <SplitText
+              texts={[
+                "Type help to get started — try dream, chat, agent-info.",
+                "Train your agent with dream or talk in real time with chat.",
+                "Evolve personality over time with month-learn and year-learn.",
+                "Use commands to analyze dreams, chat, and update memory.",
+                "Everything here refines your agent's personality and stats.",
+                "Start a conversation with your Live2D companion using talk."
+              ]}
+              className="tagline-split"
+              delay={30}
+              duration={0.5}
+              ease="power3.out"
+              splitType="chars"
+              from={{ opacity: 0, y: 15, rotateX: -90 }}
+              to={{ opacity: 1, y: 0, rotateX: 0 }}
+              textAlign="center"
+              rotationDelay={6500}
+              style={{ 
+                color: theme.text.secondary,
+                fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)',
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                fontWeight: '400',
+                letterSpacing: '0.01em'
+              }}
+            />
+          </div>
 
           {/* Theme Toggle & Commands Buttons */}
           <div style={{
