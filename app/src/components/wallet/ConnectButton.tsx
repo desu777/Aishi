@@ -1,9 +1,10 @@
 'use client';
 
 import React, { MouseEvent } from 'react';
-import { Wallet, AlertTriangle, Check } from 'lucide-react';
+import { AlertTriangle, Check } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
+import { ShimmerButton } from '../ui/ShimmerButton';
 
 const ConnectButton = () => {
   const { theme, debugLog } = useTheme();
@@ -22,40 +23,16 @@ const ConnectButton = () => {
   // If not connected, show connect button
   if (!isConnected) {
     return (
-      <button
+      <ShimmerButton
         onClick={connectWallet}
         disabled={isConnecting}
+        shimmerColor="#ffffff"
+        background={theme.accent.primary}
+        borderRadius="50px"
+        shimmerDuration="3s"
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          backgroundColor: theme.accent.primary,
-          color: 'white',
-          border: 'none',
-          borderRadius: '12px',
-          padding: '10px 16px',
           cursor: isConnecting ? 'not-allowed' : 'pointer',
-          fontSize: '14px',
-          fontWeight: '500',
-          transition: 'all 0.2s ease',
-          boxShadow: `0 0 10px rgba(139, 92, 246, 0.3)`,
           opacity: isConnecting ? 0.7 : 1,
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-        onMouseEnter={(e: MouseEvent<HTMLButtonElement>) => {
-          if (!isConnecting) {
-            e.currentTarget.style.backgroundColor = theme.dream.purple;
-            e.currentTarget.style.transform = 'translateY(-1px)';
-            e.currentTarget.style.boxShadow = `0 4px 15px rgba(139, 92, 246, 0.4)`;
-          }
-        }}
-        onMouseLeave={(e: MouseEvent<HTMLButtonElement>) => {
-          if (!isConnecting) {
-            e.currentTarget.style.backgroundColor = theme.accent.primary;
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = `0 0 10px rgba(139, 92, 246, 0.3)`;
-          }
         }}
       >
         {isConnecting ? (
@@ -67,18 +44,16 @@ const ConnectButton = () => {
                 border: '2px solid rgba(255,255,255,0.3)',
                 borderTop: '2px solid white',
                 borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
+                animation: 'spin 1s linear infinite',
+                marginRight: '8px'
               }}
             />
             Connecting...
           </>
         ) : (
-          <>
-            <Wallet size={16} />
-            Connect Wallet
-          </>
+          'Connect Wallet'
         )}
-      </button>
+      </ShimmerButton>
     );
   }
   
@@ -119,65 +94,15 @@ const ConnectButton = () => {
   
   // If connected and correct network, show account button
   return (
-    <button
+    <ShimmerButton
       onClick={openAccount}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        backgroundColor: theme.bg.card,
-        color: theme.text.primary,
-        border: `1px solid ${theme.accent.primary}`,
-        borderRadius: '12px',
-        padding: '8px 12px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: '500',
-        transition: 'all 0.2s ease',
-        boxShadow: `0 0 10px rgba(139, 92, 246, 0.2)`
-      }}
-      onMouseEnter={(e: MouseEvent<HTMLButtonElement>) => {
-        e.currentTarget.style.backgroundColor = theme.bg.panel;
-        e.currentTarget.style.borderColor = theme.dream.purple;
-        e.currentTarget.style.transform = 'translateY(-1px)';
-      }}
-      onMouseLeave={(e: MouseEvent<HTMLButtonElement>) => {
-        e.currentTarget.style.backgroundColor = theme.bg.card;
-        e.currentTarget.style.borderColor = theme.accent.primary;
-        e.currentTarget.style.transform = 'translateY(0)';
-      }}
+      shimmerColor="#ffffff"
+      background={theme.accent.primary}
+      borderRadius="24px"
+      shimmerDuration="3s"
     >
-      {/* Avatar */}
-      <div style={{
-        width: '32px',
-        height: '32px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <img 
-          src="/logo.png" 
-          alt="Dreamscape" 
-          style={{
-            width: '32px',
-            height: '32px',
-            objectFit: 'contain'
-          }}
-        />
-      </div>
-      
-      {/* Address */}
-      <span>{shortAddress}</span>
-      
-      {/* Network indicator */}
-      <div style={{
-        width: '8px',
-        height: '8px',
-        borderRadius: '50%',
-        backgroundColor: theme.accent.primary,
-        boxShadow: `0 0 4px ${theme.accent.primary}`
-      }} />
-    </button>
+      {shortAddress}
+    </ShimmerButton>
   );
 };
 
