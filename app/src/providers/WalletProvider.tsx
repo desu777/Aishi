@@ -40,8 +40,8 @@ const CustomAvatar: AvatarComponent = ({ size }: CustomAvatarProps) => {
       }}
     >
       <img 
-        src="/logo.png" 
-        alt="Dreamscape" 
+        src="/logo_clean.png" 
+        alt="Aishi" 
         style={{
           width: size,
           height: size,

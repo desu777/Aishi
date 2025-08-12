@@ -128,8 +128,8 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
             src={isCollapsed ? "/logo_clean.png" : "/logo.png"}
             alt="Aishi Logo" 
             style={{
-              width: isCollapsed ? '40px' : '200px',
-              height: isCollapsed ? '40px' : '80px',
+              width: isCollapsed ? '40px' : '220px',
+              height: isCollapsed ? '40px' : '100px',
               objectFit: 'contain',
               transition: 'all 0.3s ease'
             }}
