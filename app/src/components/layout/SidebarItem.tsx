@@ -27,9 +27,9 @@ const SidebarItem = ({ icon, label, active, to, isCollapsed, onClick }: SidebarI
     justifyContent: isCollapsed ? 'center' : 'flex-start',
     padding: isCollapsed ? '12px' : '12px 20px',
     cursor: 'pointer',
-    backgroundColor: isActive ? theme.bg.panel : 'transparent',
-    color: isActive ? theme.accent.primary : theme.text.secondary,
-    borderLeft: isActive ? `3px solid ${theme.accent.primary}` : '3px solid transparent',
+    backgroundColor: isActive ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+    color: isActive ? '#8B5CF6' : theme.text.secondary,
+    borderLeft: isActive ? `3px solid #8B5CF6` : '3px solid transparent',
     borderRadius: isCollapsed ? '8px' : '0 8px 8px 0',
     transition: 'all 0.3s ease-in-out',
     textDecoration: 'none',
@@ -56,9 +56,9 @@ const SidebarItem = ({ icon, label, active, to, isCollapsed, onClick }: SidebarI
       onClick={handleClick}
       onMouseEnter={(e) => {
         if (!isActive) {
-          // Hover effect podobny do client - glow + podświetlenie
-          e.currentTarget.style.backgroundColor = theme.bg.panel;
-          e.currentTarget.style.color = theme.accent.primary;
+          // Hover effect z fioletowym podświetleniem
+          e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.05)';
+          e.currentTarget.style.color = '#8B5CF6';
           e.currentTarget.style.transform = 'translateX(3px)';
           e.currentTarget.style.boxShadow = `0 0 20px rgba(139, 92, 246, 0.2)`;
           // Dodajemy subtelny border glow

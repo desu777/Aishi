@@ -114,22 +114,22 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
         }}
         onClick={handleLogoClick}
       >
-        {/* Dream Agent Avatar */}
+        {/* Aishi Logo */}
         <div style={{ 
           position: 'relative', 
           marginBottom: isCollapsed ? '10px' : '15px',
-          width: isCollapsed ? '40px' : '120px',
-          height: isCollapsed ? '40px' : '120px',
+          width: isCollapsed ? '40px' : '80px',
+          height: isCollapsed ? '40px' : '80px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
         }}>
           <img 
-            src="/logo.png" 
-            alt="Dreamscape Logo" 
+            src="/logo_clean.png" 
+            alt="Aishi Logo" 
             style={{
-              width: isCollapsed ? '40px' : '140px',
-              height: isCollapsed ? '40px' : '140px',
+              width: isCollapsed ? '40px' : '80px',
+              height: isCollapsed ? '40px' : '80px',
               objectFit: 'contain',
               transition: 'all 0.3s ease'
             }}
@@ -137,14 +137,37 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
         </div>
         
         {!isCollapsed && (
-          <span style={{
-            fontSize: '13px',
-            color: theme.text.secondary,
-            textAlign: 'center',
-            lineHeight: '1.4'
-          }}>
-            Your Personal AI Dream Agent
-          </span>
+          <>
+            {/* ASCII AISHI */}
+            <pre style={{
+              fontFamily: 'monospace',
+              fontSize: '8px',
+              color: '#8B5CF6',
+              textAlign: 'center' as const,
+              margin: 0,
+              marginBottom: '8px',
+              lineHeight: 1,
+              letterSpacing: '0px',
+              fontWeight: 'bold'
+            }}>
+{` █████╗ ██╗███████╗██╗  ██╗██╗
+██╔══██╗██║██╔════╝██║  ██║██║
+███████║██║███████╗███████║██║
+██╔══██║██║╚════██║██╔══██║██║
+██║  ██║██║███████║██║  ██║██║
+╚═╝  ╚═╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝`}
+            </pre>
+            
+            {/* Subtitle */}
+            <span style={{
+              fontSize: '11px',
+              color: theme.text.secondary,
+              textAlign: 'center',
+              lineHeight: '1.4'
+            }}>
+              Your inner AI (愛) companion
+            </span>
+          </>
         )}
       </div>
       

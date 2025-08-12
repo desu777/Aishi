@@ -13,7 +13,14 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const { theme, debugLog } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // Persist sidebar collapsed state
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebar-collapsed');
+      return saved === 'true';
+    }
+    return false;
+  });
   const [isMobile, setIsMobile] = useState(false);
   
   // Check if we're on mobile on mount and when window resizes
@@ -47,8 +54,11 @@ const Layout = ({ children }: LayoutProps) => {
 
   // Toggle sidebar collapse
   const toggleSidebarCollapse = (): void => {
-    setSidebarCollapsed(prev => !prev);
-    debugLog('Sidebar collapse toggled', { collapsed: !sidebarCollapsed });
+    const newCollapsed = !sidebarCollapsed;
+    setSidebarCollapsed(newCollapsed);
+    // Save to localStorage
+    localStorage.setItem('sidebar-collapsed', newCollapsed.toString());
+    debugLog('Sidebar collapse toggled', { collapsed: newCollapsed });
   };
 
   // Obliczamy szerokość sidebara
