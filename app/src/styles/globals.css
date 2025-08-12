@@ -122,10 +122,13 @@ button:disabled {
 }
 
 /* Focus states */
-input:focus,
-button:focus {
+input:focus {
   outline: 2px solid #8B5CF6;
   outline-offset: 2px;
+}
+
+button:focus {
+  outline: none;
 }
 
 /* Smooth transitions */

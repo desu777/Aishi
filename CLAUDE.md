@@ -162,7 +162,7 @@ Pracuj iteracyjnie – małe, czytelne commity z jednoznacznymi opisami co robi 
 
 ##PUSH REMINDERS: Po każdej ważniejszej zmianie (nowe feature, bugfix, refactor) ZAWSZE przypominaj o push-u podając gotowy commit message. Format:
 ```
-sheesh Ready to push:
+🥳Ready to push:🥳
 git commit -m "Your commit message here"
 git push dreamscape master
 ```
