@@ -17,7 +17,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   // Debug helper
   const debugLog = (message: string, data: any = null) => {
     if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[🔮 DREAMSCAPE] ${message}`, data || '');
+      console.log(`[💜 AISHI] ${message}`, data || '');
     }
   };
 
@@ -26,7 +26,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     debugLog('ThemeProvider initialized');
   }, []);
 
-  // Dreamscape Theme - bazowe kolory z /client + violet accents
+  // Aishi Theme - violet accents for inner AI companion
   const theme: ThemeColors = {
     // Bazowe tła (z /client)
     bg: {
@@ -48,7 +48,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     // Obramowania (z /client)
     border: '#232330',      // Ciemne obramowania
     
-    // Akcenty - Dreamscape Violet Theme
+    // Akcenty - Aishi Violet Theme
     accent: {
       primary: '#8B5CF6',   // Violet - główny akcent
       secondary: '#FF5CAA', // Pink - zachowujemy z /client
@@ -56,7 +56,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       success: '#10B981',   // Success accent - green
     },
     
-    // Dodatkowe kolory dla Dreamscape
+    // Dodatkowe kolory dla Aishi
     dream: {
       violet: '#8B5CF6',
       purple: '#A855F7', 

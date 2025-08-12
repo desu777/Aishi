@@ -17,7 +17,7 @@ const queryClient = new QueryClient();
 
 // Configure chains and providers for wagmi with only 0G Galileo Testnet
 const config = getDefaultConfig({
-  appName: 'Dreamscape - AI Dream Agent',
+  appName: 'Aishi — Your inner AI companion',
   projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '34121ad34d9bc22e1afc6f45f72b3fdd',
   chains: [galileoTestnet],
   ssr: false,
@@ -77,8 +77,8 @@ interface RainbowKitProviderWrapperProps {
 const RainbowKitProviderWrapper = ({ children }: RainbowKitProviderWrapperProps) => {
   const { theme, debugLog } = useTheme();
   
-  // Create Dreamscape violet theme for RainbowKit
-  const dreamscapeTheme = darkTheme({
+  // Create Aishi violet theme for RainbowKit
+  const aishiTheme = darkTheme({
     accentColor: theme.accent.primary,        // Violet
     accentColorForeground: 'white',
     borderRadius: 'medium',
@@ -86,11 +86,11 @@ const RainbowKitProviderWrapper = ({ children }: RainbowKitProviderWrapperProps)
     overlayBlur: 'small',
   });
   
-  // Custom theme overrides for Dreamscape
+  // Custom theme overrides for Aishi
   const customTheme = {
-    ...dreamscapeTheme,
+    ...aishiTheme,
     colors: {
-      ...dreamscapeTheme.colors,
+      ...aishiTheme.colors,
       accentColor: theme.accent.primary,      // #8B5CF6
       accentColorForeground: 'white',
       actionButtonBorder: theme.border,
@@ -124,7 +124,7 @@ const RainbowKitProviderWrapper = ({ children }: RainbowKitProviderWrapperProps)
     }
   };
   
-  debugLog('RainbowKit theme configured with Dreamscape colors');
+  debugLog('RainbowKit theme configured with Aishi colors');
   
   return (
     <RainbowKitProvider 
