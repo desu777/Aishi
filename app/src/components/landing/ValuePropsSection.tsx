@@ -39,26 +39,30 @@ export default function ValuePropsSection() {
         </div>
 
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '24px'
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap'
         }}>
           {valueProps.map((prop, i) => (
             <div
               key={i}
               style={{
-                padding: '32px',
+                flex: '1 1 calc(20% - 16px)',
+                minWidth: '180px',
+                padding: '24px 16px',
                 background: hoveredCard === i 
-                  ? 'rgba(139, 92, 246, 0.05)' 
-                  : 'rgba(24, 24, 31, 0.6)',
-                backdropFilter: 'blur(20px)',
+                  ? 'rgba(139, 92, 246, 0.08)' 
+                  : 'rgba(24, 24, 31, 0.4)',
+                backdropFilter: 'blur(10px)',
                 border: `1px solid ${hoveredCard === i ? theme.accent.primary : theme.border}`,
-                borderRadius: '20px',
+                borderRadius: '16px',
                 transition: 'all 0.3s ease',
-                transform: hoveredCard === i ? 'translateY(-8px)' : 'translateY(0)',
+                transform: hoveredCard === i ? 'translateY(-4px)' : 'translateY(0)',
                 cursor: 'pointer',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                textAlign: 'center'
               }}
               onMouseEnter={() => setHoveredCard(i)}
               onMouseLeave={() => setHoveredCard(null)}
@@ -76,31 +80,31 @@ export default function ValuePropsSection() {
               }} />
 
               <div style={{
-                width: '56px',
-                height: '56px',
+                width: '48px',
+                height: '48px',
                 borderRadius: '12px',
                 background: theme.gradients.primary,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '20px'
+                margin: '0 auto 16px'
               }}>
-                <prop.icon size={28} color="white" />
+                <prop.icon size={24} color="white" />
               </div>
               
               <h3 style={{
-                fontSize: '1.25rem',
+                fontSize: '1rem',
                 fontWeight: '600',
-                marginBottom: '12px',
+                marginBottom: '8px',
                 color: theme.text.primary
               }}>
                 {prop.title}
               </h3>
               
               <p style={{
-                fontSize: '0.95rem',
+                fontSize: '0.85rem',
                 color: theme.text.secondary,
-                lineHeight: 1.6
+                lineHeight: 1.4
               }}>
                 {prop.description}
               </p>

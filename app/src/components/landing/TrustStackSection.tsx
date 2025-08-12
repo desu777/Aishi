@@ -9,10 +9,17 @@ export default function TrustStackSection() {
   return (
     <section style={{
       padding: '100px 20px',
-      background: `radial-gradient(circle at center, ${theme.bg.card}, transparent)`,
       position: 'relative',
       zIndex: 1
     }}>
+      {/* Blur background overlay */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'rgba(24, 24, 31, 0.3)',
+        backdropFilter: 'blur(10px)',
+        zIndex: -1
+      }} />
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
           <h2 style={{
@@ -45,8 +52,8 @@ export default function TrustStackSection() {
           {stackComponents.map((component, i) => (
             <div key={i} style={{
               padding: '32px',
-              background: 'rgba(24, 24, 31, 0.8)',
-              backdropFilter: 'blur(20px)',
+              background: 'rgba(24, 24, 31, 0.4)',
+              backdropFilter: 'blur(10px)',
               border: `1px solid ${theme.border}`,
               borderRadius: '20px',
               textAlign: 'center',

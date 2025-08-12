@@ -9,10 +9,17 @@ export default function HowItWorksSection() {
   return (
     <section style={{
       padding: '100px 20px',
-      background: `linear-gradient(180deg, transparent, ${theme.bg.card}, transparent)`,
       position: 'relative',
       zIndex: 1
     }}>
+      {/* Blur background overlay */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'rgba(24, 24, 31, 0.3)',
+        backdropFilter: 'blur(10px)',
+        zIndex: -1
+      }} />
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
           <h2 style={{

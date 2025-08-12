@@ -23,33 +23,38 @@ export interface StackComponent {
 
 export const valueProps: ValueProp[] = [
   {
-    icon: Lock,
-    title: 'Private by design',
-    description: 'Your keys, your data. Memories live on 0G Storage with 0G DA guarantees.'
-  },
-  {
     icon: Brain,
     title: 'Self-learning memory',
-    description: 'Automatic monthly/yearly consolidation keeps what matters, not everything.'
+    description: 'Aishi keeps what matters and forgets the noise via monthly/yearly consolidation.'
+  },
+  {
+    icon: Sparkles,
+    title: 'Three ways to teach',
+    description: 'Share a dream, chat when you need to talk, or use the exclusive Live2D "talk" mode.'
+  },
+  {
+    icon: Cpu,
+    title: 'Gets smarter with you',
+    description: 'The more Aishi learns, the better it surfaces hidden patterns, destructive loops, and helpful suggestions.'
+  },
+  {
+    icon: Lock,
+    title: 'Private by design',
+    description: 'You choose what to store; data lives on 0G Storage with 0G DA guarantees.'
   },
   {
     icon: Diamond,
     title: 'Ownable iNFT',
-    description: 'One agent per wallet; name it, keep it, upgrade it, trade it.'
-  },
-  {
-    icon: Sparkles,
-    title: 'Live2D persona',
-    description: 'Talk to an anime companion that adapts to your vibe.'
+    description: 'One agent per wallet, with a unique name you choose.'
   }
 ];
 
 export const steps: Step[] = [
   { title: 'Connect & mint', desc: 'Name your Aishi iNFT on 0G Chain.' },
-  { title: 'Share a dream or chat', desc: 'Type dream or talk; analysis runs on 0G Compute.' },
-  { title: 'You choose what to remember', desc: 'Only approved items are saved to 0G Storage.' },
-  { title: 'Auto-consolidation', desc: 'Backend automatically runs month-learn and year-learn when due.' },
-  { title: 'Evolve', desc: "Aishi's traits and response style adapt with you." }
+  { title: 'Share a dream or chat', desc: 'Type dream to analyze your night dream, chat to talk freely, or use the Live2D "talk" mode for real-time voice.' },
+  { title: 'You choose what to remember', desc: 'After each dream/chat/talk you can teach Aishi about yourself — you decide what is saved.' },
+  { title: 'Auto-consolidation', desc: 'The backend automatically runs month-learn and year-learn when due; long-term memory is kept without linear bloat. Unlike typical agents that lose month-scale context, Aishi\'s optimized method preserves an entire month (and years) coherently.' },
+  { title: 'Evolve', desc: 'Watch intelligence, traits, and response style improve as Aishi learns.' }
 ];
 
 export const traits: string[] = [
@@ -114,9 +119,9 @@ export const techDetails = {
     {
       title: '# Growth Mechanics',
       items: [
-        '• Streaks: Consecutive interaction days',
-        '• Rewards: Intelligence points',
-        '• Milestones: Unlock features at levels'
+        '• Streaks: consecutive consolidations',
+        '• Rewards: intelligence points (+ early-bird bonus)',
+        '• Milestones: unlocks at levels & streaks'
       ]
     }
   ]

@@ -41,7 +41,7 @@ export default function PrivacySection() {
             color: theme.text.primary,
             lineHeight: 1.6
           }}>
-            You decide what to save or skip. We can't see your dreams or messages. Export anytime.
+            You own the agent and the data. We can't see your dreams or messages. Export/omit anytime.
           </p>
         </div>
       </div>

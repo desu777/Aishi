@@ -16,10 +16,17 @@ export default function PowerUsersSection({ expandTech, setExpandTech }: PowerUs
   return (
     <section style={{
       padding: '100px 20px',
-      background: theme.bg.card,
       position: 'relative',
       zIndex: 1
     }}>
+      {/* Blur background overlay */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'rgba(24, 24, 31, 0.3)',
+        backdropFilter: 'blur(10px)',
+        zIndex: -1
+      }} />
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h2 style={{
@@ -84,7 +91,8 @@ export default function PowerUsersSection({ expandTech, setExpandTech }: PowerUs
           <div style={{
             marginTop: '24px',
             padding: '32px',
-            background: '#0D0D0F',
+            background: 'rgba(10, 10, 10, 0.6)',
+            backdropFilter: 'blur(20px)',
             borderRadius: '12px',
             border: `1px solid ${theme.border}`,
             fontFamily: 'JetBrains Mono, monospace',

@@ -1,10 +1,43 @@
 'use client';
 
 import { useTheme } from '../../contexts/ThemeContext';
-import { traits } from './landingData';
+import { Brain, TrendingUp, Sparkles, Target, MessageSquare, Trophy } from 'lucide-react';
 
 export default function WhatEvolvesSection() {
   const { theme } = useTheme();
+
+  const evolvingAspects = [
+    {
+      icon: Brain,
+      title: 'Intelligence level',
+      description: 'Increases with interaction and consolidation; unlocks deeper memory access.'
+    },
+    {
+      icon: TrendingUp,
+      title: 'Memory depth',
+      description: 'From current month → quarterly/half-year → multi-year → "lifetime" (based on INT).'
+    },
+    {
+      icon: Sparkles,
+      title: 'Personality traits',
+      description: 'Creativity, analytical, empathy, intuition, resilience, curiosity.'
+    },
+    {
+      icon: Target,
+      title: 'Unique features',
+      description: 'AI-discovered quirks added over time (timestamped, intensity).'
+    },
+    {
+      icon: MessageSquare,
+      title: 'Response style',
+      description: 'Adapts based on trait changes: empathetic, creative, analytical, and more.'
+    },
+    {
+      icon: Trophy,
+      title: 'Milestones',
+      description: 'Memory Keeper/Guardian/Master, Balanced Soul, and more.'
+    }
+  ];
 
   return (
     <section style={{
@@ -32,61 +65,73 @@ export default function WhatEvolvesSection() {
             fontSize: '1.125rem',
             color: theme.text.secondary
           }}>
-            Watch your Aishi grow and adapt
+            Watch your Aishi grow and adapt through multiple dimensions
           </p>
         </div>
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '20px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '24px'
         }}>
-          {traits.map((trait, i) => (
-            <div key={trait} style={{
-              padding: '24px',
-              background: theme.bg.card,
-              borderRadius: '16px',
-              border: `1px solid ${theme.border}`,
-              textAlign: 'center',
-              transition: 'all 0.3s ease'
-            }}>
-              <h3 style={{
-                fontSize: '1.125rem',
-                fontWeight: '600',
-                marginBottom: '16px',
-                color: theme.text.primary
-              }}>
-                {trait}
-              </h3>
-              <div style={{
-                height: '4px',
-                background: theme.border,
-                borderRadius: '2px',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  height: '100%',
-                  background: theme.gradients.primary,
-                  borderRadius: '2px',
-                  width: `${60 + Math.random() * 40}%`,
-                  animation: `slideIn 1s ease-out ${0.1 * i}s both`
-                }} />
+          {evolvingAspects.map((aspect, i) => {
+            const Icon = aspect.icon;
+            return (
+              <div key={aspect.title} style={{
+                padding: '28px',
+                background: 'rgba(24, 24, 31, 0.4)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                border: `1px solid ${theme.border}`,
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.borderColor = theme.accent.primary;
+                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = theme.border;
+                e.currentTarget.style.background = 'rgba(24, 24, 31, 0.4)';
+              }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: theme.gradients.primary,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <Icon size={24} color="white" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{
+                      fontSize: '1.25rem',
+                      fontWeight: '600',
+                      marginBottom: '8px',
+                      color: theme.text.primary
+                    }}>
+                      {aspect.title}
+                    </h3>
+                    <p style={{
+                      fontSize: '0.95rem',
+                      color: theme.text.secondary,
+                      lineHeight: 1.5
+                    }}>
+                      {aspect.description}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-
-        {/* CSS Animation for progress bars */}
-        <style jsx>{`
-          @keyframes slideIn {
-            from {
-              transform: scaleX(0);
-            }
-            to {
-              transform: scaleX(1);
-            }
-          }
-        `}</style>
       </div>
     </section>
   );
