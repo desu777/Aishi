@@ -1,7 +1,7 @@
 'use client';
 
 import { useTheme } from '../../contexts/ThemeContext';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { badges } from './landingData';
 
@@ -14,9 +14,10 @@ export default function HeroSection() {
       position: 'relative',
       minHeight: '100vh',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       justifyContent: 'center',
-      padding: '80px 20px',
+      paddingTop: '12vh',
+      padding: '12vh 20px 40px 20px',
       zIndex: 1
     }}>
       <div style={{
@@ -33,8 +34,8 @@ export default function HeroSection() {
             src="/aishi_logo.png" 
             alt="Aishi"
             style={{
-              width: '150px',
-              height: '150px',
+              width: '220px',
+              height: '220px',
               objectFit: 'contain',
               margin: '0 auto',
               filter: 'drop-shadow(0 10px 30px rgba(139, 92, 246, 0.3))'
@@ -50,15 +51,6 @@ export default function HeroSection() {
           lineHeight: 1.2,
           animation: 'fadeInUp 1s ease-out 0.2s both'
         }}>
-          <span style={{
-            background: theme.gradients.primary,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>
-            Aishi
-          </span>
-          <span style={{ color: theme.text.primary, margin: '0 12px' }}>—</span>
           <span style={{ color: theme.text.primary }}>
             Your inner
             <span style={{
@@ -195,19 +187,42 @@ export default function HeroSection() {
           </button>
         </div>
 
-        {/* CSS Animations - tylko dla tego komponentu */}
-        <style jsx>{`
-          @keyframes fadeInUp {
-            from {
-              opacity: 0;
-              transform: translateY(30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        `}</style>
+        {/* Scroll Indicator - Responsywny element pod CTA */}
+        <div style={{
+          marginTop: '60px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'fadeInUp 1s ease-out 1s both',
+          cursor: 'pointer'
+        }}
+        onClick={() => {
+          window.scrollTo({
+            top: window.innerHeight,
+            behavior: 'smooth'
+          });
+        }}
+        >
+          <span style={{
+            fontSize: '12px',
+            color: theme.text.secondary,
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            opacity: 0.6
+          }}>
+            Scroll
+          </span>
+          <ChevronDown 
+            size={20} 
+            style={{
+              color: theme.accent.primary,
+              animation: 'bounce 2s infinite',
+              opacity: 0.8
+            }}
+          />
+        </div>
+
       </div>
     </section>
   );

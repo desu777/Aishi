@@ -85,6 +85,7 @@ export const stackComponents: StackComponent[] = [
 ];
 
 export const badges: string[] = [
+  'iNFT',
   '0G Compute', 
   '0G Storage', 
   '0G DA', 
