@@ -121,9 +121,12 @@ This system creates meaningful, evolving relationships between users and AI agen
 
 
 
-###INSTRUKCJE 
+### PRIMARY RULES (NAJWAŻNIEJSZE - ZAWSZE PRZESTRZEGAJ)
 
-##MAKSYMALNY ROZMIAR PLIKU: 500-550 linii – bezwzględny limit; jeżeli plik przekracza tę liczbę, podziel na mniejsze moduły.
+## 🔴 MAKSYMALNY ROZMIAR PLIKU: 550-600 linii
+**BEZWZGLĘDNY LIMIT** - jeżeli plik przekracza 600 linii, MUSISZ podzielić go na mniejsze moduły. Idealna wielkość to 200-400 linii. To zapewnia łatwość utrzymania i czytelność kodu.
+
+### INSTRUKCJE
 
 ##PRACA NAD WERSJĄ PRODUKCYJNĄ: implementuj bezpośrednio w środowisku produkcyjnym, bez mocków i placeholderów.
 
