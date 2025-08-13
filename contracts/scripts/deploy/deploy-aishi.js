@@ -76,7 +76,7 @@ const exportABIToFrontend = async (contractName, contractAddress, network) => {
     const artifact = await hre.artifacts.readArtifact(contractName);
     
     // Define frontend ABI path
-    const frontendPath = path.join(__dirname, "../../../app/src/contracts");
+    const frontendPath = path.join(__dirname, "../../../app/src/abi");
     const abiFile = path.join(frontendPath, `${contractName}ABI.json`);
     
     // Create directory if it doesn't exist
@@ -143,8 +143,8 @@ TREASURY_ADDRESS=${treasuryAddress}
 ## Frontend Integration
 
 ABIs have been exported to:
-- \`app/src/contracts/AishiVerifierABI.json\`
-- \`app/src/contracts/AishiAgentABI.json\`
+- \`app/src/abi/AishiVerifierABI.json\`
+- \`app/src/abi/AishiAgentABI.json\`
 
 ## Next Steps
 
@@ -306,8 +306,8 @@ async function main() {
   console.log("\n📂 Generated Files:");
   console.log("  ├─ deployment-addresses.json");
   console.log("  ├─ DEPLOYMENT_SUMMARY.md");
-  console.log("  ├─ app/src/contracts/AishiVerifierABI.json");
-  console.log("  └─ app/src/contracts/AishiAgentABI.json");
+  console.log("  ├─ app/src/abi/AishiVerifierABI.json");
+  console.log("  └─ app/src/abi/AishiAgentABI.json");
   
   console.log("\n🚀 Next Steps:");
   console.log("  1. Update frontend configuration");
