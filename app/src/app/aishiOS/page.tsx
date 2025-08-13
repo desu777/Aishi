@@ -70,7 +70,7 @@ export default function AishiOSPage() {
   }, [showCommands, isTerminalOpen]);
 
   return (
-    <Layout>
+    <Layout backgroundType="faulty-terminal">
       <div style={{
         padding: 'clamp(12px, 4vw, 20px)',
         maxWidth: '1200px',

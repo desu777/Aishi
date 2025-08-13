@@ -5,12 +5,14 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Menu } from 'lucide-react';
+import { FaultyTerminal } from '../backgrounds';
 
 interface LayoutProps {
   children: ReactNode;
+  backgroundType?: 'video' | 'faulty-terminal' | 'none';
 }
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({ children, backgroundType = 'video' }: LayoutProps) => {
   const { theme, debugLog } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -72,25 +74,53 @@ const Layout = ({ children }: LayoutProps) => {
       transition: 'all 0.3s ease',
       position: 'relative'
     }}>
-      {/* Video Background */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        style={{
+      {/* Background Selection */}
+      {backgroundType === 'video' && (
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            zIndex: -1,
+            opacity: 0.15
+          }}
+        >
+          <source src="/pendi-bg.mp4" type="video/mp4" />
+        </video>
+      )}
+      
+      {backgroundType === 'faulty-terminal' && (
+        <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
-          zIndex: -1,
-          opacity: 0.15 // Subtle background effect
-        }}
-      >
-        <source src="/pendi-bg.mp4" type="video/mp4" />
-      </video>
+          zIndex: -1
+        }}>
+          <FaultyTerminal
+            enabled={true}
+            performanceMode={isMobile}
+            config={{
+              tint: "#8B5CF6",
+              brightness: 0.15,
+              scale: 1.5,
+              scanlineIntensity: 0.3,
+              glitchAmount: 0.5,
+              flickerAmount: 0.3,
+              mouseReact: !isMobile,
+              pageLoadAnimation: true
+            }}
+          />
+        </div>
+      )}
       {/* Mobile Sidebar Overlay */}
       {isMobile && sidebarOpen && (
         <div 
