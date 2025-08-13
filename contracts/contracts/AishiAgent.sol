@@ -67,7 +67,7 @@ contract AishiAgent is
     /**
      * @dev Core NFT data (no unbounded arrays – only counters & flags)
      */
-    struct AishiAgent {
+    struct Aishi {
         address  owner;            // current NFT owner
         string   agentName;        // unique, user‑chosen name (max 32 bytes)
         uint256  createdAt;        // block.timestamp at mint
@@ -110,7 +110,7 @@ contract AishiAgent is
 
     // ─── Main mappings ────────────────────────────────────────────────────────
 
-    mapping(uint256 => AishiAgent)                  public agents;             // tokenId → agent data
+    mapping(uint256 => Aishi)                  public agents;             // tokenId → agent data
     mapping(string  => bool)                        public nameExists;         // prevents duplicates
     mapping(address => uint256)                     public ownerToTokenId;     // "one agent per wallet"
 
@@ -208,7 +208,7 @@ contract AishiAgent is
         tokenId = nextTokenId++;
         ownerToTokenId[to] = tokenId;
 
-        agents[tokenId] = AishiAgent({
+        agents[tokenId] = Aishi({
             owner:                   to,
             agentName:               agentName,
             createdAt:               block.timestamp,
@@ -286,7 +286,7 @@ contract AishiAgent is
     ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
         _validatePersonalityImpact(impact);
 
-        AishiAgent storage agent = agents[tokenId];
+        Aishi storage agent = agents[tokenId];
         PersonalityTraits storage traits = agentPersonalities[tokenId];
 
         // cooldown – first dream is allowed instantly; afterwards 24h gap
@@ -375,7 +375,7 @@ contract AishiAgent is
         bytes32    conversationHash,
         ContextType contextType
     ) external override whenNotPaused onlyOwnerOrAuthorized(tokenId) {
-        AishiAgent storage agent = agents[tokenId];
+        Aishi storage agent = agents[tokenId];
 
         unchecked {
             agent.conversationCount += 1;
@@ -443,7 +443,7 @@ contract AishiAgent is
 
         string memory special = _checkConsolidationMilestones(tokenId);
 
-        AishiAgent storage agent = agents[tokenId];
+        Aishi storage agent = agents[tokenId];
         uint256 oldLvl = agent.intelligenceLevel;
         unchecked { agent.intelligenceLevel += bonus; }
 
@@ -483,7 +483,7 @@ contract AishiAgent is
 
         if (pendingRewards[tokenId].yearlyReflection) {
             pendingRewards[tokenId].yearlyReflection = false;
-            AishiAgent storage agent = agents[tokenId];
+            Aishi storage agent = agents[tokenId];
             uint256 oldLvl = agent.intelligenceLevel;
             unchecked { agent.intelligenceLevel += 5; }
             emit AgentEvolved(tokenId, oldLvl, agent.intelligenceLevel);
@@ -605,7 +605,7 @@ contract AishiAgent is
     function getEvolutionStats(uint256 tokenId)
         external view override returns (uint256 totalEvolutions, uint256 evolutionRate, uint256 lastEvolution)
     {
-        AishiAgent memory a = agents[tokenId];
+        Aishi memory a = agents[tokenId];
         totalEvolutions = a.totalEvolutions;
         lastEvolution   = a.lastEvolutionDate;
         uint256 daysSinceCreation = (block.timestamp - a.createdAt) / 1 days;
