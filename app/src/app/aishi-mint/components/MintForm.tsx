@@ -34,35 +34,35 @@ export default function MintForm({
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      gap: '24px',
+      gap: theme.spacing.lg,
     }}>
       {/* Title */}
       <div>
         {/* Motivational Slogan */}
         <p style={{
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#8B5CF6',
-          marginBottom: '12px',
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontSize: theme.typography.fontSizes.md,
+          fontWeight: theme.typography.fontWeights.semibold,
+          color: theme.accent.primary,
+          marginBottom: theme.spacing.sm,
+          fontFamily: theme.typography.fontFamilies.primary,
           letterSpacing: '0.5px',
         }}>
           Are you ready to train your digital soul?
         </p>
         
         <h1 style={{
-          fontSize: '32px',
-          fontWeight: 'bold',
+          fontSize: theme.typography.fontSizes.xl,
+          fontWeight: theme.typography.fontWeights.bold,
           color: theme.text.primary,
-          marginBottom: '8px',
-          fontFamily: "'Space Grotesk', sans-serif",
+          marginBottom: theme.spacing.xs,
+          fontFamily: theme.typography.fontFamilies.primary,
         }}>
           Birth Your Digital Companion
         </h1>
         
         <p style={{
           color: theme.text.secondary,
-          fontSize: '14px',
+          fontSize: theme.typography.fontSizes.sm,
         }}>
           One agent per wallet • Evolves through your interactions
         </p>
@@ -73,9 +73,9 @@ export default function MintForm({
         <label style={{
           display: 'block',
           color: theme.text.secondary,
-          fontSize: '14px',
-          marginBottom: '8px',
-          fontWeight: '500',
+          fontSize: theme.typography.fontSizes.sm,
+          marginBottom: theme.spacing.xs,
+          fontWeight: theme.typography.fontWeights.medium,
         }}>
           Give Name For Your Agent
         </label>
@@ -88,16 +88,16 @@ export default function MintForm({
             placeholder="Choose a unique name..."
             style={{
               width: '100%',
-              padding: '14px 16px',
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
               paddingRight: '60px',
               backgroundColor: `${theme.bg.primary}88`,
               border: `1px solid ${nameError ? theme.accent.error : theme.accent.primary}44`,
-              borderRadius: '8px',
+              borderRadius: theme.radius.md,
               color: '#000000',
-              fontSize: '16px',
+              fontSize: theme.typography.fontSizes.md,
               outline: 'none',
-              transition: 'all 0.3s ease',
-              fontFamily: "'Space Grotesk', sans-serif",
+              transition: theme.effects.transitions.normal,
+              fontFamily: theme.typography.fontFamilies.primary,
             }}
             onFocus={(e) => {
               e.currentTarget.style.borderColor = theme.accent.primary;
@@ -112,12 +112,12 @@ export default function MintForm({
           {/* Character counter */}
           <div style={{
             position: 'absolute',
-            right: '16px',
+            right: theme.spacing.md,
             top: '50%',
             transform: 'translateY(-50%)',
             color: agentName.length > maxNameLength ? theme.accent.error : theme.text.secondary,
-            fontSize: '12px',
-            fontFamily: 'monospace',
+            fontSize: theme.typography.fontSizes.xs,
+            fontFamily: theme.typography.fontFamilies.monospace,
           }}>
             {agentName.length}/{maxNameLength}
           </div>
@@ -126,8 +126,8 @@ export default function MintForm({
         {/* Name validation feedback */}
         {agentName && (
           <div style={{
-            marginTop: '8px',
-            fontSize: '12px',
+            marginTop: theme.spacing.xs,
+            fontSize: theme.typography.fontSizes.xs,
             color: nameError ? theme.accent.error : theme.accent.success,
             display: 'flex',
             alignItems: 'center',
@@ -155,9 +155,9 @@ export default function MintForm({
 
       {/* Minting Fee Info */}
       <div style={{
-        padding: '16px',
+        padding: theme.spacing.md,
         backgroundColor: `${theme.bg.primary}44`,
-        borderRadius: '8px',
+        borderRadius: theme.radius.md,
         border: `1px solid ${theme.accent.primary}22`,
       }}>
         <div style={{
@@ -167,15 +167,15 @@ export default function MintForm({
         }}>
           <span style={{
             color: theme.text.secondary,
-            fontSize: '14px',
+            fontSize: theme.typography.fontSizes.sm,
           }}>
             Minting Fee
           </span>
           <span style={{
             color: theme.accent.primary,
-            fontSize: '18px',
-            fontWeight: 'bold',
-            fontFamily: 'monospace',
+            fontSize: theme.typography.fontSizes.lg,
+            fontWeight: theme.typography.fontWeights.bold,
+            fontFamily: theme.typography.fontFamilies.monospace,
           }}>
             {formatEther(mintingFee)} OG
           </span>
@@ -188,20 +188,20 @@ export default function MintForm({
         disabled={!canMint || isProcessing}
         style={{
           width: '100%',
-          padding: '16px',
-          fontSize: '16px',
-          fontWeight: 'bold',
+          padding: theme.spacing.md,
+          fontSize: theme.typography.fontSizes.md,
+          fontWeight: theme.typography.fontWeights.bold,
           color: canMint && !isProcessing ? theme.bg.primary : theme.text.secondary,
           backgroundColor: canMint && !isProcessing ? theme.accent.primary : `${theme.accent.primary}44`,
           border: 'none',
-          borderRadius: '8px',
+          borderRadius: theme.radius.md,
           cursor: canMint && !isProcessing ? 'pointer' : 'not-allowed',
-          transition: 'all 0.3s ease',
+          transition: theme.effects.transitions.normal,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '10px',
-          fontFamily: "'Space Grotesk', sans-serif",
+          gap: theme.spacing.sm,
+          fontFamily: theme.typography.fontFamilies.primary,
         }}
         onMouseEnter={(e) => {
           if (canMint && !isProcessing) {
@@ -234,11 +234,11 @@ export default function MintForm({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '8px',
+        gap: theme.spacing.xs,
         opacity: 0.7,
       }}>
         <span style={{
-          fontSize: '11px',
+          fontSize: theme.typography.fontSizes.xs,
           color: theme.text.secondary,
         }}>
           Network:

@@ -43,6 +43,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       tertiary: '#6B7280',  // Tertiary text - darker gray
       accent: '#8B5CF6',    // Accent text - violet
       success: '#10B981',   // Success text - green
+      white: '#FFFFFF',     // Pure white text
     },
     
     // Obramowania (z /client)
@@ -54,6 +55,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       secondary: '#FF5CAA', // Pink - zachowujemy z /client
       tertiary: '#7F5AF0',  // Purple - zachowujemy z /client
       success: '#10B981',   // Success accent - green
+      error: '#EF4444',     // Error accent - red
     },
     
     // Dodatkowe kolory dla Aishi
@@ -71,7 +73,78 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       secondary: 'linear-gradient(135deg, #A855F7, #C084FC)',
       rainbow: 'linear-gradient(90deg, #8B5CF6, #FF5CAA, #7F5AF0)',
       dream: 'linear-gradient(135deg, #8B5CF6, #FF5CAA)',
-    }
+    },
+
+    // Spacing system
+    spacing: {
+      xs: '8px',
+      sm: '12px',
+      md: '16px',
+      lg: '24px',
+      xl: '32px',
+      xxl: '40px',
+      xxxl: '60px',
+    },
+
+    // Typography system
+    typography: {
+      fontSizes: {
+        xs: '12px',
+        sm: '14px',
+        md: '16px',
+        lg: '18px',
+        xl: '24px',
+        xxl: '48px',
+        xxxl: '64px',
+      },
+      fontFamilies: {
+        primary: "'Space Grotesk', sans-serif",
+        monospace: "'Space Grotesk', monospace",
+      },
+      fontWeights: {
+        normal: '400',
+        medium: '500',
+        semibold: '600',
+        bold: '700',
+      },
+      lineHeights: {
+        tight: 1.2,
+        normal: 1.5,
+        relaxed: 1.6,
+      },
+    },
+
+    // Border radius system
+    radius: {
+      sm: '4px',
+      md: '8px',
+      lg: '12px',
+      xl: '18px',
+      xxl: '20px',
+      full: '50%',
+    },
+
+    // Effects system
+    effects: {
+      blur: {
+        sm: 'blur(10px)',
+        md: 'blur(20px)',
+      },
+      shadows: {
+        glow: '0 0 20px',
+      },
+      transitions: {
+        fast: 'all 0.15s ease',
+        normal: 'all 0.3s ease',
+      },
+    },
+
+    // Shimmer system
+    shimmer: {
+      color: '#ffffff',
+      size: '0.1em',
+      duration: '2s',
+    },
   };
 
   // Debug theme na start

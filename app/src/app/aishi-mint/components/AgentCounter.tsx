@@ -24,27 +24,27 @@ export default function AgentCounter({
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: '20px',
+      gap: theme.spacing.xl,
     }}>
       {/* Counter Display */}
       <div style={{
         textAlign: 'center',
-        padding: '20px',
+        padding: theme.spacing.xl,
       }}>
         <div style={{
-          fontSize: '48px',
-          fontWeight: 'bold',
+          fontSize: theme.typography.fontSizes.xxl,
+          fontWeight: theme.typography.fontWeights.bold,
           color: theme.accent.primary,
-          fontFamily: "'Space Grotesk', monospace",
-          marginBottom: '10px',
+          fontFamily: theme.typography.fontFamilies.monospace,
+          marginBottom: theme.spacing.sm,
         }}>
           {agentsRemaining}
         </div>
         
         <div style={{
-          fontSize: '14px',
+          fontSize: theme.typography.fontSizes.sm,
           color: theme.text.secondary,
-          marginBottom: '20px',
+          marginBottom: theme.spacing.xl,
         }}>
           Agents Remaining
         </div>
@@ -54,16 +54,15 @@ export default function AgentCounter({
           width: '200px',
           height: '8px',
           backgroundColor: `${theme.bg.primary}88`,
-          borderRadius: '4px',
+          borderRadius: theme.radius.sm,
           overflow: 'hidden',
-          marginBottom: '10px',
+          marginBottom: theme.spacing.sm,
         }}>
           <div style={{
             width: `${percentage}%`,
             height: '100%',
             backgroundColor: theme.accent.primary,
-            borderRadius: '4px',
-            transition: 'width 0.3s ease',
+            transition: theme.effects.transitions.normal,
           }} />
         </div>
         
@@ -72,8 +71,8 @@ export default function AgentCounter({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '8px',
-          fontSize: '12px',
+          gap: theme.spacing.xs,
+          fontSize: theme.typography.fontSizes.xs,
           color: theme.text.secondary,
         }}>
           <FiUsers />

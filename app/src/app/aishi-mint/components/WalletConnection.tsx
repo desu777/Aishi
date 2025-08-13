@@ -32,7 +32,7 @@ export default function WalletConnection({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '24px',
+        gap: theme.spacing.lg,
       }}>
         <WalletPrompt />
         <ConnectButton />
@@ -56,7 +56,7 @@ export default function WalletConnection({
           .shimmer-border-existing {
             position: relative;
             padding: 2px;
-            border-radius: 20px;
+            border-radius: ${theme.radius.xxl};
             background: linear-gradient(
               90deg,
               transparent 25%,
@@ -64,14 +64,14 @@ export default function WalletConnection({
               transparent 75%
             );
             background-size: 200% 100%;
-            animation: shimmer-existing 2s infinite;
+            animation: shimmer-existing ${theme.shimmer.duration} infinite;
           }
           
           .shimmer-content-existing {
             background: ${theme.bg.card};
-            border-radius: 18px;
-            backdrop-filter: blur(20px);
-            padding: 20px;
+            border-radius: ${theme.radius.xl};
+            backdrop-filter: ${theme.effects.blur.md};
+            padding: ${theme.spacing.xl};
             text-align: center;
           }
         `}</style>
@@ -79,29 +79,29 @@ export default function WalletConnection({
         <div className="shimmer-border-existing">
           <div className="shimmer-content-existing">
             <h3 style={{
-              color: '#8B5CF6',
-              fontSize: '18px',
-              marginBottom: '10px',
+              color: theme.accent.primary,
+              fontSize: theme.typography.fontSizes.lg,
+              marginBottom: theme.spacing.sm,
             }}>
               You Already Have an Agent
             </h3>
             <p style={{
               color: theme.text.secondary,
-              marginBottom: '15px',
+              marginBottom: theme.spacing.md,
             }}>
               Token ID #{existingTokenId?.toString()}
             </p>
             <button
               onClick={() => window.location.href = '/aishiOS'}
               style={{
-                padding: '10px 20px',
+                padding: `${theme.spacing.sm} ${theme.spacing.xl}`,
                 backgroundColor: theme.accent.primary,
-                color: 'white',
+                color: theme.text.white,
                 border: 'none',
-                borderRadius: '12px',
+                borderRadius: theme.radius.lg,
                 cursor: 'pointer',
-                fontWeight: 'bold',
-                transition: 'all 0.3s ease',
+                fontWeight: theme.typography.fontWeights.bold,
+                transition: theme.effects.transitions.normal,
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
@@ -121,29 +121,29 @@ export default function WalletConnection({
   if (hasInsufficientBalance) {
     return (
       <div style={{
-        padding: '16px',
+        padding: theme.spacing.md,
         backgroundColor: `${theme.accent.error}22`,
         border: `1px solid ${theme.accent.error}66`,
-        borderRadius: '8px',
-        marginBottom: '20px',
+        borderRadius: theme.radius.md,
+        marginBottom: theme.spacing.xl,
       }}>
         <p style={{ 
           color: theme.text.primary, 
-          fontSize: '14px',
-          marginBottom: '8px',
+          fontSize: theme.typography.fontSizes.sm,
+          marginBottom: theme.spacing.xs,
         }}>
           Insufficient balance
         </p>
         <p style={{ 
           color: theme.text.secondary, 
-          fontSize: '12px' 
+          fontSize: theme.typography.fontSizes.xs
         }}>
           You need {formatEther(mintingFee)} OG to mint
         </p>
         {balance && (
           <p style={{ 
             color: theme.text.secondary, 
-            fontSize: '12px',
+            fontSize: theme.typography.fontSizes.xs,
             marginTop: '4px',
           }}>
             Current balance: {formatEther(balance.value)} OG
@@ -158,15 +158,15 @@ export default function WalletConnection({
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '12px 16px',
+      padding: `${theme.spacing.sm} ${theme.spacing.md}`,
       backgroundColor: `${theme.bg.card}cc`,
-      backdropFilter: 'blur(10px)',
-      borderRadius: '8px',
+      backdropFilter: theme.effects.blur.sm,
+      borderRadius: theme.radius.md,
       border: `1px solid ${theme.accent.primary}22`,
     }}>
       <span style={{
         color: theme.text.secondary,
-        fontSize: '12px',
+        fontSize: theme.typography.fontSizes.xs,
       }}>
         Connected
       </span>

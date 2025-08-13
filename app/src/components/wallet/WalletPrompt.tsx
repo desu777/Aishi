@@ -19,16 +19,16 @@ export default function WalletPrompt({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '32px',
+      padding: theme.spacing.xl,
       textAlign: 'center',
       ...style
     }}>
       <p style={{
-        fontSize: '18px',
-        fontWeight: '500',
+        fontSize: theme.typography.fontSizes.lg,
+        fontWeight: theme.typography.fontWeights.medium,
         color: theme.accent.primary,
         margin: 0,
-        lineHeight: 1.5,
+        lineHeight: theme.typography.lineHeights.normal,
       }}>
         {message}
       </p>

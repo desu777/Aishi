@@ -48,7 +48,7 @@ export default function TransactionStatus({
           .shimmer-border-success {
             position: relative;
             padding: 2px;
-            border-radius: 20px;
+            border-radius: ${theme.radius.xxl};
             background: linear-gradient(
               90deg,
               transparent 25%,
@@ -56,14 +56,14 @@ export default function TransactionStatus({
               transparent 75%
             );
             background-size: 200% 100%;
-            animation: shimmer 2s infinite;
+            animation: shimmer ${theme.shimmer.duration} infinite;
           }
           
           .shimmer-content-success {
             background: ${theme.bg.card};
-            border-radius: 18px;
-            backdrop-filter: blur(20px);
-            padding: 40px 20px;
+            border-radius: ${theme.radius.xl};
+            backdrop-filter: ${theme.effects.blur.md};
+            padding: ${theme.spacing.xxl} ${theme.spacing.xl};
           }
         `}</style>
         
@@ -77,13 +77,13 @@ export default function TransactionStatus({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px',
-                marginBottom: '10px',
-                fontSize: '24px',
-                fontWeight: '600',
-                color: '#8B5CF6',
-                fontFamily: "'Space Grotesk', sans-serif",
-                marginTop: '20px',
+                gap: theme.spacing.xs,
+                marginBottom: theme.spacing.sm,
+                fontSize: theme.typography.fontSizes.xl,
+                fontWeight: theme.typography.fontWeights.semibold,
+                color: theme.accent.primary,
+                fontFamily: theme.typography.fontFamilies.primary,
+                marginTop: theme.spacing.xl,
               }}>
                 <FiCheck size={24} />
                 Agent created
@@ -91,33 +91,33 @@ export default function TransactionStatus({
         
         <p style={{
           color: theme.text.secondary,
-          marginBottom: '30px',
+          marginBottom: theme.spacing.xxxl,
         }}>
           {agentName} • Token ID #{mintedTokenId}
         </p>
         
         <div style={{
           display: 'flex',
-          gap: '10px',
+          gap: theme.spacing.sm,
           justifyContent: 'center',
           flexWrap: 'wrap',
         }}>
           <ShimmerButton
             onClick={() => window.location.href = '/aishiOS'}
-            shimmerColor="#ffffff"
-            shimmerSize="0.1em"
-            shimmerDuration="3s"
-            borderRadius="12px"
-            background="#8B5CF6"
+            shimmerColor={theme.shimmer.color}
+            shimmerSize={theme.shimmer.size}
+            shimmerDuration={theme.shimmer.duration}
+            borderRadius={theme.radius.lg}
+            background={theme.accent.primary}
             style={{
-              padding: '12px 24px',
-              fontSize: '16px',
-              fontWeight: '600',
+              padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+              fontSize: theme.typography.fontSizes.md,
+              fontWeight: theme.typography.fontWeights.semibold,
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: theme.spacing.xs,
               border: 'none',
-              transition: 'transform 0.3s ease',
+              transition: theme.effects.transitions.normal,
               cursor: 'pointer'
             }}
             onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
@@ -134,17 +134,17 @@ export default function TransactionStatus({
           <button
             onClick={onShare}
             style={{
-              padding: '12px 24px',
+              padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
               backgroundColor: 'transparent',
               color: theme.text.primary,
               border: `1px solid ${theme.accent.primary}`,
-              borderRadius: '8px',
+              borderRadius: theme.radius.md,
               cursor: 'pointer',
-              fontWeight: 'bold',
+              fontWeight: theme.typography.fontWeights.bold,
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.3s ease',
+              gap: theme.spacing.xs,
+              transition: theme.effects.transitions.normal,
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
@@ -159,11 +159,11 @@ export default function TransactionStatus({
         </div>
         
         {txHash && (
-          <div style={{ marginTop: '20px' }}>
+          <div style={{ marginTop: theme.spacing.xl }}>
             <p style={{
-              fontSize: '12px',
+              fontSize: theme.typography.fontSizes.xs,
               color: theme.text.secondary,
-              marginBottom: '8px',
+              marginBottom: theme.spacing.xs,
             }}>
               Transaction completed:
             </p>
@@ -172,7 +172,7 @@ export default function TransactionStatus({
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                fontSize: '12px',
+                fontSize: theme.typography.fontSizes.xs,
                 color: theme.accent.primary,
                 textDecoration: 'none',
                 cursor: 'pointer',
@@ -212,7 +212,7 @@ export default function TransactionStatus({
           .shimmer-border {
             position: relative;
             padding: 2px;
-            border-radius: 20px;
+            border-radius: ${theme.radius.xxl};
             background: linear-gradient(
               90deg,
               transparent 25%,
@@ -220,14 +220,14 @@ export default function TransactionStatus({
               transparent 75%
             );
             background-size: 200% 100%;
-            animation: shimmer 2s infinite;
+            animation: shimmer ${theme.shimmer.duration} infinite;
           }
           
           .shimmer-content {
             background: ${theme.bg.card};
-            border-radius: 18px;
-            backdrop-filter: blur(20px);
-            padding: 40px;
+            border-radius: ${theme.radius.xl};
+            backdrop-filter: ${theme.effects.blur.md};
+            padding: ${theme.spacing.xxl};
           }
         `}</style>
         
@@ -238,14 +238,14 @@ export default function TransactionStatus({
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '20px',
+              gap: theme.spacing.xl,
             }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '20px',
-                fontWeight: '600',
+                fontSize: theme.typography.fontSizes.lg,
+                fontWeight: theme.typography.fontWeights.semibold,
                 color: theme.accent.primary,
               }}>
                 {isWritePending ? (
@@ -263,7 +263,7 @@ export default function TransactionStatus({
               
               <p style={{
                 color: theme.text.secondary,
-                fontSize: '14px',
+                fontSize: theme.typography.fontSizes.sm,
                 margin: 0,
               }}>
                 {isWritePending 
@@ -281,26 +281,26 @@ export default function TransactionStatus({
     const error = writeError || txError;
     return (
       <div style={{
-        padding: '16px',
+        padding: theme.spacing.md,
         backgroundColor: `${theme.accent.error}22`,
         border: `1px solid ${theme.accent.error}66`,
-        borderRadius: '8px',
+        borderRadius: theme.radius.md,
         display: 'flex',
         alignItems: 'flex-start',
-        gap: '12px',
+        gap: theme.spacing.sm,
       }}>
         <FiX color={theme.accent.error} style={{ flexShrink: 0, marginTop: '2px' }} />
         <div>
           <p style={{
             color: theme.text.primary,
-            fontSize: '14px',
+            fontSize: theme.typography.fontSizes.sm,
             marginBottom: '4px',
           }}>
             Transaction failed
           </p>
           <p style={{
             color: theme.text.secondary,
-            fontSize: '12px',
+            fontSize: theme.typography.fontSizes.xs,
             wordBreak: 'break-word',
           }}>
             {error?.message || 'Unknown error occurred'}

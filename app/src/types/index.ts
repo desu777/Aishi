@@ -22,6 +22,7 @@ export interface ThemeColors {
     tertiary: string;
     accent: string;
     success: string;
+    white: string;
   };
   border: string;
   accent: {
@@ -29,6 +30,7 @@ export interface ThemeColors {
     secondary: string;
     tertiary: string;
     success: string;
+    error: string;
   };
   dream: {
     violet: string;
@@ -42,6 +44,67 @@ export interface ThemeColors {
     secondary: string;
     rainbow: string;
     dream: string;
+  };
+  spacing: {
+    xs: string;
+    sm: string;
+    md: string;
+    lg: string;
+    xl: string;
+    xxl: string;
+    xxxl: string;
+  };
+  typography: {
+    fontSizes: {
+      xs: string;
+      sm: string;
+      md: string;
+      lg: string;
+      xl: string;
+      xxl: string;
+      xxxl: string;
+    };
+    fontFamilies: {
+      primary: string;
+      monospace: string;
+    };
+    fontWeights: {
+      normal: string;
+      medium: string;
+      semibold: string;
+      bold: string;
+    };
+    lineHeights: {
+      tight: number;
+      normal: number;
+      relaxed: number;
+    };
+  };
+  radius: {
+    sm: string;
+    md: string;
+    lg: string;
+    xl: string;
+    xxl: string;
+    full: string;
+  };
+  effects: {
+    blur: {
+      sm: string;
+      md: string;
+    };
+    shadows: {
+      glow: string;
+    };
+    transitions: {
+      fast: string;
+      normal: string;
+    };
+  };
+  shimmer: {
+    color: string;
+    size: string;
+    duration: string;
   };
 }
 

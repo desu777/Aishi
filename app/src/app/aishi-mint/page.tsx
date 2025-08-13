@@ -18,7 +18,7 @@ export default function AishiMintPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '40px 20px',
+        padding: `${theme.spacing.xxl} ${theme.spacing.xl}`,
       }}>
 
         {/* Main Container with Two Sections */}
@@ -27,14 +27,14 @@ export default function AishiMintPage() {
           maxWidth: '1200px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-          gap: '60px',
+          gap: theme.spacing.xxxl,
           alignItems: 'center',
         }}>
           {/* Left Section - Mint Form */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '24px',
+            gap: theme.spacing.lg,
           }}>
             <MintStatus
               // Wallet & Connection
@@ -76,7 +76,7 @@ export default function AishiMintPage() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '40px',
+            gap: theme.spacing.xxl,
           }}>
             {/* Logo */}
             <div style={{
