@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import { Terminal } from '../../terminal-xstate/components/Terminal';
 import { useTheme } from '../../contexts/ThemeContext';
-import { CommandsModal } from './components/CommandsModal';
 import { TerminalModal } from './components/TerminalModal';
 import SplitText from '../../components/ui/SplitText';
 import ModelSelector from '../../components/ModelSelector';
@@ -14,7 +13,6 @@ export default function AishiOSPage() {
   const { theme, debugLog } = useTheme();
   const [darkMode, setDarkMode] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [showCommands, setShowCommands] = useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   
   // Model discovery hook
@@ -47,26 +45,22 @@ export default function AishiOSPage() {
     debugLog('Terminal toggled', { isTerminalOpen: !isTerminalOpen });
   };
 
-  // Handle escape key to close modals
+  // Handle escape key to close terminal
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (isTerminalOpen) {
-          setIsTerminalOpen(false);
-        } else if (showCommands) {
-          setShowCommands(false);
-        }
+      if (e.key === 'Escape' && isTerminalOpen) {
+        setIsTerminalOpen(false);
       }
     };
 
-    if (showCommands || isTerminalOpen) {
+    if (isTerminalOpen) {
       document.addEventListener('keydown', handleEscape);
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [showCommands, isTerminalOpen]);
+  }, [isTerminalOpen]);
 
   return (
     <Layout backgroundType="faulty-terminal">
@@ -222,13 +216,6 @@ export default function AishiOSPage() {
           </div>
         </div>
 
-        {/* Commands Modal */}
-        <CommandsModal 
-          showCommands={showCommands}
-          setShowCommands={setShowCommands}
-          theme={theme}
-        />
-
         {/* Terminal Modal */}
         <TerminalModal 
           isTerminalOpen={isTerminalOpen}
@@ -277,19 +264,7 @@ export default function AishiOSPage() {
         }
         
         @media (max-width: 768px) {
-          .commands-modal {
-            width: 95vw !important;
-            height: 90vh !important;
-            background-color: ${theme.bg.card} !important;
-          }
-          
-          .commands-video {
-            display: none !important;
-          }
-          
-          .commands-modal > div:nth-child(2) {
-            background-color: rgba(0, 0, 0, 0.1) !important;
-          }
+          /* Mobile styles cleaned */
         }
         
         @media (max-width: 480px) {
