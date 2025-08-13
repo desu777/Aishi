@@ -6,6 +6,13 @@ import queryManager from '../services/queryManager';
 import consolidationChecker from '../services/consolidationChecker';
 import DatabaseService from '../database/database';
 import geminiService from '../services/geminiService';
+import { 
+  aiQueryLimiter, 
+  brokerCreationLimiter, 
+  costEstimationLimiter, 
+  fundingLimiter,
+  strictLimiter 
+} from '../middleware/rateLimiter';
 
 const router = express.Router();
 
@@ -35,8 +42,9 @@ const handleSuccess = (res: express.Response, data: any, message?: string) => {
 /**
  * POST /api/create-broker
  * Creates a new virtual broker for user
+ * PROTECTED: Limited to 3 creations per hour per IP
  */
-router.post('/create-broker', async (req, res) => {
+router.post('/create-broker', brokerCreationLimiter, async (req, res) => {
   try {
     const { walletAddress } = req.body;
     
@@ -63,8 +71,9 @@ router.post('/create-broker', async (req, res) => {
 /**
  * POST /api/fund
  * Funds a virtual broker account
+ * PROTECTED: Limited to 5 funding operations per 10 minutes per IP
  */
-router.post('/fund', async (req, res) => {
+router.post('/fund', fundingLimiter, async (req, res) => {
   try {
     const { walletAddress, amount, txHash } = req.body;
     
@@ -123,8 +132,9 @@ router.get('/balance/:walletAddress', async (req, res) => {
 /**
  * POST /api/0g-compute
  * Main endpoint for 0G Network AI processing (dreams, chats, etc.)
+ * PROTECTED: Limited to 20 AI queries per minute per IP
  */
-router.post('/0g-compute', async (req, res) => {
+router.post('/0g-compute', aiQueryLimiter, async (req, res) => {
   try {
     const { walletAddress, query } = req.body;
     
@@ -293,8 +303,9 @@ router.get('/master-wallet-address', async (req, res) => {
 /**
  * POST /api/estimate-cost
  * Estimates cost for AI query
+ * PROTECTED: Limited to 20 cost estimations per 5 minutes per IP
  */
-router.post('/estimate-cost', async (req, res) => {
+router.post('/estimate-cost', costEstimationLimiter, async (req, res) => {
   try {
     const { query } = req.body;
     
@@ -458,8 +469,9 @@ router.get('/consolidation/status', (req, res) => {
 /**
  * POST /api/consolidation/start
  * Start the consolidation checker
+ * PROTECTED: Sensitive system operation - Limited to 5 requests per 15 minutes per IP
  */
-router.post('/consolidation/start', (req, res) => {
+router.post('/consolidation/start', strictLimiter, (req, res) => {
   try {
     const { intervalMinutes } = req.body;
     const interval = intervalMinutes ? parseInt(intervalMinutes) : 60;
@@ -482,8 +494,9 @@ router.post('/consolidation/start', (req, res) => {
 /**
  * POST /api/consolidation/stop
  * Stop the consolidation checker
+ * PROTECTED: Sensitive system operation - Limited to 5 requests per 15 minutes per IP
  */
-router.post('/consolidation/stop', (req, res) => {
+router.post('/consolidation/stop', strictLimiter, (req, res) => {
   try {
     consolidationChecker.stopChecker();
     
@@ -501,8 +514,9 @@ router.post('/consolidation/stop', (req, res) => {
  * POST /api/gemini
  * Proxy endpoint for Gemini AI via Vertex AI
  * Acts as a passthrough - frontend builds prompt, backend forwards to Gemini
+ * PROTECTED: Limited to 20 AI queries per minute per IP
  */
-router.post('/gemini', async (req, res) => {
+router.post('/gemini', aiQueryLimiter, async (req, res) => {
   try {
     const { prompt, temperature, maxTokens } = req.body;
     

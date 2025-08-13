@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import './config/envLoader';
 import apiRoutes from './routes/api';
+import { generalLimiter } from './middleware/rateLimiter';
 import aiService from './services/aiService';
 import masterWallet from './services/masterWallet';
 import virtualBrokers from './services/virtualBrokers';
@@ -13,16 +14,20 @@ import geminiService from './services/geminiService';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
+// Security Middleware (order matters for performance)
 app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
 }));
+
+// Rate Limiting - Applied globally to all API routes
+app.use('/api', generalLimiter);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware
+// Request logging middleware (after rate limiting to avoid log spam)
 app.use((req, res, next) => {
   if (process.env.TEST_ENV === 'true') {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -30,7 +35,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// API routes
+// API routes (protected by rate limiting above)
 app.use('/api', apiRoutes);
 
 // Root endpoint
