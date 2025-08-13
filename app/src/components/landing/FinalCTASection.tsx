@@ -2,7 +2,7 @@
 
 import { useTheme } from '../../contexts/ThemeContext';
 import { useRouter } from 'next/navigation';
-import { Zap } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { ShimmerButton } from '../ui/ShimmerButton';
 import { useState, useEffect } from 'react';
 
@@ -81,11 +81,19 @@ export default function FinalCTASection() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                border: 'none'
+                border: 'none',
+                transition: 'transform 0.3s ease',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
               Open Terminal
-              <Zap size={24} />
+              <ChevronRight size={20} />
             </ShimmerButton>
           </div>
 

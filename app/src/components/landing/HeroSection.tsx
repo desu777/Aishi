@@ -191,7 +191,15 @@ export default function HeroSection() {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              border: 'none'
+              border: 'none',
+              transition: 'transform 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
             Open Terminal
