@@ -79,7 +79,7 @@ export default function WalletConnection({
         <div className="shimmer-border-existing">
           <div className="shimmer-content-existing">
             <h3 style={{
-              color: theme.text.primary,
+              color: '#8B5CF6',
               fontSize: '18px',
               marginBottom: '10px',
             }}>
@@ -98,9 +98,16 @@ export default function WalletConnection({
                 backgroundColor: theme.accent.primary,
                 color: 'white',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '12px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
               Go to Terminal

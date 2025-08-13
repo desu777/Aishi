@@ -3,6 +3,7 @@
 import { useTheme } from '../../../contexts/ThemeContext';
 import { FiCheck, FiX, FiLoader, FiShare2, FiArrowRight } from 'react-icons/fi';
 import AnimatedDots from '../../../components/ui/AnimatedDots';
+import { ShimmerButton } from '../../../components/ui/ShimmerButton';
 
 interface TransactionStatusProps {
   showSuccess: boolean;
@@ -73,25 +74,19 @@ export default function TransactionStatus({
               animation: 'fadeIn 0.5s ease',
             }}>
               <div style={{
-                fontSize: '48px',
-                marginBottom: '20px',
-                color: theme.accent.primary,
-              }}>
-                <FiCheck />
-              </div>
-              
-              <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                gap: '8px',
                 marginBottom: '10px',
                 fontSize: '24px',
                 fontWeight: '600',
-                color: theme.text.primary,
+                color: '#8B5CF6',
                 fontFamily: "'Space Grotesk', sans-serif",
+                marginTop: '20px',
               }}>
+                <FiCheck size={24} />
                 Agent created
-                <AnimatedDots color={theme.accent.primary} size={6} />
               </div>
         
         <p style={{
@@ -107,24 +102,34 @@ export default function TransactionStatus({
           justifyContent: 'center',
           flexWrap: 'wrap',
         }}>
-          <button
+          <ShimmerButton
             onClick={() => window.location.href = '/aishiOS'}
+            shimmerColor="#ffffff"
+            shimmerSize="0.1em"
+            shimmerDuration="3s"
+            borderRadius="12px"
+            background="#8B5CF6"
             style={{
               padding: '12px 24px',
-              backgroundColor: theme.accent.primary,
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
+              fontSize: '16px',
+              fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
+              border: 'none',
+              transition: 'transform 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
             Open Terminal
-            <FiArrowRight />
-          </button>
+            <span>></span>
+          </ShimmerButton>
           
           <button
             onClick={onShare}
@@ -139,6 +144,13 @@ export default function TransactionStatus({
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
             <FiShare2 />
@@ -162,7 +174,7 @@ export default function TransactionStatus({
               style={{
                 fontSize: '12px',
                 color: theme.accent.primary,
-                textDecoration: 'underline',
+                textDecoration: 'none',
                 cursor: 'pointer',
                 wordBreak: 'break-all',
               }}
