@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import { Terminal } from '../../terminal-xstate/components/Terminal';
+import { MockTerminal } from '../../components/MockTerminal';
 import { useTheme } from '../../contexts/ThemeContext';
 import { TerminalModal } from './components/TerminalModal';
 import SplitText from '../../components/ui/SplitText';
@@ -155,7 +156,7 @@ export default function AishiOSPage() {
           borderRadius: '12px',
           overflow: 'hidden'
         }}>
-          {/* Blurred Terminal Background */}
+          {/* Blurred Mock Terminal Background */}
           <div 
             className="terminal-blur-overlay"
             style={{
@@ -164,8 +165,7 @@ export default function AishiOSPage() {
               width: '100%',
               height: '100%'
             }}>
-            <Terminal 
-              darkMode={darkMode}
+            <MockTerminal 
               width="100%"
               height="100%"
             />

@@ -94,7 +94,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           {currentModel.type === 'decentralized' ? (
             <Cpu size={16} color={theme.accent.primary} />
           ) : currentModel.type === 'centralized' ? (
-            <Cloud size={16} color={theme.accent.secondary} />
+            <Cloud size={16} color={theme.accent.primary} />
           ) : (
             <img 
               src="/logo_clean.png" 
@@ -184,17 +184,32 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           {/* Decentralized Models */}
           <div style={{ borderTop: `1px solid ${theme.border}` }}>
             <div style={{ padding: '8px' }}>
-              <span style={{
-                display: 'block',
-                padding: '4px 8px',
-                fontSize: '11px',
-                fontWeight: '600',
-                textTransform: 'uppercase',
-                color: theme.text.secondary,
-                letterSpacing: '0.5px'
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '8px 8px 4px 8px'
               }}>
-                Decentralized (0G Network)
-              </span>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  color: theme.text.secondary,
+                  letterSpacing: '0.5px'
+                }}>
+                  Decentralized
+                </span>
+                <img 
+                  src="/og.png" 
+                  alt="0G Network" 
+                  style={{
+                    height: '16px',
+                    width: 'auto',
+                    opacity: 0.9
+                  }}
+                />
+              </div>
               {decentralizedModels.length > 0 ? (
                 decentralizedModels.map(model => (
                   <ModelOption
@@ -227,17 +242,23 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           {centralizedModels.length > 0 && (
             <div style={{ borderTop: `1px solid ${theme.border}` }}>
               <div style={{ padding: '8px' }}>
-                <span style={{
-                  display: 'block',
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  textTransform: 'uppercase',
-                  color: theme.text.secondary,
-                  letterSpacing: '0.5px'
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '8px 8px 4px 8px'
                 }}>
-                  Centralized
-                </span>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    color: theme.text.secondary,
+                    letterSpacing: '0.5px'
+                  }}>
+                    Centralized
+                  </span>
+                </div>
                 {centralizedModels.map(model => (
                   <ModelOption
                     key={model.id}
@@ -317,7 +338,7 @@ const ModelOption: React.FC<{
         {model.type === 'decentralized' ? (
           <Cpu size={14} color={theme.accent.primary} />
         ) : (
-          <Cloud size={14} color={theme.accent.secondary} />
+          <Cloud size={14} color={theme.accent.primary} />
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <span style={{ 

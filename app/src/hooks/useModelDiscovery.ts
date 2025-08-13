@@ -8,7 +8,14 @@ const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 export const useModelDiscovery = () => {
   const [models, setModels] = useState<Model[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>('auto');
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    // Load saved model from localStorage on init
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('aishi-selected-model');
+      return saved || 'auto';
+    }
+    return 'auto';
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastDiscoveryTime, setLastDiscoveryTime] = useState<Date | null>(null);
@@ -85,6 +92,13 @@ export const useModelDiscovery = () => {
 
     return () => clearInterval(interval);
   }, [discoverModels]);
+
+  // Save selected model to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('aishi-selected-model', selectedModel);
+    }
+  }, [selectedModel]);
 
   // Get the currently selected model object
   const getSelectedModel = useCallback(() => {
