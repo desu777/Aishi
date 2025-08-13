@@ -1,5 +1,7 @@
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { WalletProvider } from '../providers/WalletProvider';
+import { LoadingProvider } from '../contexts/LoadingContext';
+import { NavigationLoader } from '../components/NavigationLoader';
 import '../styles/globals.css';
 import '@rainbow-me/rainbowkit/styles.css';
 import { ReactNode } from 'react';
@@ -80,7 +82,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body>
         <ThemeProvider>
           <WalletProvider>
-            {children}
+            <LoadingProvider>
+              <NavigationLoader />
+              {children}
+            </LoadingProvider>
           </WalletProvider>
         </ThemeProvider>
       </body>
