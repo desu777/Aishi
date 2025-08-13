@@ -4,6 +4,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { FiWallet } from 'react-icons/fi';
 import { formatEther } from 'viem';
 import ConnectButton from '../../../components/wallet/ConnectButton';
+import WalletPrompt from '../../../components/wallet/WalletPrompt';
 
 interface WalletConnectionProps {
   isConnected: boolean;
@@ -26,7 +27,14 @@ export default function WalletConnection({
 
   if (!isConnected) {
     return (
-      <div style={{ width: '100%' }}>
+      <div style={{ 
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '24px',
+      }}>
+        <WalletPrompt />
         <ConnectButton />
       </div>
     );

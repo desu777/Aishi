@@ -2,6 +2,7 @@
 
 import { useTheme } from '../../../contexts/ThemeContext';
 import { FiCheck, FiX, FiLoader, FiShare2, FiArrowRight } from 'react-icons/fi';
+import AnimatedDots from '../../../components/ui/AnimatedDots';
 
 interface TransactionStatusProps {
   showSuccess: boolean;
@@ -125,29 +126,82 @@ export default function TransactionStatus({
 
   if (isProcessing) {
     return (
-      <div style={{
-        textAlign: 'center',
-        padding: '30px',
-        backgroundColor: `${theme.bg.card}cc`,
-        backdropFilter: 'blur(10px)',
-        borderRadius: '12px',
-        border: `1px solid ${theme.accent.primary}33`,
-      }}>
-        <FiLoader 
-          size={32} 
-          style={{ 
-            animation: 'spin 1s linear infinite',
-            color: theme.accent.primary,
-            marginBottom: '16px',
-          }} 
-        />
-        <p style={{
-          color: theme.text.primary,
-          fontSize: '16px',
-        }}>
-          {isWritePending ? 'Confirm in wallet...' : 'Creating agent...'}
-        </p>
-      </div>
+      <>
+        <style jsx>{`
+          @keyframes shimmer {
+            0% {
+              background-position: -200% center;
+            }
+            100% {
+              background-position: 200% center;
+            }
+          }
+          
+          .shimmer-border {
+            position: relative;
+            padding: 2px;
+            border-radius: 20px;
+            background: linear-gradient(
+              90deg,
+              transparent 25%,
+              ${theme.accent.primary}44 50%,
+              transparent 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+          }
+          
+          .shimmer-content {
+            background: ${theme.bg.card};
+            border-radius: 18px;
+            backdrop-filter: blur(20px);
+            padding: 40px;
+          }
+        `}</style>
+        
+        <div className="shimmer-border">
+          <div className="shimmer-content">
+            <div style={{
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '20px',
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px',
+                fontWeight: '600',
+                color: theme.accent.primary,
+              }}>
+                {isWritePending ? (
+                  <>
+                    Confirm in wallet
+                    <AnimatedDots color={theme.accent.primary} size={5} />
+                  </>
+                ) : (
+                  <>
+                    Creating agent
+                    <AnimatedDots color={theme.accent.primary} size={5} />
+                  </>
+                )}
+              </div>
+              
+              <p style={{
+                color: theme.text.secondary,
+                fontSize: '14px',
+                margin: 0,
+              }}>
+                {isWritePending 
+                  ? 'Please check your wallet for confirmation' 
+                  : 'Processing transaction on blockchain'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
