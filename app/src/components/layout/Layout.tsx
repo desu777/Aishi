@@ -6,6 +6,8 @@ import Header from './Header';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Menu } from 'lucide-react';
 import { FaultyTerminal } from '../backgrounds';
+import { FaultyTerminalErrorBoundary } from '../backgrounds/FaultyTerminal/FaultyTerminalErrorBoundary';
+import { zIndex } from '../../styles/zIndex';
 
 interface LayoutProps {
   children: ReactNode;
@@ -88,7 +90,7 @@ const Layout = ({ children, backgroundType = 'video' }: LayoutProps) => {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            zIndex: -1,
+            zIndex: zIndex.background,
             opacity: 0.15
           }}
         >
@@ -97,29 +99,31 @@ const Layout = ({ children, backgroundType = 'video' }: LayoutProps) => {
       )}
       
       {backgroundType === 'faulty-terminal' && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: -1
-        }}>
-          <FaultyTerminal
-            enabled={true}
-            performanceMode={isMobile}
-            config={{
-              tint: "#8B5CF6",
-              brightness: 0.15,
-              scale: 1.5,
-              scanlineIntensity: 0.3,
-              glitchAmount: 0.5,
-              flickerAmount: 0.3,
-              mouseReact: !isMobile,
-              pageLoadAnimation: true
-            }}
-          />
-        </div>
+        <FaultyTerminalErrorBoundary>
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: -1
+          }}>
+            <FaultyTerminal
+              enabled={true}
+              performanceMode={isMobile}
+              config={{
+                tint: "#8B5CF6",
+                brightness: 0.15,
+                scale: 1.5,
+                scanlineIntensity: 0.3,
+                glitchAmount: 0.5,
+                flickerAmount: 0.3,
+                mouseReact: !isMobile,
+                pageLoadAnimation: true
+              }}
+            />
+          </div>
+        </FaultyTerminalErrorBoundary>
       )}
       {/* Mobile Sidebar Overlay */}
       {isMobile && sidebarOpen && (
@@ -128,7 +132,7 @@ const Layout = ({ children, backgroundType = 'video' }: LayoutProps) => {
             position: 'fixed',
             inset: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 40,
+            zIndex: zIndex.sidebarOverlay,
             transition: 'opacity 0.3s ease'
           }}
           onClick={toggleSidebar}

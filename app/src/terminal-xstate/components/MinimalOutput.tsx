@@ -14,7 +14,7 @@ const colors = {
   error: '#F97316'
 };
 
-export const MinimalOutput: React.FC<MinimalOutputProps> = ({ lines, welcomeLines }) => {
+const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({ lines, welcomeLines }) => {
   const outputRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new lines
@@ -142,3 +142,5 @@ export const MinimalOutput: React.FC<MinimalOutputProps> = ({ lines, welcomeLine
     </>
   );
 };
+
+export const MinimalOutput = React.memo(MinimalOutputComponent);

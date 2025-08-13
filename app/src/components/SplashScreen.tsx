@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { zIndex } from '../styles/zIndex';
 
 interface SplashScreenProps {
   isLoading: boolean;
@@ -16,6 +17,9 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ isLoading, progress 
 
   return (
     <div
+      role="status"
+      aria-live="polite"
+      aria-label="Page loading"
       style={{
         position: 'fixed',
         top: 0,
@@ -23,7 +27,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ isLoading, progress 
         right: 0,
         bottom: 0,
         background: '#0A0A0A',
-        zIndex: 9999,
+        zIndex: zIndex.splash,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -43,6 +47,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ isLoading, progress 
       
       {/* Progress Bar */}
       <div 
+        role="progressbar"
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Loading progress: ${progress}%`}
         style={{ 
           fontSize: '32px', 
           fontFamily: 'Courier New, monospace',
@@ -51,10 +60,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ isLoading, progress 
           gap: '20px'
         }}
       >
-        <span style={{ color: '#2D2D2D' }}>[</span>
-        <span style={{ color: '#8B5CF6' }}>{'█'.repeat(fillCount)}</span>
-        <span style={{ color: '#2D2D2D' }}>{'░'.repeat(emptyCount)}</span>
-        <span style={{ color: '#2D2D2D' }}>]</span>
+        <span style={{ color: '#2D2D2D' }} aria-hidden="true">[</span>
+        <span style={{ color: '#8B5CF6' }} aria-hidden="true">{'█'.repeat(fillCount)}</span>
+        <span style={{ color: '#2D2D2D' }} aria-hidden="true">{'░'.repeat(emptyCount)}</span>
+        <span style={{ color: '#2D2D2D' }} aria-hidden="true">]</span>
         <span style={{ 
           color: '#8A8A8A',
           fontSize: '24px',
@@ -63,6 +72,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ isLoading, progress 
           minWidth: '60px',
           textAlign: 'right'
         }}>
+          <span className="sr-only">Loading progress: </span>
           {progress}%
         </span>
       </div>

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { MinimalOutput } from './MinimalOutput';
 import { PremiumCommandBar } from './PremiumCommandBar';
 import { useTerminal } from '../hooks/useTerminal';
+import { zIndex } from '../../styles/zIndex';
 
 interface GlassTerminalProps {
   isOpen: boolean;
@@ -39,7 +40,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose })
   }, [state]);
 
   // Handle command submission
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (context.currentInput.trim()) {
       send({ type: 'INPUT.SUBMIT' });
       
@@ -50,26 +51,26 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose })
         setTimeout(() => setOrbState('idle'), 500);
       }, 1000);
     }
-  };
+  }, [context.currentInput, send]);
 
   // Handle input change
-  const handleInputChange = (value: string) => {
+  const handleInputChange = useCallback((value: string) => {
     send({ type: 'INPUT.CHANGE', value });
-  };
+  }, [send]);
 
   // Handle history navigation
-  const handleHistoryUp = () => {
+  const handleHistoryUp = useCallback(() => {
     send({ type: 'HISTORY.UP' });
-  };
+  }, [send]);
 
-  const handleHistoryDown = () => {
+  const handleHistoryDown = useCallback(() => {
     send({ type: 'HISTORY.DOWN' });
-  };
+  }, [send]);
 
   // Handle clear
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     send({ type: 'CLEAR' });
-  };
+  }, [send]);
 
   // Handle escape key to close
   useEffect(() => {
@@ -98,7 +99,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose })
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
+    zIndex: zIndex.terminal,
     animation: 'fadeIn 0.3s ease'
   };
 

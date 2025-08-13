@@ -18,7 +18,7 @@ const colors = {
   borderSubtle: 'rgba(255, 255, 255, 0.05)'
 };
 
-export const PremiumCommandBar: React.FC<PremiumCommandBarProps> = ({
+const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   value,
   onChange,
   onSubmit,
@@ -146,3 +146,5 @@ export const PremiumCommandBar: React.FC<PremiumCommandBarProps> = ({
     </div>
   );
 };
+
+export const PremiumCommandBar = React.memo(PremiumCommandBarComponent);
