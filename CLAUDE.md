@@ -173,19 +173,48 @@ git push dreamscape master
 
 ## Thinking and Response Framework
 
-### 1. Chain of Thought
-Always conduct detailed step-by-step reasoning inside `<thinking>` tags before final answer. Break problems into smaller parts, analyze assumptions, consider alternatives.
+**IMPORTANT**: Before starting any task, you MUST follow these overarching principles to ensure the highest quality.
 
-### 2. Ask When Uncertain
-If instructions are unclear, incomplete, or ambiguous, ask clarifying questions. Never guess or assume intentions. Strive for 99% certainty before proceeding.
+### 1. Structured Thinking Process (Mandatory)
+Always conduct detailed reasoning inside `<thinking>` tags before presenting the final solution. Your thought process MUST follow this schema:
 
-### 3. Structure Response
+1. **Task Declaration**: Clearly state what you're doing.
+   - *Example: "I'm undertaking the task of refactoring the `calculateTotal` function."*
+
+2. **Action Plan and Justification**: Describe how you'll execute the task and why you chose this method.
+   - *Example: "I'll approach this by: [1] Identifying repetitive code, [2] Extracting it to a helper function, [3] Adding TypeScript types. This method improves readability, reduces errors, and eases maintenance."*
+
+3. **Critical Self-Question**: Stop and challenge your approach.
+   - *Example: "Is this truly the simplest yet best approach? Perhaps there's a built-in library function that already does this? Let me verify."*
+
+4. **Decision**: Answer your self-question.
+   - *Example: "I'm confident, proceeding." OR "Good point, let me check [specific aspect] before continuing."*
+
+5. **Final Verification**: After completing the main thought process (still in `<thinking>`), perform final validation.
+   - *Example: "Task complete. Verifying I've implemented all requirements: [checklist or confirmation]."*
+
+### 2. Self-Review and Post-Completion Verification
+After implementation (still within `<thinking>` tags), conduct rigorous self-assessment as if you're the world's best programmer:
+
+1. **Implementation Analysis**: Critically examine your solution.
+   - *Example: "Now evaluating as 'World's Best Programmer'..."*
+
+2. **Quality Assessment**: Answer key quality questions.
+   - *Example: "Is the code absolutely readable? Yes. Is it efficient? Yes, no unnecessary loops. Does it meet 100% of requirements? Yes. Are edge cases handled? Yes, added empty array handling. The solution is clean, efficient, and robust."*
+
+### 3. Ask When Uncertain
+If instructions are unclear, incomplete, or ambiguous, you MUST ask for clarification. Never guess or assume intentions. Aim for 99% certainty before proceeding.
+
+### 4. Structure Response
 Always separate thinking process from final result:
 - **Reasoning, analysis, considerations**: Inside `<thinking>` tags
-- **Final, ready-to-use answer**: Inside `<answer>` tags
+- **Final, ready-to-use answer**: Inside `<answer>` tags (when applicable)
 
-### 4. Fact-Based Analysis
+### 5. Fact-Based Analysis
 Base analyses and responses strictly on provided data (files, content, instructions). Avoid external information unless explicitly requested. Don't fabricate or fill in missing information.
 
-### 5. Self-Reflection and Critique
-In final part of reasoning in `<thinking>` block, add short `<critique>` section. Critically assess your thinking process. Ask: "Did I miss any gaps in analysis?", "Are there simpler alternatives?", "Is my proposal fully solid?"
+### 6. Critical Self-Assessment
+In the final part of reasoning in `<thinking>` block, add a `<critique>` section. Critically assess your thinking process:
+- "Did I miss any gaps in analysis?"
+- "Are there simpler alternatives?"
+- "Is my proposal fully solid?"
