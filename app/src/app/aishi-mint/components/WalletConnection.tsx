@@ -42,42 +42,72 @@ export default function WalletConnection({
 
   if (hasExistingAgent) {
     return (
-      <div style={{
-        padding: '20px',
-        backgroundColor: `${theme.bg.card}cc`,
-        backdropFilter: 'blur(10px)',
-        borderRadius: '12px',
-        border: `1px solid ${theme.accent.primary}33`,
-        textAlign: 'center',
-      }}>
-        <h3 style={{
-          color: theme.text.primary,
-          fontSize: '18px',
-          marginBottom: '10px',
-        }}>
-          You Already Have an Agent
-        </h3>
-        <p style={{
-          color: theme.text.secondary,
-          marginBottom: '15px',
-        }}>
-          Token ID #{existingTokenId?.toString()}
-        </p>
-        <button
-          onClick={() => window.location.href = '/agent-dashboard'}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: theme.accent.primary,
-            color: theme.bg.primary,
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-          }}
-        >
-          Go to Dashboard
-        </button>
-      </div>
+      <>
+        <style jsx>{`
+          @keyframes shimmer-existing {
+            0% {
+              background-position: -200% center;
+            }
+            100% {
+              background-position: 200% center;
+            }
+          }
+          
+          .shimmer-border-existing {
+            position: relative;
+            padding: 2px;
+            border-radius: 20px;
+            background: linear-gradient(
+              90deg,
+              transparent 25%,
+              ${theme.accent.primary}44 50%,
+              transparent 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmer-existing 2s infinite;
+          }
+          
+          .shimmer-content-existing {
+            background: ${theme.bg.card};
+            border-radius: 18px;
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            text-align: center;
+          }
+        `}</style>
+        
+        <div className="shimmer-border-existing">
+          <div className="shimmer-content-existing">
+            <h3 style={{
+              color: theme.text.primary,
+              fontSize: '18px',
+              marginBottom: '10px',
+            }}>
+              You Already Have an Agent
+            </h3>
+            <p style={{
+              color: theme.text.secondary,
+              marginBottom: '15px',
+            }}>
+              Token ID #{existingTokenId?.toString()}
+            </p>
+            <button
+              onClick={() => window.location.href = '/aishiOS'}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: theme.accent.primary,
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              Go to Terminal
+            </button>
+          </div>
+        </div>
+      </>
     );
   }
 

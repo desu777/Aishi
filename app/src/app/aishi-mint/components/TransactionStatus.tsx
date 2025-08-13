@@ -33,31 +33,66 @@ export default function TransactionStatus({
 
   if (showSuccess) {
     return (
-      <div style={{
-        textAlign: 'center',
-        padding: '40px 20px',
-        backgroundColor: `${theme.bg.card}cc`,
-        backdropFilter: 'blur(10px)',
-        borderRadius: '12px',
-        border: `1px solid ${theme.accent.success}66`,
-        animation: 'fadeIn 0.5s ease',
-      }}>
-        <div style={{
-          fontSize: '48px',
-          marginBottom: '20px',
-          color: theme.accent.success,
-        }}>
-          <FiCheck />
-        </div>
+      <>
+        <style jsx>{`
+          @keyframes shimmer {
+            0% {
+              background-position: -200% center;
+            }
+            100% {
+              background-position: 200% center;
+            }
+          }
+          
+          .shimmer-border-success {
+            position: relative;
+            padding: 2px;
+            border-radius: 20px;
+            background: linear-gradient(
+              90deg,
+              transparent 25%,
+              ${theme.accent.primary}44 50%,
+              transparent 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+          }
+          
+          .shimmer-content-success {
+            background: ${theme.bg.card};
+            border-radius: 18px;
+            backdrop-filter: blur(20px);
+            padding: 40px 20px;
+          }
+        `}</style>
         
-        <h2 style={{
-          color: theme.text.primary,
-          fontSize: '24px',
-          marginBottom: '10px',
-          fontFamily: "'Space Grotesk', sans-serif",
-        }}>
-          Agent Created Successfully!
-        </h2>
+        <div className="shimmer-border-success">
+          <div className="shimmer-content-success">
+            <div style={{
+              textAlign: 'center',
+              animation: 'fadeIn 0.5s ease',
+            }}>
+              <div style={{
+                fontSize: '48px',
+                marginBottom: '20px',
+                color: theme.accent.primary,
+              }}>
+                <FiCheck />
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '10px',
+                fontSize: '24px',
+                fontWeight: '600',
+                color: theme.text.primary,
+                fontFamily: "'Space Grotesk', sans-serif",
+              }}>
+                Agent created
+                <AnimatedDots color={theme.accent.primary} size={6} />
+              </div>
         
         <p style={{
           color: theme.text.secondary,
@@ -73,11 +108,11 @@ export default function TransactionStatus({
           flexWrap: 'wrap',
         }}>
           <button
-            onClick={() => window.location.href = '/agent-dashboard'}
+            onClick={() => window.location.href = '/aishiOS'}
             style={{
               padding: '12px 24px',
               backgroundColor: theme.accent.primary,
-              color: theme.bg.primary,
+              color: 'white',
               border: 'none',
               borderRadius: '8px',
               cursor: 'pointer',
@@ -87,7 +122,7 @@ export default function TransactionStatus({
               gap: '8px',
             }}
           >
-            Open Dashboard
+            Open Terminal
             <FiArrowRight />
           </button>
           
@@ -112,15 +147,40 @@ export default function TransactionStatus({
         </div>
         
         {txHash && (
-          <p style={{
-            marginTop: '20px',
-            fontSize: '12px',
-            color: theme.text.secondary,
-          }}>
-            Transaction: {txHash.slice(0, 10)}...{txHash.slice(-8)}
-          </p>
+          <div style={{ marginTop: '20px' }}>
+            <p style={{
+              fontSize: '12px',
+              color: theme.text.secondary,
+              marginBottom: '8px',
+            }}>
+              Transaction completed:
+            </p>
+            <a
+              href={`${process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL}/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: '12px',
+                color: theme.accent.primary,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                wordBreak: 'break-all',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = theme.text.primary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = theme.accent.primary;
+              }}
+            >
+              {txHash.slice(0, 10)}...{txHash.slice(-8)}
+            </a>
+          </div>
         )}
-      </div>
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 

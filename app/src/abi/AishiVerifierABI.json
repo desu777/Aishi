@@ -1,6 +1,6 @@
 {
   "contractName": "AishiVerifier",
-  "address": "0xb78b7Dc4291554F950212105Fecd7bbE1F092A6f",
+  "address": "0xD73557999AAf623e58264513902c0A569Bb55B8F",
   "network": "galileo",
   "chainId": 16601,
   "abi": [
@@ -82,5 +82,5 @@
       "type": "function"
     }
   ],
-  "deployedAt": "2025-08-13T19:54:34.971Z"
+  "deployedAt": "2025-08-13T20:38:38.730Z"
 }
