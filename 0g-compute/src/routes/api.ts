@@ -5,7 +5,7 @@ import masterWallet from '../services/masterWallet';
 import queryManager from '../services/queryManager';
 import consolidationChecker from '../services/consolidationChecker';
 import DatabaseService from '../database/database';
-import geminiService from '../services/geminiService';
+import geminiService, { GeminiService } from '../services/geminiService';
 import { 
   aiQueryLimiter, 
   brokerCreationLimiter, 
@@ -133,10 +133,11 @@ router.get('/balance/:walletAddress', async (req, res) => {
  * POST /api/0g-compute
  * Main endpoint for 0G Network AI processing (dreams, chats, etc.)
  * PROTECTED: Limited to 20 AI queries per minute per IP
+ * Accepts modelId from frontend for dynamic model selection
  */
 router.post('/0g-compute', aiQueryLimiter, async (req, res) => {
   try {
-    const { walletAddress, query } = req.body;
+    const { walletAddress, query, modelId } = req.body;
     
     if (!walletAddress || !query) {
       return res.status(400).json({
@@ -146,8 +147,12 @@ router.post('/0g-compute', aiQueryLimiter, async (req, res) => {
       });
     }
 
-    // Backend zawsze używa MODEL_PICKED z .env
-    const selectedModel = process.env.MODEL_PICKED || 'deepseek-r1-70b';
+    // Use modelId from frontend if provided, fallback to env variable
+    const selectedModel = modelId || process.env.MODEL_PICKED || 'llama-3.3-70b-instruct';
+    
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🎯 API: Model selection - requested: ${modelId}, using: ${selectedModel}`);
+    }
     
     const result = await queryManager.processQuery(
       walletAddress,
@@ -159,9 +164,16 @@ router.post('/0g-compute', aiQueryLimiter, async (req, res) => {
       console.log(`🤖 API: AI analysis completed for ${walletAddress} using model: ${selectedModel}`);
     }
 
-    handleSuccess(res, result, 'Dream analysis completed successfully');
+    // Include selected model in response for frontend feedback
+    const enhancedResult = {
+      ...result,
+      modelUsed: selectedModel,
+      modelSource: modelId ? 'frontend' : 'env_default'
+    };
+
+    handleSuccess(res, enhancedResult, 'AI processing completed successfully');
   } catch (error: any) {
-    handleError(res, error, 'Failed to analyze dream');
+    handleError(res, error, 'Failed to process AI query');
   }
 });
 
@@ -199,6 +211,7 @@ router.get('/models/discover', async (req, res) => {
         id: service.model,
         name: service.model,
         provider: service.provider,
+        providerAddress: service.provider, // Add providerAddress for backend execution
         type: 'decentralized',
         verifiability: service.verifiability,
         inputPrice: service.inputPrice.toString(),
@@ -206,17 +219,42 @@ router.get('/models/discover', async (req, res) => {
         available: service.isAvailable,
         badge: service.verifiability === 'TeeML' ? 'Verified' : null
       })),
-      // Centralized Gemini model
+      // Centralized Gemini models with different profiles
       {
-        id: 'gemini-2.5-flash',
-        name: 'Gemini 2.5 Flash',
+        id: 'gemini-2.5-flash-thinking',
+        name: 'Gemini 2.5 Flash (Thinking)',
         provider: 'Google Vertex AI',
+        providerAddress: null, // Centralized models don't have providerAddress
         type: 'centralized',
         verifiability: 'none',
         inputPrice: '0',
         outputPrice: '0',
         available: true,
-        badge: 'Fast'
+        badge: 'Smart'
+      },
+      {
+        id: 'gemini-2.5-flash-fast',
+        name: 'Gemini 2.5 Flash (Fast)',
+        provider: 'Google Vertex AI', 
+        providerAddress: null, // Centralized models don't have providerAddress
+        type: 'centralized',
+        verifiability: 'none',
+        inputPrice: '0',
+        outputPrice: '0',
+        available: true,
+        badge: 'Speed'
+      },
+      {
+        id: 'gemini-2.5-flash-auto',
+        name: 'Gemini 2.5 Flash (Auto)',
+        provider: 'Google Vertex AI',
+        providerAddress: null, // Centralized models don't have providerAddress
+        type: 'centralized', 
+        verifiability: 'none',
+        inputPrice: '0',
+        outputPrice: '0',
+        available: true,
+        badge: 'Adaptive'
       }
     ];
     
@@ -229,17 +267,44 @@ router.get('/models/discover', async (req, res) => {
     // On error, still return Gemini as fallback
     console.error('Failed to discover 0G models, returning Gemini only:', error.message);
     
-    const fallbackModels = [{
-      id: 'gemini-2.5-flash',
-      name: 'Gemini 2.5 Flash (Fallback)',
-      provider: 'Google Vertex AI',
-      type: 'centralized',
-      verifiability: 'none',
-      inputPrice: '0',
-      outputPrice: '0',
-      available: true,
-      badge: 'Fallback'
-    }];
+    const fallbackModels = [
+      {
+        id: 'gemini-2.5-flash-thinking',
+        name: 'Gemini 2.5 Flash (Thinking)',
+        provider: 'Google Vertex AI',
+        providerAddress: null, // Centralized models don't have providerAddress
+        type: 'centralized',
+        verifiability: 'none',
+        inputPrice: '0',
+        outputPrice: '0',
+        available: true,
+        badge: 'Fallback'
+      },
+      {
+        id: 'gemini-2.5-flash-fast',
+        name: 'Gemini 2.5 Flash (Fast)',
+        provider: 'Google Vertex AI',
+        providerAddress: null, // Centralized models don't have providerAddress
+        type: 'centralized',
+        verifiability: 'none',
+        inputPrice: '0',
+        outputPrice: '0',
+        available: true,
+        badge: 'Fallback'
+      },
+      {
+        id: 'gemini-2.5-flash-auto',
+        name: 'Gemini 2.5 Flash (Auto)',
+        provider: 'Google Vertex AI',
+        providerAddress: null, // Centralized models don't have providerAddress
+        type: 'centralized',
+        verifiability: 'none',
+        inputPrice: '0',
+        outputPrice: '0',
+        available: true,
+        badge: 'Fallback'
+      }
+    ];
     
     handleSuccess(res, { models: fallbackModels }, 'Using fallback model');
   }
@@ -318,7 +383,7 @@ router.post('/estimate-cost', costEstimationLimiter, async (req, res) => {
     }
 
     // Backend zawsze używa MODEL_PICKED z .env
-    const selectedModel = process.env.MODEL_PICKED || 'deepseek-r1-70b';
+    const selectedModel = process.env.MODEL_PICKED || 'llama-3.3-70b-instruct';
     const cost = virtualBrokers.estimateQueryCost(query, selectedModel);
     
     if (process.env.TEST_ENV === 'true') {
@@ -512,13 +577,13 @@ router.post('/consolidation/stop', strictLimiter, (req, res) => {
 
 /**
  * POST /api/gemini
- * Proxy endpoint for Gemini AI via Vertex AI
- * Acts as a passthrough - frontend builds prompt, backend forwards to Gemini
+ * Modern Gemini endpoint with dynamic profile selection
+ * Supports 3 profiles: thinking, fast, auto (no .env dependency)
  * PROTECTED: Limited to 20 AI queries per minute per IP
  */
 router.post('/gemini', aiQueryLimiter, async (req, res) => {
   try {
-    const { prompt, temperature, maxTokens } = req.body;
+    const { prompt, profile, modelId, temperature, maxTokens } = req.body;
     
     if (!prompt) {
       return res.status(400).json({
@@ -537,13 +602,25 @@ router.post('/gemini', aiQueryLimiter, async (req, res) => {
       });
     }
 
-    if (process.env.TEST_ENV === 'true') {
-      console.log(`🤖 API: Gemini request received, prompt length: ${prompt.length}`);
+    // Determine profile from explicit parameter or extract from modelId
+    let selectedProfile = profile || 'auto'; // default to 'auto'
+    
+    if (modelId && !profile) {
+      // Extract profile from modelId (e.g., "gemini-2.5-flash-thinking" → "thinking")
+      selectedProfile = GeminiService.extractProfileFromModelId(modelId);
     }
 
-    // Forward request to Gemini
-    const result = await geminiService.generateContent(
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🤖 API: Gemini request received`);
+      console.log(`   Prompt length: ${prompt.length}`);
+      console.log(`   Profile: ${selectedProfile} ${modelId ? `(extracted from ${modelId})` : '(explicit/default)'}`);
+      console.log(`   Temperature: ${temperature || 'default'}`);
+    }
+
+    // Forward request to modern Gemini service with profile
+    const result = await geminiService.generateContentWithProfile(
       prompt,
+      selectedProfile,
       {
         temperature,
         maxTokens
@@ -552,18 +629,55 @@ router.post('/gemini', aiQueryLimiter, async (req, res) => {
 
     if (process.env.TEST_ENV === 'true') {
       console.log(`✅ API: Gemini response received in ${result.metadata.responseTime}ms`);
+      console.log(`   Profile used: ${result.metadata.profile}`);
+      console.log(`   Thinking enabled: ${result.metadata.thinkingEnabled}`);
+      if (result.metadata.thinkingBudget !== undefined) {
+        console.log(`   Thinking budget: ${result.metadata.thinkingBudget}`);
+      }
     }
 
-    // Return the response as-is (proxy behavior)
-    handleSuccess(res, result.data, 'Gemini response generated successfully');
+    // Return enhanced response with profile metadata
+    res.json({
+      success: true,
+      data: result.data,
+      metadata: {
+        ...result.metadata,
+        selectedProfile,
+        profileSource: modelId ? 'modelId' : (profile ? 'explicit' : 'default')
+      },
+      message: `Gemini response generated successfully using ${result.metadata.profile}`,
+      timestamp: new Date().toISOString()
+    });
   } catch (error: any) {
     handleError(res, error, 'Failed to generate Gemini response');
   }
 });
 
 /**
+ * GET /api/gemini/profiles
+ * Get available Gemini profiles information
+ */
+router.get('/gemini/profiles', (req, res) => {
+  try {
+    const profiles = geminiService.getAvailableProfiles();
+    
+    if (process.env.TEST_ENV === 'true') {
+      console.log('📋 API: Gemini profiles requested');
+    }
+
+    handleSuccess(res, { 
+      profiles,
+      count: Object.keys(profiles).length,
+      defaultProfile: 'auto'
+    }, 'Gemini profiles retrieved successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to retrieve Gemini profiles');
+  }
+});
+
+/**
  * GET /api/gemini/status
- * Check Gemini service status
+ * Check Gemini service status with profile information
  */
 router.get('/gemini/status', (req, res) => {
   try {

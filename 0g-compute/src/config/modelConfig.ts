@@ -21,16 +21,16 @@ export type FullModelType = typeof MODEL_MAPPING[ModelPickedType];
 
 /**
  * Gets the selected model from environment variable
- * Defaults to 'deepseek' if not set or invalid
+ * Defaults to 'llama' if not set or invalid
  */
 export function getSelectedModel(): FullModelType {
   const modelPicked = process.env.MODEL_PICKED as ModelPickedType;
   
   if (!modelPicked || !MODEL_MAPPING[modelPicked]) {
     if (process.env.TEST_ENV === 'true') {
-      console.log(`⚠️  MODEL_PICKED not set or invalid (${modelPicked}), using default: deepseek`);
+      console.log(`⚠️  MODEL_PICKED not set or invalid (${modelPicked}), using default: llama`);
     }
-    return MODEL_MAPPING.deepseek;
+    return MODEL_MAPPING.llama;
   }
   
   if (process.env.TEST_ENV === 'true') {

@@ -96,12 +96,16 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           ) : currentModel.type === 'centralized' ? (
             <Cloud size={16} color={theme.accent.secondary} />
           ) : (
-            <div style={{ 
-              width: '16px', 
-              height: '16px', 
-              borderRadius: '50%',
-              background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`
-            }} />
+            <img 
+              src="/logo_clean.png" 
+              alt="Aishi AI" 
+              style={{ 
+                width: '16px', 
+                height: '16px',
+                borderRadius: '50%',
+                objectFit: 'cover'
+              }} 
+            />
           )}
           <span style={{ fontSize: '13px' }}>
             {isLoading ? 'Loading models...' : currentModel.name}
@@ -159,12 +163,16 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ 
-                  width: '16px', 
-                  height: '16px', 
-                  borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.accent.secondary})`
-                }} />
+                <img 
+                  src="/logo_clean.png" 
+                  alt="Aishi AI" 
+                  style={{ 
+                    width: '16px', 
+                    height: '16px',
+                    borderRadius: '50%',
+                    objectFit: 'cover'
+                  }} 
+                />
                 <span style={{ fontSize: '13px', fontWeight: selectedModel === 'auto' ? '600' : '400' }}>
                   Auto-select best model
                 </span>
@@ -174,21 +182,21 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           </div>
 
           {/* Decentralized Models */}
-          {decentralizedModels.length > 0 && (
-            <div style={{ borderTop: `1px solid ${theme.border}` }}>
-              <div style={{ padding: '8px' }}>
-                <span style={{
-                  display: 'block',
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  textTransform: 'uppercase',
-                  color: theme.text.secondary,
-                  letterSpacing: '0.5px'
-                }}>
-                  Decentralized (0G Network)
-                </span>
-                {decentralizedModels.map(model => (
+          <div style={{ borderTop: `1px solid ${theme.border}` }}>
+            <div style={{ padding: '8px' }}>
+              <span style={{
+                display: 'block',
+                padding: '4px 8px',
+                fontSize: '11px',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                color: theme.text.secondary,
+                letterSpacing: '0.5px'
+              }}>
+                Decentralized (0G Network)
+              </span>
+              {decentralizedModels.length > 0 ? (
+                decentralizedModels.map(model => (
                   <ModelOption
                     key={model.id}
                     model={model}
@@ -199,10 +207,21 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                     }}
                     theme={theme}
                   />
-                ))}
-              </div>
+                ))
+              ) : (
+                <div style={{
+                  padding: '12px 12px 8px 12px',
+                  textAlign: 'center',
+                  color: theme.text.secondary,
+                  fontSize: '12px',
+                  fontStyle: 'italic',
+                  opacity: 0.8
+                }}>
+                  No models available
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Centralized Models */}
           {centralizedModels.length > 0 && (

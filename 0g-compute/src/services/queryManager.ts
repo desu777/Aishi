@@ -31,14 +31,17 @@ export class QueryManagerService {
 
   /**
    * Add query to processing queue - this is now the main entry point
+   * @param userWalletAddress - User's wallet address
+   * @param query - Query text to process
+   * @param modelId - Model ID from frontend (can be model name or will be resolved to provider address)
    */
-  async processQuery(userWalletAddress: string, query: string, model?: string): Promise<any> {
+  async processQuery(userWalletAddress: string, query: string, modelId?: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const task: QueryTask = {
         id: `query_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         userWalletAddress,
         query,
-        model: model || process.env.MODEL_PICKED || 'deepseek-r1-70b',
+        model: modelId || process.env.MODEL_PICKED || 'llama-3.3-70b-instruct',
         timestamp: Date.now(),
         resolve,
         reject
@@ -48,6 +51,7 @@ export class QueryManagerService {
 
       if (process.env.TEST_ENV === 'true') {
         console.log(`📥 Added query ${task.id} to queue. Queue length: ${this.queue.length}`);
+        console.log(`🎯 Model requested: ${task.model}`);
       }
     });
   }
@@ -106,15 +110,38 @@ export class QueryManagerService {
       // Log selected model
       console.log(`🎯 Selected Model: ${task.model} (Query ID: ${task.id})`);
 
-      // Get provider address
-      const OFFICIAL_PROVIDERS: Record<string, string> = {
-        "llama-3.3-70b-instruct": "0xf07240Efa67755B5311bc75784a061eDB47165Dd",
-        "deepseek-r1-70b": "0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3",
-      };
+      // Resolve model to provider address using dynamic discovery
+      let providerAddress: string;
+      let modelName: string;
 
-      const providerAddress = OFFICIAL_PROVIDERS[task.model as keyof typeof OFFICIAL_PROVIDERS];
-      if (!providerAddress) {
-        throw new Error(`Unsupported model: ${task.model}. Available models: ${Object.keys(OFFICIAL_PROVIDERS).join(', ')}`);
+      // First, try to get service by model name (for backward compatibility and new models)
+      const serviceByModel = await aiService.getServiceByModelName(task.model);
+      if (serviceByModel) {
+        providerAddress = serviceByModel.provider;
+        modelName = serviceByModel.model;
+        
+        if (process.env.TEST_ENV === 'true') {
+          console.log(`✅ Model resolved by name: ${task.model} → ${providerAddress}`);
+        }
+      } else {
+        // Fallback to hardcoded providers for known models
+        const FALLBACK_PROVIDERS: Record<string, string> = {
+          "llama-3.3-70b-instruct": "0xf07240Efa67755B5311bc75784a061eDB47165Dd",
+          "deepseek-r1-70b": "0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3",
+        };
+
+        providerAddress = FALLBACK_PROVIDERS[task.model as keyof typeof FALLBACK_PROVIDERS];
+        modelName = task.model;
+        
+        if (!providerAddress) {
+          const availableServices = await aiService.discoverServices();
+          const availableModels = availableServices.map(s => s.model).concat(Object.keys(FALLBACK_PROVIDERS));
+          throw new Error(`Model not available: ${task.model}. Available models: ${availableModels.join(', ')}`);
+        }
+
+        if (process.env.TEST_ENV === 'true') {
+          console.log(`⚠️  Model resolved by fallback: ${task.model} → ${providerAddress}`);
+        }
       }
 
       // Estimate cost for pre-check

@@ -276,7 +276,7 @@ export class VirtualBrokersService {
    */
   estimateQueryCost(query: string, model?: string): number {
     // Use MODEL_PICKED from environment or default
-    const selectedModel = model || process.env.MODEL_PICKED || 'deepseek-r1-70b';
+    const selectedModel = model || process.env.MODEL_PICKED || 'llama-3.3-70b-instruct';
     
     // SIGNIFICANTLY LOWERED cost estimation - real costs are near zero
     const baseCosts = {

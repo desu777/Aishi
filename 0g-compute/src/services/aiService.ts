@@ -4,7 +4,7 @@ import masterWallet from './masterWallet';
 import virtualBrokers from './virtualBrokers';
 
 // Constants
-const DEFAULT_MODEL = process.env.MODEL_PICKED || "deepseek-r1-70b";
+const DEFAULT_MODEL = process.env.MODEL_PICKED || "llama-3.3-70b-instruct";
 const PROVIDER_TIMEOUT = 30000; // 30 seconds
 const BALANCE_EXPIRATION = 5 * 60 * 1000; // 5 minutes
 const MIN_BALANCE_THRESHOLD = 0.0001;
@@ -346,6 +346,38 @@ export class AIService {
     
     // Return discovered services as array
     return Array.from(this.discoveredServices.values());
+  }
+
+  /**
+   * Get service by provider address
+   * @param providerAddress - Provider address to lookup
+   * @returns DiscoveredService or null if not found
+   */
+  async getServiceByProviderAddress(providerAddress: string): Promise<DiscoveredService | null> {
+    // Ensure services are discovered
+    await this.discoverAndCacheServices();
+    
+    // Find service by provider address
+    for (const service of this.discoveredServices.values()) {
+      if (service.provider.toLowerCase() === providerAddress.toLowerCase()) {
+        return service;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get service by model name (for backward compatibility)
+   * @param modelName - Model name to lookup
+   * @returns DiscoveredService or null if not found
+   */
+  async getServiceByModelName(modelName: string): Promise<DiscoveredService | null> {
+    // Ensure services are discovered
+    await this.discoverAndCacheServices();
+    
+    // Find service by model name
+    return this.discoveredServices.get(modelName) || null;
   }
 
   async getServiceStatus(): Promise<{
