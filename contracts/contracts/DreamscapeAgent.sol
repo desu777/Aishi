@@ -14,8 +14,6 @@ import "./interfaces/IERC7857.sol";               // ERC‑7857 base interface (
 import "./interfaces/IERC7857DataVerifier.sol";    // Optional: ZK‑proof verifier used at mint
 import "./interfaces/IPersonalityEvolution.sol";   // Trait & evolution data‑model
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";  // protects against re‑entrancy
 import "@openzeppelin/contracts/access/AccessControl.sol";   // role‑based admin system
 import "@openzeppelin/contracts/utils/Pausable.sol";         // emergency stop
@@ -336,6 +334,8 @@ contract DreamscapeAgent is
             // ── AI-generated unique features ──
             if (impact.newFeatures.length > 0) {
                 require(impact.newFeatures.length <= 2, "max2");
+                // Enforce a hard cap of 5 unique features total
+                require(traits.uniqueFeatures.length + impact.newFeatures.length <= 5, "max5 features");
                 
                 uint256 featuresLength = impact.newFeatures.length;
                 for (uint256 i; i < featuresLength;) {
@@ -420,13 +420,27 @@ contract DreamscapeAgent is
         AgentMemory storage mem = agentMemories[tokenId];
         require(mem.currentMonth != month || mem.currentYear != year, "still current month");
 
+        /*
+         * COOLDOWN FOR TESTING: Enforce a 25-day gap between consolidations
+         * Note: Disabled for test convenience. Enable for stricter testing.
+         * require(
+         *     block.timestamp >= mem.lastConsolidation + 25 days,
+         *     "cooldown <25d"
+         * );
+         */
+
         mem.lastDreamMonthlyHash = dreamMonthlyHash;
         mem.lastConvMonthlyHash  = convMonthlyHash;
-        mem.lastConsolidation    = block.timestamp;
 
         // streak logic (unchecked safe increment)
         unchecked { consolidationStreak[tokenId] += 1; }
+
+        // Calculate bonus BEFORE updating lastConsolidation to avoid always-on early-bird
         uint256 bonus = _calculateConsolidationBonus(tokenId);
+
+        // Now update consolidation timestamp for future calculations
+        mem.lastConsolidation    = block.timestamp;
+
         string memory special = _checkConsolidationMilestones(tokenId);
 
         DreamAgent storage agent = agents[tokenId];
@@ -454,6 +468,15 @@ contract DreamscapeAgent is
         external whenNotPaused onlyOwnerOrAuthorized(tokenId)
     {
         AgentMemory storage mem = agentMemories[tokenId];
+
+        /*
+         * COOLDOWN FOR TESTING: Enforce a 180-day (~6 months) gap for memory core updates
+         * Note: For production, validate against calendar-year boundaries instead.
+         * require(
+         *     block.timestamp >= mem.lastConsolidation + 180 days,
+         *     "cooldown <180d"
+         * );
+         */
         bytes32 old = mem.memoryCoreHash;
         mem.memoryCoreHash = newHash;
         emit MemoryUpdated(tokenId, "memory_core", newHash, old);
@@ -624,9 +647,21 @@ contract DreamscapeAgent is
         emit AuthorizedUsage(tokenId, user);
     }
     
-    function transfer(address to, uint256 tokenId, bytes[] calldata) external override onlyOwnerOrAdmin(tokenId) {
+    function transfer(address to, uint256 tokenId, bytes[] calldata proofs) external override onlyOwnerOrAdmin(tokenId) {
         require(to != address(0), "to = zero");
         require(ownerToTokenId[to] == 0, "to already owns agent");
+        
+        // If verifier is configured, require and verify transfer proofs (ERC-7857 semantics)
+        if (address(verifier) != address(0)) {
+            require(proofs.length > 0, "proofs required");
+            TransferValidityProofOutput[] memory outs = verifier.verifyTransferValidity(proofs);
+            require(outs.length == proofs.length, "proofs len");
+            uint256 outsLength = outs.length;
+            for (uint256 i; i < outsLength;) {
+                require(outs[i].isValid, "!proof");
+                unchecked { ++i; }
+            }
+        }
         
         address from = agents[tokenId].owner;
         ownerToTokenId[from] = 0;
@@ -663,8 +698,6 @@ contract DreamscapeAgent is
 
     function supportsInterface(bytes4 id) public view override returns (bool) {
         return
-            id == type(IERC721).interfaceId ||
-            id == type(IERC721Metadata).interfaceId ||
             id == type(IERC7857).interfaceId ||
             super.supportsInterface(id);
     }
