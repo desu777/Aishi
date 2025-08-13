@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import Layout from '../../components/layout/Layout';
 import { Terminal } from '../../terminal-xstate/components/Terminal';
-import ThemeToggle from '../../agent_dashboard/components/ui/ThemeToggle';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Command } from 'lucide-react';
 import { CommandsModal } from './components/CommandsModal';
 import { TerminalModal } from './components/TerminalModal';
 import SplitText from '../../components/ui/SplitText';
+import ModelSelector from '../../components/ModelSelector';
+import useModelDiscovery from '../../hooks/useModelDiscovery';
 
 export default function AishiOSPage() {
   const { theme, debugLog } = useTheme();
@@ -16,6 +16,14 @@ export default function AishiOSPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  
+  // Model discovery hook
+  const { 
+    models, 
+    selectedModel, 
+    setSelectedModel, 
+    isLoading: modelsLoading 
+  } = useModelDiscovery();
   
   // Debug log na start
   debugLog('AishiOS page loaded');
@@ -33,15 +41,6 @@ export default function AishiOSPage() {
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
-  const toggleTheme = () => {
-    setDarkMode(!darkMode);
-    debugLog('Terminal theme toggled', { darkMode: !darkMode });
-  };
-
-  const toggleCommands = () => {
-    setShowCommands(!showCommands);
-    debugLog('Commands panel toggled', { showCommands: !showCommands });
-  };
 
   const toggleTerminal = () => {
     setIsTerminalOpen(!isTerminalOpen);
@@ -136,7 +135,7 @@ export default function AishiOSPage() {
             />
           </div>
 
-          {/* Theme Toggle & Commands Buttons */}
+          {/* Model Selector */}
           <div style={{
             display: 'flex',
             gap: '12px',
@@ -144,35 +143,12 @@ export default function AishiOSPage() {
             alignItems: 'center',
             flexWrap: 'wrap'
           }}>
-            <ThemeToggle darkMode={darkMode} onToggle={toggleTheme} />
-            
-            <button
-              onClick={toggleCommands}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                border: `1px solid ${theme.border}`,
-                backgroundColor: showCommands ? theme.bg.panel : theme.bg.card,
-                color: theme.text.primary,
-                cursor: 'pointer',
-                fontSize: 'clamp(12px, 2.5vw, 14px)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = theme.accent.primary;
-                e.currentTarget.style.backgroundColor = theme.bg.panel;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = theme.border;
-                e.currentTarget.style.backgroundColor = showCommands ? theme.bg.panel : theme.bg.card;
-              }}
-            >
-              <Command size={16} />
-              Commands
-            </button>
+            <ModelSelector
+              models={models}
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+              isLoading={modelsLoading}
+            />
           </div>
         </div>
 
@@ -260,6 +236,7 @@ export default function AishiOSPage() {
           darkMode={darkMode}
           isMobile={isMobile}
           theme={theme}
+          selectedModel={selectedModel}
         />
       </div>
 

@@ -1,0 +1,18 @@
+{
+  // This file is not used in compilation. It is here just for a nice editor experience.
+  "extends": "@docusaurus/tsconfig",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "exclude": [
+    "node_modules",
+    "build",
+    "docs/**/data/*.ts",
+    "docs/**/data/*.tsx",
+    "**/*.example.ts",
+    "**/*.example.tsx"
+  ]
+}

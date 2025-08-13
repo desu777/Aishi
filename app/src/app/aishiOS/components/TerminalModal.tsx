@@ -7,6 +7,7 @@ interface TerminalModalProps {
   darkMode: boolean;
   isMobile: boolean;
   theme: any;
+  selectedModel?: string;
 }
 
 export const TerminalModal: React.FC<TerminalModalProps> = ({ 
@@ -14,9 +15,11 @@ export const TerminalModal: React.FC<TerminalModalProps> = ({
   setIsTerminalOpen, 
   darkMode, 
   isMobile, 
-  theme 
+  theme,
+  selectedModel 
 }) => {
   // The new Terminal component now handles its own modal display
+  // TODO: In future, pass selectedModel to Terminal for AI queries
   return (
     <Terminal 
       darkMode={darkMode}

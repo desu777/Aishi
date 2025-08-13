@@ -174,6 +174,68 @@ router.get('/models', async (req, res) => {
 });
 
 /**
+ * GET /api/models/discover
+ * Discovers available models from 0G Network and includes Gemini
+ */
+router.get('/models/discover', async (req, res) => {
+  try {
+    // Get discovered services from 0G Network
+    const discoveredServices = await aiService.discoverServices();
+    
+    // Format models for frontend
+    const models = [
+      // Decentralized models from 0G Network
+      ...discoveredServices.map(service => ({
+        id: service.model,
+        name: service.model,
+        provider: service.provider,
+        type: 'decentralized',
+        verifiability: service.verifiability,
+        inputPrice: service.inputPrice.toString(),
+        outputPrice: service.outputPrice.toString(),
+        available: service.isAvailable,
+        badge: service.verifiability === 'TeeML' ? 'Verified' : null
+      })),
+      // Centralized Gemini model
+      {
+        id: 'gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        provider: 'Google Vertex AI',
+        type: 'centralized',
+        verifiability: 'none',
+        inputPrice: '0',
+        outputPrice: '0',
+        available: true,
+        badge: 'Fast'
+      }
+    ];
+    
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🔍 API: Discovered ${discoveredServices.length} decentralized models + Gemini`);
+    }
+
+    handleSuccess(res, { models }, 'Models discovered successfully');
+  } catch (error: any) {
+    // On error, still return Gemini as fallback
+    console.error('Failed to discover 0G models, returning Gemini only:', error.message);
+    
+    const fallbackModels = [{
+      id: 'gemini-2.5-flash',
+      name: 'Gemini 2.5 Flash (Fallback)',
+      provider: 'Google Vertex AI',
+      type: 'centralized',
+      verifiability: 'none',
+      inputPrice: '0',
+      outputPrice: '0',
+      available: true,
+      badge: 'Fallback'
+    }];
+    
+    handleSuccess(res, { models: fallbackModels }, 'Using fallback model');
+  }
+});
+
+/**
  * GET /api/status
  * Gets service status and health check
  */

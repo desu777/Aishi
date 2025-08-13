@@ -10,12 +10,19 @@ const BALANCE_EXPIRATION = 5 * 60 * 1000; // 5 minutes
 const MIN_BALANCE_THRESHOLD = 0.0001;
 const MIN_PROFIT_MARGIN = 0.00001;
 const MAX_PROFIT_MARGIN = 0.0005;
+const SERVICE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache for discovered services
 
-// Official 0G providers
-const OFFICIAL_PROVIDERS: Record<string, string> = {
-  "llama-3.3-70b-instruct": "0xf07240Efa67755B5311bc75784a061eDB47165Dd",
-  "deepseek-r1-70b": "0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3",
-};
+export interface DiscoveredService {
+  provider: string;
+  model: string;
+  url: string;
+  inputPrice: bigint;
+  outputPrice: bigint;
+  verifiability: string;
+  serviceType: string;
+  updatedAt: bigint;
+  isAvailable: boolean;
+}
 
 export interface AIRequest {
   userWalletAddress: string;
@@ -35,24 +42,23 @@ export interface AIResponse {
 export class AIService {
   private availableServices: any[] = [];
   private acknowledgedProviders: Set<string> = new Set();
+  private discoveredServices: Map<string, DiscoveredService> = new Map();
+  private lastDiscoveryTime: number = 0;
 
   async initialize(): Promise<void> {
     try {
       // Log default model configuration
-      console.log(`🎯 Default Model Loaded: ${DEFAULT_MODEL}`);
-      console.log(`📋 Available Models: ${Object.keys(OFFICIAL_PROVIDERS).join(', ')}`);
+      console.log(`🎯 Default Model Configuration: ${DEFAULT_MODEL}`);
       
       // Initialize master wallet
       await masterWallet.initialize();
       
       // Discover available AI services
-      await this.discoverServices();
-      
-      // Acknowledge default providers
-      await this.acknowledgeDefaultProviders();
+      await this.discoverAndCacheServices();
       
       if (process.env.TEST_ENV === 'true') {
         console.log('🤖 AI Service initialized successfully');
+        console.log(`📋 Discovered ${this.discoveredServices.size} models from 0G Network`);
       }
     } catch (error: any) {
       console.error('❌ Failed to initialize AI Service:', error.message);
@@ -60,45 +66,79 @@ export class AIService {
     }
   }
 
-  private async discoverServices(): Promise<void> {
+  private async discoverAndCacheServices(): Promise<void> {
+    // Check if cache is still valid
+    const now = Date.now();
+    if (this.lastDiscoveryTime && (now - this.lastDiscoveryTime) < SERVICE_CACHE_TTL) {
+      if (process.env.TEST_ENV === 'true') {
+        console.log('🔄 Using cached service discovery');
+      }
+      return;
+    }
+
     try {
       const broker = masterWallet.getBroker();
-      this.availableServices = await broker.inference.listService();
+      const services = await broker.inference.listService();
+      
+      // Clear old services
+      this.discoveredServices.clear();
+      
+      // Filter and map inference services
+      for (const service of services) {
+        if (service.serviceType === 'inference' && service.model) {
+          const discoveredService: DiscoveredService = {
+            provider: service.provider,
+            model: service.model,
+            url: service.url,
+            inputPrice: service.inputPrice,
+            outputPrice: service.outputPrice,
+            verifiability: service.verifiability || 'none',
+            serviceType: service.serviceType,
+            updatedAt: service.updatedAt,
+            isAvailable: true
+          };
+          
+          this.discoveredServices.set(service.model, discoveredService);
+          
+          // Try to acknowledge the provider
+          await this.acknowledgeProvider(service.provider, service.model);
+        }
+      }
+      
+      this.availableServices = services;
+      this.lastDiscoveryTime = now;
       
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🔍 Discovered ${this.availableServices.length} AI services`);
+        console.log(`🔍 Discovered ${this.discoveredServices.size} inference models from ${services.length} total services`);
+        console.log(`📋 Available models: ${Array.from(this.discoveredServices.keys()).join(', ')}`);
       }
     } catch (error: any) {
       console.error('❌ Failed to discover AI services:', error.message);
-      throw error;
+      // Don't throw - we can still use Gemini as fallback
     }
   }
 
-  private async acknowledgeDefaultProviders(): Promise<void> {
-    const broker = masterWallet.getBroker();
+  private async acknowledgeProvider(providerAddress: string, modelName: string): Promise<void> {
+    if (this.acknowledgedProviders.has(providerAddress)) {
+      return;
+    }
     
-    for (const [modelName, providerAddress] of Object.entries(OFFICIAL_PROVIDERS)) {
-      if (this.acknowledgedProviders.has(providerAddress)) {
-        continue;
-      }
+    try {
+      const broker = masterWallet.getBroker();
+      await broker.inference.acknowledgeProviderSigner(providerAddress);
+      this.acknowledgedProviders.add(providerAddress);
       
-      try {
-        await broker.inference.acknowledgeProviderSigner(providerAddress);
+      if (process.env.TEST_ENV === 'true') {
+        console.log(`✅ Acknowledged provider for ${modelName}: ${providerAddress}`);
+      }
+    } catch (error: any) {
+      if (error.message.includes('already acknowledged')) {
         this.acknowledgedProviders.add(providerAddress);
-        
         if (process.env.TEST_ENV === 'true') {
-          console.log(`✅ Acknowledged provider: ${modelName} (${providerAddress})`);
+          console.log(`✅ Provider already acknowledged: ${modelName}`);
         }
-      } catch (error: any) {
-        if (error.message.includes('already acknowledged')) {
-          this.acknowledgedProviders.add(providerAddress);
-          
-          if (process.env.TEST_ENV === 'true') {
-            console.log(`✅ Provider already acknowledged: ${modelName}`);
-          }
-        } else {
-          console.error(`⚠️  Failed to acknowledge provider ${modelName}:`, error.message);
-        }
+      } else {
+        console.error(`⚠️  Failed to acknowledge provider ${modelName}:`, error.message);
       }
     }
   }
@@ -117,16 +157,24 @@ export class AIService {
         throw new Error('Query cannot be empty');
       }
 
-      // Get provider address
-      const providerAddress = OFFICIAL_PROVIDERS[model as keyof typeof OFFICIAL_PROVIDERS];
-      if (!providerAddress) {
-        throw new Error(`Unsupported model: ${model}. Available models: ${Object.keys(OFFICIAL_PROVIDERS).join(', ')}`);
+      // Refresh discovery if needed
+      await this.discoverAndCacheServices();
+      
+      // Get provider address from discovered services
+      const service = this.discoveredServices.get(model);
+      if (!service) {
+        // List available models for error message
+        const availableModels = Array.from(this.discoveredServices.keys());
+        throw new Error(`Model not available: ${model}. Available models: ${availableModels.join(', ') || 'No models discovered. Using Gemini fallback.'}`);
       }
+      
+      const providerAddress = service.provider;
 
       // Log selected model
-      console.log(`🎯 Selected Model: ${model} (from ${process.env.MODEL_PICKED ? 'MODEL_PICKED env' : 'request parameter'})`);
+      console.log(`🎯 Selected Model: ${model} (Provider: ${providerAddress})`);
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🔑 Provider Address: ${providerAddress}`);
+        console.log(`🔑 Service URL: ${service.url}`);
+        console.log(`💰 Input Price: ${service.inputPrice.toString()}`);
       }
 
       // Estimate cost for pre-check (user needs some minimum balance)
@@ -274,18 +322,30 @@ export class AIService {
     models: string[];
     services: any[];
   }> {
-    return {
-      models: Object.keys(OFFICIAL_PROVIDERS),
-      services: this.availableServices.map(service => ({
-        provider: service.provider,
-        serviceType: service.serviceType,
-        url: service.url,
-        inputPrice: service.inputPrice,
-        outputPrice: service.outputPrice,
-        verifiability: service.verifiability,
-        isOfficial: Object.values(OFFICIAL_PROVIDERS).includes(service.provider)
-      }))
-    };
+    // Refresh discovery if needed
+    await this.discoverAndCacheServices();
+    
+    const models = Array.from(this.discoveredServices.keys());
+    const services = Array.from(this.discoveredServices.values()).map(service => ({
+      provider: service.provider,
+      model: service.model,
+      serviceType: service.serviceType,
+      url: service.url,
+      inputPrice: service.inputPrice.toString(),
+      outputPrice: service.outputPrice.toString(),
+      verifiability: service.verifiability,
+      isAvailable: service.isAvailable
+    }));
+    
+    return { models, services };
+  }
+
+  async discoverServices(): Promise<DiscoveredService[]> {
+    // Refresh discovery
+    await this.discoverAndCacheServices();
+    
+    // Return discovered services as array
+    return Array.from(this.discoveredServices.values());
   }
 
   async getServiceStatus(): Promise<{

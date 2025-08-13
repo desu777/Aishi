@@ -1,10 +1,5 @@
 # CLAUDE.md
 
-
-<rola>
-Jesteś ekspertem w dziedzinie programowania 2025 roku. Stosujesz najlepsze techniki i rozwiązania.
-</rola>
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Development Commands
@@ -33,10 +28,11 @@ npm run test:complete # Run complete test suite
 ### 0G Compute Backend
 ```bash
 cd 0g-compute
-npm run dev          # Development server with ts-node
+npm run dev          # Development server with ts-node on port 3001
 npm run dev:wsl      # Development with WSL environment
 npm run build        # Compile TypeScript
 npm run start        # Start compiled server
+npm run rebuild      # Rebuild better-sqlite3 native dependencies
 ```
 
 ## Project Architecture
@@ -52,7 +48,7 @@ This is a full-stack Web3 application built around AI agent NFTs with personalit
 - **DreamscapeAgent.sol** - Main NFT contract with personality traits and evolution mechanics
 - **SimpleDreamVerifier.sol** - Data verification for dream and conversation content
 - Implements personality evolution through daily dream processing and conversation recording
-- Memory system with hierarchical storage (daily → monthly → yearly consolidation)
+- Memory system with hierarchical storage (daily � monthly � yearly consolidation)
 - Gamification with intelligence rewards, streaks, and milestones
 
 ### Frontend Architecture
@@ -119,77 +115,77 @@ Memory files follow specific patterns:
 
 This system creates meaningful, evolving relationships between users and AI agents while maintaining technical efficiency and blockchain economics.
 
+---
 
+# PRIMARY DEVELOPMENT RULES
 
-### PRIMARY RULES (NAJWAŻNIEJSZE - ZAWSZE PRZESTRZEGAJ)
+## 🔴 File Size Limit: 550-600 Lines Maximum
+**ABSOLUTE LIMIT** - If a file exceeds 600 lines, you MUST split it into smaller modules. Ideal size is 200-400 lines. This ensures maintainability and code readability.
 
-## 🔴 MAKSYMALNY ROZMIAR PLIKU: 550-600 linii
-**BEZWZGLĘDNY LIMIT** - jeżeli plik przekracza 600 linii, MUSISZ podzielić go na mniejsze moduły. Idealna wielkość to 200-400 linii. To zapewnia łatwość utrzymania i czytelność kodu.
+## Core Development Principles
 
-### INSTRUKCJE
+### Code Quality Standards
+- **PRODUCTION-READY CODE**: Implement directly in production environment, no mocks or placeholders
+- **TASK-FOCUSED CHANGES**: Only introduce modifications directly related to the assigned task
+- **NO HARDCODING**: Never hardcode APIs or variables that can be placed in .env (network addresses, RPC endpoints, etc.)
 
-##PRACA NAD WERSJĄ PRODUKCYJNĄ: implementuj bezpośrednio w środowisku produkcyjnym, bez mocków i placeholderów.
+### Environment Variable Management
+- **ENVIRONMENT FILES**: Assume .env always exists but you don't have direct access to it
+- **GATEWAY PATTERN**: .env.example serves as the gateway between you and sensitive data
+- **SENSITIVE DATA**: Empty variables in .env.example indicate sensitive APIs added to .env but not shared
+- **SECURITY FIRST**: Store all sensitive .env files in external folder outside repository
+- **EXTERNAL LOADING**: Project uses env_loader or central loading point that automatically loads .env from external location (via ENV_FILE_PATH) or local fallback
+- **ALWAYS ADD TO .gitignore**: CLAUDE.md should always be added to .gitignore
 
-##TYLKO ZWIĄZANE ZMIANY: wprowadzaj wyłącznie modyfikacje bezpośrednio związane z zadanym zadaniem.
+### Debug Logging
+Use `process.env.NEXT_PUBLIC_DREAM_TEST === 'true'` for debug logs in projects without this variable defined. If defined, read from .env.example and always use this variable for logs.
 
-##NIE HARDCODUJ API ani zmiennych które można wsadzić do .env: zawsze używaj zmiennych środowiskowych, plików konfiguracyjnych lub stałych. Typu adres sieci kryptowalutowej, rpc itp
+### Development Workflow
+- **RESEARCH FIRST**: If uncertain about implementation, search the web for current best practices
+- **UNDERSTAND CONTEXT**: Study entire codebase before making changes
+- **STAY FOCUSED**: Focus exclusively on the task, avoid unrelated changes
+- **RESPECT PATTERNS**: Follow existing conventions unless task requires otherwise
+- **ANALYZE BEFORE MODIFYING**: Understand full context before making changes
+- **ITERATIVE APPROACH**: Small, clear commits with descriptive messages
 
-##ZMIENNE ŚRODOWISKOWE: przyjmij, że plik .env zawsze istnieje, ale nie masz do niego bezpośredniego dostępu. Plik .env.example stanowi bramę między tobą a mną. Jeśli w tym pliku znajduje się pusta zmienna, to znaczy że to wrażliwe API które dodałem do pliku .env ale tutaj nie udostępniłem. Jeśli tworzysz kod i zawiera odczyt z .env dodawaj do pliku .env.example. CLAUDE.md zawsze dodawaj do .gitignore!
+### Knowledge and Research
+- **WEB RESEARCH**: If not 100% certain about error cause, search the web
+- **LIBRARY UPDATES**: If knowledge about library is older than July 2025, research latest stable version and usage patterns (e.g., wagmi vs wagmi v2)
 
-##BEZPIECZEŃSTWO PLIKÓW .ENV: Z powodów bezpieczeństwa preferujemy przechowywanie wszystkich wrażliwych plików .env w osobnym folderze poza repozytorium. Projekt używa env_loader.py lub innego centralnego punktu ładowania zmiennych w zależności od używanego języka który automatycznie ładuje .env z zewnętrznej lokalizacji (poprzez zmienną ENV_FILE_PATH) lub z lokalnego fallback. Choć można używać .env lokalnie, zawsze preferujemy external path ze względów bezpieczeństwa. Ta zasada obowiązuje we wszystkich projektach - nigdy nie przechowuj wrażliwych danych w repozytorium, używaj zewnętrznych ścieżek konfigurowanych przez zmienne środowiskowe.
+### UI Guidelines
+- **NO EMOJIS**: Use React icons only, maintain elegance
 
-##LOGI DEVELOPERSKIE: używaj sprawdzenia process.env.NEXT_PUBLIC_DREAM_TEST= === 'true' dla wyświetlania logów debugowych dla projektów które nie mają zdefiniowanej tej zmiennej. Jeśli mają odczytaj z .env.example i zawsze stosuj tą zmienną do logów.
+## Git Workflow Standards
 
-##RESEARCH PRZED DZIAŁANIEM – jeśli nie jesteś pewny implementacji, twoja wiedza nie wystarcza żebyś stwierdził czy rozwiązanie jest dobre. Skorzystaj z sieci, przeszukaj.
+### Commit Guidelines
+- **USER COMMITS**: All commits and pushes executed as user (not Claude Code)
+- **NO AI ATTRIBUTION**: Don't add "Generated with Claude Code" or "Co-Authored-By: Claude" to commit messages
+- **ENGLISH COMMITS**: All commit messages in English
+- **NORMAL USER COMMITS**: Commits should look like regular user commits
 
-##ZROZUMIENIE KONTEKSTU – zapoznaj się z działaniem całego kodu przed wprowadzaniem 
-napraw.
-
-##FOCUS NA ZADANIU – skup się wyłącznie na zadaniu, nie wprowadzaj nie związanych zmian.
-
-##Bez drastycznych zmian wzorców – przestrzegaj obecnych konwencji, chyba że zadanie wymaga inaczej.
-
-##Zrozum pełen kontekst przed modyfikacją – analizuj całość przed zmianam
-Pracuj iteracyjnie – małe, czytelne commity z jednoznacznymi opisami co robi dany kod.
-
-##Jesteś najlepszy na świecie programistą, piszesz kod jak eskpert który zjadł zęby.
-
-
-
-## Git Workflow Instructions
-
-##COMMIT AUTHORSHIP: Wszystkie commit-y i push-e na git wykonujesz jako użytkownik (nie jako Claude Code). NIE dodawaj do commit message informacji że to wygenerowane przez Claude Code lub Co-Authored-By: Claude. Commit-y mają wyglądać jak normalne commit-y użytkownika. W języku angielskim!
-
-##PUSH REMINDERS: Po każdej ważniejszej zmianie (nowe feature, bugfix, refactor) ZAWSZE przypominaj o push-u podając gotowy commit message. Format:
+### Push Reminders
+After important changes (new feature, bugfix, refactor) ALWAYS remind about push with ready commit message:
 ```
 🥳Ready to push:🥳
 git commit -m "Your commit message here"
 git push dreamscape master
 ```
 
+## Thinking and Response Framework
 
-##POSZERZANIE WIEDZY
-Jeśli nie jesteś w 100% z czego wynika błąd, przeszukaj sieć 
+### 1. Chain of Thought
+Always conduct detailed step-by-step reasoning inside `<thinking>` tags before final answer. Break problems into smaller parts, analyze assumptions, consider alternatives.
 
-##OGRANICZENIA WIEDZY
-Jeśli twoja wiedza na temat danej biblioteki jest starsza niż z 07.2025 przeszukaj sieć i znajdź najnowszą oraz stabilną wersje tej biblioteki oraz zbierz informacje jak jej używać przykład(wagmi a wagmi v2)
+### 2. Ask When Uncertain
+If instructions are unclear, incomplete, or ambiguous, ask clarifying questions. Never guess or assume intentions. Strive for 99% certainty before proceeding.
 
-###NIE UŻYWAJ EMOTEK TYLKO IKONY REACT MA BYĆ ELEGANCJA ZACHOWANA
+### 3. Structure Response
+Always separate thinking process from final result:
+- **Reasoning, analysis, considerations**: Inside `<thinking>` tags
+- **Final, ready-to-use answer**: Inside `<answer>` tags
 
-####PRIMARY RULES ALWAYS USE IN WORKFLOW: 
-1.  **Zasada #1: Myśl na Głos (Chain of Thought)**
-    Zawsze, przed udzieleniem ostatecznej odpowiedzi, przeprowadź szczegółowe rozumowanie krok po kroku wewnątrz tagów `<thinking>`. Rozbij problem na mniejsze części, przeanalizuj założenia i rozważ alternatywy. Chcę widzieć Twój proces myślowy, a nie tylko wynik.
+### 4. Fact-Based Analysis
+Base analyses and responses strictly on provided data (files, content, instructions). Avoid external information unless explicitly requested. Don't fabricate or fill in missing information.
 
-2.  **Zasada #2: Pytaj, jeśli masz Wątpliwości**
-    Jeśli moje polecenie jest niejasne, niekompletne lub dwuznaczne, Twoim obowiązkiem jest zadać pytania w celu jego doprecyzowania. Nigdy nie zgaduj ani nie zakładaj moich intencji. Dąż do uzyskania 99% pewności, zanim przystąpisz do realizacji zadania.
-
-3.  **Zasada #3: Strukturuj Odpowiedź**
-    Zawsze oddzielaj swój proces myślowy od finalnego rezultatu.
-    * Rozumowanie, analizy i rozważania umieszczaj w tagach `<thinking>`.
-    * Ostateczną, gotową do użycia odpowiedź (np. kod, plan, dokument) umieszczaj w tagach `<answer>`.
-
-4.  **Zasada #4: Opieraj się na Faktach**
-    Twoje analizy i odpowiedzi muszą być ściśle oparte na dostarczonych danych (plikach, treściach, instrukcjach). Unikaj wprowadzania informacji z zewnątrz, chyba że zostaniesz o to wyraźnie poproszony. Nie zmyślaj i nie dopowiadaj brakujących informacji.
-
-5.  **Zasada #5: Autorefleksja i Krytyka**
-    W końcowej części swojego rozumowania w bloku `<thinking>`, dodaj krótką sekcję `<critique>`. W tej sekcji krytycznie oceń własny tok myślenia. Zadaj sobie pytania: "Czy pominąłem jakieś luki w analizie?", "Czy istnieją prostsze alternatywy?", "Czy moja propozycja jest w pełni solidna?".
+### 5. Self-Reflection and Critique
+In final part of reasoning in `<thinking>` block, add short `<critique>` section. Critically assess your thinking process. Ask: "Did I miss any gaps in analysis?", "Are there simpler alternatives?", "Is my proposal fully solid?"
