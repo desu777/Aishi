@@ -158,6 +158,20 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
           onClick={isMobile ? onClose : undefined}
         />
         <SidebarItem 
+          icon={<Sparkles size={18} />} 
+          label="Mint" 
+          to="/aishi-mint"
+          isCollapsed={isCollapsed}
+          onClick={isMobile ? onClose : undefined}
+        />
+        <SidebarItem 
+          icon={<Brain size={18} />} 
+          label="aishiOS" 
+          to="/aishiOS"
+          isCollapsed={isCollapsed}
+          onClick={isMobile ? onClose : undefined}
+        />
+        <SidebarItem 
           icon={<User size={18} />} 
           label="Agent Dashboard" 
           to="/agent-dashboard"

@@ -1,14 +1,14 @@
 # Aishi Agent Deployment Summary
 
 ## Network: galileo
-**Deployed at:** 2025-08-13T18:42:19.625Z
+**Deployed at:** 2025-08-13T19:54:34.985Z
 
 ## Contract Addresses
 
 | Contract | Address |
 |----------|---------|
-| AishiVerifier | `0x115E9121885EfFD77DB27Ddfc2d9103FeaA255c7` |
-| AishiAgent | `0xEa8972DE6cfbefA1b5eBaC25B2b4d4F4a871B392` |
+| AishiVerifier | `0xb78b7Dc4291554F950212105Fecd7bbE1F092A6f` |
+| AishiAgent | `0xA922731d26F5Ab2D03812388C7206c0fBa226efc` |
 | Treasury | `0x0f13e85B575964B8b4b77E37d43A6aE9E354e94C` |
 
 ## Configuration
@@ -23,16 +23,16 @@
 Add these to your `.env` file:
 
 ```bash
-AISHI_VERIFIER_ADDRESS=0x115E9121885EfFD77DB27Ddfc2d9103FeaA255c7
-AISHI_AGENT_ADDRESS=0xEa8972DE6cfbefA1b5eBaC25B2b4d4F4a871B392
+AISHI_VERIFIER_ADDRESS=0xb78b7Dc4291554F950212105Fecd7bbE1F092A6f
+AISHI_AGENT_ADDRESS=0xA922731d26F5Ab2D03812388C7206c0fBa226efc
 TREASURY_ADDRESS=0x0f13e85B575964B8b4b77E37d43A6aE9E354e94C
 ```
 
 ## Frontend Integration
 
 ABIs have been exported to:
-- `app/src/contracts/AishiVerifierABI.json`
-- `app/src/contracts/AishiAgentABI.json`
+- `app/src/abi/AishiVerifierABI.json`
+- `app/src/abi/AishiAgentABI.json`
 
 ## Next Steps
 

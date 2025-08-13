@@ -99,7 +99,7 @@ export default function FinalCTASection() {
 
           {/* Secondary CTA */}
           <button
-            onClick={() => router.push('/agent-dashboard')}
+            onClick={() => router.push('/aishi-mint')}
             style={{
               padding: '20px 40px',
               background: 'transparent',

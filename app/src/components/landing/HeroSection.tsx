@@ -207,7 +207,7 @@ export default function HeroSection() {
           </ShimmerButton>
 
           <button
-            onClick={() => router.push('/agent-dashboard')}
+            onClick={() => router.push('/aishi-mint')}
             style={{
               padding: isSmallMobile ? '14px 24px' : '16px 32px',
               background: 'transparent',
