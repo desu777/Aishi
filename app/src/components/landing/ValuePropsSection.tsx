@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { valueProps, dreamInspirations, howAishiMakesItReal, disclaimer } from './landingData';
 import { ChevronRight, Info } from 'lucide-react';
@@ -9,10 +9,25 @@ export default function ValuePropsSection() {
   const { theme } = useTheme();
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [hoveredInspiration, setHoveredInspiration] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSmallMobile, setIsSmallMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+  
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsSmallMobile(window.innerWidth < 480);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   return (
     <section style={{
-      padding: '100px 20px',
+      padding: isMobile ? '60px 16px' : '100px 20px',
       position: 'relative',
       zIndex: 1
     }}>
@@ -20,7 +35,7 @@ export default function ValuePropsSection() {
         {/* Main Title */}
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
           <h2 style={{
-            fontSize: 'clamp(2rem, 4vw, 3rem)',
+            fontSize: isSmallMobile ? '1.75rem' : 'clamp(2rem, 4vw, 3rem)',
             fontWeight: 'bold',
             marginBottom: '16px'
           }}>
@@ -44,8 +59,8 @@ export default function ValuePropsSection() {
         {/* 6 Main Value Props - 3x2 grid layout */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-          gap: '24px',
+          gridTemplateColumns: isSmallMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: isSmallMobile ? '16px' : '24px',
           marginBottom: '80px',
           maxWidth: '1200px',
           margin: '0 auto 80px'
@@ -54,7 +69,7 @@ export default function ValuePropsSection() {
             <div
               key={i}
               style={{
-                padding: '32px 24px',
+                padding: isSmallMobile ? '24px 20px' : '32px 24px',
                 background: hoveredCard === i 
                   ? 'rgba(139, 92, 246, 0.08)' 
                   : 'rgba(24, 24, 31, 0.4)',
@@ -119,14 +134,14 @@ export default function ValuePropsSection() {
         {/* Known Inspirations from Dreams */}
         <div style={{
           marginBottom: '80px',
-          padding: '60px 40px',
+          padding: isSmallMobile ? '40px 20px' : isMobile ? '50px 30px' : '60px 40px',
           background: 'rgba(139, 92, 246, 0.03)',
           backdropFilter: 'blur(20px)',
           borderRadius: '24px',
           border: `1px solid ${theme.border}`
         }}>
           <h3 style={{
-            fontSize: '1.75rem',
+            fontSize: isSmallMobile ? '1.4rem' : '1.75rem',
             fontWeight: '600',
             marginBottom: '16px',
             textAlign: 'center'
@@ -151,14 +166,14 @@ export default function ValuePropsSection() {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '24px'
+            gridTemplateColumns: isSmallMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: isSmallMobile ? '16px' : '24px'
           }}>
             {dreamInspirations.map((inspiration, i) => (
               <div
                 key={i}
                 style={{
-                  padding: '28px',
+                  padding: isSmallMobile ? '20px' : '28px',
                   background: hoveredInspiration === i
                     ? 'rgba(139, 92, 246, 0.08)'
                     : 'rgba(24, 24, 31, 0.6)',
@@ -231,8 +246,9 @@ export default function ValuePropsSection() {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: '24px',
-            flexWrap: 'wrap'
+            gap: isSmallMobile ? '16px' : '24px',
+            flexWrap: 'wrap',
+            flexDirection: isSmallMobile ? 'column' : 'row'
           }}>
             {howAishiMakesItReal.map((step, i) => (
               <div key={i} style={{
@@ -275,7 +291,7 @@ export default function ValuePropsSection() {
                     </p>
                   </div>
                 </div>
-                {i < howAishiMakesItReal.length - 1 && (
+                {i < howAishiMakesItReal.length - 1 && !isSmallMobile && (
                   <ChevronRight 
                     size={20} 
                     style={{ 
@@ -291,7 +307,7 @@ export default function ValuePropsSection() {
 
         {/* Disclaimer */}
         <div style={{
-          padding: '24px',
+          padding: isSmallMobile ? '16px' : '24px',
           background: 'rgba(24, 24, 31, 0.4)',
           backdropFilter: 'blur(10px)',
           borderRadius: '12px',

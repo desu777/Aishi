@@ -6,10 +6,24 @@ import { useRouter } from 'next/navigation';
 import { badges } from './landingData';
 import { ShimmerButton } from '../ui/ShimmerButton';
 import SplitText from '../ui/SplitText';
+import { useState, useEffect } from 'react';
 
 export default function HeroSection() {
   const { theme } = useTheme();
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSmallMobile, setIsSmallMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsSmallMobile(window.innerWidth < 480);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
   
   const rotatingTexts = [
     'Built 100% on 0G: Compute · Storage · DA · Chain.',
@@ -32,7 +46,7 @@ export default function HeroSection() {
       alignItems: 'flex-start',
       justifyContent: 'center',
       paddingTop: '12vh',
-      padding: '12vh 20px 40px 20px',
+      padding: isMobile ? '80px 20px 40px 20px' : '12vh 20px 40px 20px',
       zIndex: 1
     }}>
       <div style={{
@@ -49,8 +63,8 @@ export default function HeroSection() {
             src="/aishi_logo.png" 
             alt="Aishi"
             style={{
-              width: '220px',
-              height: '220px',
+              width: 'min(220px, 50vw)',
+              height: 'min(220px, 50vw)',
               objectFit: 'contain',
               margin: '0 auto',
               filter: 'drop-shadow(0 10px 30px rgba(139, 92, 246, 0.3))'
@@ -60,7 +74,7 @@ export default function HeroSection() {
 
         {/* Title */}
         <h1 style={{
-          fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+          fontSize: 'clamp(2rem, 5vw, 4rem)',
           fontWeight: 'bold',
           marginBottom: '24px',
           lineHeight: 1.2,
@@ -116,7 +130,7 @@ export default function HeroSection() {
             rotationDelay={6500}
             style={{ 
               color: theme.text.secondary,
-              fontSize: '1.25rem',
+              fontSize: 'clamp(1rem, 2.5vw, 1.25rem)',
               lineHeight: 1.6,
               fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
               fontWeight: '400'
@@ -154,9 +168,11 @@ export default function HeroSection() {
         {/* CTA Buttons */}
         <div style={{
           display: 'flex',
-          gap: '20px',
+          gap: '12px',
           justifyContent: 'center',
+          flexDirection: isSmallMobile ? 'column' : 'row',
           flexWrap: 'wrap',
+          alignItems: 'center',
           animation: 'fadeInUp 1s ease-out 0.8s both'
         }}>
           <ShimmerButton
@@ -167,8 +183,10 @@ export default function HeroSection() {
             borderRadius="12px"
             background={theme.gradients.primary}
             style={{
-              padding: '16px 32px',
-              fontSize: '16px',
+              padding: isSmallMobile ? '14px 24px' : '16px 32px',
+              fontSize: isSmallMobile ? '14px' : '16px',
+              width: isSmallMobile ? '100%' : 'auto',
+              maxWidth: isSmallMobile ? '100%' : '280px',
               fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
@@ -183,8 +201,11 @@ export default function HeroSection() {
           <button
             onClick={() => router.push('/agent-dashboard')}
             style={{
-              padding: '16px 32px',
+              padding: isSmallMobile ? '14px 24px' : '16px 32px',
               background: 'transparent',
+              width: isSmallMobile ? '100%' : 'auto',
+              maxWidth: isSmallMobile ? '100%' : '280px',
+              fontSize: isSmallMobile ? '14px' : '16px',
               border: `2px solid ${theme.accent.primary}`,
               borderRadius: '12px',
               color: theme.accent.primary,

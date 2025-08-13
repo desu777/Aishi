@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { agentProblems, aishiSolutions } from './landingData';
 import { AlertCircle, CheckCircle } from 'lucide-react';
@@ -9,10 +9,23 @@ export default function ProblemsAndSolutionsSection() {
   const { theme } = useTheme();
   const [hoveredProblem, setHoveredProblem] = useState<number | null>(null);
   const [hoveredSolution, setHoveredSolution] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSmallMobile, setIsSmallMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsSmallMobile(window.innerWidth < 480);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   return (
     <section style={{
-      padding: '100px 20px',
+      padding: isMobile ? '60px 16px' : '100px 20px',
       position: 'relative',
       zIndex: 1
     }}>
@@ -21,7 +34,7 @@ export default function ProblemsAndSolutionsSection() {
         {/* Problems Section */}
         <div style={{ marginBottom: '80px' }}>
           <h2 style={{
-            fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
+            fontSize: isSmallMobile ? '1.5rem' : 'clamp(1.75rem, 3.5vw, 2.5rem)',
             fontWeight: 'bold',
             marginBottom: '16px',
             textAlign: 'center'
@@ -33,15 +46,15 @@ export default function ProblemsAndSolutionsSection() {
           
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '16px',
+            gridTemplateColumns: isSmallMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: isSmallMobile ? '12px' : '16px',
             marginTop: '40px'
           }}>
             {agentProblems.map((problem, i) => (
               <div
                 key={i}
                 style={{
-                  padding: '20px',
+                  padding: isSmallMobile ? '16px' : '20px',
                   background: hoveredProblem === i 
                     ? 'rgba(239, 68, 68, 0.05)' 
                     : 'rgba(24, 24, 31, 0.4)',
@@ -89,7 +102,7 @@ export default function ProblemsAndSolutionsSection() {
         {/* Solutions Section */}
         <div style={{ marginBottom: '80px' }}>
           <h2 style={{
-            fontSize: 'clamp(2rem, 4vw, 3rem)',
+            fontSize: isSmallMobile ? '1.75rem' : 'clamp(2rem, 4vw, 3rem)',
             fontWeight: 'bold',
             marginBottom: '16px',
             textAlign: 'center'
@@ -106,15 +119,15 @@ export default function ProblemsAndSolutionsSection() {
           
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-            gap: '24px',
+            gridTemplateColumns: isSmallMobile ? '1fr' : isMobile ? 'repeat(auto-fit, minmax(280px, 1fr))' : 'repeat(auto-fit, minmax(350px, 1fr))',
+            gap: isSmallMobile ? '16px' : '24px',
             marginTop: '40px'
           }}>
             {aishiSolutions.map((solution, i) => (
               <div
                 key={i}
                 style={{
-                  padding: '28px',
+                  padding: isSmallMobile ? '20px' : '28px',
                   background: hoveredSolution === i 
                     ? 'rgba(139, 92, 246, 0.08)' 
                     : 'rgba(24, 24, 31, 0.4)',

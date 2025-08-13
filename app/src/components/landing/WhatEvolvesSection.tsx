@@ -2,9 +2,23 @@
 
 import { useTheme } from '../../contexts/ThemeContext';
 import { Brain, TrendingUp, Sparkles, Target, MessageSquare, Trophy } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function WhatEvolvesSection() {
   const { theme } = useTheme();
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSmallMobile, setIsSmallMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsSmallMobile(window.innerWidth < 480);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const evolvingAspects = [
     {
@@ -41,7 +55,7 @@ export default function WhatEvolvesSection() {
 
   return (
     <section style={{
-      padding: '100px 20px',
+      padding: isMobile ? '60px 16px' : '100px 20px',
       position: 'relative',
       zIndex: 1
     }}>
@@ -71,14 +85,14 @@ export default function WhatEvolvesSection() {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '24px'
+          gridTemplateColumns: isSmallMobile ? '1fr' : isMobile ? 'repeat(auto-fit, minmax(280px, 1fr))' : 'repeat(3, 1fr)',
+          gap: isSmallMobile ? '16px' : '24px'
         }}>
           {evolvingAspects.map((aspect, i) => {
             const Icon = aspect.icon;
             return (
               <div key={aspect.title} style={{
-                padding: '28px',
+                padding: isSmallMobile ? '20px' : '28px',
                 background: 'rgba(24, 24, 31, 0.4)',
                 backdropFilter: 'blur(10px)',
                 borderRadius: '16px',

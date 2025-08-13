@@ -4,21 +4,35 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { Zap } from 'lucide-react';
 import { ShimmerButton } from '../ui/ShimmerButton';
+import { useState, useEffect } from 'react';
 
 export default function FinalCTASection() {
   const { theme } = useTheme();
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSmallMobile, setIsSmallMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsSmallMobile(window.innerWidth < 480);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   return (
     <section style={{
-      padding: '150px 20px',
+      padding: isMobile ? '80px 16px' : '150px 20px',
       position: 'relative',
       zIndex: 1,
       textAlign: 'center'
     }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <h2 style={{
-          fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+          fontSize: isSmallMobile ? '2rem' : 'clamp(2.5rem, 5vw, 4rem)',
           fontWeight: 'bold',
           marginBottom: '48px'
         }}>
@@ -34,9 +48,11 @@ export default function FinalCTASection() {
 
         <div style={{
           display: 'flex',
-          gap: '24px',
+          gap: isSmallMobile ? '16px' : '24px',
           justifyContent: 'center',
-          flexWrap: 'wrap'
+          flexDirection: isSmallMobile ? 'column' : 'row',
+          flexWrap: 'wrap',
+          alignItems: 'center'
         }}>
           {/* Primary CTA with glow effect */}
           <div style={{ position: 'relative' }}>
@@ -57,8 +73,10 @@ export default function FinalCTASection() {
               background={theme.gradients.primary}
               style={{
                 position: 'relative',
-                padding: '20px 40px',
-                fontSize: '18px',
+                padding: isSmallMobile ? '16px 32px' : '20px 40px',
+                fontSize: isSmallMobile ? '16px' : '18px',
+                width: isSmallMobile ? '100%' : 'auto',
+                maxWidth: isSmallMobile ? '280px' : 'none',
                 fontWeight: '600',
                 display: 'flex',
                 alignItems: 'center',
