@@ -1,6 +1,7 @@
 // Landing page components export
 export { default as NeuralNetworkCanvas } from './NeuralNetworkCanvas';
 export { default as HeroSection } from './HeroSection';
+export { default as ProblemsAndSolutionsSection } from './ProblemsAndSolutionsSection';
 export { default as ValuePropsSection } from './ValuePropsSection';
 export { default as HowItWorksSection } from './HowItWorksSection';
 export { default as WhatEvolvesSection } from './WhatEvolvesSection';

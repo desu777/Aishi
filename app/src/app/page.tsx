@@ -5,6 +5,7 @@ import Layout from '../components/layout/Layout';
 import {
   NeuralNetworkCanvas,
   HeroSection,
+  ProblemsAndSolutionsSection,
   ValuePropsSection,
   HowItWorksSection,
   WhatEvolvesSection,
@@ -24,6 +25,9 @@ export default function Home() {
 
       {/* Hero Section */}
       <HeroSection />
+
+      {/* Problems and Solutions Section */}
+      <ProblemsAndSolutionsSection />
 
       {/* Value Props Section */}
       <ValuePropsSection />

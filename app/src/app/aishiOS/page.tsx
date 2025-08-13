@@ -10,7 +10,7 @@ import { CommandsModal } from './components/CommandsModal';
 import { TerminalModal } from './components/TerminalModal';
 import SplitText from '../../components/ui/SplitText';
 
-export default function AgentOSPage() {
+export default function AishiOSPage() {
   const { theme, debugLog } = useTheme();
   const [darkMode, setDarkMode] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -18,7 +18,7 @@ export default function AgentOSPage() {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   
   // Debug log na start
-  debugLog('AgentOS page loaded');
+  debugLog('AishiOS page loaded');
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -94,12 +94,12 @@ export default function AgentOSPage() {
             letterSpacing: '1px',
             fontWeight: 'bold'
           }}>
-{` █████╗  ██████╗ ███████╗███╗   ██╗████████╗    ██████╗ ███████╗
-██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝   ██╔═══██╗██╔════╝
-███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║      ██║   ██║███████╗
-██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║      ██║   ██║╚════██║
-██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║      ╚██████╔╝███████║
-╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝       ╚═════╝ ╚══════╝`}
+{` █████╗ ██╗███████╗██╗  ██╗██╗    ██████╗ ███████╗
+██╔══██╗██║██╔════╝██║  ██║██║   ██╔═══██╗██╔════╝
+███████║██║███████╗███████║██║   ██║   ██║███████╗
+██╔══██║██║╚════██║██╔══██║██║   ██║   ██║╚════██║
+██║  ██║██║███████║██║  ██║██║   ╚██████╔╝███████║
+╚═╝  ╚═╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝    ╚═════╝ ╚══════╝`}
           </pre>
           <div style={{
             margin: '0 0 16px 0',

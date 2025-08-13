@@ -3,6 +3,7 @@
 import { useTheme } from '../../contexts/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { Zap } from 'lucide-react';
+import { ShimmerButton } from '../ui/ShimmerButton';
 
 export default function FinalCTASection() {
   const { theme } = useTheme();
@@ -47,33 +48,27 @@ export default function FinalCTASection() {
               filter: 'blur(20px)',
               opacity: 0.5
             }} />
-            <button
-              onClick={() => router.push('/agentOS')}
+            <ShimmerButton
+              onClick={() => router.push('/aishiOS')}
+              shimmerColor="#ffffff"
+              shimmerSize="0.1em"
+              shimmerDuration="3s"
+              borderRadius="12px"
+              background={theme.gradients.primary}
               style={{
                 position: 'relative',
                 padding: '20px 40px',
-                background: theme.gradients.primary,
-                border: 'none',
-                borderRadius: '12px',
-                color: 'white',
                 fontSize: '18px',
                 fontWeight: '600',
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
+                border: 'none'
               }}
             >
               Open Terminal
               <Zap size={24} />
-            </button>
+            </ShimmerButton>
           </div>
 
           {/* Secondary CTA */}

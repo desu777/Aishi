@@ -4,10 +4,25 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { badges } from './landingData';
+import { ShimmerButton } from '../ui/ShimmerButton';
+import SplitText from '../ui/SplitText';
 
 export default function HeroSection() {
   const { theme } = useTheme();
   const router = useRouter();
+  
+  const rotatingTexts = [
+    'Built 100% on 0G: Compute · Storage · DA · Chain.',
+    'Your dreams and chats become a private memory.',
+    'Auto month‑learn/year‑learn keeps long‑term context.',
+    'You choose what Aishi remembers — always.',
+    'Talk in real time with a Live2D persona.',
+    'Spot hidden patterns and self‑defeating loops.',
+    'An ownable self‑learning iNFT you name and keep.',
+    'Intelligence and traits evolve with you.',
+    'Encrypted on 0G Storage; we can\'t see your data.',
+    'Operate via AishiOS: type dream, chat, or talk.'
+  ];
 
   return (
     <section style={{
@@ -81,18 +96,33 @@ export default function HeroSection() {
           </span>
         </h1>
 
-        {/* Subtitle */}
-        <p style={{
-          fontSize: '1.25rem',
-          color: theme.text.secondary,
+        {/* Subtitle with rotating text */}
+        <div style={{
           maxWidth: '800px',
-          margin: '0 auto 40px',
-          lineHeight: 1.6,
-          animation: 'fadeInUp 1s ease-out 0.4s both'
+          margin: '0 auto 24px',
+          animation: 'fadeInUp 1s ease-out 0.4s both',
+          minHeight: '3em'
         }}>
-          A self-learning iNFT built 100% on 0G (Compute, Storage, DA, Chain). 
-          Your dreams and conversations become a private memory your agent evolves from.
-        </p>
+          <SplitText
+            texts={rotatingTexts}
+            className="hero-subtitle"
+            delay={25}
+            duration={0.5}
+            ease="power3.out"
+            splitType="chars"
+            from={{ opacity: 0, y: 20, rotateX: -90 }}
+            to={{ opacity: 1, y: 0, rotateX: 0 }}
+            textAlign="center"
+            rotationDelay={6500}
+            style={{ 
+              color: theme.text.secondary,
+              fontSize: '1.25rem',
+              lineHeight: 1.6,
+              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+              fontWeight: '400'
+            }}
+          />
+        </div>
 
         {/* Badges */}
         <div style={{
@@ -100,7 +130,7 @@ export default function HeroSection() {
           gap: '12px',
           justifyContent: 'center',
           flexWrap: 'wrap',
-          marginBottom: '48px'
+          marginBottom: '32px'
         }}>
           {badges.map((badge, i) => (
             <div 
@@ -129,35 +159,26 @@ export default function HeroSection() {
           flexWrap: 'wrap',
           animation: 'fadeInUp 1s ease-out 0.8s both'
         }}>
-          <button
-            onClick={() => router.push('/agentOS')}
+          <ShimmerButton
+            onClick={() => router.push('/aishiOS')}
+            shimmerColor="#ffffff"
+            shimmerSize="0.1em"
+            shimmerDuration="3s"
+            borderRadius="12px"
+            background={theme.gradients.primary}
             style={{
               padding: '16px 32px',
-              background: theme.gradients.primary,
-              border: 'none',
-              borderRadius: '12px',
-              color: 'white',
               fontSize: '16px',
               fontWeight: '600',
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 20px rgba(139, 92, 246, 0.3)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 30px rgba(139, 92, 246, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.3)';
+              border: 'none'
             }}
           >
             Open Terminal
             <ChevronRight size={20} />
-          </button>
+          </ShimmerButton>
 
           <button
             onClick={() => router.push('/agent-dashboard')}
