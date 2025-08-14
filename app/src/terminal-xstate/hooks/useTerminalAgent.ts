@@ -7,6 +7,13 @@ import { useAccount, useReadContract } from 'wagmi';
 import { getContractConfig, ContractFunctions } from '../services/contractService';
 import { useEffect, useState } from 'react';
 
+// Debug function for XState terminal
+const debugLog = (message: string, data?: any) => {
+  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+    console.log(`[useTerminalAgent] ${message}`, data || '');
+  }
+};
+
 export interface AgentData {
   name: string;
   tokenId: number;
@@ -54,12 +61,45 @@ export function useTerminalAgent() {
       // Use type assertion to access properties
       const rawData = agentRawData as any;
       
+      debugLog('Raw agent data from contract', {
+        rawData,
+        dataType: typeof rawData,
+        hasAgentName: rawData.agentName !== undefined,
+        hasName: rawData.name !== undefined,
+        keys: Object.keys(rawData)
+      });
+      
+      // Try wagmi v2 object style first, then fallback to array style
+      const agentName = (rawData.agentName !== undefined ? 
+        rawData.agentName : 
+        (rawData[1] !== undefined ? rawData[1] : 'Unknown Agent'));
+        
+      const intelligenceLevel = (rawData.intelligenceLevel !== undefined ?
+        rawData.intelligenceLevel :
+        (rawData[4] !== undefined ? rawData[4] : 0));
+        
+      const dreamCount = (rawData.dreamCount !== undefined ?
+        rawData.dreamCount :
+        (rawData[5] !== undefined ? rawData[5] : 0));
+        
+      const conversationCount = (rawData.conversationCount !== undefined ?
+        rawData.conversationCount :
+        (rawData[6] !== undefined ? rawData[6] : 0));
+      
       setAgentData({
-        name: rawData.name || 'Unknown Agent',
+        name: agentName,
         tokenId: tokenId,
-        intelligenceLevel: Number(rawData.intelligenceLevel || 0),
-        dreamCount: Number(rawData.dreamCount || 0),
-        conversationCount: Number(rawData.conversationCount || 0)
+        intelligenceLevel: Number(intelligenceLevel),
+        dreamCount: Number(dreamCount),
+        conversationCount: Number(conversationCount)
+      });
+      
+      debugLog('Parsed agent data', {
+        name: agentName,
+        tokenId,
+        intelligenceLevel: Number(intelligenceLevel),
+        dreamCount: Number(dreamCount),
+        conversationCount: Number(conversationCount)
       });
     }
   }, [agentRawData, tokenId]);
