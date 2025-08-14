@@ -1,18 +1,17 @@
+/**
+ * @fileoverview Cross-platform environment variable loader with automatic path conversion
+ * @description Handles environment loading for WSL, Windows, and Linux with intelligent path resolution.
+ * Supports automatic conversion between Windows and WSL paths, multiple fallback locations,
+ * and provides platform-specific path suggestions for configuration files.
+ */
+
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { execSync } from 'child_process';
 
-/**
- * Environment types for cross-platform compatibility
- */
 type Environment = 'wsl' | 'windows' | 'linux' | 'unknown';
 
-/**
- * Centralized environment variable loader with cross-platform compatibility
- * Supports WSL, Windows PowerShell, and Linux environments
- * Handles automatic path conversion between Windows and WSL paths
- */
 export class EnvLoader {
   private static isLoaded = false;
   private static loadedPath: string | null = null;
@@ -30,8 +29,8 @@ export class EnvLoader {
       // Check if we're in WSL
       if (process.platform === 'linux') {
         try {
-          const release = fs.readFileSync('/proc/version', 'utf8');
-          if (release.toLowerCase().includes('microsoft') || release.toLowerCase().includes('wsl')) {
+          const processorVersionInfo = fs.readFileSync('/proc/version', 'utf8');
+          if (processorVersionInfo.toLowerCase().includes('microsoft') || processorVersionInfo.toLowerCase().includes('wsl')) {
             this.detectedEnvironment = 'wsl';
             return 'wsl';
           }

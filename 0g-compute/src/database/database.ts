@@ -1,3 +1,10 @@
+/**
+ * @fileoverview SQLite database service for managing virtual brokers and transactions
+ * @description Provides a centralized database interface for broker accounts, balance management,
+ * transaction history, and consolidation status tracking. Uses better-sqlite3 for synchronous
+ * database operations with automatic table initialization and migration support.
+ */
+
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
@@ -28,19 +35,18 @@ class DatabaseService {
   private db: Database.Database;
 
   constructor() {
-    const dbPath = process.env.DATABASE_PATH || './data/brokers.db';
+    const databaseFilePath = process.env.DATABASE_PATH || './data/brokers.db';
     
-    // Create directory if it doesn't exist
-    const dir = dirname(dbPath);
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
+    const databaseDirectory = dirname(databaseFilePath);
+    if (!existsSync(databaseDirectory)) {
+      mkdirSync(databaseDirectory, { recursive: true });
     }
 
-    this.db = new Database(dbPath);
+    this.db = new Database(databaseFilePath);
     this.initializeTables();
     
     if (process.env.TEST_ENV === 'true') {
-      console.log('💾 Database initialized at:', dbPath);
+      console.log('💾 Database initialized at:', databaseFilePath);
     }
   }
 
@@ -58,7 +64,6 @@ class DatabaseService {
           ADD COLUMN consolidation_date TEXT
         `);
         
-        // Then update existing rows with current timestamp
         this.db.exec(`
           UPDATE user_brokers 
           SET consolidation_date = datetime('now') 
@@ -76,7 +81,6 @@ class DatabaseService {
           ADD COLUMN month_learn TEXT DEFAULT 'noneed'
         `);
         
-        // Update existing rows
         this.db.exec(`
           UPDATE user_brokers 
           SET month_learn = 'noneed' 
@@ -94,7 +98,6 @@ class DatabaseService {
           ADD COLUMN year_learn TEXT DEFAULT 'noneed'
         `);
         
-        // Update existing rows
         this.db.exec(`
           UPDATE user_brokers 
           SET year_learn = 'noneed' 

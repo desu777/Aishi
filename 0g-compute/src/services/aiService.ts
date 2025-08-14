@@ -1,16 +1,21 @@
+/**
+ * @fileoverview AI service for processing queries through 0G Network
+ * @description Manages AI model discovery, service acknowledgment, query processing,
+ * and dynamic cost calculation with real-time balance tracking.
+ */
+
 import OpenAI from 'openai';
 import '../config/envLoader';
 import masterWallet from './masterWallet';
 import virtualBrokers from './virtualBrokers';
 
-// Constants
 const DEFAULT_MODEL = process.env.MODEL_PICKED || "llama-3.3-70b-instruct";
-const PROVIDER_TIMEOUT = 30000; // 30 seconds
-const BALANCE_EXPIRATION = 5 * 60 * 1000; // 5 minutes
+const PROVIDER_TIMEOUT = 30000;
+const BALANCE_EXPIRATION = 5 * 60 * 1000;
 const MIN_BALANCE_THRESHOLD = 0.0001;
 const MIN_PROFIT_MARGIN = 0.00001;
 const MAX_PROFIT_MARGIN = 0.0005;
-const SERVICE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache for discovered services
+const SERVICE_CACHE_TTL = 5 * 60 * 1000;
 
 export interface DiscoveredService {
   provider: string;
@@ -44,18 +49,14 @@ export class AIService {
   private acknowledgedProviders: Set<string> = new Set();
   private discoveredServices: Map<string, DiscoveredService> = new Map();
   private lastDiscoveryTime: number = 0;
-  // ✅ Cache mapowania model name → provider address
   private modelToProviderCache: Map<string, string> = new Map();
 
   async initialize(): Promise<void> {
     try {
-      // Log default model configuration
       console.log(`🎯 Default Model Configuration: ${DEFAULT_MODEL}`);
       
-      // Initialize master wallet
       await masterWallet.initialize();
       
-      // Discover available AI services
       await this.discoverAndCacheServices();
       
       if (process.env.TEST_ENV === 'true') {
@@ -68,10 +69,13 @@ export class AIService {
     }
   }
 
+  /**
+   * Discover and cache available AI services from 0G Network
+   * @private
+   */
   private async discoverAndCacheServices(): Promise<void> {
-    // Check if cache is still valid
-    const now = Date.now();
-    if (this.lastDiscoveryTime && (now - this.lastDiscoveryTime) < SERVICE_CACHE_TTL) {
+    const currentTimestamp = Date.now();
+    if (this.lastDiscoveryTime && (currentTimestamp - this.lastDiscoveryTime) < SERVICE_CACHE_TTL) {
       if (process.env.TEST_ENV === 'true') {
         console.log('🔄 Using cached service discovery');
       }
@@ -79,65 +83,65 @@ export class AIService {
     }
 
     try {
-      const broker = masterWallet.getBroker();
-      const services = await broker.inference.listService();
+      const masterBroker = masterWallet.getBroker();
+      const availableServices = await masterBroker.inference.listService();
       
-      // Clear old services
       this.discoveredServices.clear();
       
-      // Debug logging: show all discovered service types
       if (process.env.TEST_ENV === 'true') {
-        const serviceTypes = services.map(s => s.serviceType).filter((v, i, a) => a.indexOf(v) === i);
-        console.log(`🔍 Discovered service types: ${serviceTypes.join(', ')}`);
-        console.log(`📊 Total services found: ${services.length}`);
+        const uniqueServiceTypes = availableServices.map(service => service.serviceType).filter((value, index, array) => array.indexOf(value) === index);
+        console.log(`🔍 Discovered service types: ${uniqueServiceTypes.join(', ')}`);
+        console.log(`📊 Total services found: ${availableServices.length}`);
       }
       
-      // Filter AI models - support both 'inference' (legacy) and 'chatbot' (new API)
-      for (const service of services) {
-        if ((service.serviceType === 'inference' || service.serviceType === 'chatbot') && service.model) {
-          const discoveredService: DiscoveredService = {
-            provider: service.provider,
-            model: service.model,
-            url: service.url,
-            inputPrice: service.inputPrice,
-            outputPrice: service.outputPrice,
-            verifiability: service.verifiability || 'none',
-            serviceType: service.serviceType,
-            updatedAt: service.updatedAt,
+      /* Filter AI models - support both 'inference' (legacy) and 'chatbot' (new API) */
+      for (const serviceItem of availableServices) {
+        if ((serviceItem.serviceType === 'inference' || serviceItem.serviceType === 'chatbot') && serviceItem.model) {
+          const discoveredServiceEntry: DiscoveredService = {
+            provider: serviceItem.provider,
+            model: serviceItem.model,
+            url: serviceItem.url,
+            inputPrice: serviceItem.inputPrice,
+            outputPrice: serviceItem.outputPrice,
+            verifiability: serviceItem.verifiability || 'none',
+            serviceType: serviceItem.serviceType,
+            updatedAt: serviceItem.updatedAt,
             isAvailable: true
           };
           
-          this.discoveredServices.set(service.model, discoveredService);
+          this.discoveredServices.set(serviceItem.model, discoveredServiceEntry);
           
-          // ✅ Update model → provider cache for fast lookup
-          this.modelToProviderCache.set(service.model, service.provider);
+          this.modelToProviderCache.set(serviceItem.model, serviceItem.provider);
           
-          // Try to acknowledge the provider
-          await this.acknowledgeProvider(service.provider, service.model);
+          await this.acknowledgeProvider(serviceItem.provider, serviceItem.model);
         }
       }
       
-      this.availableServices = services;
-      this.lastDiscoveryTime = now;
+      this.availableServices = availableServices;
+      this.lastDiscoveryTime = currentTimestamp;
       
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🔍 Discovered ${this.discoveredServices.size} inference models from ${services.length} total services`);
+        console.log(`🔍 Discovered ${this.discoveredServices.size} inference models from ${availableServices.length} total services`);
         console.log(`📋 Available models: ${Array.from(this.discoveredServices.keys()).join(', ')}`);
       }
     } catch (error: any) {
       console.error('❌ Failed to discover AI services:', error.message);
-      // Don't throw - we can still use Gemini as fallback
+      /* Don't throw - we can still use Gemini as fallback */
     }
   }
 
+  /**
+   * Acknowledge provider signer for a model
+   * @private
+   */
   private async acknowledgeProvider(providerAddress: string, modelName: string): Promise<void> {
     if (this.acknowledgedProviders.has(providerAddress)) {
       return;
     }
     
     try {
-      const broker = masterWallet.getBroker();
-      await broker.inference.acknowledgeProviderSigner(providerAddress);
+      const masterBroker = masterWallet.getBroker();
+      await masterBroker.inference.acknowledgeProviderSigner(providerAddress);
       this.acknowledgedProviders.add(providerAddress);
       
       if (process.env.TEST_ENV === 'true') {
@@ -157,10 +161,9 @@ export class AIService {
 
   async analyzeDream(request: AIRequest): Promise<AIResponse> {
     const { userWalletAddress, query, model = DEFAULT_MODEL } = request;
-    const startTime = Date.now();
+    const queryStartTime = Date.now();
     
     try {
-      // Validate inputs
       if (!userWalletAddress || !userWalletAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
         throw new Error('Invalid wallet address format');
       }
@@ -169,24 +172,21 @@ export class AIService {
         throw new Error('Query cannot be empty');
       }
 
-      // Refresh discovery if needed
       await this.discoverAndCacheServices();
       
-      // Get provider address from discovered services
-      const service = this.discoveredServices.get(model);
-      if (!service) {
-        // List available models for error message
-        const availableModels = Array.from(this.discoveredServices.keys());
-        throw new Error(`Model not available: ${model}. Available models: ${availableModels.join(', ') || 'No models discovered. Using Gemini fallback.'}`);
+      const discoveredService = this.discoveredServices.get(model);
+      if (!discoveredService) {
+        const availableModelsList = Array.from(this.discoveredServices.keys());
+        throw new Error(`Model not available: ${model}. Available models: ${availableModelsList.join(', ') || 'No models discovered. Using Gemini fallback.'}`);
       }
       
-      const providerAddress = service.provider;
+      const providerAddress = discoveredService.provider;
 
       // Log selected model
       console.log(`🎯 Selected Model: ${model} (Provider: ${providerAddress})`);
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🔑 Service URL: ${service.url}`);
-        console.log(`💰 Input Price: ${service.inputPrice.toString()}`);
+        console.log(`🔑 Service URL: ${discoveredService.url}`);
+        console.log(`💰 Input Price: ${discoveredService.inputPrice.toString()}`);
       }
 
       // Estimate cost for pre-check (user needs some minimum balance)
@@ -247,7 +247,7 @@ export class AIService {
 
       const aiResponse = completion.choices[0].message.content || '';
       const chatId = completion.id;
-      const responseTime = Date.now() - startTime;
+      const responseTime = Date.now() - queryStartTime;
 
       if (process.env.TEST_ENV === 'true') {
         console.log(`✅ AI query completed in ${responseTime}ms`);
@@ -311,7 +311,7 @@ export class AIService {
       };
 
     } catch (error: any) {
-      const responseTime = Date.now() - startTime;
+      const responseTime = Date.now() - queryStartTime;
       
       console.error(`❌ AI query failed for ${userWalletAddress}:`, error.message);
       

@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Main server entry point for Dreamscape 0G Compute Backend
+ * @description Initializes Express server with security middleware, API routes, and all core services.
+ * Handles service initialization, graceful shutdown, and global error handling.
+ */
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -11,36 +17,31 @@ import queryManager from './services/queryManager';
 import consolidationChecker from './services/consolidationChecker';
 import geminiService from './services/geminiService';
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+const expressApplication = express();
+const SERVER_PORT = process.env.PORT || 3001;
 
-// Security Middleware (order matters for performance)
-app.use(helmet());
-app.use(cors({
+expressApplication.use(helmet());
+expressApplication.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
 }));
 
-// Rate Limiting - Applied globally to all API routes
-app.use('/api', generalLimiter);
+expressApplication.use('/api', generalLimiter);
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+expressApplication.use(express.json({ limit: '10mb' }));
+expressApplication.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware (after rate limiting to avoid log spam)
-app.use((req, res, next) => {
+expressApplication.use((request, response, next) => {
   if (process.env.TEST_ENV === 'true') {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log(`${new Date().toISOString()} - ${request.method} ${request.path}`);
   }
   next();
 });
 
-// API routes (protected by rate limiting above)
-app.use('/api', apiRoutes);
+expressApplication.use('/api', apiRoutes);
 
-// Root endpoint
-app.get('/', (req, res) => {
-  res.json({
+expressApplication.get('/', (request, response) => {
+  response.json({
     service: 'Dreamscape 0G Compute Backend',
     version: '1.0.0',
     status: 'running',
@@ -66,71 +67,67 @@ app.get('/', (req, res) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
+expressApplication.use('*', (request, response) => {
+  response.status(404).json({
     success: false,
     error: 'Endpoint not found',
-    path: req.originalUrl,
+    path: request.originalUrl,
     timestamp: new Date().toISOString()
   });
 });
 
-// Global error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', err);
+expressApplication.use((errorObject: any, request: express.Request, response: express.Response, next: express.NextFunction) => {
+  console.error('Unhandled error:', errorObject);
   
-  res.status(500).json({
+  response.status(500).json({
     success: false,
     error: 'Internal server error',
     timestamp: new Date().toISOString(),
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: errorObject.stack })
   });
 });
 
-// Initialize services
-async function initializeServices() {
+/**
+ * Initialize all backend services in proper order
+ * @returns {Promise<void>}
+ */
+async function initializeAllBackendServices() {
   console.log('🚀 Initializing Dreamscape 0G Compute Backend...');
   
   try {
-    // Initialize AI service (which initializes master wallet)
+    /* Initialize AI service first as it sets up master wallet */
     console.log('🤖 Initializing AI Service...');
     await aiService.initialize();
     
-    // Initialize Gemini service
     console.log('🌟 Initializing Gemini AI Service...');
     await geminiService.initialize();
     
-    // Start transaction monitoring
     console.log('👁️  Starting transaction monitor...');
-    await masterWallet.startTransactionMonitor(async (from, amount, txHash) => {
+    await masterWallet.startTransactionMonitor(async (senderAddress, transactionAmount, transactionHash) => {
       try {
-        await virtualBrokers.processFundingTransaction(from, amount, txHash);
-        console.log(`✅ Auto-funded broker ${from} with ${amount} OG`);
+        await virtualBrokers.processFundingTransaction(senderAddress, transactionAmount, transactionHash);
+        console.log(`✅ Auto-funded broker ${senderAddress} with ${transactionAmount} OG`);
       } catch (error: any) {
-        console.error(`❌ Failed to auto-fund broker ${from}:`, error.message);
+        console.error(`❌ Failed to auto-fund broker ${senderAddress}:`, error.message);
       }
     });
     
     console.log('✅ All services initialized successfully');
     
-    // Display configuration
     console.log('\n📋 Configuration:');
     console.log(`   Master Wallet: ${masterWallet.getWalletAddress()}`);
     console.log(`   RPC URL: ${process.env.RPC_URL || 'https://evmrpc-testnet.0g.ai'}`);
     console.log(`   Database: ${process.env.DATABASE_PATH || './data/brokers.db'}`);
-    console.log(`   Port: ${PORT}`);
+    console.log(`   Port: ${SERVER_PORT}`);
     console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`   Max Concurrent Queries: ${process.env.MAX_CONCURRENT_QUERIES || '5'}`);
     
-    // Display queue status
-    const queueStatus = queryManager.getQueueStatus();
-    console.log(`   Query Manager: Ready (Queue: ${queueStatus.queueLength}, Active: ${queueStatus.activeQueries}/${queueStatus.maxConcurrent})`);
+    const currentQueueStatus = queryManager.getQueueStatus();
+    console.log(`   Query Manager: Ready (Queue: ${currentQueueStatus.queueLength}, Active: ${currentQueueStatus.activeQueries}/${currentQueueStatus.maxConcurrent}`);
     
-    // Start consolidation checker
-    const consolidationInterval = parseInt(process.env.CONSOLIDATION_CHECK_INTERVAL_MINUTES || '60');
-    consolidationChecker.startChecker(consolidationInterval);
-    console.log(`   Consolidation Checker: Started (interval: ${consolidationInterval} minutes)`);
+    const consolidationCheckIntervalMinutes = parseInt(process.env.CONSOLIDATION_CHECK_INTERVAL_MINUTES || '60');
+    consolidationChecker.startChecker(consolidationCheckIntervalMinutes);
+    console.log(`   Consolidation Checker: Started (interval: ${consolidationCheckIntervalMinutes} minutes)`);
     
   } catch (error: any) {
     console.error('❌ Failed to initialize services:', error.message);
@@ -138,20 +135,22 @@ async function initializeServices() {
   }
 }
 
-// Graceful shutdown
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', performGracefulShutdown);
+process.on('SIGINT', performGracefulShutdown);
 
-async function gracefulShutdown() {
+/**
+ * Perform graceful shutdown of all services
+ * @returns {Promise<void>}
+ */
+async function performGracefulShutdown() {
   console.log('\n🛑 Graceful shutdown initiated...');
   
   try {
-    // Cleanup services
     console.log('🛑 Stopping Consolidation Checker...');
     consolidationChecker.stopChecker();
     
     console.log('🛑 Cleaning up Query Manager...');
-    // QueryManager cleanup would happen here if needed
+    /* QueryManager cleanup would happen here if needed */
     
     await aiService.cleanup();
     await geminiService.cleanup();
@@ -165,16 +164,19 @@ async function gracefulShutdown() {
   }
 }
 
-// Start server
-async function startServer() {
+/**
+ * Start the Express server and initialize all services
+ * @returns {Promise<void>}
+ */
+async function startExpressServer() {
   try {
-    await initializeServices();
+    await initializeAllBackendServices();
     
-    app.listen(PORT, () => {
-      console.log(`\n🎯 Dreamscape 0G Compute Backend running on port ${PORT}`);
-      console.log(`🌐 API available at: http://localhost:${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`📋 Status: http://localhost:${PORT}/api/status`);
+    expressApplication.listen(SERVER_PORT, () => {
+      console.log(`\n🎯 Dreamscape 0G Compute Backend running on port ${SERVER_PORT}`);
+      console.log(`🌐 API available at: http://localhost:${SERVER_PORT}`);
+      console.log(`📊 Health check: http://localhost:${SERVER_PORT}/api/health`);
+      console.log(`📋 Status: http://localhost:${SERVER_PORT}/api/status`);
       
       if (process.env.TEST_ENV === 'true') {
         console.log('🔧 Debug mode enabled (TEST_ENV=true)');
@@ -189,18 +191,16 @@ async function startServer() {
   }
 }
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
+process.on('uncaughtException', (uncaughtError) => {
+  console.error('❌ Uncaught Exception:', uncaughtError);
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+process.on('unhandledRejection', (rejectionReason, rejectedPromise) => {
+  console.error('❌ Unhandled Rejection at:', rejectedPromise, 'reason:', rejectionReason);
   process.exit(1);
 });
 
-// Start the server
-startServer();
+startExpressServer();
 
-export default app; 
+export default expressApplication; 
