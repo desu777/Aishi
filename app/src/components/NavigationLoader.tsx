@@ -11,6 +11,14 @@ export const NavigationLoader = () => {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isFirstLoad = useRef(true);
 
+  // Check if splash screen is disabled via environment variable
+  const isSplashDisabled = process.env.NEXT_PUBLIC_SPLASH_SCREEN === 'off';
+  
+  // Early return if splash is disabled
+  if (isSplashDisabled) {
+    return null;
+  }
+
   useEffect(() => {
     // Skip splash screen on first page load
     if (isFirstLoad.current) {
