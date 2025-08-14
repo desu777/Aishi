@@ -13,7 +13,7 @@ const debugLog = (message: string, data?: any) => {
 };
 
 interface BrokerContext {
-  status: 'uninitialized' | 'initialized' | 'loading' | 'error';
+  status: 'uninitialized' | 'not_initialized' | 'initialized' | 'loading' | 'error';
   balance: number;
   walletAddress: string | null;
   errorMessage: string | null;
@@ -21,7 +21,8 @@ interface BrokerContext {
 
 type BrokerEvent =
   | { type: 'INITIALIZE'; walletAddress: string }
-  | { type: 'FUND'; amount: number }
+  | { type: 'CREATE' }
+  | { type: 'FUND'; amount: number; txHash?: string }
   | { type: 'UPDATE_BALANCE'; balance: number }
   | { type: 'REFRESH' }
   | { type: 'RETRY' };
@@ -30,7 +31,7 @@ type BrokerEvent =
 const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress: string } }) => {
   const API_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
   
-  debugLog('Fetching broker status', { walletAddress: input.walletAddress });
+  debugLog('Fetching broker status', { walletAddress: input.walletAddress, API_URL });
   
   try {
     const response = await fetch(`${API_URL}/balance/${input.walletAddress}`, {
@@ -38,17 +39,62 @@ const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress
       headers: { 'Content-Type': 'application/json' }
     });
     
-    debugLog('Balance API response', { status: response.status, ok: response.ok });
+    debugLog('Balance API response', { 
+      status: response.status, 
+      ok: response.ok,
+      statusText: response.statusText 
+    });
     
-    if (!response.ok) {
-      // If broker doesn't exist, return uninitialized state
-      if (response.status === 404) {
-        debugLog('Broker not found, returning uninitialized state');
-        return { exists: false, balance: 0 };
+    // Handle 404 - broker doesn't exist
+    if (response.status === 404) {
+      debugLog('Broker not found (404), returning exists: false');
+      // Try to get error message from response
+      try {
+        const errorData = await response.json();
+        debugLog('404 error data', errorData);
+      } catch (e) {
+        debugLog('Could not parse 404 response body');
       }
-      throw new Error(`Failed to fetch broker status: ${response.statusText}`);
+      return { exists: false, balance: 0 };
     }
     
+    // Handle 500 with specific "No virtual broker found" message
+    if (response.status === 500) {
+      try {
+        const errorData = await response.json();
+        debugLog('500 error response', errorData);
+        
+        // Check if this is a "broker not found" error from backend
+        if (errorData.error && errorData.error.includes('No virtual broker found')) {
+          debugLog('Broker not found (500 with specific message), returning exists: false');
+          return { exists: false, balance: 0 };
+        }
+        
+        // Otherwise it's a real error
+        throw new Error(`Server error: ${errorData.error || response.statusText}`);
+      } catch (parseError) {
+        // If we can't parse the JSON, try text
+        const errorText = await response.text();
+        debugLog('Could not parse 500 response as JSON', { errorText });
+        
+        // Check if text contains the broker not found message
+        if (errorText.includes('No virtual broker found')) {
+          debugLog('Broker not found (500 with text message), returning exists: false');
+          return { exists: false, balance: 0 };
+        }
+        
+        throw new Error(`Failed to fetch broker status: ${response.status} ${response.statusText}`);
+      }
+    }
+    
+    // Handle other non-OK responses
+    if (!response.ok) {
+      const errorText = await response.text();
+      debugLog('API error response', { status: response.status, errorText });
+      throw new Error(`Failed to fetch broker status: ${response.status} ${response.statusText}`);
+    }
+    
+    // Parse successful response
     const data = await response.json();
     debugLog('Balance data received', data);
     
@@ -59,10 +105,14 @@ const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress
         balance: data.data.balance || 0
       };
     } else {
+      debugLog('Unexpected response format, assuming broker does not exist', data);
       return { exists: false, balance: 0 };
     }
-  } catch (error) {
-    debugLog('Error fetching broker status', error);
+  } catch (error: any) {
+    debugLog('Error fetching broker status', { 
+      message: error.message,
+      stack: error.stack 
+    });
     throw error;
   }
 });
@@ -70,28 +120,47 @@ const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress
 const createBroker = fromPromise(async ({ input }: { input: { walletAddress: string } }) => {
   const API_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
   
-  debugLog('Creating broker', { walletAddress: input.walletAddress });
-  
-  const response = await fetch(`${API_URL}/create-broker`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ walletAddress: input.walletAddress })
+  debugLog('Creating broker', { 
+    walletAddress: input.walletAddress,
+    API_URL,
+    endpoint: `${API_URL}/create-broker`
   });
   
-  debugLog('Create broker response', { status: response.status, ok: response.ok });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    debugLog('Create broker error', errorText);
-    throw new Error(`Failed to create broker: ${response.statusText}`);
+  try {
+    const response = await fetch(`${API_URL}/create-broker`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress: input.walletAddress })
+    });
+    
+    debugLog('Create broker response', { 
+      status: response.status, 
+      ok: response.ok,
+      statusText: response.statusText
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      debugLog('Create broker error response', { 
+        status: response.status,
+        errorText 
+      });
+      throw new Error(`Failed to create broker: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    debugLog('Broker created successfully', data);
+    
+    return {
+      balance: data.data?.balance || 0
+    };
+  } catch (error: any) {
+    debugLog('Error creating broker', {
+      message: error.message,
+      stack: error.stack
+    });
+    throw error;
   }
-  
-  const data = await response.json();
-  debugLog('Broker created', data);
-  
-  return {
-    balance: data.data?.balance || 0
-  };
 });
 
 const fundBroker = fromPromise(async ({ input }: { input: { walletAddress: string; amount: number } }) => {
@@ -174,7 +243,13 @@ export const brokerMachine = setup({
         if (event.type === 'xstate.error.actor.fetchBrokerStatus' ||
             event.type === 'xstate.error.actor.createBroker' ||
             event.type === 'xstate.error.actor.fundBroker') {
-          return event.error?.message || 'Unknown error occurred';
+          const errorMsg = event.error?.message || 'Unknown error occurred';
+          debugLog('Setting error', { 
+            eventType: event.type,
+            error: errorMsg,
+            fullError: event.error 
+          });
+          return errorMsg;
         }
         return null;
       },
@@ -231,12 +306,29 @@ export const brokerMachine = setup({
             actions: 'setBalanceFromResponse'
           },
           {
-            target: 'creating'
+            target: 'not_initialized'
           }
         ],
         onError: {
           target: 'error',
           actions: 'setError'
+        }
+      }
+    },
+    
+    not_initialized: {
+      entry: [
+        assign({ status: 'not_initialized' as const }),
+        () => debugLog('Entered not_initialized state - broker does not exist')
+      ],
+      on: {
+        CREATE: {
+          target: 'creating',
+          actions: () => debugLog('CREATE event received, transitioning to creating state')
+        },
+        REFRESH: {
+          target: 'checking',
+          guard: 'hasWalletAddress'
         }
       }
     },

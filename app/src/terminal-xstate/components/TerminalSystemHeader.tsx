@@ -31,6 +31,13 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
   const { address } = useAccount();
   const [showFundModal, setShowFundModal] = useState(false);
   
+  // Debug helper - defined first
+  const debugLog = (message: string, data?: any) => {
+    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+      console.log(`[TerminalSystemHeader] ${message}`, data || '');
+    }
+  };
+  
   // Use props if provided
   const brokerRef = propBrokerRef;
   const modelRef = propModelRef;
@@ -42,6 +49,14 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
   // Extract broker info
   const brokerStatus = brokerState?.context?.status || 'uninitialized';
   const brokerBalance = brokerState?.context?.balance || 0;
+  
+  // Debug broker state
+  debugLog('Broker state', { 
+    status: brokerStatus, 
+    balance: brokerBalance,
+    error: brokerState?.context?.errorMessage,
+    walletAddress: brokerState?.context?.walletAddress
+  });
   
   // Extract model info - use prop first, then actor state
   const currentModel = selectedModel || modelState?.context?.selectedModel || 'auto';
@@ -73,6 +88,13 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
         // Open fund modal for initialized broker
         setShowFundModal(true);
       }
+    }
+  };
+  
+  const handleCreateBroker = () => {
+    if (brokerRef && address) {
+      debugLog('Creating broker for wallet', { address });
+      brokerRef.send({ type: 'CREATE' });
     }
   };
   return (
@@ -140,51 +162,86 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
             <span style={{ color: theme.text.secondary }}>Broker:</span>
             {brokerStatus === 'uninitialized' ? (
               <>
-                <span style={{ color: '#EF4444' }}>not_initialized</span>
-                <span style={{ color: '#FCD34D', fontSize: '0.8rem' }}>
-                  (initialize broker!)
-                </span>
+                <span style={{ color: theme.text.secondary }}>checking...</span>
+              </>
+            ) : brokerStatus === 'not_initialized' ? (
+              <>
+                <span style={{ color: '#FCD34D' }}>not_initialized</span>
               </>
             ) : brokerStatus === 'loading' ? (
               <span style={{ color: theme.text.secondary }}>loading...</span>
             ) : brokerStatus === 'error' ? (
               <span style={{ color: '#EF4444' }}>error</span>
-            ) : (
+            ) : brokerStatus === 'initialized' ? (
               <>
                 <span style={{ color: '#10B981' }}>initialized</span>
                 <span style={{ color: theme.text.primary }}>
                   ({brokerBalance.toFixed(2)} 0G)
                 </span>
               </>
-            )}
+            ) : null}
             
-            {/* Fund Button */}
+            {/* Action Buttons */}
             {address && (
-              <button
-                onClick={handleFundBroker}
-                style={{
-                  marginLeft: '0.5rem',
-                  padding: '2px 6px',
-                  background: 'transparent',
-                  border: `1px solid ${theme.accent.primary}`,
-                  borderRadius: '3px',
-                  color: theme.accent.primary,
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  fontFamily: 'monospace'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = theme.accent.primary;
-                  e.currentTarget.style.color = '#000';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = theme.accent.primary;
-                }}
-              >
-                [+]
-              </button>
+              <>
+                {/* Create Button - only when not_initialized */}
+                {brokerStatus === 'not_initialized' && (
+                  <button
+                    onClick={handleCreateBroker}
+                    style={{
+                      marginLeft: '0.5rem',
+                      padding: '2px 8px',
+                      background: 'transparent',
+                      border: `1px solid ${theme.accent.primary}`,
+                      borderRadius: '3px',
+                      color: theme.accent.primary,
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = theme.accent.primary;
+                      e.currentTarget.style.color = '#000';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = theme.accent.primary;
+                    }}
+                  >
+                    [create]
+                  </button>
+                )}
+                
+                {/* Fund Button - only when initialized */}
+                {brokerStatus === 'initialized' && (
+                  <button
+                    onClick={handleFundBroker}
+                    style={{
+                      marginLeft: '0.5rem',
+                      padding: '2px 6px',
+                      background: 'transparent',
+                      border: `1px solid ${theme.accent.primary}`,
+                      borderRadius: '3px',
+                      color: theme.accent.primary,
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = theme.accent.primary;
+                      e.currentTarget.style.color = '#000';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = theme.accent.primary;
+                    }}
+                  >
+                    [+]
+                  </button>
+                )}
+              </>
             )}
           </div>
         </>
