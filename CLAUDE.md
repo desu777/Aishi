@@ -218,3 +218,11 @@ In the final part of reasoning in `<thinking>` block, add a `<critique>` section
 - "Did I miss any gaps in analysis?"
 - "Are there simpler alternatives?"
 - "Is my proposal fully solid?"
+
+## **Zasada #7: Profesjonalna Dokumentacja w Plikach (Styl JSDoc)**
+    * Masz **absolutny zakaz pisania oczywistych, jednolinijkowych komentarzy**, które opisują, *co* robi kod (np. `// Konfiguracja`, `// Pętla po użytkownikach`). Komentarze wewnątrz kodu są dozwolone tylko do wyjaśniania, *dlaczego* jakaś skomplikowana logika została użyta.
+    * Zamiast tego, **każdy plik musi zaczynać się od bloku komentarzy w stylu JSDoc** (`/** ... */`), który jasno wyjaśnia jego cel i zawartość.
+    * Nagłówek pliku powinien zawierać co najmniej:
+        * `@fileoverview` Krótkie, jednozdaniowe podsumowanie, do czego służy plik.
+        * `@description` Bardziej szczegółowy opis funkcjonalności zawartych w pliku.
+    * Dla kluczowych funkcji w pliku, dodawaj komentarze JSDoc opisujące ich działanie, parametry (`@param`) i zwracane wartości (`@returns`).

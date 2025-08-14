@@ -83,9 +83,16 @@ export class AIService {
       // Clear old services
       this.discoveredServices.clear();
       
-      // Filter and map inference services
+      // Debug logging: show all discovered service types
+      if (process.env.TEST_ENV === 'true') {
+        const serviceTypes = services.map(s => s.serviceType).filter((v, i, a) => a.indexOf(v) === i);
+        console.log(`🔍 Discovered service types: ${serviceTypes.join(', ')}`);
+        console.log(`📊 Total services found: ${services.length}`);
+      }
+      
+      // Filter AI models - support both 'inference' (legacy) and 'chatbot' (new API)
       for (const service of services) {
-        if (service.serviceType === 'inference' && service.model) {
+        if ((service.serviceType === 'inference' || service.serviceType === 'chatbot') && service.model) {
           const discoveredService: DiscoveredService = {
             provider: service.provider,
             model: service.model,

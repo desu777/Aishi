@@ -67,18 +67,31 @@ export class MasterWalletService {
 
     try {
       const ledgerInfo = await this.broker.ledger.getLedger();
-      const balance = parseFloat(ethers.formatEther(ledgerInfo.ledgerInfo[0]));
+      const balance = parseFloat(ethers.formatEther(ledgerInfo.totalBalance));
       
       if (process.env.TEST_ENV === 'true') {
         console.log(`💰 Master Wallet ledger balance: ${balance.toFixed(8)} OG`);
       }
     } catch (error: any) {
-      if (error.message.includes('LedgerNotExists')) {
+      if (error.message.includes('Account does not exist')) {
+        // NOWA WERSJA 0.3.1: Account nie istnieje
         if (process.env.TEST_ENV === 'true') {
-          console.log('🆕 Creating Master Wallet ledger...');
+          console.log('🆕 Creating Master Wallet account (v0.3.1)...');
         }
         
-        const initialAmount = parseFloat(process.env.AUTO_REFILL_AMOUNT || '0.5');
+        const initialAmount = parseFloat(process.env.MASTER_WALLET_INITIAL_DEPOSIT || '0.15');
+        await this.broker.ledger.addLedger(initialAmount);
+        
+        if (process.env.TEST_ENV === 'true') {
+          console.log(`✅ Master Wallet account created with ${initialAmount} OG`);
+        }
+      } else if (error.message.includes('LedgerNotExists')) {
+        // STARA WERSJA: Backward compatibility
+        if (process.env.TEST_ENV === 'true') {
+          console.log('🆕 Creating Master Wallet ledger (v0.2.x)...');
+        }
+        
+        const initialAmount = parseFloat(process.env.MASTER_WALLET_INITIAL_DEPOSIT || '0.15');
         await this.broker.ledger.addLedger(initialAmount);
         
         if (process.env.TEST_ENV === 'true') {
@@ -97,9 +110,9 @@ export class MasterWalletService {
 
     try {
       const ledgerInfo = await this.broker.ledger.getLedger();
-      const balance = parseFloat(ethers.formatEther(ledgerInfo.ledgerInfo[0]));
-      const threshold = parseFloat(process.env.AUTO_REFILL_THRESHOLD || '0.1');
-      const refillAmount = parseFloat(process.env.AUTO_REFILL_AMOUNT || '0.5');
+      const balance = parseFloat(ethers.formatEther(ledgerInfo.totalBalance));
+      const threshold = parseFloat(process.env.AUTO_REFILL_THRESHOLD || '0.05');
+      const refillAmount = parseFloat(process.env.AUTO_REFILL_AMOUNT || '0.1');
 
       if (balance < threshold) {
         if (process.env.TEST_ENV === 'true') {
@@ -113,7 +126,7 @@ export class MasterWalletService {
           await this.broker.ledger.depositFund(refillAmount);
           
           const newLedgerInfo = await this.broker.ledger.getLedger();
-          const newBalance = parseFloat(ethers.formatEther(newLedgerInfo.ledgerInfo[0]));
+          const newBalance = parseFloat(ethers.formatEther(newLedgerInfo.totalBalance));
           
           if (process.env.TEST_ENV === 'true') {
             console.log(`✅ Master Wallet refilled. New balance: ${newBalance.toFixed(8)} OG`);
@@ -139,7 +152,7 @@ export class MasterWalletService {
     }
 
     const ledgerInfo = await this.broker.ledger.getLedger();
-    return parseFloat(ethers.formatEther(ledgerInfo.ledgerInfo[0]));
+    return parseFloat(ethers.formatEther(ledgerInfo.totalBalance));
   }
 
   getBroker(): ZGComputeNetworkBroker {

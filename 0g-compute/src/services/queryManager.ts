@@ -17,7 +17,7 @@ interface QueryTask {
 export class QueryManagerService {
   private queue: Array<QueryTask> = [];
   private processing = false;
-  private maxConcurrent = parseInt(process.env.MAX_CONCURRENT_QUERIES || '5');
+  private maxConcurrent = parseInt(process.env.MAX_CONCURRENT_QUERIES || '10');
   private activeQueries = 0;
 
   constructor() {
