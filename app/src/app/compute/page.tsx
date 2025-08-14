@@ -164,7 +164,7 @@ export default function ComputeTest() {
     }
   };
 
-  // Analyze dream
+  // Process AI query with appropriate endpoint routing
   const analyzeDream = async () => {
     if (!address || !dreamQuery.trim()) return;
     
@@ -173,21 +173,43 @@ export default function ComputeTest() {
     setResult(null);
     
     try {
-      const data = await apiCall('/0g-compute', {
+      // Route request based on model type
+      const isGeminiModel = selectedModel.startsWith('gemini-');
+      const endpoint = isGeminiModel ? '/gemini' : '/0g-compute';
+      
+      // Prepare request payload based on model type
+      const requestBody = isGeminiModel ? {
+        prompt: dreamQuery,
+        modelId: selectedModel
+      } : {
+        walletAddress: address,
+        query: dreamQuery,
+        modelId: selectedModel
+      };
+      
+      const data = await apiCall(endpoint, {
         method: 'POST',
-        body: JSON.stringify({
-          walletAddress: address,
-          query: dreamQuery,
-          modelId: selectedModel
-        })
+        body: JSON.stringify(requestBody)
       });
       
       if (data.success) {
-        setResult(data.data);
-        debugLog('Dream analyzed', data.data);
+        // Normalize response structure between different endpoints
+        const normalizedResult = isGeminiModel ? {
+          response: data.data,
+          model: data.metadata?.model || selectedModel,
+          cost: 0,
+          responseTime: data.metadata?.responseTime,
+          isValid: true,
+          chatId: data.metadata?.requestId
+        } : data.data;
         
-        // Auto-refresh balance after AI query
-        setTimeout(() => checkBalance(), 1000);
+        setResult(normalizedResult);
+        debugLog('Dream analyzed', normalizedResult);
+        
+        // Auto-refresh balance after AI query (only for 0G models)
+        if (!isGeminiModel) {
+          setTimeout(() => checkBalance(), 1000);
+        }
       } else {
         setError(data.error || 'Failed to analyze dream');
       }

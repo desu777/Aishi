@@ -52,8 +52,8 @@ const GEMINI_PROFILES: Record<string, GeminiProfile> = {
   'fast': {
     name: 'Speed Mode',
     thinking: { 
-      enabled: false, 
-      budget: 0 // Thinking disabled for maximum speed
+      enabled: true,  // Thinking enabled but with 0 budget (disabled in practice)
+      budget: 0       // Budget 0 = thinking disabled for maximum speed
     },
     temperature: 0.9,
     description: 'Optimized for quick responses and high throughput'
@@ -157,23 +157,19 @@ export class GeminiService {
         candidateCount: 1,
       };
 
-      // Apply thinking configuration based on profile
-      if (activeProfile.thinking.enabled) {
-        generationConfig.thinkingConfig = {
-          thinkingBudget: activeProfile.thinking.budget,
-          includeThoughts: activeProfile.thinking.includeThoughts || false
-        };
+      // Apply thinking configuration - all profiles now have thinking enabled with different budgets
+      generationConfig.thinkingConfig = {
+        thinkingBudget: activeProfile.thinking.budget,
+        includeThoughts: activeProfile.thinking.includeThoughts || false
+      };
 
-        if (process.env.TEST_ENV === 'true') {
-          const budgetDisplay = activeProfile.thinking.budget === -1 
-            ? 'AUTO' 
-            : activeProfile.thinking.budget.toString();
-          console.log(`🧠 Profile '${profileId}': Thinking enabled (budget: ${budgetDisplay})`);
-        }
-      } else {
-        if (process.env.TEST_ENV === 'true') {
-          console.log(`⚡ Profile '${profileId}': Thinking disabled (speed optimized)`);
-        }
+      if (process.env.TEST_ENV === 'true') {
+        const budgetDisplay = activeProfile.thinking.budget === -1 
+          ? 'AUTO' 
+          : activeProfile.thinking.budget === 0
+          ? '0 (disabled in practice)'
+          : activeProfile.thinking.budget.toString();
+        console.log(`🧠 Profile '${profileId}': Thinking enabled (budget: ${budgetDisplay})`);
       }
 
       // Log request details in test mode
