@@ -80,7 +80,7 @@ export default function WalletConnection({
           <div className="shimmer-content-existing">
             <h3 style={{
               color: theme.accent.primary,
-              fontSize: theme.typography.fontSizes.lg,
+              fontSize: `clamp(${theme.typography.fontSizes.md}, 4vw, ${theme.typography.fontSizes.lg})`,
               marginBottom: theme.spacing.sm,
             }}>
               You Already Have an Agent
@@ -88,13 +88,15 @@ export default function WalletConnection({
             <p style={{
               color: theme.text.secondary,
               marginBottom: theme.spacing.md,
+              fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
             }}>
               Token ID #{existingTokenId?.toString()}
             </p>
             <button
               onClick={() => window.location.href = '/aishiOS'}
               style={{
-                padding: `${theme.spacing.sm} ${theme.spacing.xl}`,
+                padding: `clamp(12px, 2vw, ${theme.spacing.sm}) clamp(20px, 4vw, ${theme.spacing.xl})`,
+                minHeight: '48px',
                 backgroundColor: theme.accent.primary,
                 color: theme.text.white,
                 border: 'none',
@@ -102,6 +104,8 @@ export default function WalletConnection({
                 cursor: 'pointer',
                 fontWeight: theme.typography.fontWeights.bold,
                 transition: theme.effects.transitions.normal,
+                touchAction: 'manipulation',
+                fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';

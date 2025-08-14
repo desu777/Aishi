@@ -16,9 +16,6 @@ export default function AgentCounter({
 }: AgentCounterProps) {
   const { theme } = useTheme();
   
-  // Calculate percentage for progress bar
-  const percentage = (agentsMinted / maxAgents) * 100;
-  
   return (
     <div style={{
       display: 'flex',
@@ -32,38 +29,22 @@ export default function AgentCounter({
         padding: theme.spacing.xl,
       }}>
         <div style={{
-          fontSize: theme.typography.fontSizes.xxl,
+          fontSize: `clamp(${theme.typography.fontSizes.xl}, 6vw, ${theme.typography.fontSizes.xxl})`,
           fontWeight: theme.typography.fontWeights.bold,
           color: theme.accent.primary,
           fontFamily: theme.typography.fontFamilies.monospace,
           marginBottom: theme.spacing.sm,
+          lineHeight: 1,
         }}>
           {agentsRemaining}
         </div>
         
         <div style={{
-          fontSize: theme.typography.fontSizes.sm,
+          fontSize: `clamp(${theme.typography.fontSizes.xs}, 3vw, ${theme.typography.fontSizes.sm})`,
           color: theme.text.secondary,
-          marginBottom: theme.spacing.xl,
+          marginBottom: `clamp(${theme.spacing.md}, 3vw, ${theme.spacing.xl})`,
         }}>
           Agents Remaining
-        </div>
-        
-        {/* Progress Bar */}
-        <div style={{
-          width: '200px',
-          height: '8px',
-          backgroundColor: `${theme.bg.primary}88`,
-          borderRadius: theme.radius.sm,
-          overflow: 'hidden',
-          marginBottom: theme.spacing.sm,
-        }}>
-          <div style={{
-            width: `${percentage}%`,
-            height: '100%',
-            backgroundColor: theme.accent.primary,
-            transition: theme.effects.transitions.normal,
-          }} />
         </div>
         
         {/* Stats */}
@@ -76,7 +57,9 @@ export default function AgentCounter({
           color: theme.text.secondary,
         }}>
           <FiUsers />
-          <span>{agentsMinted} / {maxAgents} minted</span>
+          <span style={{
+            fontSize: `clamp(11px, 2.5vw, ${theme.typography.fontSizes.xs})`,
+          }}>{agentsMinted} / {maxAgents} minted</span>
         </div>
       </div>
     </div>

@@ -18,7 +18,7 @@ export default function AishiMintPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: `${theme.spacing.xxl} ${theme.spacing.xl}`,
+        padding: 'clamp(1rem, 5vw, 2.5rem)',
       }}>
 
         {/* Main Container with Two Sections */}
@@ -26,8 +26,8 @@ export default function AishiMintPage() {
           width: '100%',
           maxWidth: '1200px',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-          gap: theme.spacing.xxxl,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 350px), 1fr))',
+          gap: `clamp(${theme.spacing.xl}, 5vw, ${theme.spacing.xxxl})`,
           alignItems: 'center',
         }}>
           {/* Left Section - Mint Form */}
@@ -81,16 +81,17 @@ export default function AishiMintPage() {
             {/* Logo */}
             <div style={{
               position: 'relative',
-              width: '300px',
-              height: '300px',
+              width: 'clamp(150px, 30vw, 300px)',
+              height: 'clamp(150px, 30vw, 300px)',
+              margin: '0 auto',
             }}>
               <Image
                 src="/logo.png"
                 alt="Aishi Logo"
-                width={300}
-                height={300}
+                fill
                 style={{
                   filter: `drop-shadow(0 0 20px ${theme.accent.primary}66)`,
+                  objectFit: 'contain',
                 }}
               />
             </div>
@@ -117,9 +118,23 @@ export default function AishiMintPage() {
           to { opacity: 1; transform: translateY(0); }
         }
         
-        @media (max-width: 900px) {
+        @media (max-width: 768px) {
           div[style*="gridTemplateColumns"] {
             grid-template-columns: 1fr !important;
+          }
+        }
+        
+        @media (hover: hover) {
+          button:hover {
+            transform: translateY(-2px);
+          }
+        }
+        
+        /* Touch-friendly adjustments */
+        @media (pointer: coarse) {
+          button, input, a {
+            min-height: 48px;
+            touch-action: manipulation;
           }
         }
       `}</style>

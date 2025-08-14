@@ -36,6 +36,16 @@ export default function TransactionStatus({
     return (
       <>
         <style jsx>{`
+          @media (max-width: 480px) {
+            .action-buttons {
+              flex-direction: column !important;
+              width: 100%;
+            }
+            .action-buttons button {
+              width: 100%;
+            }
+          }
+          
           @keyframes shimmer {
             0% {
               background-position: -200% center;
@@ -79,7 +89,7 @@ export default function TransactionStatus({
                 justifyContent: 'center',
                 gap: theme.spacing.xs,
                 marginBottom: theme.spacing.sm,
-                fontSize: theme.typography.fontSizes.xl,
+                fontSize: `clamp(${theme.typography.fontSizes.lg}, 4vw, ${theme.typography.fontSizes.xl})`,
                 fontWeight: theme.typography.fontWeights.semibold,
                 color: theme.accent.primary,
                 fontFamily: theme.typography.fontFamilies.primary,
@@ -91,12 +101,15 @@ export default function TransactionStatus({
         
         <p style={{
           color: theme.text.secondary,
-          marginBottom: theme.spacing.xxxl,
+          marginBottom: `clamp(${theme.spacing.xl}, 5vw, ${theme.spacing.xxxl})`,
+          fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
         }}>
           {agentName} • Token ID #{mintedTokenId}
         </p>
         
-        <div style={{
+        <div 
+          className="action-buttons"
+          style={{
           display: 'flex',
           gap: theme.spacing.sm,
           justifyContent: 'center',
@@ -110,15 +123,18 @@ export default function TransactionStatus({
             borderRadius={theme.radius.lg}
             background={theme.accent.primary}
             style={{
-              padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
-              fontSize: theme.typography.fontSizes.md,
+              padding: `clamp(12px, 2vw, ${theme.spacing.sm}) clamp(16px, 3vw, ${theme.spacing.lg})`,
+              fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
               fontWeight: theme.typography.fontWeights.semibold,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: theme.spacing.xs,
               border: 'none',
               transition: theme.effects.transitions.normal,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              minHeight: '48px',
+              touchAction: 'manipulation',
             }}
             onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
@@ -134,7 +150,7 @@ export default function TransactionStatus({
           <button
             onClick={onShare}
             style={{
-              padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+              padding: `clamp(12px, 2vw, ${theme.spacing.sm}) clamp(16px, 3vw, ${theme.spacing.lg})`,
               backgroundColor: 'transparent',
               color: theme.text.primary,
               border: `1px solid ${theme.accent.primary}`,
@@ -143,8 +159,12 @@ export default function TransactionStatus({
               fontWeight: theme.typography.fontWeights.bold,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: theme.spacing.xs,
               transition: theme.effects.transitions.normal,
+              minHeight: '48px',
+              touchAction: 'manipulation',
+              fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
@@ -244,7 +264,7 @@ export default function TransactionStatus({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: theme.typography.fontSizes.lg,
+                fontSize: `clamp(${theme.typography.fontSizes.md}, 4vw, ${theme.typography.fontSizes.lg})`,
                 fontWeight: theme.typography.fontWeights.semibold,
                 color: theme.accent.primary,
               }}>
@@ -263,8 +283,9 @@ export default function TransactionStatus({
               
               <p style={{
                 color: theme.text.secondary,
-                fontSize: theme.typography.fontSizes.sm,
+                fontSize: `clamp(${theme.typography.fontSizes.xs}, 3vw, ${theme.typography.fontSizes.sm})`,
                 margin: 0,
+                padding: '0 1rem',
               }}>
                 {isWritePending 
                   ? 'Please check your wallet for confirmation' 

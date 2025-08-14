@@ -40,7 +40,7 @@ export default function MintForm({
       <div>
         {/* Motivational Slogan */}
         <p style={{
-          fontSize: theme.typography.fontSizes.md,
+          fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
           fontWeight: theme.typography.fontWeights.semibold,
           color: theme.accent.primary,
           marginBottom: theme.spacing.sm,
@@ -51,7 +51,7 @@ export default function MintForm({
         </p>
         
         <h1 style={{
-          fontSize: theme.typography.fontSizes.xl,
+          fontSize: `clamp(${theme.typography.fontSizes.lg}, 5vw, ${theme.typography.fontSizes.xl})`,
           fontWeight: theme.typography.fontWeights.bold,
           color: theme.text.primary,
           marginBottom: theme.spacing.xs,
@@ -88,16 +88,18 @@ export default function MintForm({
             placeholder="Choose a unique name..."
             style={{
               width: '100%',
-              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+              padding: `clamp(12px, 2vw, ${theme.spacing.sm}) ${theme.spacing.md}`,
               paddingRight: '60px',
+              minHeight: '48px',
               backgroundColor: `${theme.bg.primary}88`,
               border: `1px solid ${nameError ? theme.accent.error : theme.accent.primary}44`,
               borderRadius: theme.radius.md,
               color: '#000000',
-              fontSize: theme.typography.fontSizes.md,
+              fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
               outline: 'none',
               transition: theme.effects.transitions.normal,
               fontFamily: theme.typography.fontFamilies.primary,
+              touchAction: 'manipulation',
             }}
             onFocus={(e) => {
               e.currentTarget.style.borderColor = theme.accent.primary;
@@ -188,8 +190,9 @@ export default function MintForm({
         disabled={!canMint || isProcessing}
         style={{
           width: '100%',
-          padding: theme.spacing.md,
-          fontSize: theme.typography.fontSizes.md,
+          padding: `clamp(14px, 2vw, ${theme.spacing.md})`,
+          minHeight: '52px',
+          fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
           fontWeight: theme.typography.fontWeights.bold,
           color: canMint && !isProcessing ? theme.bg.primary : theme.text.secondary,
           backgroundColor: canMint && !isProcessing ? theme.accent.primary : `${theme.accent.primary}44`,
@@ -202,6 +205,7 @@ export default function MintForm({
           justifyContent: 'center',
           gap: theme.spacing.sm,
           fontFamily: theme.typography.fontFamilies.primary,
+          touchAction: 'manipulation',
         }}
         onMouseEnter={(e) => {
           if (canMint && !isProcessing) {
