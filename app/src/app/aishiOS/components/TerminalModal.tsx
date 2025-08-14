@@ -19,12 +19,12 @@ export const TerminalModal: React.FC<TerminalModalProps> = ({
   selectedModel 
 }) => {
   // The new Terminal component now handles its own modal display
-  // TODO: In future, pass selectedModel to Terminal for AI queries
   return (
     <Terminal 
       darkMode={darkMode}
       isOpen={isTerminalOpen}
       onClose={() => setIsTerminalOpen(false)}
+      selectedModel={selectedModel}
     />
   );
 };

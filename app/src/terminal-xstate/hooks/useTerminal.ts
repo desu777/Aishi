@@ -46,6 +46,8 @@ export function useTerminal() {
     send,
     context: state.context,
     isProcessing: state.matches('processing'),
-    isInitialized: state.context.isInitialized
+    isInitialized: state.context.isInitialized,
+    brokerRef: state.context.brokerRef,
+    modelRef: state.context.modelRef
   };
 }

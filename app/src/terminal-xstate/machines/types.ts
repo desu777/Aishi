@@ -26,6 +26,9 @@ export interface TerminalContext {
   commandHistory: string[];
   historyIndex: number;
   isInitialized: boolean;
+  brokerRef: any; // ActorRef from XState
+  modelRef: any; // ActorRef from XState
+  selectedModel: string | null;
 }
 
 // Events the terminal can receive
@@ -35,4 +38,6 @@ export type TerminalEvent =
   | { type: 'HISTORY.UP' }
   | { type: 'HISTORY.DOWN' }
   | { type: 'CLEAR' }
-  | { type: 'INITIALIZE' };
+  | { type: 'INITIALIZE' }
+  | { type: 'UPDATE_MODEL'; modelId: string }
+  | { type: 'INITIALIZE_BROKER'; walletAddress: string };

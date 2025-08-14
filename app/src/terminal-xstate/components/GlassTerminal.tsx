@@ -7,10 +7,12 @@ import { TerminalSystemHeader } from './TerminalSystemHeader';
 import { useTerminal } from '../hooks/useTerminal';
 import { useTerminalAgent } from '../hooks/useTerminalAgent';
 import { zIndex } from '../../styles/zIndex';
+import { useAccount } from 'wagmi';
 
 interface GlassTerminalProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedModel?: string;
 }
 
 // Premium color palette
@@ -26,9 +28,10 @@ const colors = {
   borderSubtle: 'rgba(255, 255, 255, 0.05)'
 };
 
-export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose }) => {
-  const { context, send, state } = useTerminal();
+export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, selectedModel }) => {
+  const { context, send, state, brokerRef, modelRef } = useTerminal();
   const { agentName, isLoading: agentLoading } = useTerminalAgent();
+  const { address, isConnected } = useAccount();
   const [orbState, setOrbState] = useState<'uninitialized' | 'idle' | 'processing' | 'success' | 'error'>('idle');
   
   // Map XState states to orb visual states
@@ -74,6 +77,21 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose })
   const handleClear = useCallback(() => {
     send({ type: 'CLEAR' });
   }, [send]);
+
+  // Initialize broker when wallet is connected
+  useEffect(() => {
+    if (isConnected && address && brokerRef) {
+      // Send initialize event to broker actor
+      brokerRef.send({ type: 'INITIALIZE', walletAddress: address });
+    }
+  }, [isConnected, address, brokerRef]);
+  
+  // Update model in terminal when selectedModel changes
+  useEffect(() => {
+    if (selectedModel && modelRef) {
+      modelRef.send({ type: 'SELECT_MODEL', modelId: selectedModel });
+    }
+  }, [selectedModel, modelRef]);
 
   // Handle escape key to close
   useEffect(() => {
@@ -190,6 +208,10 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose })
           <TerminalSystemHeader 
             agentName={agentName}
             isLoading={agentLoading}
+            selectedModel={selectedModel}
+            terminalState={state}
+            brokerRef={brokerRef}
+            modelRef={modelRef}
           />
 
           {/* Minimal Output */}

@@ -1,14 +1,19 @@
 import { setup, assign } from 'xstate';
 import { TerminalContext, TerminalEvent, TerminalLine } from './types';
+import { brokerMachine } from './brokerMachine';
+import { modelMachine } from './modelMachine';
 
-// Initial context
+// Initial context - extended with actor refs
 const initialContext: TerminalContext = {
   lines: [],
   welcomeLines: [],
   currentInput: '',
   commandHistory: [],
   historyIndex: -1,
-  isInitialized: false
+  isInitialized: false,
+  brokerRef: null,
+  modelRef: null,
+  selectedModel: null
 };
 
 // Terminal machine definition
@@ -16,6 +21,10 @@ export const terminalMachine = setup({
   types: {} as {
     context: TerminalContext;
     events: TerminalEvent;
+  },
+  actors: {
+    brokerActor: brokerMachine,
+    modelActor: modelMachine
   },
   actions: {
     updateInput: assign({
@@ -118,12 +127,12 @@ export const terminalMachine = setup({
         return [
           {
             type: 'success' as const,
-            content: 'XState Terminal v2.0 - MVP',
+            content: 'XState Terminal v2.0 - Actor Model Architecture',
             timestamp
           },
           {
             type: 'info' as const,
-            content: 'Terminal is running on new architecture',
+            content: 'Terminal is running with broker and model actors',
             timestamp: timestamp + 1
           },
           {
@@ -138,6 +147,20 @@ export const terminalMachine = setup({
           }
         ];
       }
+    }),
+    
+    spawnActors: assign({
+      brokerRef: ({ spawn }) => spawn('brokerActor', { id: 'broker' }),
+      modelRef: ({ spawn }) => spawn('modelActor', { id: 'model' })
+    }),
+    
+    updateSelectedModel: assign({
+      selectedModel: ({ event }) => {
+        if (event.type === 'UPDATE_MODEL') {
+          return event.modelId;
+        }
+        return null;
+      }
     })
   }
 }).createMachine({
@@ -149,7 +172,7 @@ export const terminalMachine = setup({
       on: {
         INITIALIZE: {
           target: 'idle',
-          actions: 'initialize'
+          actions: ['initialize', 'spawnActors']
         }
       }
     },
