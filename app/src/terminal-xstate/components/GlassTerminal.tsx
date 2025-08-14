@@ -3,7 +3,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { MinimalOutput } from './MinimalOutput';
 import { PremiumCommandBar } from './PremiumCommandBar';
+import { TerminalSystemHeader } from './TerminalSystemHeader';
 import { useTerminal } from '../hooks/useTerminal';
+import { useTerminalAgent } from '../hooks/useTerminalAgent';
 import { zIndex } from '../../styles/zIndex';
 
 interface GlassTerminalProps {
@@ -26,6 +28,7 @@ const colors = {
 
 export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose }) => {
   const { context, send, state } = useTerminal();
+  const { agentName, isLoading: agentLoading } = useTerminalAgent();
   const [orbState, setOrbState] = useState<'uninitialized' | 'idle' | 'processing' | 'success' | 'error'>('idle');
   
   // Map XState states to orb visual states
@@ -183,6 +186,11 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose })
             ×
           </button>
 
+          {/* Terminal Header */}
+          <TerminalSystemHeader 
+            agentName={agentName}
+            isLoading={agentLoading}
+          />
 
           {/* Minimal Output */}
           <MinimalOutput 
