@@ -44,6 +44,8 @@ export class AIService {
   private acknowledgedProviders: Set<string> = new Set();
   private discoveredServices: Map<string, DiscoveredService> = new Map();
   private lastDiscoveryTime: number = 0;
+  // ✅ Cache mapowania model name → provider address
+  private modelToProviderCache: Map<string, string> = new Map();
 
   async initialize(): Promise<void> {
     try {
@@ -106,6 +108,9 @@ export class AIService {
           };
           
           this.discoveredServices.set(service.model, discoveredService);
+          
+          // ✅ Update model → provider cache for fast lookup
+          this.modelToProviderCache.set(service.model, service.provider);
           
           // Try to acknowledge the provider
           await this.acknowledgeProvider(service.provider, service.model);
@@ -385,6 +390,35 @@ export class AIService {
     
     // Find service by model name
     return this.discoveredServices.get(modelName) || null;
+  }
+
+  /**
+   * ✅ Get provider address by model name - FAST CACHE LOOKUP
+   * @param modelName - Model name to lookup
+   * @returns Provider address or null if not found
+   */
+  async getProviderByModelName(modelName: string): Promise<string | null> {
+    // Ensure services are discovered and cache is populated
+    await this.discoverAndCacheServices();
+    
+    // Fast cache lookup
+    return this.modelToProviderCache.get(modelName) || null;
+  }
+
+  /**
+   * ✅ Get all available models from cache - FAST LOOKUP
+   * @returns Array of model names
+   */
+  getAvailableModelNames(): string[] {
+    return Array.from(this.modelToProviderCache.keys());
+  }
+
+  /**
+   * ✅ Clear model cache (useful for testing)
+   */
+  clearModelCache(): void {
+    this.modelToProviderCache.clear();
+    this.lastDiscoveryTime = 0; // Force re-discovery
   }
 
   async getServiceStatus(): Promise<{

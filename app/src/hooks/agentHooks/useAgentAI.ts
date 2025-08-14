@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useWallet } from '../useWallet';
+import { useModelDiscovery } from '../useModelDiscovery';
 import { DreamAnalysisPrompt } from './useAgentPrompt';
 
 interface AIAnalysisState {
@@ -75,6 +76,7 @@ export function useAgentAI() {
   });
 
   const { address } = useWallet();
+  const { getSelectedModel } = useModelDiscovery();
 
   // Debug logs dla development
   const debugLog = (message: string, data?: any) => {
@@ -124,10 +126,16 @@ export function useAgentAI() {
     }));
 
     try {
+      // Get selected model for AI processing
+      const selectedModel = getSelectedModel();
+      const modelId = selectedModel?.id || 'auto';
+
       debugLog('Starting dream analysis', { 
         walletAddress: address,
         promptLength: promptData.prompt.length,
-        needsEvolution: promptData.expectedFormat.needsPersonalityEvolution
+        needsEvolution: promptData.expectedFormat.needsPersonalityEvolution,
+        selectedModel: modelId,
+        modelType: selectedModel?.type
       });
 
       // Get API URL from environment
@@ -135,7 +143,7 @@ export function useAgentAI() {
       
       debugLog('API URL configured', { apiUrl });
 
-      // Send request to 0g-compute API
+      // Send request to 0g-compute API with model selection
       const response = await fetch(`${apiUrl}/0g-compute`, {
         method: 'POST',
         headers: {
@@ -143,7 +151,8 @@ export function useAgentAI() {
         },
         body: JSON.stringify({
           walletAddress: address,
-          query: promptData.prompt
+          query: promptData.prompt,
+          modelId: modelId // ✅ Dodano modelId do żądania
         })
       });
 

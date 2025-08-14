@@ -110,38 +110,23 @@ export class QueryManagerService {
       // Log selected model
       console.log(`🎯 Selected Model: ${task.model} (Query ID: ${task.id})`);
 
-      // Resolve model to provider address using dynamic discovery
+      // ✅ Resolve model to provider address using cache (eliminuje hardcoded fallback)
       let providerAddress: string;
       let modelName: string;
 
-      // First, try to get service by model name (for backward compatibility and new models)
-      const serviceByModel = await aiService.getServiceByModelName(task.model);
-      if (serviceByModel) {
-        providerAddress = serviceByModel.provider;
-        modelName = serviceByModel.model;
-        
-        if (process.env.TEST_ENV === 'true') {
-          console.log(`✅ Model resolved by name: ${task.model} → ${providerAddress}`);
-        }
-      } else {
-        // Fallback to hardcoded providers for known models
-        const FALLBACK_PROVIDERS: Record<string, string> = {
-          "llama-3.3-70b-instruct": "0xf07240Efa67755B5311bc75784a061eDB47165Dd",
-          "deepseek-r1-70b": "0x3feE5a4dd5FDb8a32dDA97Bed899830605dBD9D3",
-        };
-
-        providerAddress = FALLBACK_PROVIDERS[task.model as keyof typeof FALLBACK_PROVIDERS];
+      // Use fast cache lookup for provider address
+      const cachedProviderAddress = await aiService.getProviderByModelName(task.model);
+      if (cachedProviderAddress) {
+        providerAddress = cachedProviderAddress;
         modelName = task.model;
         
-        if (!providerAddress) {
-          const availableServices = await aiService.discoverServices();
-          const availableModels = availableServices.map(s => s.model).concat(Object.keys(FALLBACK_PROVIDERS));
-          throw new Error(`Model not available: ${task.model}. Available models: ${availableModels.join(', ')}`);
-        }
-
         if (process.env.TEST_ENV === 'true') {
-          console.log(`⚠️  Model resolved by fallback: ${task.model} → ${providerAddress}`);
+          console.log(`✅ Model resolved from cache: ${task.model} → ${providerAddress}`);
         }
+      } else {
+        // If not in cache, get all available models for error message
+        const availableModels = aiService.getAvailableModelNames();
+        throw new Error(`Model not available: ${task.model}. Available models: ${availableModels.length > 0 ? availableModels.join(', ') : 'No models discovered. Try refreshing model discovery.'}`);
       }
 
       // Estimate cost for pre-check

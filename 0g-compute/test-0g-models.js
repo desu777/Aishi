@@ -95,7 +95,7 @@ async function getMasterWalletBalance() {
 async function createVirtualBroker() {
   try {
     console.log(chalk.yellow('🏦 Creating virtual broker for testing...'));
-    const response = await axios.post(`${API_URL}/brokers/create`, {
+    const response = await axios.post(`${API_URL}/create-broker`, { // ✅ Poprawiony endpoint
       walletAddress: MASTER_WALLET
     });
     
@@ -115,7 +115,7 @@ async function createVirtualBroker() {
 async function fundVirtualBroker(amount = 0.1) {
   try {
     console.log(chalk.yellow(`💰 Funding virtual broker with ${amount} OG...`));
-    const response = await axios.post(`${API_URL}/brokers/fund`, {
+    const response = await axios.post(`${API_URL}/fund`, { // ✅ Poprawiony endpoint
       walletAddress: MASTER_WALLET,
       amount: amount
     });
@@ -140,11 +140,16 @@ async function test0GModel(modelId, query, queryType = 'custom') {
     console.log(chalk.cyan(`🤖 Testing model: ${chalk.bold(modelId)}`));
     console.log(chalk.gray(`Query (${queryType}): "${query.substring(0, 60)}..."`));
     
-    const response = await axios.post(`${API_URL}/0g-compute`, {
-      userWalletAddress: MASTER_WALLET,
+    // ✅ Dodaj debug informacje o żądaniu  
+    const requestBody = {
+      walletAddress: MASTER_WALLET, // ✅ Zmiana z userWalletAddress na walletAddress
       query: query,
       modelId: modelId
-    });
+    };
+    
+    console.log(chalk.gray(`📤 Request: ${JSON.stringify(requestBody, null, 2)}`));
+    
+    const response = await axios.post(`${API_URL}/0g-compute`, requestBody);
     
     const endTime = Date.now();
     const responseTime = endTime - startTime;
@@ -171,11 +176,21 @@ async function test0GModel(modelId, query, queryType = 'custom') {
       };
     } else {
       console.log(chalk.red('❌ Request failed:'), response.data.error);
+      console.log(chalk.gray(`📥 Full Response: ${JSON.stringify(response.data, null, 2)}`)); // ✅ Debug full response
       return { success: false, error: response.data.error };
     }
   } catch (error) {
     const responseTime = Date.now() - startTime;
     console.log(chalk.red('❌ Error:'), error.message);
+    
+    // ✅ Lepsze error handling z więcej informacji
+    if (error.response) {
+      console.log(chalk.gray(`📥 Error Response Status: ${error.response.status}`));
+      console.log(chalk.gray(`📥 Error Response Data: ${JSON.stringify(error.response.data, null, 2)}`));
+    } else if (error.request) {
+      console.log(chalk.gray(`📡 No response received from server`));
+    }
+    
     return { success: false, error: error.message, responseTime };
   }
 }
@@ -221,13 +236,13 @@ async function compareAllModels(models) {
   const results = [];
   
   for (const model of models) {
-    console.log(chalk.yellow(`\n━━━ Testing ${model.model.toUpperCase()} ━━━`));
-    const result = await test0GModel(model.model, TEST_QUERIES.complex, 'complex');
+    console.log(chalk.yellow(`\n━━━ Testing ${model.name.toUpperCase()} ━━━`));
+    const result = await test0GModel(model.id, TEST_QUERIES.complex, 'complex'); // ✅ Używamy model.id
     
     if (result.success) {
       results.push({
         ...result,
-        modelName: model.model,
+        modelName: model.name, // ✅ Używamy model.name dla display
         provider: model.provider
       });
     }
@@ -329,7 +344,10 @@ async function selectModel(models) {
     type: 'list',
     name: 'selectedModel',
     message: 'Select a model:',
-    choices: models.map(model => ({ name: model.model, value: model.model }))
+    choices: models.map(model => ({ 
+      name: `${model.name} (${model.provider})`, // ✅ Używamy model.name zamiast model.model
+      value: model.id // ✅ Używamy model.id zamiast model.model
+    }))
   }]);
   
   return selectedModel;
@@ -364,6 +382,39 @@ async function main() {
   }
   
   console.log(chalk.green('✅ Backend is healthy and responding\n'));
+  
+  // ✅ Auto-setup Virtual Broker for testing
+  console.log(chalk.yellow('🏦 Setting up Virtual Broker...'));
+  try {
+    const brokerCreated = await createVirtualBroker();
+    if (brokerCreated) {
+      console.log(chalk.yellow('💰 Funding broker with 0.01 OG...'));
+      const funded = await fundVirtualBroker(0.01);
+      if (funded) {
+        console.log(chalk.green('✅ Virtual Broker setup completed successfully'));
+        
+        // Verify balance
+        try {
+          const response = await axios.get(`${API_URL}/balance/${MASTER_WALLET}`);
+          if (response.data.success) {
+            const balance = response.data.data.balance;
+            console.log(chalk.green(`💰 Current balance: ${balance.toFixed(8)} OG`));
+          }
+        } catch (error) {
+          console.log(chalk.yellow('⚠️  Could not verify balance, but proceeding...'));
+        }
+      } else {
+        console.log(chalk.red('❌ Failed to fund broker - some tests may fail'));
+      }
+    } else {
+      console.log(chalk.red('❌ Failed to create broker - tests will likely fail'));
+    }
+  } catch (error) {
+    console.log(chalk.red('❌ Broker setup failed:', error.message));
+    console.log(chalk.yellow('⚠️  Continuing anyway - tests may fail without proper broker setup'));
+  }
+  
+  console.log(''); // spacing
   
   let models = [];
   
