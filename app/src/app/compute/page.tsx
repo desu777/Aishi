@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
+import { useModelDiscovery } from '../../hooks/useModelDiscovery';
+import ModelSelector from '../../components/ModelSelector';
 import { Brain, DollarSign, Zap, CheckCircle, AlertCircle, Loader2, Send } from 'lucide-react';
 
 export default function ComputeTest() {
@@ -18,12 +20,19 @@ export default function ComputeTest() {
     isSendingTransaction 
   } = useWallet();
   
+  const {
+    models,
+    selectedModel,
+    setSelectedModel,
+    isLoading: modelsLoading,
+    error: modelsError
+  } = useModelDiscovery();
+  
   // State for backend testing
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [dreamQuery, setDreamQuery] = useState('');
-  const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-instruct');
   const [brokerInfo, setBrokerInfo] = useState<any>(null);
   
   // State for funding
@@ -169,7 +178,7 @@ export default function ComputeTest() {
         body: JSON.stringify({
           walletAddress: address,
           query: dreamQuery,
-          model: selectedModel
+          modelId: selectedModel
         })
       });
       
@@ -230,7 +239,7 @@ export default function ComputeTest() {
             WebkitTextFillColor: 'transparent',
             marginBottom: '10px'
           }}>
-            🧠 Compute Testing
+            Compute Testing
           </h1>
           <p style={{
             fontSize: '1.1rem',
@@ -398,7 +407,7 @@ export default function ComputeTest() {
                   color: theme.text.secondary,
                   lineHeight: '1.4'
                 }}>
-                  💡 Send 0G to Master Wallet to fund your Virtual Broker. Transaction will be automatically detected and balance will increase.
+                  Send 0G to Master Wallet to fund your Virtual Broker. Transaction will be automatically detected and balance will increase.
                 </div>
                 
                 {lastTxHash && (
@@ -557,21 +566,21 @@ export default function ComputeTest() {
                   }}>
                     Model:
                   </label>
-                  <select
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    style={{
-                      width: '200px',
-                      padding: '8px',
-                      borderRadius: '6px',
-                      border: `1px solid ${theme.border}`,
-                      backgroundColor: theme.bg.panel,
-                      color: theme.text.primary
-                    }}
-                  >
-                    <option value="llama-3.3-70b-instruct">Llama 3.3 70B</option>
-                    <option value="deepseek-r1-70b">DeepSeek R1 70B</option>
-                  </select>
+                  <ModelSelector
+                    models={models}
+                    selectedModel={selectedModel}
+                    onModelChange={setSelectedModel}
+                    isLoading={modelsLoading}
+                  />
+                  {modelsError && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: theme.accent.error || '#ff4444',
+                      marginTop: '4px'
+                    }}>
+                      {modelsError}
+                    </div>
+                  )}
                 </div>
                 
                 <div>
