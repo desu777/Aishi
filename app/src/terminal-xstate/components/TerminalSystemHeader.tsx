@@ -24,7 +24,7 @@ interface TerminalSystemHeaderProps {
 }
 
 
-export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({ 
+const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({ 
   agentName, 
   isLoading,
   selectedModel,
@@ -58,13 +58,17 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
   const brokerStatus = brokerState?.context?.status || 'uninitialized';
   const brokerBalance = brokerState?.context?.balance || 0;
   
-  // Debug broker state
-  debugLog('Broker state', { 
-    status: brokerStatus, 
-    balance: brokerBalance,
-    error: brokerState?.context?.errorMessage,
-    walletAddress: brokerState?.context?.walletAddress
-  });
+  // Debug broker state only when it changes
+  React.useEffect(() => {
+    if (brokerStatus !== 'uninitialized') {
+      debugLog('Broker state changed', { 
+        status: brokerStatus, 
+        balance: brokerBalance,
+        error: brokerState?.context?.errorMessage,
+        walletAddress: brokerState?.context?.walletAddress
+      });
+    }
+  }, [brokerStatus, brokerBalance, brokerState?.context?.errorMessage]);
   
   // Extract model info - use prop first, then actor state
   const currentModel = selectedModel || modelState?.context?.selectedModel || 'auto';
@@ -454,3 +458,18 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
     </div>
   );
 };
+
+// Memoize component to prevent unnecessary re-renders when props haven't changed
+export const TerminalSystemHeader = React.memo(TerminalSystemHeaderComponent, (prevProps, nextProps) => {
+  // Custom comparison - only re-render if these specific props change
+  return (
+    prevProps.agentName === nextProps.agentName &&
+    prevProps.isLoading === nextProps.isLoading &&
+    prevProps.selectedModel === nextProps.selectedModel &&
+    prevProps.brokerRef === nextProps.brokerRef &&
+    prevProps.modelRef === nextProps.modelRef &&
+    prevProps.isMobile === nextProps.isMobile &&
+    prevProps.isTablet === nextProps.isTablet
+    // Note: terminalState intentionally excluded to prevent re-renders on input changes
+  );
+});
