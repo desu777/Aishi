@@ -53,10 +53,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'uninitialized':
         return {
           colors: {
-            bg: "oklch(0.10 0 0)",                // Very dark gray
-            c1: "oklch(0.30 0.01 292.72)",        // Dark gray with slight violet
-            c2: "oklch(0.25 0.01 292.72)",        // Darker gray
-            c3: "oklch(0.20 0.01 292.72)",        // Almost black
+            bg: "rgba(26, 26, 26, 0.5)",          // Very dark gray with transparency
+            c1: "rgba(77, 77, 89, 0.4)",          // Dark gray with violet tint, low opacity
+            c2: "rgba(64, 64, 77, 0.35)",         // Darker gray, more transparent
+            c3: "rgba(51, 51, 64, 0.3)",          // Almost black, very transparent
           },
           animationDuration: 40,  // Very slow
         };
@@ -65,10 +65,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'syncing':
         return {
           colors: {
-            bg: "oklch(0.10 0.01 292.72)",        // Dark background
-            c1: "oklch(0.45 0.2189 292.72)",      // Dark violet
-            c2: "oklch(0.50 0.2189 292.72)",      // Medium violet
-            c3: "oklch(0.40 0.2189 292.72)",      // Very dark violet
+            bg: "rgba(26, 26, 26, 0.7)",          // Dark background with medium transparency
+            c1: "rgba(109, 62, 216, 0.8)",        // Dark violet with some transparency
+            c2: "rgba(124, 77, 226, 0.85)",       // Medium violet, slightly more opaque
+            c3: "rgba(79, 42, 186, 0.75)",        // Deep violet, more transparent
           },
           animationDuration: 15,  // Medium speed
         };
@@ -76,10 +76,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'online':
         return {
           colors: {
-            bg: "oklch(0.10 0.01 292.72)",        // Dark background with violet tint
-            c1: "oklch(0.6056 0.2189 292.72)",    // Violet #8B5CF6 (exact)
-            c2: "oklch(0.6294 0.2189 292.72)",    // Lightest violet
-            c3: "oklch(0.55 0.2189 292.72)",      // Slightly darker violet
+            bg: "rgba(26, 26, 26, 0.9)",          // Dark background, mostly opaque
+            c1: "rgba(139, 92, 246, 1)",          // Main violet #8B5CF6 (full opacity)
+            c2: "rgba(168, 130, 255, 1)",         // Light violet - harmonious shade
+            c3: "rgba(109, 62, 216, 0.95)",       // Dark violet, slight transparency
           },
           animationDuration: 20,  // Normal speed
         };
@@ -87,10 +87,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'thinking':
         return {
           colors: {
-            bg: "oklch(0.10 0.01 292.72)",        // Dark background
-            c1: "oklch(0.6294 0.2189 292.72)",    // Brightest violet
-            c2: "oklch(0.6056 0.2189 292.72)",    // Normal violet
-            c3: "oklch(0.58 0.2189 292.72)",      // Between normal and bright
+            bg: "rgba(26, 26, 26, 0.85)",         // Dark background, slightly transparent
+            c1: "rgba(168, 130, 255, 1)",         // Light violet (full opacity)
+            c2: "rgba(139, 92, 246, 0.95)",       // Main violet, slight transparency
+            c3: "rgba(124, 77, 226, 0.9)",        // Medium-dark violet, more transparent
           },
           animationDuration: 8,   // Fast
         };
@@ -98,10 +98,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'responding':
         return {
           colors: {
-            bg: "oklch(0.10 0.01 292.72)",        // Dark background
-            c1: "oklch(0.95 0 0)",                 // White accent instead of cyan
-            c2: "oklch(0.6056 0.2189 292.72)",    // Violet #8B5CF6
-            c3: "oklch(0.90 0 0)",                 // Light white instead of cyan-blue
+            bg: "rgba(26, 26, 26, 0.85)",         // Dark background, slightly transparent
+            c1: "rgba(242, 242, 242, 0.95)",      // White accent with slight transparency
+            c2: "rgba(139, 92, 246, 1)",          // Violet #8B5CF6 (full opacity)
+            c3: "rgba(230, 230, 230, 0.9)",       // Light white with transparency
           },
           animationDuration: 10,  // Fast
         };
@@ -109,10 +109,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'error':
         return {
           colors: {
-            bg: "oklch(0.15 0.01 0)",        // Dark with no hue
-            c1: "oklch(0.60 0.25 25)",       // Red
-            c2: "oklch(0.55 0.20 15)",       // Dark red
-            c3: "oklch(0.50 0.15 20)",       // Muted red
+            bg: "rgba(38, 26, 26, 0.8)",          // Dark with red tint, transparent
+            c1: "rgba(255, 107, 107, 0.9)",       // Bright red with transparency
+            c2: "rgba(220, 83, 83, 0.85)",        // Dark red, more transparent
+            c3: "rgba(204, 68, 68, 0.8)",         // Muted red, even more transparent
           },
           animationDuration: 25,  // Slow
         };
@@ -120,10 +120,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'no_agent':
         return {
           colors: {
-            bg: "oklch(0.12 0 0)",                // Very dark
-            c1: "oklch(0.40 0.2189 292.72)",      // Very dark violet
-            c2: "oklch(0.35 0.2189 292.72)",      // Even darker violet
-            c3: "oklch(0.30 0.2189 292.72)",      // Almost black violet
+            bg: "rgba(31, 31, 31, 0.6)",          // Very dark, more transparent
+            c1: "rgba(78, 42, 142, 0.5)",         // Very dark violet, half transparent
+            c2: "rgba(69, 37, 125, 0.45)",        // Even darker violet, more transparent
+            c3: "rgba(59, 32, 108, 0.4)",         // Almost black violet, very transparent
           },
           animationDuration: 35,  // Very slow
         };
@@ -131,10 +131,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       default:
         return {
           colors: {
-            bg: "oklch(0.10 0.01 292.72)",
-            c1: "oklch(0.6056 0.2189 292.72)",    // Normal violet
-            c2: "oklch(0.6294 0.2189 292.72)",    // Brightest violet
-            c3: "oklch(0.55 0.2189 292.72)",      // Slightly darker violet
+            bg: "rgba(26, 26, 26, 0.9)",          // Dark background, mostly opaque
+            c1: "rgba(139, 92, 246, 1)",          // Main violet (full opacity)
+            c2: "rgba(168, 130, 255, 1)",         // Light violet - harmonious shade
+            c3: "rgba(109, 62, 216, 0.95)",       // Dark violet, slight transparency
           },
           animationDuration: 20,
         };
@@ -148,7 +148,9 @@ const AIOrb: React.FC<AIorbProps> = ({
         return (
           <>
             <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#6B7280'}}>status:</span>
+            </div>
+            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
               <span style={{color: '#F97316'}}>initializing</span>
             </div>
             <div style={{fontSize: '14px'}}>Starting up</div>
@@ -158,7 +160,9 @@ const AIOrb: React.FC<AIorbProps> = ({
         return (
           <>
             <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#6B7280'}}>status:</span>
+            </div>
+            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
               <span style={{color: '#FCD34D'}}>connecting</span>
             </div>
             <div style={{fontSize: '14px'}}>Connecting{dots}</div>
@@ -168,7 +172,9 @@ const AIOrb: React.FC<AIorbProps> = ({
         return (
           <>
             <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#6B7280'}}>status:</span>
+            </div>
+            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
               <span style={{color: '#FCD34D'}}>syncing</span>
             </div>
             <div style={{fontSize: '14px'}}>Syncing{dots}</div>
@@ -178,13 +184,15 @@ const AIOrb: React.FC<AIorbProps> = ({
         return (
           <>
             <div style={{fontSize: '10px', opacity: 0.7, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#6B7280'}}>status:</span>
+            </div>
+            <div style={{fontSize: '12px', opacity: 0.8, marginBottom: '2px'}}>
               <span style={{color: '#10B981'}}>connected</span>
             </div>
             <div style={{fontSize: '14px', fontWeight: 600}}>
               <span style={{color: '#FFFFFF'}}>{agentName || 'Agent'}</span>
               {intelligenceLevel > 0 && (
-                <span style={{color: '#FFFFFF'}}> | lvl {intelligenceLevel}</span>
+                <span style={{color: '#FFFFFF'}}> ~ iq:{intelligenceLevel}</span>
               )}
             </div>
           </>
@@ -193,7 +201,9 @@ const AIOrb: React.FC<AIorbProps> = ({
         return (
           <>
             <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#6B7280'}}>status:</span>
+            </div>
+            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
               <span style={{color: '#A855F7'}}>processing</span>
             </div>
             <div style={{fontSize: '14px'}}>Thinking...</div>
@@ -203,8 +213,10 @@ const AIOrb: React.FC<AIorbProps> = ({
         return (
           <>
             <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>$status: </span>
-              <span style={{color: '#00D2E9'}}>generating</span>
+              <span style={{color: '#6B7280'}}>status:</span>
+            </div>
+            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
+              <span style={{color: '#A855F7'}}>generating</span>
             </div>
             <div style={{fontSize: '14px'}}>Responding...</div>
           </>
@@ -213,7 +225,9 @@ const AIOrb: React.FC<AIorbProps> = ({
         return (
           <>
             <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#6B7280'}}>status:</span>
+            </div>
+            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
               <span style={{color: '#EF4444'}}>failed</span>
             </div>
             <div style={{fontSize: '14px', color: '#FCA5A5'}}>
@@ -225,7 +239,9 @@ const AIOrb: React.FC<AIorbProps> = ({
         return (
           <>
             <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#6B7280'}}>status:</span>
+            </div>
+            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
               <span style={{color: '#6B7280'}}>empty</span>
             </div>
             <div style={{fontSize: '13px', color: '#9CA3AF'}}>No agent minted</div>
@@ -235,7 +251,9 @@ const AIOrb: React.FC<AIorbProps> = ({
         return (
           <>
             <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#6B7280'}}>status:</span>
+            </div>
+            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
               <span style={{color: '#6B7280'}}>standby</span>
             </div>
             <div style={{fontSize: '14px'}}>Waiting...</div>

@@ -26,12 +26,12 @@ const SiriOrb: React.FC<SiriOrbProps> = ({
   colors,
   animationDuration = 20,
 }) => {
-  // Aishi default colors in OKLCH for better gradients
+  // Aishi default colors in RGBA - pure violet harmony
   const defaultColors = {
-    bg: "oklch(0.10 0.01 292.72)",        // Dark background with violet tint
-    c1: "oklch(0.6056 0.2189 292.72)",    // Violet #8B5CF6 (exact)
-    c2: "oklch(0.6294 0.2189 292.72)",    // Brightest violet
-    c3: "oklch(0.55 0.2189 292.72)",      // Darker violet
+    bg: "rgba(26, 26, 26, 0.9)",          // Dark background with slight transparency
+    c1: "rgba(139, 92, 246, 1)",          // Main violet #8B5CF6 (full opacity)
+    c2: "rgba(168, 130, 255, 1)",         // Light violet - harmonious shade
+    c3: "rgba(109, 62, 216, 0.95)",       // Dark violet with slight transparency
   };
 
   const finalColors = { ...defaultColors, ...colors };
