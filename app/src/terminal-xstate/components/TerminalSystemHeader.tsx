@@ -79,14 +79,29 @@ const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
                             (m: any) => m.id === currentModel
                           )?.needsBroker || false);
   
-  // Format display names
+  // Format display names - returns JSX for 0G models to include logo
   const formatModelName = (modelId: string) => {
     if (modelId === 'auto') return 'Auto Select';
     if (modelId === 'gemini-2.5-flash') return 'Gemini 2.5 Flash';
     if (modelId.startsWith('phala/')) {
-      // Extract model name after "phala/" and add 0G indicator
+      // Extract model name after "phala/" and add 0G logo
       const modelName = modelId.replace('phala/', '');
-      return `${modelName} (0G)`;
+      return (
+        <span style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.3rem' : '0.4rem' }}>
+          <span>{modelName}</span>
+          <img 
+            src="/og.png" 
+            alt="0G Network"
+            style={{ 
+              height: isMobile ? '14px' : '16px',
+              width: 'auto',
+              objectFit: 'contain',
+              opacity: 0.8,
+              flexShrink: 0
+            }} 
+          />
+        </span>
+      );
     }
     return modelId;
   };
