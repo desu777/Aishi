@@ -3,7 +3,7 @@
  * @description Single line status display showing agent connection and intelligence level
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface TerminalStatusLineProps {
   status: 'uninitialized' | 'connecting' | 'syncing' | 'online' | 'thinking' | 'responding' | 'error' | 'no_agent';
@@ -20,6 +20,23 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
   isMobile = false,
   isTablet = false
 }) => {
+  const [dots, setDots] = useState('');
+  
+  // Animate dots for thinking state
+  useEffect(() => {
+    if (status === 'thinking') {
+      const interval = setInterval(() => {
+        setDots(prev => {
+          if (prev === '.') return '..';
+          if (prev === '..') return '...';
+          return '.';
+        });
+      }, 500);
+      return () => clearInterval(interval);
+    } else {
+      setDots('');
+    }
+  }, [status]);
   const getStatusText = () => {
     switch (status) {
       case 'online': return 'connected';
@@ -56,35 +73,66 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
       letterSpacing: '0.5px',
       fontWeight: '400',
     }}>
-      <span style={{ color: '#9CA3AF' }}>status: </span>
-      <span style={{ 
-        color: getStatusColor(),
-        fontWeight: '500',
-      }}>
-        {getStatusText()}
-      </span>
-      
-      {status !== 'no_agent' && agentName && (
+      {status === 'thinking' && agentName ? (
+        // Special display for thinking state
         <>
-          <span style={{ color: '#9CA3AF' }}> with </span>
+          <span style={{ color: '#9CA3AF' }}>status: </span>
           <span style={{ 
             color: '#FFFFFF',
             fontWeight: '500',
           }}>
             {agentName}
           </span>
-        </>
-      )}
-
-      {status !== 'no_agent' && intelligenceLevel > 0 && (
-        <>
-          <span style={{ color: '#9CA3AF' }}> | intelligence: </span>
           <span style={{ 
             color: '#A855F7',
             fontWeight: '500',
           }}>
-            {intelligenceLevel}
+            {' is thinking'}
           </span>
+          <span style={{ 
+            color: '#A855F7',
+            fontWeight: '500',
+            minWidth: '18px',
+            display: 'inline-block',
+            textAlign: 'left'
+          }}>
+            {dots}
+          </span>
+        </>
+      ) : (
+        // Normal status display
+        <>
+          <span style={{ color: '#9CA3AF' }}>status: </span>
+          <span style={{ 
+            color: getStatusColor(),
+            fontWeight: '500',
+          }}>
+            {getStatusText()}
+          </span>
+          
+          {status !== 'no_agent' && agentName && (
+            <>
+              <span style={{ color: '#9CA3AF' }}> with </span>
+              <span style={{ 
+                color: '#FFFFFF',
+                fontWeight: '500',
+              }}>
+                {agentName}
+              </span>
+            </>
+          )}
+
+          {status !== 'no_agent' && intelligenceLevel > 0 && (
+            <>
+              <span style={{ color: '#9CA3AF' }}> | intelligence: </span>
+              <span style={{ 
+                color: '#A855F7',
+                fontWeight: '500',
+              }}>
+                {intelligenceLevel}
+              </span>
+            </>
+          )}
         </>
       )}
 

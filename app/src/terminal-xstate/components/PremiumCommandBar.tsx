@@ -8,6 +8,8 @@ interface PremiumCommandBarProps {
   onHistoryDown: () => void;
   onClear: () => void;
   disabled?: boolean;
+  placeholder?: string;
+  promptSymbol?: string;
 }
 
 const colors = {
@@ -25,7 +27,9 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   onHistoryUp,
   onHistoryDown,
   onClear,
-  disabled = false
+  disabled = false,
+  placeholder = 'Enter command',
+  promptSymbol = '>'
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -121,7 +125,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
       }}
     >
       <div style={commandInputStyle}>
-        <span style={commandPromptStyle}>{'>'}</span>
+        <span style={commandPromptStyle}>{promptSymbol}</span>
         <input
           ref={inputRef}
           type="text"
@@ -129,7 +133,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          placeholder={disabled ? 'Processing...' : 'Enter command'}
+          placeholder={disabled ? 'Processing...' : placeholder}
           style={commandFieldStyle}
           autoComplete="off"
           autoCorrect="off"

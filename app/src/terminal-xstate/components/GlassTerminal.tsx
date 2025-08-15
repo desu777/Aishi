@@ -33,7 +33,7 @@ const colors = {
 };
 
 export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, selectedModel }) => {
-  const { context, send, state, brokerRef, modelRef, agentRef } = useTerminal();
+  const { context, send, state, brokerRef, modelRef, agentRef, isDreamActive, dreamStatus } = useTerminal();
   const { agentName, isLoading: agentLoading } = useTerminalAgent();
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
@@ -51,10 +51,17 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
   const getOrbStatus = () => {
     if (!isConnected) return 'uninitialized';
     if (agentStatus === 'syncing') return 'syncing';
-    if (agentStatus === 'connected' && syncedAgentName) return 'online';
+    if (agentStatus === 'connected' && syncedAgentName) {
+      // Check if dream is processing
+      if (isDreamActive && dreamStatus && dreamStatus.includes('thinking')) {
+        return 'thinking';
+      }
+      return 'online';
+    }
     if (agentStatus === 'no_agent') return 'no_agent';
     if (agentStatus === 'error') return 'error';
     if (state.matches('processing')) return 'thinking';
+    if (state.matches('dreamWorkflow')) return 'thinking';
     if (agentLoading) return 'connecting';
     return 'uninitialized';
   };
@@ -261,6 +268,16 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             onHistoryDown={handleHistoryDown}
             onClear={handleClear}
             disabled={state.matches('processing')}
+            placeholder={
+              isDreamActive && dreamStatus && dreamStatus.includes('thinking')
+                ? dreamStatus
+                : isDreamActive && dreamStatus === 'Type y/n to confirm'
+                  ? 'Type y or n'
+                : isDreamActive 
+                  ? 'Describe your dream here'
+                  : 'Enter command'
+            }
+            promptSymbol={isDreamActive ? '~' : '>'}
           />
         </div>
       </div>

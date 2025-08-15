@@ -42,8 +42,8 @@ const AIOrb: React.FC<AIorbProps> = ({
 
   // Determine orb size based on device (further reduced sizes for more space)
   const getOrbSize = () => {
-    if (isMobile) return "100px";
-    if (isTablet) return "130px";
+    if (isMobile) return "80px";
+    if (isTablet) return "110px";
     return "150px";
   };
 

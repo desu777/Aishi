@@ -6,6 +6,9 @@ System analizy snów składa się z dwóch głównych kroków: wprowadzania snu 
 
 ---
 
+
+agent_name+timestamp+dreams_daily.json i tak dreams_monthly i memory_core_yearly.json 
+
 ## 🎯 STEP 1: Dream Input
 
 ### Implementacja

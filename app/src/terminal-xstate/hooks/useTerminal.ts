@@ -46,9 +46,12 @@ export function useTerminal() {
     send,
     context: state.context,
     isProcessing: state.matches('processing'),
+    isDreamActive: state.context.isDreamActive,
+    dreamStatus: state.context.dreamStatus,
     isInitialized: state.context.isInitialized,
     brokerRef: state.context.brokerRef,
     modelRef: state.context.modelRef,
-    agentRef: state.context.agentRef
+    agentRef: state.context.agentRef,
+    dreamRef: state.context.dreamRef
   };
 }
