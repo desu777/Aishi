@@ -28,10 +28,10 @@ const SiriOrb: React.FC<SiriOrbProps> = ({
 }) => {
   // Aishi default colors in OKLCH for better gradients
   const defaultColors = {
-    bg: "oklch(15% 0.01 264)",     // Dark background (#0A0A0A-ish)
-    c1: "oklch(70% 0.25 303)",     // Violet (#8B5CF6)
-    c2: "oklch(75% 0.22 293)",     // Purple (#A855F7)
-    c3: "oklch(80% 0.18 283)",     // Light Purple (#C084FC)
+    bg: "oklch(0.10 0.01 292.72)",        // Dark background with violet tint
+    c1: "oklch(0.6056 0.2189 292.72)",    // Violet #8B5CF6 (exact)
+    c2: "oklch(0.6294 0.2189 292.72)",    // Brightest violet
+    c3: "oklch(0.55 0.2189 292.72)",      // Darker violet
   };
 
   const finalColors = { ...defaultColors, ...colors };

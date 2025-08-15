@@ -9,6 +9,7 @@ import SiriOrb from './SiriOrb';
 interface AIorbProps {
   status: 'uninitialized' | 'connecting' | 'syncing' | 'online' | 'thinking' | 'responding' | 'error' | 'no_agent';
   agentName?: string | null;
+  intelligenceLevel?: number;
   syncProgress?: string;
   isMobile?: boolean;
   isTablet?: boolean;
@@ -16,7 +17,8 @@ interface AIorbProps {
 
 const AIOrb: React.FC<AIorbProps> = ({ 
   status, 
-  agentName, 
+  agentName,
+  intelligenceLevel = 0,
   syncProgress,
   isMobile = false,
   isTablet = false
@@ -38,11 +40,11 @@ const AIOrb: React.FC<AIorbProps> = ({
     }
   }, [status]);
 
-  // Determine orb size based on device
+  // Determine orb size based on device (reduced sizes)
   const getOrbSize = () => {
-    if (isMobile) return "140px";
-    if (isTablet) return "180px";
-    return "220px";
+    if (isMobile) return "120px";
+    if (isTablet) return "150px";
+    return "180px";
   };
 
   // Get colors and animation speed based on status
@@ -51,10 +53,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'uninitialized':
         return {
           colors: {
-            bg: "oklch(10% 0 0)",           // Very dark gray
-            c1: "oklch(30% 0.02 264)",      // Dark gray
-            c2: "oklch(25% 0.01 264)",      // Darker gray
-            c3: "oklch(20% 0.01 264)",      // Almost black
+            bg: "oklch(0.10 0 0)",                // Very dark gray
+            c1: "oklch(0.30 0.01 292.72)",        // Dark gray with slight violet
+            c2: "oklch(0.25 0.01 292.72)",        // Darker gray
+            c3: "oklch(0.20 0.01 292.72)",        // Almost black
           },
           animationDuration: 40,  // Very slow
         };
@@ -63,10 +65,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'syncing':
         return {
           colors: {
-            bg: "oklch(15% 0.01 264)",      // Dark background
-            c1: "oklch(65% 0.20 303)",      // Muted violet
-            c2: "oklch(70% 0.18 293)",      // Muted purple
-            c3: "oklch(60% 0.15 283)",      // Muted light purple
+            bg: "oklch(0.10 0.01 292.72)",        // Dark background
+            c1: "oklch(0.45 0.2189 292.72)",      // Dark violet
+            c2: "oklch(0.50 0.2189 292.72)",      // Medium violet
+            c3: "oklch(0.40 0.2189 292.72)",      // Very dark violet
           },
           animationDuration: 15,  // Medium speed
         };
@@ -74,10 +76,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'online':
         return {
           colors: {
-            bg: "oklch(15% 0.01 264)",      // Dark background
-            c1: "oklch(70% 0.25 303)",      // Violet (#8B5CF6)
-            c2: "oklch(75% 0.22 293)",      // Purple (#A855F7)
-            c3: "oklch(80% 0.18 283)",      // Light Purple (#C084FC)
+            bg: "oklch(0.10 0.01 292.72)",        // Dark background with violet tint
+            c1: "oklch(0.6056 0.2189 292.72)",    // Violet #8B5CF6 (exact)
+            c2: "oklch(0.6294 0.2189 292.72)",    // Lightest violet
+            c3: "oklch(0.55 0.2189 292.72)",      // Slightly darker violet
           },
           animationDuration: 20,  // Normal speed
         };
@@ -85,10 +87,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'thinking':
         return {
           colors: {
-            bg: "oklch(15% 0.01 264)",      // Dark background
-            c1: "oklch(80% 0.28 293)",      // Bright purple
-            c2: "oklch(85% 0.25 283)",      // Bright light purple
-            c3: "oklch(75% 0.30 303)",      // Bright violet
+            bg: "oklch(0.10 0.01 292.72)",        // Dark background
+            c1: "oklch(0.6294 0.2189 292.72)",    // Brightest violet
+            c2: "oklch(0.6056 0.2189 292.72)",    // Normal violet
+            c3: "oklch(0.58 0.2189 292.72)",      // Between normal and bright
           },
           animationDuration: 8,   // Fast
         };
@@ -96,10 +98,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'responding':
         return {
           colors: {
-            bg: "oklch(15% 0.01 264)",      // Dark background
-            c1: "oklch(75% 0.20 195)",      // Cyan tint
-            c2: "oklch(70% 0.25 303)",      // Violet
-            c3: "oklch(85% 0.15 195)",      // Light cyan
+            bg: "oklch(0.10 0.01 292.72)",        // Dark background
+            c1: "oklch(0.95 0 0)",                 // White accent instead of cyan
+            c2: "oklch(0.6056 0.2189 292.72)",    // Violet #8B5CF6
+            c3: "oklch(0.90 0 0)",                 // Light white instead of cyan-blue
           },
           animationDuration: 10,  // Fast
         };
@@ -107,10 +109,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'error':
         return {
           colors: {
-            bg: "oklch(15% 0.01 0)",        // Dark with no hue
-            c1: "oklch(60% 0.25 25)",       // Red
-            c2: "oklch(55% 0.20 15)",       // Dark red
-            c3: "oklch(50% 0.15 20)",       // Muted red
+            bg: "oklch(0.15 0.01 0)",        // Dark with no hue
+            c1: "oklch(0.60 0.25 25)",       // Red
+            c2: "oklch(0.55 0.20 15)",       // Dark red
+            c3: "oklch(0.50 0.15 20)",       // Muted red
           },
           animationDuration: 25,  // Slow
         };
@@ -118,10 +120,10 @@ const AIOrb: React.FC<AIorbProps> = ({
       case 'no_agent':
         return {
           colors: {
-            bg: "oklch(12% 0 0)",           // Very dark
-            c1: "oklch(40% 0.05 264)",      // Gray with slight blue
-            c2: "oklch(35% 0.03 264)",      // Darker gray
-            c3: "oklch(30% 0.02 264)",      // Almost black
+            bg: "oklch(0.12 0 0)",                // Very dark
+            c1: "oklch(0.40 0.2189 292.72)",      // Very dark violet
+            c2: "oklch(0.35 0.2189 292.72)",      // Even darker violet
+            c3: "oklch(0.30 0.2189 292.72)",      // Almost black violet
           },
           animationDuration: 35,  // Very slow
         };
@@ -129,56 +131,119 @@ const AIOrb: React.FC<AIorbProps> = ({
       default:
         return {
           colors: {
-            bg: "oklch(15% 0.01 264)",
-            c1: "oklch(70% 0.25 303)",
-            c2: "oklch(75% 0.22 293)",
-            c3: "oklch(80% 0.18 283)",
+            bg: "oklch(0.10 0.01 292.72)",
+            c1: "oklch(0.6056 0.2189 292.72)",    // Normal violet
+            c2: "oklch(0.6294 0.2189 292.72)",    // Brightest violet
+            c3: "oklch(0.55 0.2189 292.72)",      // Slightly darker violet
           },
           animationDuration: 20,
         };
     }
   };
 
-  // Status text content
-  const getStatusText = () => {
+  // Status text content - returns JSX for formatted display
+  const getStatusContent = () => {
     switch (status) {
       case 'uninitialized':
-        return 'Initializing';
+        return (
+          <>
+            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
+              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#F97316'}}>initializing</span>
+            </div>
+            <div style={{fontSize: '14px'}}>Starting up</div>
+          </>
+        );
       case 'connecting':
-        return `Connecting${dots}`;
+        return (
+          <>
+            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
+              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#FCD34D'}}>connecting</span>
+            </div>
+            <div style={{fontSize: '14px'}}>Connecting{dots}</div>
+          </>
+        );
       case 'syncing':
-        return `Syncing${dots}`;
+        return (
+          <>
+            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
+              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#FCD34D'}}>syncing</span>
+            </div>
+            <div style={{fontSize: '14px'}}>Syncing{dots}</div>
+          </>
+        );
       case 'online':
-        return agentName ? `${agentName} is online` : 'Agent online';
+        return (
+          <>
+            <div style={{fontSize: '10px', opacity: 0.7, marginBottom: '2px'}}>
+              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#10B981'}}>connected</span>
+            </div>
+            <div style={{fontSize: '14px', fontWeight: 600}}>
+              <span style={{color: '#FFFFFF'}}>{agentName || 'Agent'}</span>
+              {intelligenceLevel > 0 && (
+                <span style={{color: '#FFFFFF'}}> | lvl {intelligenceLevel}</span>
+              )}
+            </div>
+          </>
+        );
       case 'thinking':
-        return 'Thinking';
+        return (
+          <>
+            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
+              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#A855F7'}}>processing</span>
+            </div>
+            <div style={{fontSize: '14px'}}>Thinking...</div>
+          </>
+        );
       case 'responding':
-        return 'Responding';
+        return (
+          <>
+            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
+              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#00D2E9'}}>generating</span>
+            </div>
+            <div style={{fontSize: '14px'}}>Responding...</div>
+          </>
+        );
       case 'error':
-        return syncProgress || 'Connection failed';
+        return (
+          <>
+            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
+              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#EF4444'}}>failed</span>
+            </div>
+            <div style={{fontSize: '14px', color: '#FCA5A5'}}>
+              {syncProgress || 'Connection error'}
+            </div>
+          </>
+        );
       case 'no_agent':
-        return 'No agent';
+        return (
+          <>
+            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
+              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#6B7280'}}>empty</span>
+            </div>
+            <div style={{fontSize: '13px', color: '#9CA3AF'}}>No agent minted</div>
+          </>
+        );
       default:
-        return 'Standby';
+        return (
+          <>
+            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
+              <span style={{color: '#6B7280'}}>$status: </span>
+              <span style={{color: '#6B7280'}}>standby</span>
+            </div>
+            <div style={{fontSize: '14px'}}>Waiting...</div>
+          </>
+        );
     }
   };
 
-  // Get text color based on status
-  const getTextColor = () => {
-    switch (status) {
-      case 'uninitialized':
-      case 'no_agent':
-        return '#6B7280';  // Gray
-      case 'error':
-        return '#FCA5A5';  // Light red
-      case 'online':
-      case 'thinking':
-      case 'responding':
-        return '#FFFFFF';  // White
-      default:
-        return '#E6E6E6';  // Light gray
-    }
-  };
 
   const orbConfig = getOrbConfig();
 
@@ -226,19 +291,14 @@ const AIOrb: React.FC<AIorbProps> = ({
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          color: getTextColor(),
-          fontSize: isMobile ? '13px' : isTablet ? '15px' : '17px',
-          fontWeight: 500,
           textAlign: 'center',
-          padding: '0 1rem',
           zIndex: 10,
           fontFamily: 'Inter, -apple-system, system-ui, sans-serif',
-          letterSpacing: '0.05em',
-          textTransform: status === 'no_agent' ? 'uppercase' : 'none',
-          textShadow: `0 0 20px rgba(0, 0, 0, 0.8)`,
+          textShadow: `0 0 20px rgba(0, 0, 0, 0.9)`,
           pointerEvents: 'none',
+          color: '#FFFFFF',
         }}>
-          {getStatusText()}
+          {getStatusContent()}
         </div>
       </div>
 

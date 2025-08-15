@@ -44,6 +44,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
   const agentStatus = agentState?.context?.status || 'uninitialized';
   const syncedAgentName = agentState?.context?.agentName || null;
   const syncProgress = agentState?.context?.syncProgress || undefined;
+  const intelligenceLevel = agentState?.context?.intelligenceLevel || 0;
   
   // Map agent status to orb status
   const getOrbStatus = () => {
@@ -226,6 +227,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
           <AIOrb
             status={getOrbStatus()}
             agentName={syncedAgentName}
+            intelligenceLevel={intelligenceLevel}
             syncProgress={syncProgress}
             isMobile={isMobile}
             isTablet={isTablet}
