@@ -40,11 +40,11 @@ const AIOrb: React.FC<AIorbProps> = ({
     }
   }, [status]);
 
-  // Determine orb size based on device (reduced sizes)
+  // Determine orb size based on device (further reduced sizes for more space)
   const getOrbSize = () => {
-    if (isMobile) return "120px";
-    if (isTablet) return "150px";
-    return "180px";
+    if (isMobile) return "100px";
+    if (isTablet) return "130px";
+    return "150px";
   };
 
   // Get colors and animation speed based on status
@@ -141,126 +141,7 @@ const AIOrb: React.FC<AIorbProps> = ({
     }
   };
 
-  // Status text content - returns JSX for formatted display
-  const getStatusContent = () => {
-    switch (status) {
-      case 'uninitialized':
-        return (
-          <>
-            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>status:</span>
-            </div>
-            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
-              <span style={{color: '#F97316'}}>initializing</span>
-            </div>
-            <div style={{fontSize: '14px'}}>Starting up</div>
-          </>
-        );
-      case 'connecting':
-        return (
-          <>
-            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>status:</span>
-            </div>
-            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
-              <span style={{color: '#FCD34D'}}>connecting</span>
-            </div>
-            <div style={{fontSize: '14px'}}>Connecting{dots}</div>
-          </>
-        );
-      case 'syncing':
-        return (
-          <>
-            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>status:</span>
-            </div>
-            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
-              <span style={{color: '#FCD34D'}}>syncing</span>
-            </div>
-            <div style={{fontSize: '14px'}}>Syncing{dots}</div>
-          </>
-        );
-      case 'online':
-        return (
-          <>
-            <div style={{fontSize: '10px', opacity: 0.7, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>status:</span>
-            </div>
-            <div style={{fontSize: '12px', opacity: 0.8, marginBottom: '2px'}}>
-              <span style={{color: '#10B981'}}>connected</span>
-            </div>
-            <div style={{fontSize: '14px', fontWeight: 600}}>
-              <span style={{color: '#FFFFFF'}}>{agentName || 'Agent'}</span>
-              {intelligenceLevel > 0 && (
-                <span style={{color: '#FFFFFF'}}> ~ iq:{intelligenceLevel}</span>
-              )}
-            </div>
-          </>
-        );
-      case 'thinking':
-        return (
-          <>
-            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>status:</span>
-            </div>
-            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
-              <span style={{color: '#A855F7'}}>processing</span>
-            </div>
-            <div style={{fontSize: '14px'}}>Thinking...</div>
-          </>
-        );
-      case 'responding':
-        return (
-          <>
-            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>status:</span>
-            </div>
-            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
-              <span style={{color: '#A855F7'}}>generating</span>
-            </div>
-            <div style={{fontSize: '14px'}}>Responding...</div>
-          </>
-        );
-      case 'error':
-        return (
-          <>
-            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>status:</span>
-            </div>
-            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
-              <span style={{color: '#EF4444'}}>failed</span>
-            </div>
-            <div style={{fontSize: '14px', color: '#FCA5A5'}}>
-              {syncProgress || 'Connection error'}
-            </div>
-          </>
-        );
-      case 'no_agent':
-        return (
-          <>
-            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>status:</span>
-            </div>
-            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>empty</span>
-            </div>
-            <div style={{fontSize: '13px', color: '#9CA3AF'}}>No agent minted</div>
-          </>
-        );
-      default:
-        return (
-          <>
-            <div style={{fontSize: '10px', opacity: 0.6, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>status:</span>
-            </div>
-            <div style={{fontSize: '12px', opacity: 0.7, marginBottom: '2px'}}>
-              <span style={{color: '#6B7280'}}>standby</span>
-            </div>
-            <div style={{fontSize: '14px'}}>Waiting...</div>
-          </>
-        );
-    }
-  };
+
 
 
   const orbConfig = getOrbConfig();
@@ -271,19 +152,19 @@ const AIOrb: React.FC<AIorbProps> = ({
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem 0',
+      padding: '1.5rem 0',
       position: 'relative',
-      minHeight: parseInt(getOrbSize()) + 120,
     }}>
       {/* Welcome message */}
       <div style={{
-        marginBottom: '2rem',
+        marginBottom: '1rem',
         textAlign: 'center',
         color: '#9999A5',
         fontSize: isMobile ? '14px' : '16px',
-        fontFamily: 'Inter, -apple-system, system-ui, sans-serif',
+        fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         letterSpacing: '0.02em',
         opacity: 0.8,
+        lineHeight: '1.4',
       }}>
         Welcome to aishiOS terminal. Type 'help' for available commands.
       </div>
@@ -303,35 +184,10 @@ const AIOrb: React.FC<AIorbProps> = ({
           className="drop-shadow-2xl"
         />
 
-        {/* Status text overlay */}
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          textAlign: 'center',
-          zIndex: 10,
-          fontFamily: 'Inter, -apple-system, system-ui, sans-serif',
-          textShadow: `0 0 20px rgba(0, 0, 0, 0.9)`,
-          pointerEvents: 'none',
-          color: '#FFFFFF',
-        }}>
-          {getStatusContent()}
-        </div>
+
       </div>
 
-      {/* Sub-status for no agent */}
-      {status === 'no_agent' && (
-        <div style={{
-          marginTop: '1.5rem',
-          color: '#9999A5',
-          fontSize: isMobile ? '12px' : '14px',
-          fontFamily: 'Inter, -apple-system, system-ui, sans-serif',
-          opacity: 0.7,
-        }}>
-          Type 'mint' to create your first agent
-        </div>
-      )}
+
 
       {/* Additional glow effect for active states */}
       {(status === 'thinking' || status === 'responding') && (

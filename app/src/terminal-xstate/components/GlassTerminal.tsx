@@ -5,6 +5,7 @@ import { MinimalOutput } from './MinimalOutput';
 import { PremiumCommandBar } from './PremiumCommandBar';
 import { TerminalSystemHeader } from './TerminalSystemHeader';
 import AIOrb from './AIOrb';
+import TerminalStatusLine from './TerminalStatusLine';
 import { useTerminal } from '../hooks/useTerminal';
 import { useTerminalAgent } from '../hooks/useTerminalAgent';
 import { zIndex } from '../../styles/zIndex';
@@ -231,6 +232,14 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             syncProgress={syncProgress}
             isMobile={isMobile}
             isTablet={isTablet}
+          />
+
+          {/* Terminal Status Line */}
+          <TerminalStatusLine
+            status={getOrbStatus()}
+            agentName={syncedAgentName}
+            intelligenceLevel={intelligenceLevel}
+            isMobile={isMobile}
           />
 
           {/* Minimal Output - Terminal Lines Only */}
