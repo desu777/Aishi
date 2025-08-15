@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Cpu, Cloud, Check, AlertCircle, Info } from 'lucide-react';
+import { ChevronDown, Cpu, Cloud, Check, AlertCircle, Info, X } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { breakpoints, touchTargets } from '../utils/responsive';
 
 export interface Model {
   id: string;
@@ -31,7 +32,18 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 }) => {
   const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < breakpoints.sm);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -121,19 +133,42 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       </button>
 
       {isOpen && !isLoading && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 8px)',
-          left: 0,
-          minWidth: '320px',
-          backgroundColor: theme.bg.panel,
-          border: `1px solid ${theme.border}`,
-          borderRadius: '12px',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-          overflow: 'hidden',
-          zIndex: 1000,
-          animation: 'slideDown 0.2s ease'
-        }}>
+        <>
+          {/* Mobile Overlay */}
+          {isMobile && (
+            <div 
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                zIndex: 999,
+                animation: 'fadeIn 0.2s ease'
+              }}
+              onClick={() => setIsOpen(false)}
+            />
+          )}
+          
+          <div style={{
+            position: isMobile ? 'fixed' : 'absolute',
+            top: isMobile ? '50%' : 'calc(100% + 8px)',
+            left: isMobile ? '50%' : 0,
+            transform: isMobile ? 'translate(-50%, -50%)' : 'none',
+            width: isMobile ? 'calc(100vw - 32px)' : 'auto',
+            minWidth: isMobile ? 'auto' : '380px',
+            maxWidth: isMobile ? '400px' : '480px',
+            backgroundColor: theme.bg.panel,
+            border: `1px solid ${theme.border}`,
+            borderRadius: theme.radius.lg,
+            boxShadow: isMobile 
+              ? '0 20px 60px rgba(0,0,0,0.3)' 
+              : '0 10px 40px rgba(0,0,0,0.15)',
+            overflow: 'hidden',
+            zIndex: 1000,
+            animation: isMobile ? 'scaleIn 0.3s ease' : 'slideDown 0.2s ease'
+          }}>
           {/* Auto-select option */}
           <div style={{ padding: '8px' }}>
             <div
@@ -278,19 +313,39 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           {/* Info footer */}
           <div style={{
             borderTop: `1px solid ${theme.border}`,
-            padding: '8px 12px',
+            padding: isMobile ? '12px 16px' : '8px 12px',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '6px',
             backgroundColor: theme.bg.card,
             opacity: 0.8
           }}>
-            <Info size={12} color={theme.text.secondary} />
-            <span style={{ fontSize: '11px', color: theme.text.secondary }}>
-              Models refresh every 5 minutes
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Info size={12} color={theme.text.secondary} />
+              <span style={{ fontSize: '11px', color: theme.text.secondary }}>
+                Models refresh every 5 minutes
+              </span>
+            </div>
+            {isMobile && (
+              <button
+                onClick={() => setIsOpen(false)}
+                style={{
+                  padding: '4px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <X size={16} color={theme.text.secondary} />
+              </button>
+            )}
           </div>
         </div>
+        </>
       )}
 
       <style jsx>{`
@@ -302,6 +357,22 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
           }
         }
       `}</style>
@@ -317,6 +388,16 @@ const ModelOption: React.FC<{
   theme: any;
 }> = ({ model, isSelected, onSelect, theme }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < breakpoints.sm);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <div
@@ -324,56 +405,90 @@ const ModelOption: React.FC<{
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        display: 'flex',
+        display: 'grid',
+        gridTemplateColumns: '20px 1fr auto',
+        gap: '12px',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '10px 12px',
-        borderRadius: '6px',
+        padding: isMobile ? '14px 16px' : '12px 16px',
+        minHeight: isMobile ? `${touchTargets.comfortable}px` : 'auto',
+        borderRadius: theme.radius.md,
         cursor: 'pointer',
         backgroundColor: isSelected ? theme.bg.card : (isHovered ? theme.bg.card : 'transparent'),
-        transition: 'all 0.15s'
+        transition: theme.effects.transitions.fast,
+        transform: isHovered && !isMobile ? 'scale(1.02)' : 'scale(1)'
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+      {/* Icon Column - Fixed Width */}
+      <div style={{ 
+        width: '20px', 
+        height: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
         {model.type === 'decentralized' ? (
-          <Cpu size={14} color={theme.accent.primary} />
+          <Cpu size={16} color={theme.accent.primary} />
         ) : (
-          <Cloud size={14} color={theme.accent.primary} />
+          <Cloud size={16} color={theme.accent.primary} />
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <span style={{ 
-            fontSize: '13px', 
-            fontWeight: isSelected ? '600' : '400',
-            color: theme.text.primary
-          }}>
-            {model.name}
-          </span>
-          {model.verifiability && model.verifiability !== 'none' && (
-            <span style={{ fontSize: '10px', color: theme.text.secondary }}>
-              {model.verifiability}
-            </span>
-          )}
-        </div>
       </div>
       
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* Text Column - Flexible */}
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '2px',
+        minWidth: 0,
+        overflow: 'hidden'
+      }}>
+        <span style={{ 
+          fontSize: isMobile ? '14px' : '13px', 
+          fontWeight: isSelected ? '600' : '400',
+          color: theme.text.primary,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}>
+          {model.name}
+        </span>
+        {model.verifiability && model.verifiability !== 'none' && (
+          <span style={{ 
+            fontSize: '10px', 
+            color: theme.text.secondary,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
+            {model.verifiability}
+          </span>
+        )}
+      </div>
+      
+      {/* Actions Column - Auto Width */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '8px',
+        flexShrink: 0
+      }}>
         {model.badge && (
           <span style={{
-            padding: '2px 6px',
-            borderRadius: '4px',
+            padding: '3px 8px',
+            borderRadius: theme.radius.sm,
             fontSize: '10px',
             fontWeight: '600',
             backgroundColor: model.badge === 'Verified' ? theme.accent.success : theme.accent.primary,
-            color: '#ffffff'
+            color: '#ffffff',
+            whiteSpace: 'nowrap'
           }}>
             {model.badge}
           </span>
         )}
         {!model.available && (
-          <AlertCircle size={14} color={theme.accent.error} />
+          <AlertCircle size={16} color={theme.accent.error} />
         )}
         {isSelected && (
-          <Check size={14} color={theme.accent.primary} />
+          <Check size={16} color={theme.accent.primary} />
         )}
       </div>
     </div>

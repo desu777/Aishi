@@ -9,6 +9,7 @@ import { useTerminalAgent } from '../hooks/useTerminalAgent';
 import { zIndex } from '../../styles/zIndex';
 import { useAccount, usePublicClient } from 'wagmi';
 import { useSafeActorState } from '../hooks/useSafeSelector';
+import { breakpoints } from '../../utils/responsive';
 
 interface GlassTerminalProps {
   isOpen: boolean;
@@ -35,11 +36,25 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
   const [orbState, setOrbState] = useState<'uninitialized' | 'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   
   // Subscribe to agent state using safe selector
   const agentState = useSafeActorState(agentRef);
   const agentStatus = agentState?.context?.status || 'uninitialized';
   const syncedAgentName = agentState?.context?.agentName || null;
+  
+  // Detect viewport size
+  useEffect(() => {
+    const checkViewport = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < breakpoints.sm);
+      setIsTablet(width >= breakpoints.sm && width < breakpoints.lg);
+    };
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+    return () => window.removeEventListener('resize', checkViewport);
+  }, []);
   
   // Map XState states to orb visual states
   useEffect(() => {
@@ -156,42 +171,25 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
   };
 
   const terminalBodyStyle: React.CSSProperties = {
-    width: '90%',
-    maxWidth: '1200px',
-    height: '85vh',
+    width: isMobile ? '100%' : '90%',
+    maxWidth: isMobile ? '100%' : '1200px',
+    height: isMobile ? '100vh' : '85vh',
     background: colors.glassBg,
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
-    border: `1px solid ${colors.borderSubtle}`,
-    borderRadius: '20px',
+    border: isMobile ? 'none' : `1px solid ${colors.borderSubtle}`,
+    borderRadius: isMobile ? '0' : '20px',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
-    boxShadow: `
+    boxShadow: isMobile ? 'none' : `
       0 20px 60px rgba(0, 0, 0, 0.3),
       inset 0 0 0 1px rgba(255, 255, 255, 0.02)
     `,
-    animation: 'slideUp 0.4s ease'
+    animation: isMobile ? 'fadeIn 0.3s ease' : 'slideUp 0.4s ease'
   };
 
-  const closeButtonStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '1.5rem',
-    right: '1.5rem',
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    background: colors.slate,
-    border: `1px solid ${colors.borderSubtle}`,
-    color: colors.silver,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    fontSize: '18px',
-    transition: 'all 0.2s ease',
-    zIndex: 10
-  };
+  // Close button removed - will be added to header
 
 
   return (
@@ -216,26 +214,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
       
       <div style={glassTerminalStyle}>
         <div style={terminalBodyStyle}>
-          {/* Close Button */}
-          <button 
-            style={closeButtonStyle}
-            onClick={onClose}
-            aria-label="Close terminal"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = colors.accentMuted;
-              e.currentTarget.style.color = colors.pearl;
-              e.currentTarget.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = colors.slate;
-              e.currentTarget.style.color = colors.silver;
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            ×
-          </button>
-
-          {/* Terminal Header */}
+          {/* Terminal Header with Close Button */}
           <TerminalSystemHeader 
             agentName={syncedAgentName || agentName}
             isLoading={agentLoading}
@@ -243,6 +222,9 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             terminalState={state}
             brokerRef={brokerRef}
             modelRef={modelRef}
+            onClose={onClose}
+            isMobile={isMobile}
+            isTablet={isTablet}
           />
 
           {/* Minimal Output */}

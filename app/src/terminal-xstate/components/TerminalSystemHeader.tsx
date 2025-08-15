@@ -8,6 +8,8 @@ import { useSafeActorState } from '../hooks/useSafeSelector';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAccount } from 'wagmi';
 import { FundBrokerModal } from './FundBrokerModal';
+import { X } from 'lucide-react';
+import { touchTargets } from '../../utils/responsive';
 
 interface TerminalSystemHeaderProps {
   agentName: string | null;
@@ -16,6 +18,9 @@ interface TerminalSystemHeaderProps {
   terminalState?: any;
   brokerRef?: any;
   modelRef?: any;
+  onClose?: () => void;
+  isMobile?: boolean;
+  isTablet?: boolean;
 }
 
 
@@ -25,7 +30,10 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
   selectedModel,
   terminalState,
   brokerRef: propBrokerRef,
-  modelRef: propModelRef
+  modelRef: propModelRef,
+  onClose,
+  isMobile = false,
+  isTablet = false
 }) => {
   const { theme } = useTheme();
   const { address } = useAccount();
@@ -97,68 +105,107 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
       brokerRef.send({ type: 'CREATE' });
     }
   };
+  // Determine if we need multi-line layout on mobile
+  const needsMultiLine = isMobile && modelNeedsBroker;
+  const headerHeight = needsMultiLine ? '80px' : '56px';
+
   return (
     <div style={{
       display: 'flex',
-      alignItems: 'center',
-      padding: '0.75rem 1.5rem',
+      flexDirection: needsMultiLine ? 'column' : 'row',
+      alignItems: needsMultiLine ? 'stretch' : 'center',
+      justifyContent: needsMultiLine ? 'flex-start' : 'space-between',
+      padding: isMobile ? '0.75rem 1rem' : isTablet ? '0.75rem 1.25rem' : '0.75rem 1.5rem',
+      minHeight: isMobile ? headerHeight : 'auto',
       borderBottom: `1px solid rgba(255, 255, 255, 0.05)`,
-      gap: '1.5rem',
       background: 'rgba(0, 0, 0, 0.2)',
       fontFamily: 'monospace',
-      fontSize: '0.85rem'
+      fontSize: isMobile ? '0.75rem' : '0.85rem',
+      position: 'relative',
+      transition: 'min-height 0.3s ease'
     }}>
-      {/* Logo */}
-      <img 
-        src="/logo_clean.png" 
-        alt="Aishi"
-        style={{ 
-          height: '28px',
-          width: 'auto',
-          objectFit: 'contain',
-          opacity: 0.9
-        }} 
-      />
-      
-      {/* Separator */}
-      <span style={{ color: theme.text.secondary, opacity: 0.3 }}>|</span>
-      
-      {/* System Info */}
-      <div style={{ 
-        color: theme.accent.primary,
-        fontWeight: '600',
-        letterSpacing: '0.05em'
-      }}>
-        aishiOS v1.0
-      </div>
-      
-      {/* Separator */}
-      <span style={{ color: theme.text.secondary, opacity: 0.3 }}>|</span>
-      
-      {/* AI Model */}
-      <div style={{ 
-        color: theme.text.primary,
+      {/* Main Header Content - Line 1 */}
+      <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '0.5rem'
+        justifyContent: 'space-between',
+        gap: isMobile ? '0.75rem' : '1.5rem',
+        flex: needsMultiLine ? 'none' : 1,
+        overflow: 'hidden'
       }}>
-        <span style={{ color: theme.text.secondary }}>AI:</span>
-        <span style={{ color: theme.text.primary }}>
-          {formatModelName(currentModel)}
-        </span>
-      </div>
+        {/* Left Side Content */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: isMobile ? '0.75rem' : '1.5rem',
+          flex: 1,
+          overflow: 'hidden'
+        }}>
+        {/* Logo */}
+        <img 
+          src="/logo_clean.png" 
+          alt="Aishi"
+          style={{ 
+            height: isMobile ? '24px' : '28px',
+            width: 'auto',
+            objectFit: 'contain',
+            opacity: 0.9,
+            flexShrink: 0
+          }} 
+        />
       
-      {/* Broker Status - Only show for 0G models */}
-      {modelNeedsBroker && (
-        <>
-          {/* Separator */}
+        {/* Separator - hide on mobile */}
+        {!isMobile && (
           <span style={{ color: theme.text.secondary, opacity: 0.3 }}>|</span>
-          
+        )}
+        
+        {/* System Info - hide on mobile */}
+        {!isMobile && (
           <div style={{ 
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
+            color: theme.accent.primary,
+            fontWeight: '600',
+            letterSpacing: '0.05em',
+            whiteSpace: 'nowrap'
           }}>
+            aishiOS v1.0
+          </div>
+        )}
+      
+        {/* Separator */}
+        <span style={{ color: theme.text.secondary, opacity: 0.3 }}>|</span>
+        
+        {/* AI Model */}
+        <div style={{ 
+          color: theme.text.primary,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          minWidth: 0,
+          overflow: 'hidden'
+        }}>
+          <span style={{ color: theme.text.secondary, flexShrink: 0 }}>AI:</span>
+          <span style={{ 
+            color: theme.text.primary,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
+            {formatModelName(currentModel)}
+          </span>
+        </div>
+      
+        {/* Broker Status - Only show for 0G models, hide on mobile */}
+        {modelNeedsBroker && !isMobile && (
+          <>
+            {/* Separator */}
+            <span style={{ color: theme.text.secondary, opacity: 0.3 }}>|</span>
+          
+            <div style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              minWidth: 0
+            }}>
             <span style={{ color: theme.text.secondary }}>Broker:</span>
             {brokerStatus === 'uninitialized' ? (
               <>
@@ -243,8 +290,156 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
                 )}
               </>
             )}
+            </div>
+          </>
+        )}
+        </div>
+        
+        {/* Close Button - Part of Line 1 */}
+        {onClose && !needsMultiLine && (
+          <button
+            onClick={onClose}
+            aria-label="Close terminal"
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: theme.text.secondary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              flexShrink: 0,
+              padding: '0',
+              margin: '0'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = theme.accent.primary;
+              e.currentTarget.style.color = '#000';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+              e.currentTarget.style.color = theme.text.secondary;
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+      
+      {/* Mobile Broker Line - Line 2 */}
+      {needsMultiLine && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingTop: '0.5rem',
+          marginTop: '0.5rem',
+          borderTop: `1px solid rgba(255, 255, 255, 0.05)`
+        }}>
+          {/* Mobile Broker Status */}
+          <div style={{ 
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            flex: 1
+          }}>
+            <span style={{ color: theme.text.secondary }}>Broker:</span>
+            {brokerStatus === 'uninitialized' ? (
+              <span style={{ color: theme.text.secondary }}>checking...</span>
+            ) : brokerStatus === 'not_initialized' ? (
+              <>
+                <span style={{ color: '#FCD34D' }}>⚠️</span>
+                <button
+                  onClick={handleCreateBroker}
+                  style={{
+                    padding: '2px 6px',
+                    background: 'transparent',
+                    border: `1px solid ${theme.accent.primary}`,
+                    borderRadius: '3px',
+                    color: theme.accent.primary,
+                    fontSize: '0.7rem',
+                    cursor: 'pointer',
+                    fontFamily: 'monospace'
+                  }}
+                >
+                  [create]
+                </button>
+              </>
+            ) : brokerStatus === 'loading' ? (
+              <span style={{ color: theme.text.secondary }}>⏳</span>
+            ) : brokerStatus === 'error' ? (
+              <span style={{ color: '#EF4444' }}>❌</span>
+            ) : brokerStatus === 'initialized' ? (
+              <>
+                <span style={{ color: '#10B981' }}>✅</span>
+                <span style={{ color: theme.text.primary }}>
+                  {brokerBalance.toFixed(2)} 0G
+                </span>
+                {address && (
+                  <button
+                    onClick={handleFundBroker}
+                    style={{
+                      padding: '2px 4px',
+                      background: 'transparent',
+                      border: `1px solid ${theme.accent.primary}`,
+                      borderRadius: '3px',
+                      color: theme.accent.primary,
+                      fontSize: '0.7rem',
+                      cursor: 'pointer',
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    [+]
+                  </button>
+                )}
+              </>
+            ) : null}
           </div>
-        </>
+          
+          {/* Mobile Close Button */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              aria-label="Close terminal"
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: theme.text.secondary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
+                padding: '0',
+                margin: '0'
+              }}
+              onTouchStart={(e) => {
+                e.currentTarget.style.background = theme.accent.primary;
+                e.currentTarget.style.color = '#000';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onTouchEnd={(e) => {
+                setTimeout(() => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = theme.text.secondary;
+                  e.currentTarget.style.transform = 'scale(1)';
+                }, 150);
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
       )}
       
       {/* Fund Broker Modal */}
