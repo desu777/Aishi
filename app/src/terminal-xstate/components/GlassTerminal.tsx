@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { MinimalOutput } from './MinimalOutput';
 import { PremiumCommandBar } from './PremiumCommandBar';
 import { TerminalSystemHeader } from './TerminalSystemHeader';
+import AIOrb from './AIOrb';
 import { useTerminal } from '../hooks/useTerminal';
 import { useTerminalAgent } from '../hooks/useTerminalAgent';
 import { zIndex } from '../../styles/zIndex';
@@ -35,7 +36,6 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
   const { agentName, isLoading: agentLoading } = useTerminalAgent();
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
-  const [orbState, setOrbState] = useState<'uninitialized' | 'idle' | 'processing' | 'success' | 'error'>('idle');
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   
@@ -43,6 +43,19 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
   const agentState = useSafeActorState(agentRef);
   const agentStatus = agentState?.context?.status || 'uninitialized';
   const syncedAgentName = agentState?.context?.agentName || null;
+  const syncProgress = agentState?.context?.syncProgress || undefined;
+  
+  // Map agent status to orb status
+  const getOrbStatus = () => {
+    if (!isConnected) return 'uninitialized';
+    if (agentStatus === 'syncing') return 'syncing';
+    if (agentStatus === 'connected' && syncedAgentName) return 'online';
+    if (agentStatus === 'no_agent') return 'no_agent';
+    if (agentStatus === 'error') return 'error';
+    if (state.matches('processing')) return 'thinking';
+    if (agentLoading) return 'connecting';
+    return 'uninitialized';
+  };
   
   // Detect viewport size
   useEffect(() => {
@@ -55,29 +68,11 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     window.addEventListener('resize', checkViewport);
     return () => window.removeEventListener('resize', checkViewport);
   }, []);
-  
-  // Map XState states to orb visual states
-  useEffect(() => {
-    if (state.matches('uninitialized')) {
-      setOrbState('uninitialized');
-    } else if (state.matches('processing')) {
-      setOrbState('processing');
-    } else if (state.matches('idle')) {
-      setOrbState('idle');
-    }
-  }, [state]);
 
   // Handle command submission
   const handleSubmit = useCallback(() => {
     if (context.currentInput.trim()) {
       send({ type: 'INPUT.SUBMIT' });
-      
-      // Brief success state for visual feedback
-      setOrbState('processing');
-      setTimeout(() => {
-        setOrbState('success');
-        setTimeout(() => setOrbState('idle'), 500);
-      }, 1000);
     }
   }, [context.currentInput, send]);
 
@@ -227,13 +222,22 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             isTablet={isTablet}
           />
 
-          {/* Minimal Output */}
+          {/* AI Orb - Central Visual Element */}
+          <AIOrb
+            status={getOrbStatus()}
+            agentName={syncedAgentName}
+            syncProgress={syncProgress}
+            isMobile={isMobile}
+            isTablet={isTablet}
+          />
+
+          {/* Minimal Output - Terminal Lines Only */}
           <MinimalOutput 
             lines={context.lines}
             welcomeLines={context.welcomeLines}
             agentStatus={agentStatus}
             agentName={syncedAgentName}
-            syncProgress={agentState?.context?.syncProgress}
+            syncProgress={syncProgress}
           />
 
           {/* Premium Command Bar */}

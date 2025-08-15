@@ -26,20 +26,6 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
   syncProgress 
 }) => {
   const outputRef = useRef<HTMLDivElement>(null);
-  const [dots, setDots] = useState('.');
-  
-  // Animate dots for syncing state
-  useEffect(() => {
-    if (agentStatus === 'syncing') {
-      const interval = setInterval(() => {
-        setDots(prev => {
-          if (prev.length >= 3) return '.';
-          return prev + '.';
-        });
-      }, 500);
-      return () => clearInterval(interval);
-    }
-  }, [agentStatus]);
 
   // Auto-scroll to bottom on new lines
   useEffect(() => {
@@ -140,68 +126,7 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
       `}</style>
 
       <div ref={outputRef} style={outputAreaStyle} className="minimal-output">
-        {/* Dynamic agent status instead of static welcome */}
-        {agentStatus === 'syncing' && (
-          <div style={{
-            ...getLineStyle('info'),
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <span>syncing with agent</span>
-            <span style={{ 
-              minWidth: '1.5rem',
-              opacity: 0.6
-            }}>{dots}</span>
-          </div>
-        )}
-        
-        {agentStatus === 'connected' && agentName && (
-          <>
-            <div style={getLineStyle('success')}>
-              connected ~ {agentName}
-            </div>
-            <div style={{
-              ...getLineStyle('system'),
-              marginTop: '0.5rem'
-            }}>
-              Welcome to aishiOS terminal. Type 'help' for available commands.
-            </div>
-          </>
-        )}
-        
-        {agentStatus === 'no_agent' && (
-          <>
-            <div style={getLineStyle('warning')}>
-              no agent detected ~ type 'mint' to create your first agent
-            </div>
-            <div style={{
-              ...getLineStyle('system'),
-              marginTop: '0.5rem'
-            }}>
-              Welcome to aishiOS terminal.
-            </div>
-          </>
-        )}
-        
-        {agentStatus === 'error' && (
-          <div style={getLineStyle('error')}>
-            {syncProgress || 'connection failed ~ check wallet connection'}
-          </div>
-        )}
-        
-        {agentStatus === 'uninitialized' && (
-          <div style={getLineStyle('system')}>
-            Initializing terminal...
-          </div>
-        )}
-        
-        {/* Add spacing after welcome */}
-        {welcomeLines.length > 0 && lines.length > 0 && (
-          <div style={{ height: '1rem' }} />
-        )}
-        
-        {/* Command lines */}
+        {/* Command lines only - status moved to AIOrb */}
         {lines.map((line, index) => (
           <div 
             key={`line-${index}`} 
