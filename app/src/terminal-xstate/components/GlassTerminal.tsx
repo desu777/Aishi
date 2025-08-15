@@ -240,6 +240,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             agentName={syncedAgentName}
             intelligenceLevel={intelligenceLevel}
             isMobile={isMobile}
+            isTablet={isTablet}
           />
 
           {/* Minimal Output - Terminal Lines Only */}

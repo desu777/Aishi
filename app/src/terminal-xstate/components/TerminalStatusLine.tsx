@@ -10,13 +10,15 @@ interface TerminalStatusLineProps {
   agentName?: string | null;
   intelligenceLevel?: number;
   isMobile?: boolean;
+  isTablet?: boolean;
 }
 
 const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
   status,
   agentName,
   intelligenceLevel = 0,
-  isMobile = false
+  isMobile = false,
+  isTablet = false
 }) => {
   const getStatusText = () => {
     switch (status) {
@@ -48,7 +50,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
       textAlign: 'center',
       margin: '1rem 0 1.5rem 0',
       fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-      fontSize: isMobile ? '13px' : '14px',
+      fontSize: isMobile ? '11px' : isTablet ? '12px' : '13px',
       lineHeight: '1.4',
       color: '#E5E5E5',
       letterSpacing: '0.5px',
@@ -92,7 +94,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
           <span style={{ 
             color: '#9CA3AF',
             fontStyle: 'italic',
-            fontSize: isMobile ? '12px' : '13px',
+            fontSize: isMobile ? '10px' : isTablet ? '11px' : '12px',
           }}>
             type 'mint' to create agent
           </span>

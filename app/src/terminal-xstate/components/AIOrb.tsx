@@ -160,7 +160,7 @@ const AIOrb: React.FC<AIorbProps> = ({
         marginBottom: '1rem',
         textAlign: 'center',
         color: '#9999A5',
-        fontSize: isMobile ? '14px' : '16px',
+        fontSize: isMobile ? '12px' : isTablet ? '13px' : '14px',
         fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         letterSpacing: '0.02em',
         opacity: 0.8,

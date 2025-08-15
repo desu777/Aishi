@@ -354,7 +354,7 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
               <span style={{ color: theme.text.secondary }}>checking...</span>
             ) : brokerStatus === 'not_initialized' ? (
               <>
-                <span style={{ color: '#FCD34D' }}>⚠️</span>
+                <span style={{ color: '#FCD34D' }}>not_initialized</span>
                 <button
                   onClick={handleCreateBroker}
                   style={{
@@ -372,14 +372,14 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
                 </button>
               </>
             ) : brokerStatus === 'loading' ? (
-              <span style={{ color: theme.text.secondary }}>⏳</span>
+              <span style={{ color: theme.text.secondary }}>loading...</span>
             ) : brokerStatus === 'error' ? (
-              <span style={{ color: '#EF4444' }}>❌</span>
+              <span style={{ color: '#EF4444' }}>error</span>
             ) : brokerStatus === 'initialized' ? (
               <>
-                <span style={{ color: '#10B981' }}>✅</span>
+                <span style={{ color: '#10B981' }}>initialized</span>
                 <span style={{ color: theme.text.primary }}>
-                  {brokerBalance.toFixed(2)} 0G
+                  ({brokerBalance.toFixed(2)} 0G)
                 </span>
                 {address && (
                   <button
