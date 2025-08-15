@@ -28,6 +28,7 @@ export interface TerminalContext {
   isInitialized: boolean;
   brokerRef: any; // ActorRef from XState
   modelRef: any; // ActorRef from XState
+  agentRef: any; // ActorRef from XState for agent synchronization
   selectedModel: string | null;
 }
 
@@ -40,4 +41,5 @@ export type TerminalEvent =
   | { type: 'CLEAR' }
   | { type: 'INITIALIZE' }
   | { type: 'UPDATE_MODEL'; modelId: string }
-  | { type: 'INITIALIZE_BROKER'; walletAddress: string };
+  | { type: 'INITIALIZE_BROKER'; walletAddress: string }
+  | { type: 'SYNC_AGENT'; walletAddress: string; provider: any };

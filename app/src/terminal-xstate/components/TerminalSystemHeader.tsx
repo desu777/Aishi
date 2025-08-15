@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { useSelector } from '@xstate/react';
+import { useSafeActorState } from '../hooks/useSafeSelector';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAccount } from 'wagmi';
 import { FundBrokerModal } from './FundBrokerModal';
@@ -42,9 +42,9 @@ export const TerminalSystemHeader: React.FC<TerminalSystemHeaderProps> = ({
   const brokerRef = propBrokerRef;
   const modelRef = propModelRef;
   
-  // Subscribe to actor states using useSelector
-  const brokerState = brokerRef ? useSelector(brokerRef, snapshot => snapshot) : null;
-  const modelState = modelRef ? useSelector(modelRef, snapshot => snapshot) : null;
+  // Subscribe to actor states using safe selector
+  const brokerState = useSafeActorState(brokerRef);
+  const modelState = useSafeActorState(modelRef);
   
   // Extract broker info
   const brokerStatus = brokerState?.context?.status || 'uninitialized';

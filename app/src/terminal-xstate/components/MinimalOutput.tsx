@@ -1,9 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { TerminalLine } from '../machines/types';
 
 interface MinimalOutputProps {
   lines: TerminalLine[];
   welcomeLines: TerminalLine[];
+  agentStatus?: string;
+  agentName?: string | null;
+  syncProgress?: string;
 }
 
 const colors = {
@@ -11,11 +14,32 @@ const colors = {
   silver: '#8A8A8A',
   slate: '#2D2D2D',
   success: '#22D3EE',
-  error: '#F97316'
+  error: '#F97316',
+  warning: '#FCD34D'
 };
 
-const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({ lines, welcomeLines }) => {
+const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({ 
+  lines, 
+  welcomeLines, 
+  agentStatus = 'uninitialized',
+  agentName,
+  syncProgress 
+}) => {
   const outputRef = useRef<HTMLDivElement>(null);
+  const [dots, setDots] = useState('.');
+  
+  // Animate dots for syncing state
+  useEffect(() => {
+    if (agentStatus === 'syncing') {
+      const interval = setInterval(() => {
+        setDots(prev => {
+          if (prev.length >= 3) return '.';
+          return prev + '.';
+        });
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [agentStatus]);
 
   // Auto-scroll to bottom on new lines
   useEffect(() => {
@@ -44,6 +68,8 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({ lines, welcomeLi
         return { ...baseStyle, color: colors.error, opacity: 0.8 };
       case 'success':
         return { ...baseStyle, color: colors.success, opacity: 0.8 };
+      case 'warning':
+        return { ...baseStyle, color: colors.warning, opacity: 0.9 };
       default:
         return { ...baseStyle, color: colors.pearl };
     }
@@ -114,15 +140,61 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({ lines, welcomeLi
       `}</style>
 
       <div ref={outputRef} style={outputAreaStyle} className="minimal-output">
-        {/* Welcome messages */}
-        {welcomeLines.map((line, index) => (
-          <div 
-            key={`welcome-${index}`} 
-            style={getLineStyle(line.type)}
-          >
-            {formatContent(line)}
+        {/* Dynamic agent status instead of static welcome */}
+        {agentStatus === 'syncing' && (
+          <div style={{
+            ...getLineStyle('info'),
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span>syncing with agent</span>
+            <span style={{ 
+              minWidth: '1.5rem',
+              opacity: 0.6
+            }}>{dots}</span>
           </div>
-        ))}
+        )}
+        
+        {agentStatus === 'connected' && agentName && (
+          <>
+            <div style={getLineStyle('success')}>
+              connected ~ {agentName}
+            </div>
+            <div style={{
+              ...getLineStyle('system'),
+              marginTop: '0.5rem'
+            }}>
+              Welcome to aishiOS terminal. Type 'help' for available commands.
+            </div>
+          </>
+        )}
+        
+        {agentStatus === 'no_agent' && (
+          <>
+            <div style={getLineStyle('warning')}>
+              no agent detected ~ type 'mint' to create your first agent
+            </div>
+            <div style={{
+              ...getLineStyle('system'),
+              marginTop: '0.5rem'
+            }}>
+              Welcome to aishiOS terminal.
+            </div>
+          </>
+        )}
+        
+        {agentStatus === 'error' && (
+          <div style={getLineStyle('error')}>
+            {syncProgress || 'connection failed ~ check wallet connection'}
+          </div>
+        )}
+        
+        {agentStatus === 'uninitialized' && (
+          <div style={getLineStyle('system')}>
+            Initializing terminal...
+          </div>
+        )}
         
         {/* Add spacing after welcome */}
         {welcomeLines.length > 0 && lines.length > 0 && (

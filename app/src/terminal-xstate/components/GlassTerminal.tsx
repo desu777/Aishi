@@ -7,7 +7,8 @@ import { TerminalSystemHeader } from './TerminalSystemHeader';
 import { useTerminal } from '../hooks/useTerminal';
 import { useTerminalAgent } from '../hooks/useTerminalAgent';
 import { zIndex } from '../../styles/zIndex';
-import { useAccount } from 'wagmi';
+import { useAccount, usePublicClient } from 'wagmi';
+import { useSafeActorState } from '../hooks/useSafeSelector';
 
 interface GlassTerminalProps {
   isOpen: boolean;
@@ -29,10 +30,16 @@ const colors = {
 };
 
 export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, selectedModel }) => {
-  const { context, send, state, brokerRef, modelRef } = useTerminal();
+  const { context, send, state, brokerRef, modelRef, agentRef } = useTerminal();
   const { agentName, isLoading: agentLoading } = useTerminalAgent();
   const { address, isConnected } = useAccount();
+  const publicClient = usePublicClient();
   const [orbState, setOrbState] = useState<'uninitialized' | 'idle' | 'processing' | 'success' | 'error'>('idle');
+  
+  // Subscribe to agent state using safe selector
+  const agentState = useSafeActorState(agentRef);
+  const agentStatus = agentState?.context?.status || 'uninitialized';
+  const syncedAgentName = agentState?.context?.agentName || null;
   
   // Map XState states to orb visual states
   useEffect(() => {
@@ -78,13 +85,37 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     send({ type: 'CLEAR' });
   }, [send]);
 
-  // Initialize broker when wallet is connected
+  // Initialize broker and agent when wallet is connected
   useEffect(() => {
-    if (isConnected && address && brokerRef) {
-      // Send initialize event to broker actor
-      brokerRef.send({ type: 'INITIALIZE', walletAddress: address });
+    if (isConnected && address) {
+      // Initialize broker
+      if (brokerRef) {
+        console.log('[GlassTerminal] Initializing broker', { address });
+        brokerRef.send({ type: 'INITIALIZE', walletAddress: address });
+      }
+      
+      // Sync agent with contract
+      if (agentRef && publicClient) {
+        console.log('[GlassTerminal] Syncing agent with viem publicClient', { 
+          address,
+          chainId: publicClient.chain?.id,
+          chainName: publicClient.chain?.name,
+          transportType: publicClient.transport?.type
+        });
+        agentRef.send({ 
+          type: 'SYNC', 
+          walletAddress: address,
+          provider: publicClient
+        });
+      } else {
+        console.log('[GlassTerminal] Cannot sync agent', {
+          hasAgentRef: !!agentRef,
+          hasPublicClient: !!publicClient,
+          address
+        });
+      }
     }
-  }, [isConnected, address, brokerRef]);
+  }, [isConnected, address, brokerRef, agentRef, publicClient]);
   
   // Update model in terminal when selectedModel changes
   useEffect(() => {
@@ -206,7 +237,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
 
           {/* Terminal Header */}
           <TerminalSystemHeader 
-            agentName={agentName}
+            agentName={syncedAgentName || agentName}
             isLoading={agentLoading}
             selectedModel={selectedModel}
             terminalState={state}
@@ -218,6 +249,9 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
           <MinimalOutput 
             lines={context.lines}
             welcomeLines={context.welcomeLines}
+            agentStatus={agentStatus}
+            agentName={syncedAgentName}
+            syncProgress={agentState?.context?.syncProgress}
           />
 
           {/* Premium Command Bar */}

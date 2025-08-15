@@ -2,6 +2,7 @@ import { setup, assign } from 'xstate';
 import { TerminalContext, TerminalEvent, TerminalLine } from './types';
 import { brokerMachine } from './brokerMachine';
 import { modelMachine } from './modelMachine';
+import { agentMachine } from './agentMachine';
 
 // Initial context - extended with actor refs
 const initialContext: TerminalContext = {
@@ -13,6 +14,7 @@ const initialContext: TerminalContext = {
   isInitialized: false,
   brokerRef: null,
   modelRef: null,
+  agentRef: null,
   selectedModel: null
 };
 
@@ -24,7 +26,8 @@ export const terminalMachine = setup({
   },
   actors: {
     brokerActor: brokerMachine,
-    modelActor: modelMachine
+    modelActor: modelMachine,
+    agentActor: agentMachine
   },
   actions: {
     updateInput: assign({
@@ -126,24 +129,14 @@ export const terminalMachine = setup({
         const timestamp = Date.now();
         return [
           {
-            type: 'success' as const,
-            content: 'XState Terminal v2.0 - Actor Model Architecture',
-            timestamp
-          },
-          {
             type: 'info' as const,
-            content: 'Terminal is running with broker and model actors',
-            timestamp: timestamp + 1
+            content: 'syncing with agent',
+            timestamp
           },
           {
             type: 'system' as const,
             content: '',
-            timestamp: timestamp + 2
-          },
-          {
-            type: 'system' as const,
-            content: 'Type any command (commands not implemented yet)',
-            timestamp: timestamp + 3
+            timestamp: timestamp + 1
           }
         ];
       }
@@ -151,7 +144,8 @@ export const terminalMachine = setup({
     
     spawnActors: assign({
       brokerRef: ({ spawn }) => spawn('brokerActor', { id: 'broker' }),
-      modelRef: ({ spawn }) => spawn('modelActor', { id: 'model' })
+      modelRef: ({ spawn }) => spawn('modelActor', { id: 'model' }),
+      agentRef: ({ spawn }) => spawn('agentActor', { id: 'agent' })
     }),
     
     updateSelectedModel: assign({
