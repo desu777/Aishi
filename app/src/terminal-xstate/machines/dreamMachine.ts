@@ -15,6 +15,7 @@ import {
   mockDownloadFromStorage,
   mockUpdateContract
 } from '../mocks/dreamMocks';
+import { executeDreamPersistenceProtocol, PersistenceProtocolInput } from '../services/dreamPersistenceOrchestrator';
 import { XStateStorageService } from '../services/xstateStorage';
 import { TerminalLine } from './types';
 
@@ -37,8 +38,10 @@ export interface DreamMachineContext {
   dreamPrompt: string | null;
   aiResponse: AIResponse | null;
   
-  // Storage data
+  // Persistence data
+  persistenceResult: any | null;
   storageRootHash: string | null;
+  contractTxHash: string | null;
   
   // Status and errors
   statusMessage: string;
@@ -69,7 +72,9 @@ const initialContext: DreamMachineContext = {
   dreamContext: null,
   dreamPrompt: null,
   aiResponse: null,
+  persistenceResult: null,
   storageRootHash: null,
+  contractTxHash: null,
   statusMessage: '',
   errorMessage: null,
   awaitingConfirmation: false,
@@ -357,7 +362,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
     }
     
     // 7. Build context for dream analysis
-    const context: DreamContext = {
+    const context: DreamContext & { memoryData: any } = {
       userDream: input.dreamText,
       agentProfile: {
         name: parsedAgentName || effectiveAgentName,
@@ -385,7 +390,9 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
         monthsAccessible: 1, // Would need to calculate from intelligence
         memoryDepth: 'current month only'
       },
-      historicalData: historicalData
+      historicalData: historicalData,
+      // Add memoryData for persistence protocol
+      memoryData: memoryData
     };
     
     debugLog('[COMPLETE] REAL context built successfully', { 
@@ -482,38 +489,67 @@ const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: strin
   return response;
 });
 
-// Service: Upload to storage
-const storageUploadService = fromPromise(async ({ input }: { input: { aiResponse: AIResponse } }) => {
-  debugLog('Uploading dream to storage');
-  
-  // In real implementation, would download existing, append, and upload
-  const existingDreams = await mockDownloadFromStorage('mock-hash');
-  const updatedDreams = [input.aiResponse.dreamData, ...(existingDreams || [])];
-  
-  const result = await mockUploadToStorage(updatedDreams);
-  
-  debugLog('Storage upload complete', { rootHash: result.rootHash });
-  
-  return result.rootHash;
-});
-
-// Service: Update contract
-const contractUpdateService = fromPromise(async ({ 
+// Service: Complete Dream Persistence Protocol (PRODUCTION)
+const dreamPersistenceService = fromPromise(async ({ 
   input 
 }: { 
-  input: { tokenId: number; rootHash: string; personalityImpact: any } 
+  input: { 
+    aiResponse: AIResponse; 
+    tokenId: number; 
+    agentName: string; 
+    dreamCount: number;
+    currentRootHash?: string;
+  } 
 }) => {
-  debugLog('Updating contract', { tokenId: input.tokenId, hasImpact: !!input.personalityImpact });
-  
-  const result = await mockUpdateContract(
-    input.tokenId,
-    input.rootHash,
-    input.personalityImpact
-  );
-  
-  debugLog('Contract updated', { txHash: result.txHash });
-  
-  return result;
+  debugLog('🚀 Executing Dream Persistence Protocol (PRODUCTION)', {
+    dreamId: input.aiResponse.dreamData.id,
+    agentName: input.agentName,
+    dreamCount: input.dreamCount,
+    isEvolution: (input.dreamCount + 1) % 5 === 0
+  });
+
+  // Prepare protocol input
+  const protocolInput: PersistenceProtocolInput = {
+    aiResponseBlock2: {
+      analysis: input.aiResponse.analysis,
+      dreamData: input.aiResponse.dreamData,
+      personalityImpact: input.aiResponse.personalityImpact
+    },
+    tokenId: input.tokenId,
+    agentName: input.agentName,
+    dreamCount: input.dreamCount,
+    currentRootHash: input.currentRootHash,
+    config: {
+      enableVerification: true,
+      maxRetries: 3,
+      skipContractUpdate: false
+    }
+  };
+
+  // Execute complete persistence protocol
+  const result = await executeDreamPersistenceProtocol(protocolInput);
+
+  if (!result.success) {
+    debugLog('❌ Dream Persistence Protocol failed', { 
+      error: result.error,
+      completedStages: result.validation ? 1 : 0
+    });
+    throw new Error(`Dream persistence failed: ${result.error}`);
+  }
+
+  debugLog('✅ Dream Persistence Protocol completed successfully', {
+    rootHash: result.rootHash?.substring(0, 10) + '...',
+    txHash: result.txHash?.substring(0, 10) + '...',
+    isEvolution: result.isEvolutionDream,
+    totalTime: result.metadata?.totalTime
+  });
+
+  return {
+    rootHash: result.rootHash,
+    txHash: result.txHash,
+    isEvolutionDream: result.isEvolutionDream,
+    persistenceResult: result
+  };
 });
 
 // Dream state machine
@@ -526,8 +562,7 @@ export const dreamMachine = setup({
     fetchContext: fetchContextService,
     buildPrompt: buildPromptService,
     aiAnalysis: aiAnalysisService,
-    storageUpload: storageUploadService,
-    contractUpdate: contractUpdateService
+    dreamPersistence: dreamPersistenceService
   },
   actions: {
     // Initialize dream session
@@ -580,10 +615,17 @@ export const dreamMachine = setup({
       awaitingConfirmation: true
     }),
     
-    // Store upload result
-    storeUploadResult: assign({
-      storageRootHash: ({ event }) => event.output as string,
-      statusMessage: 'Updating blockchain...'
+    // Store persistence result
+    storePersistenceResult: assign({
+      persistenceResult: ({ event }) => event.output.persistenceResult,
+      storageRootHash: ({ event }) => event.output.rootHash,
+      contractTxHash: ({ event }) => event.output.txHash,
+      statusMessage: ({ event }) => {
+        const output = event.output;
+        return output.isEvolutionDream ? 
+          'Evolution dream persisted! Agent has evolved.' :
+          'Dream persisted successfully!';
+      }
     }),
     
     // Mark as completed
@@ -747,41 +789,35 @@ export const dreamMachine = setup({
     },
     
     savingDream: {
-      initial: 'uploadingToStorage',
-      states: {
-        uploadingToStorage: {
-          entry: assign({ statusMessage: 'Saving dream to storage...' }),
-          invoke: {
-            src: 'storageUpload',
-            input: ({ context }) => ({ aiResponse: context.aiResponse! }),
-            onDone: {
-              target: 'updatingContract',
-              actions: ['storeUploadResult', 'sendStatusToParent']
-            },
-            onError: {
-              target: '#dream.error',
-              actions: ['storeError', 'sendErrorToParent']
-            }
-          }
+      entry: assign({ statusMessage: 'Executing Dream Persistence Protocol...' }),
+      invoke: {
+        src: 'dreamPersistence',
+        input: ({ context }) => {
+          // Extract currentDreamDailyHash from context (it's stored during fetchContext)
+          const memoryData = (context.dreamContext as any)?.memoryData;
+          const currentRootHash = memoryData?.currentDreamDailyHash;
+          
+          debugLog('Preparing dreamPersistence input', {
+            dreamCount: context.dreamContext?.agentProfile?.dreamCount || 0,
+            hasCurrentRootHash: !!currentRootHash,
+            currentRootHash: currentRootHash?.substring(0, 10) + '...'
+          });
+          
+          return {
+            aiResponse: context.aiResponse!,
+            tokenId: context.tokenId!,
+            agentName: context.agentName!,
+            dreamCount: context.dreamContext?.agentProfile?.dreamCount || 0,
+            currentRootHash: currentRootHash
+          };
         },
-        
-        updatingContract: {
-          invoke: {
-            src: 'contractUpdate',
-            input: ({ context }) => ({
-              tokenId: context.tokenId!,
-              rootHash: context.storageRootHash!,
-              personalityImpact: context.aiResponse?.personalityImpact || null
-            }),
-            onDone: {
-              target: '#dream.completed',
-              actions: ['markCompleted', 'sendStatusToParent']
-            },
-            onError: {
-              target: '#dream.error',
-              actions: ['storeError', 'sendErrorToParent']
-            }
-          }
+        onDone: {
+          target: 'completed',
+          actions: ['storePersistenceResult', 'sendStatusToParent']
+        },
+        onError: {
+          target: '#dream.error',
+          actions: ['storeError', 'sendErrorToParent']
         }
       }
     },
