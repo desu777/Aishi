@@ -3,7 +3,7 @@
  * @description Main orchestrator for the complete dream persistence protocol
  */
 
-import { validateDreamDataSchema, ValidationResult, StandardDreamFields, EvolutionFields } from './dreamDataValidator';
+// Removed validation - using direct schema mapping approach
 import { manageDailyDreamsFile, FileManagementResult } from './dreamFileManager';
 import { uploadDreamDataSecurely, SecureUploadResult } from './dreamStorageUploader';
 import { updateDreamContract, ContractUpdateResult } from './dreamContractUpdater';
@@ -23,7 +23,6 @@ export interface PersistenceProtocolResult {
   error?: string;
   
   // Stage results
-  validation?: ValidationResult;
   fileManagement?: FileManagementResult;
   storageUpload?: SecureUploadResult;
   contractUpdate?: ContractUpdateResult;
@@ -37,7 +36,6 @@ export interface PersistenceProtocolResult {
   metadata?: {
     totalTime: number;
     stageTimings: {
-      validation: number;
       fileManagement: number;
       storageUpload: number;
       contractUpdate: number;
@@ -76,7 +74,7 @@ export async function executeDreamPersistenceProtocol(
   input: PersistenceProtocolInput
 ): Promise<PersistenceProtocolResult> {
   const protocolStartTime = Date.now();
-  const stageTimings = { validation: 0, fileManagement: 0, storageUpload: 0, contractUpdate: 0 };
+  const stageTimings = { fileManagement: 0, storageUpload: 0, contractUpdate: 0 };
   
   debugLog('🚀 Starting Dream Persistence Protocol', {
     tokenId: input.tokenId,
@@ -88,45 +86,35 @@ export async function executeDreamPersistenceProtocol(
   });
 
   try {
-    // ====== STAGE 1: VALIDATION ======
-    debugLog('📋 STAGE 1: Validating dream data schema');
-    const validationStart = Date.now();
-    
-    const validationResult = validateDreamDataSchema(
-      input.aiResponseBlock2,
-      input.dreamCount
-    );
-    
-    stageTimings.validation = Date.now() - validationStart;
-    
-    if (!validationResult.isValid) {
-      debugLog('❌ Validation failed', { errors: validationResult.errors });
-      return {
-        success: false,
-        error: `Validation failed: ${validationResult.errors.join(', ')}`,
-        validation: validationResult,
-        metadata: {
-          totalTime: Date.now() - protocolStartTime,
-          stageTimings,
-          agentName: input.agentName,
-          dreamId: input.dreamCount + 1,
-          dreamsCount: 0
-        }
-      };
-    }
-
-    debugLog('✅ Validation successful', {
-      warnings: validationResult.warnings?.length || 0,
-      hasPersonalityImpact: !!validationResult.validatedData?.personalityImpact
-    });
-
-    // ====== STAGE 2: FILE MANAGEMENT ======
-    debugLog('📁 STAGE 2: Managing daily dreams file');
+    // ====== STAGE 1: FILE MANAGEMENT (Direct Schema Mapping) ======
+    debugLog('📁 STAGE 1: Managing daily dreams file with direct schema mapping');
     const fileManagementStart = Date.now();
+    
+    // Direct mapping from AI response to schema - no validation layer
+    const dreamData = input.aiResponseBlock2.dreamData;
+    
+    // Ensure critical fields are present with fallbacks and merge analysis
+    const safeDreamData = {
+      ...dreamData,
+      analysis: input.aiResponseBlock2.analysis || 'Dream analysis available.',
+      id: dreamData.id || (input.dreamCount + 1),
+      date: dreamData.date || new Date().toISOString().split('T')[0],
+      timestamp: dreamData.timestamp || Math.floor(Date.now() / 1000)
+    };
+    
+    debugLog('✅ Dream data prepared for file management', {
+      dreamId: safeDreamData.id,
+      hasAllCriticalFields: !!(safeDreamData.id && safeDreamData.date && safeDreamData.timestamp),
+      hasAnalysis: !!safeDreamData.analysis,
+      analysisLength: safeDreamData.analysis?.length || 0,
+      dreamType: safeDreamData.dream_type,
+      emotionsCount: safeDreamData.emotions?.length || 0,
+      symbolsCount: safeDreamData.symbols?.length || 0
+    });
     
     const fileManagementResult = await manageDailyDreamsFile(
       input.agentName,
-      validationResult.validatedData!.dreamData,
+      safeDreamData,
       input.currentRootHash
     );
     
@@ -137,7 +125,6 @@ export async function executeDreamPersistenceProtocol(
       return {
         success: false,
         error: `File management failed: ${fileManagementResult.error}`,
-        validation: validationResult,
         fileManagement: fileManagementResult,
         metadata: {
           totalTime: Date.now() - protocolStartTime,
@@ -155,8 +142,8 @@ export async function executeDreamPersistenceProtocol(
       isNewFile: fileManagementResult.isNewFile
     });
 
-    // ====== STAGE 3: STORAGE UPLOAD ======
-    debugLog('☁️ STAGE 3: Uploading to 0G Storage');
+    // ====== STAGE 2: STORAGE UPLOAD ======
+    debugLog('☁️ STAGE 2: Uploading to 0G Storage');
     const storageUploadStart = Date.now();
     
     const uploadResult = await uploadDreamDataSecurely(
@@ -175,7 +162,6 @@ export async function executeDreamPersistenceProtocol(
       return {
         success: false,
         error: `Storage upload failed: ${uploadResult.error}`,
-        validation: validationResult,
         fileManagement: fileManagementResult,
         storageUpload: uploadResult,
         metadata: {
@@ -194,17 +180,16 @@ export async function executeDreamPersistenceProtocol(
       fileSize: uploadResult.metadata?.fileSize
     });
 
-    // ====== STAGE 4: CONTRACT UPDATE ======
+    // ====== STAGE 3: CONTRACT UPDATE ======
     if (input.config?.skipContractUpdate) {
       debugLog('⚠️ Skipping contract update (test mode)');
       
       return {
         success: true,
-        validation: validationResult,
         fileManagement: fileManagementResult,
         storageUpload: uploadResult,
         rootHash: uploadResult.rootHash,
-        isEvolutionDream: !!validationResult.validatedData?.personalityImpact,
+        isEvolutionDream: !!(input.aiResponseBlock2.personalityImpact),
         metadata: {
           totalTime: Date.now() - protocolStartTime,
           stageTimings,
@@ -215,13 +200,13 @@ export async function executeDreamPersistenceProtocol(
       };
     }
 
-    debugLog('⛓️ STAGE 4: Updating smart contract');
+    debugLog('⛓️ STAGE 3: Updating smart contract');
     const contractUpdateStart = Date.now();
     
     const contractUpdateResult = await updateDreamContract(
       input.tokenId,
       uploadResult.rootHash,
-      validationResult.validatedData?.personalityImpact,
+      input.aiResponseBlock2.personalityImpact,
       input.dreamCount
     );
     
@@ -236,7 +221,6 @@ export async function executeDreamPersistenceProtocol(
       return {
         success: false,
         error: `Contract update failed: ${contractUpdateResult.error}`,
-        validation: validationResult,
         fileManagement: fileManagementResult,
         storageUpload: uploadResult,
         contractUpdate: contractUpdateResult,
@@ -270,7 +254,6 @@ export async function executeDreamPersistenceProtocol(
 
     return {
       success: true,
-      validation: validationResult,
       fileManagement: fileManagementResult,
       storageUpload: uploadResult,
       contractUpdate: contractUpdateResult,
