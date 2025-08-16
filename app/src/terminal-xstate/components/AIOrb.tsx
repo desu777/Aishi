@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import SiriOrb from './SiriOrb';
 
 interface AIorbProps {
-  status: 'uninitialized' | 'connecting' | 'syncing' | 'online' | 'thinking' | 'responding' | 'error' | 'no_agent';
+  status: 'uninitialized' | 'connecting' | 'syncing' | 'online' | 'thinking' | 'responding' | 'learning' | 'evolving' | 'error' | 'no_agent';
   agentName?: string | null;
   intelligenceLevel?: number;
   syncProgress?: string;
@@ -106,6 +106,28 @@ const AIOrb: React.FC<AIorbProps> = ({
           animationDuration: 10,  // Fast
         };
       
+      case 'learning':
+        return {
+          colors: {
+            bg: "rgba(26, 26, 26, 0.85)",         // Dark background, slightly transparent
+            c1: "rgba(16, 185, 129, 1)",          // Emerald green #10B981 (full opacity)
+            c2: "rgba(139, 92, 246, 0.9)",        // Violet accent, slight transparency
+            c3: "rgba(52, 211, 153, 0.8)",        // Light emerald, more transparent
+          },
+          animationDuration: 12,  // Medium speed
+        };
+      
+      case 'evolving':
+        return {
+          colors: {
+            bg: "rgba(26, 26, 26, 0.85)",         // Dark background, slightly transparent
+            c1: "rgba(245, 158, 11, 1)",          // Amber gold #F59E0B (full opacity)
+            c2: "rgba(139, 92, 246, 0.9)",        // Violet accent, slight transparency
+            c3: "rgba(251, 191, 36, 0.8)",        // Light amber, more transparent
+          },
+          animationDuration: 8,   // Fast - evolution is exciting!
+        };
+      
       case 'error':
         return {
           colors: {
@@ -190,7 +212,7 @@ const AIOrb: React.FC<AIorbProps> = ({
 
 
       {/* Additional glow effect for active states */}
-      {(status === 'thinking' || status === 'responding') && (
+      {(status === 'thinking' || status === 'responding' || status === 'learning' || status === 'evolving') && (
         <style jsx>{`
           @keyframes pulse-glow {
             0%, 100% { opacity: 0.3; }
@@ -198,7 +220,11 @@ const AIOrb: React.FC<AIorbProps> = ({
           }
           
           .drop-shadow-2xl {
-            filter: drop-shadow(0 25px 25px rgba(139, 92, 246, 0.25));
+            filter: drop-shadow(0 25px 25px ${
+              status === 'learning' ? 'rgba(16, 185, 129, 0.25)' :
+              status === 'evolving' ? 'rgba(245, 158, 11, 0.25)' :
+              'rgba(139, 92, 246, 0.25)'
+            });
             animation: pulse-glow 2s ease-in-out infinite;
           }
         `}</style>

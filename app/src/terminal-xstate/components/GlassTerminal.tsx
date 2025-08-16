@@ -52,9 +52,11 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     if (!isConnected) return 'uninitialized';
     if (agentStatus === 'syncing') return 'syncing';
     if (agentStatus === 'connected' && syncedAgentName) {
-      // Check if dream is processing
-      if (isDreamActive && dreamStatus && dreamStatus.includes('thinking')) {
-        return 'thinking';
+      // Check if dream is processing with specific states
+      if (isDreamActive && dreamStatus) {
+        if (dreamStatus.includes('thinking')) return 'thinking';
+        if (dreamStatus.includes('learning')) return 'learning';
+        if (dreamStatus.includes('evolving')) return 'evolving';
       }
       return 'online';
     }

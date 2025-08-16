@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 
 interface TerminalStatusLineProps {
-  status: 'uninitialized' | 'connecting' | 'syncing' | 'online' | 'thinking' | 'responding' | 'error' | 'no_agent';
+  status: 'uninitialized' | 'connecting' | 'syncing' | 'online' | 'thinking' | 'responding' | 'learning' | 'evolving' | 'error' | 'no_agent';
   agentName?: string | null;
   intelligenceLevel?: number;
   isMobile?: boolean;
@@ -22,9 +22,9 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
 }) => {
   const [dots, setDots] = useState('');
   
-  // Animate dots for thinking state
+  // Animate dots for active processing states
   useEffect(() => {
-    if (status === 'thinking') {
+    if (status === 'thinking' || status === 'learning' || status === 'evolving') {
       const interval = setInterval(() => {
         setDots(prev => {
           if (prev === '.') return '..';
@@ -42,8 +42,10 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
       case 'online': return 'connected';
       case 'connecting': return 'connecting...';
       case 'syncing': return 'syncing...';
-      case 'thinking': return 'processing';
+      case 'thinking': return 'thinking';
       case 'responding': return 'generating';
+      case 'learning': return 'learning';
+      case 'evolving': return 'evolving';
       case 'error': return 'failed';
       case 'no_agent': return 'no agent';
       default: return 'initializing';
@@ -55,6 +57,8 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
       case 'online': return '#10B981';
       case 'thinking': 
       case 'responding': return '#A855F7';
+      case 'learning': return '#10B981';
+      case 'evolving': return '#F59E0B';
       case 'connecting': 
       case 'syncing': return '#FCD34D';
       case 'error': return '#EF4444';
@@ -73,8 +77,8 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
       letterSpacing: '0.5px',
       fontWeight: '400',
     }}>
-      {status === 'thinking' && agentName ? (
-        // Special display for thinking state
+      {(status === 'thinking' || status === 'learning' || status === 'evolving') && agentName ? (
+        // Special display for active processing states
         <>
           <span style={{ color: '#9CA3AF' }}>status: </span>
           <span style={{ 
@@ -84,13 +88,13 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
             {agentName}
           </span>
           <span style={{ 
-            color: '#A855F7',
+            color: getStatusColor(),
             fontWeight: '500',
           }}>
-            {' is thinking'}
+            {' is ' + getStatusText()}
           </span>
           <span style={{ 
-            color: '#A855F7',
+            color: getStatusColor(),
             fontWeight: '500',
             minWidth: '18px',
             display: 'inline-block',

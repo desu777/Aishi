@@ -16,6 +16,9 @@ import {
   mockUpdateContract
 } from '../mocks/dreamMocks';
 import { executeDreamPersistenceProtocol, PersistenceProtocolInput } from '../services/dreamPersistenceOrchestrator';
+import { manageDailyDreamsFile } from '../services/dreamFileManager';
+import { uploadDreamDataSecurely } from '../services/dreamStorageUploader';
+import { updateDreamContract } from '../services/dreamContractUpdater';
 import { XStateStorageService } from '../services/xstateStorage';
 import { TerminalLine } from './types';
 
@@ -490,7 +493,126 @@ const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: strin
   return response;
 });
 
-// Service: Complete Dream Persistence Protocol (PRODUCTION)
+// Service: File Management (Stage 1)
+const fileManagementService = fromPromise(async ({ 
+  input 
+}: { 
+  input: { 
+    aiResponse: AIResponse; 
+    agentName: string; 
+    currentRootHash?: string;
+  } 
+}) => {
+  debugLog('📁 Starting file management service', {
+    dreamId: input.aiResponse.dreamData.id,
+    agentName: input.agentName
+  });
+
+  const dreamData = {
+    ...input.aiResponse.dreamData,
+    analysis: input.aiResponse.analysis || 'Dream analysis available.'
+  };
+
+  const result = await manageDailyDreamsFile(
+    input.agentName,
+    dreamData,
+    input.currentRootHash
+  );
+
+  if (!result.success) {
+    throw new Error(`File management failed: ${result.error}`);
+  }
+
+  debugLog('✅ File management completed', { 
+    fileName: result.fileName,
+    dreamsCount: result.data?.length 
+  });
+
+  return {
+    fileName: result.fileName,
+    data: result.data,
+    isNewFile: result.isNewFile
+  };
+});
+
+// Service: Storage Upload (Stage 2)
+const storageUploadService = fromPromise(async ({ 
+  input 
+}: { 
+  input: { 
+    data: any[];
+    fileName: string;
+  } 
+}) => {
+  debugLog('☁️ Starting storage upload service', {
+    fileName: input.fileName,
+    dataCount: input.data.length
+  });
+
+  const uploadResult = await uploadDreamDataSecurely(
+    input.data,
+    input.fileName,
+    {
+      enableVerification: true,
+      maxRetries: 3
+    }
+  );
+
+  if (!uploadResult.success || !uploadResult.rootHash) {
+    throw new Error(`Storage upload failed: ${uploadResult.error}`);
+  }
+
+  debugLog('✅ Storage upload completed', { 
+    rootHash: uploadResult.rootHash.substring(0, 10) + '...'
+  });
+
+  return {
+    rootHash: uploadResult.rootHash,
+    verified: uploadResult.verified,
+    txHash: uploadResult.txHash
+  };
+});
+
+// Service: Contract Update (Stage 3)
+const contractUpdateService = fromPromise(async ({ 
+  input 
+}: { 
+  input: { 
+    tokenId: number;
+    rootHash: string;
+    personalityImpact?: any;
+    dreamCount: number;
+  } 
+}) => {
+  debugLog('⛓️ Starting contract update service', {
+    tokenId: input.tokenId,
+    rootHash: input.rootHash.substring(0, 10) + '...'
+  });
+
+  const result = await updateDreamContract(
+    input.tokenId,
+    input.rootHash,
+    input.personalityImpact,
+    input.dreamCount
+  );
+
+  if (!result.success) {
+    throw new Error(`Contract update failed: ${result.error}`);
+  }
+
+  debugLog('✅ Contract update completed', { 
+    txHash: result.txHash?.substring(0, 10) + '...',
+    isEvolutionDream: result.isEvolutionDream
+  });
+
+  return {
+    txHash: result.txHash,
+    gasUsed: result.gasUsed,
+    isEvolutionDream: result.isEvolutionDream
+  };
+});
+
+// Service: Complete Dream Persistence Protocol (PRODUCTION) - DEPRECATED, kept for backward compatibility
 const dreamPersistenceService = fromPromise(async ({ 
   input 
 }: { 
@@ -563,7 +685,10 @@ export const dreamMachine = setup({
     fetchContext: fetchContextService,
     buildPrompt: buildPromptService,
     aiAnalysis: aiAnalysisService,
-    dreamPersistence: dreamPersistenceService
+    dreamPersistence: dreamPersistenceService,
+    fileManagement: fileManagementService,
+    storageUpload: storageUploadService,
+    contractUpdate: contractUpdateService
   },
   actions: {
     // Initialize dream session
@@ -606,7 +731,7 @@ export const dreamMachine = setup({
     // Store prompt
     storePrompt: assign({
       dreamPrompt: ({ event }) => event.output as string,
-      statusMessage: 'Analyzing dream with AI...'
+      statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} is thinking`
     }),
     
     // Store AI response
@@ -631,7 +756,7 @@ export const dreamMachine = setup({
     
     // Mark as completed
     markCompleted: assign({
-      statusMessage: ({ context }) => `${context.agentName} has learned from your dream!`,
+      statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} has learned from your dream!`,
       awaitingConfirmation: false
     }),
     
@@ -790,35 +915,102 @@ export const dreamMachine = setup({
     },
     
     savingDream: {
-      entry: assign({ statusMessage: 'Executing Dream Persistence Protocol...' }),
-      invoke: {
-        src: 'dreamPersistence',
-        input: ({ context }) => {
-          // Extract currentDreamDailyHash from context (it's stored during fetchContext)
-          const memoryData = (context.dreamContext as any)?.memoryData;
-          const currentRootHash = memoryData?.currentDreamDailyHash;
-          
-          debugLog('Preparing dreamPersistence input', {
-            dreamCount: context.dreamContext?.agentProfile?.dreamCount || 0,
-            hasCurrentRootHash: !!currentRootHash,
-            currentRootHash: currentRootHash?.substring(0, 10) + '...'
-          });
-          
-          return {
-            aiResponse: context.aiResponse!,
-            tokenId: context.tokenId!,
-            agentName: context.dreamContext?.agentProfile?.name || 'Agent',  // Use actual agent name from context
-            dreamCount: context.dreamContext?.agentProfile?.dreamCount || 0,
-            currentRootHash: currentRootHash
-          };
+      initial: 'fileManagement',
+      states: {
+        fileManagement: {
+          entry: [
+            assign({ statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} is learning` }),
+            'sendStatusToParent'
+          ],
+          invoke: {
+            src: 'fileManagement',
+            input: ({ context }) => {
+              const memoryData = (context.dreamContext as any)?.memoryData;
+              const currentRootHash = memoryData?.currentDreamDailyHash;
+              
+              return {
+                aiResponse: context.aiResponse!,
+                agentName: context.dreamContext?.agentProfile?.name || 'Agent',
+                currentRootHash: currentRootHash
+              };
+            },
+            onDone: {
+              target: 'storageUpload',
+              actions: assign({
+                persistenceResult: ({ event }) => ({ fileData: event.output })
+              })
+            },
+            onError: {
+              target: '#dream.error',
+              actions: ['storeError', 'sendErrorToParent']
+            }
+          }
         },
-        onDone: {
-          target: 'completed',
-          actions: ['storePersistenceResult', 'sendStatusToParent']
+        
+        storageUpload: {
+          entry: [
+            assign({ statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} is learning` }),
+            'sendStatusToParent'
+          ],
+          invoke: {
+            src: 'storageUpload',
+            input: ({ context }) => {
+              const fileData = (context.persistenceResult as any)?.fileData;
+              return {
+                data: fileData?.data || [],
+                fileName: fileData?.fileName || 'unknown'
+              };
+            },
+            onDone: {
+              target: 'contractUpdate',
+              actions: assign({
+                storageRootHash: ({ event }) => event.output.rootHash,
+                persistenceResult: ({ context, event }) => ({
+                  ...context.persistenceResult,
+                  storageData: event.output
+                })
+              })
+            },
+            onError: {
+              target: '#dream.error',
+              actions: ['storeError', 'sendErrorToParent']
+            }
+          }
         },
-        onError: {
-          target: '#dream.error',
-          actions: ['storeError', 'sendErrorToParent']
+        
+        contractUpdate: {
+          entry: [
+            assign({ statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} is evolving` }),
+            'sendStatusToParent'
+          ],
+          invoke: {
+            src: 'contractUpdate',
+            input: ({ context }) => ({
+              tokenId: context.tokenId!,
+              rootHash: context.storageRootHash!,
+              personalityImpact: context.aiResponse?.personalityImpact,
+              dreamCount: context.dreamContext?.agentProfile?.dreamCount || 0
+            }),
+            onDone: {
+              target: '#dream.completed',
+              actions: [
+                assign({
+                  contractTxHash: ({ event }) => event.output.txHash,
+                  persistenceResult: ({ context, event }) => ({
+                    ...context.persistenceResult,
+                    contractData: event.output,
+                    isEvolutionDream: event.output.isEvolutionDream
+                  })
+                }),
+                'markCompleted',
+                'sendStatusToParent'
+              ]
+            },
+            onError: {
+              target: '#dream.error',
+              actions: ['storeError', 'sendErrorToParent']
+            }
+          }
         }
       }
     },

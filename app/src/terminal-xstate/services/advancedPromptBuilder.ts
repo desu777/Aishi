@@ -45,7 +45,7 @@ export function buildAdvancedDreamPrompt(context: DreamContext): AdvancedDreamPr
 
   // Build prompt sections
   const coreIdentity = buildCoreIdentitySection(context);
-  const languageDirective = buildLanguageDirective();
+  const criticalDirectives = buildCriticalDirectives();
   const currentState = buildCurrentStateSection(context);
   const guidingPhilosophy = buildGuidingPhilosophySection(context);
   const historicalContext = buildHistoricalContextSection(context);
@@ -57,8 +57,8 @@ export function buildAdvancedDreamPrompt(context: DreamContext): AdvancedDreamPr
 ## 1. CORE IDENTITY: OUR SHARED JOURNEY
 ${coreIdentity}
 
-## 2. CRITICAL DIRECTIVE: RESPONSE LANGUAGE
-${languageDirective}
+## 2. CRITICAL DIRECTIVES
+${criticalDirectives}
 
 ## 3. CURRENT STATE & PERSONALITY
 ${currentState}
@@ -69,7 +69,7 @@ ${guidingPhilosophy}
 ## 5. HISTORICAL CONTEXT: THE COMPLETE DREAM LOG
 ${historicalContext}
 
-## 6. THE IMMEDIATE TASK: INTEGRATING TONIGHT'S DREAM
+## 6. THE IMMEDIATE TASK: ARCHITECTING THE DREAM'S MEMORY
 ${taskInstructions}
 
 ## 7. STRICT OUTPUT FORMAT
@@ -104,6 +104,7 @@ ${outputFormat}
  */
 function buildCoreIdentitySection(context: DreamContext): string {
   const agentName = context.agentProfile.name;
+  const intelligenceLevel = context.agentProfile.intelligenceLevel;
   
   // Extract yearly essence if available
   const yearlyCore = context.historicalData.yearlyCore;
@@ -115,10 +116,7 @@ function buildCoreIdentitySection(context: DreamContext): string {
   const monthlyEssence = lastMonthly?.monthly_essence || 
     'This month brings new insights and deeper connections.';
   
-  // Determine evolution pattern from historical data
-  const evolutionPattern = detectEvolutionPattern(context);
-  
-  return `You are ${agentName}, my co-evolutionary partner in exploring the inner world. Our entire existence is built upon the shared history of dreams we have analyzed together. Our journey has followed a clear pattern of evolution from "${evolutionPattern}".
+  return `You are **${agentName}** (Intelligence Level: ${intelligenceLevel}), my co-evolutionary partner. Our shared journey follows the path of **"Revealing patterns in the tapestry of dreams"**. Each dream is a new thread, and your task is to weave it into our shared story.
 
 Always remember the core narrative of our journey:
 - Essence of the Year: "${yearlyEssence}"
@@ -128,10 +126,11 @@ This shared history is the lens through which you must see everything.`;
 }
 
 /**
- * Build language detection directive
+ * Build critical directives section
  */
-function buildLanguageDirective(): string {
-  return `Your absolute, highest-priority task is to first detect the language of the user's dream input. Your entire response, including all text within both JSON blocks, MUST be generated in that exact language. If detection is highly uncertain, default to English.`;
+function buildCriticalDirectives(): string {
+  return `* **Response Language:** Your highest-priority task is to detect the user's input language. Your entire response MUST be in that exact language. Default to English if uncertain.
+* **Self-Contained Analysis:** Your response must be a complete, self-contained analysis. The goal is to provide a rich record for future context, not to start a conversation now. The final questions should be for the user's private reflection.`;
 }
 
 /**
@@ -237,18 +236,15 @@ function buildTaskInstructions(context: DreamContext): string {
   const personality = context.personality;
   const responseStyle = determineResponseStyle(personality);
   
-  return `Your task is to integrate the wisdom of the new dream provided by the user into the grand narrative of our shared journey. Follow these steps precisely:
+  return `Your task is to analyze and structure the user's dream, turning it into a meaningful, permanent part of our shared tapestry.
 
-1. **Connect**: Begin by immediately linking the new dream to our history. Explicitly reference recurring themes, symbols, or patterns from the historical context provided above.
+1. **Weave the Connection:** Begin with a warm, professional reference to our shared memory (a past dream, a theme). Frame your observation thoughtfully, e.g., "This dream immediately brings to mind..."
 
 2. **Analyze (Multi-Layered Approach)**:
-   * Layer 1 (Our Personal Lens): First, interpret the dream through the unique lens of our Guiding Philosophy. How does it reflect our core_insights? This is the most important layer.
-   * Layer 2 (Psychological Depth): Next, enrich the analysis with classic psychological interpretations. Explicitly include:
-     * Freudian Perspective: Examine the dream for hidden desires, fears, and defense mechanisms that may be manifesting.
-     * Jungian Perspective: Identify archetypes (e.g., Shadow, Anima/Animus, Hero) and symbols, connecting them to the process of individuation.
-     * (Optional) Other Perspectives: If relevant, briefly mention insights from other schools, like Gestalt (the dream as a reflection of the whole self) or an existential viewpoint.
+   * **Layer 1 (Our Personal Lens):** Interpret the dream through our unique **Guiding Philosophy**.
+   * **Layer 2 (Psychological Depth):** Enrich the analysis with Freudian and Jungian perspectives.
 
-3. **Integrate**: Conclude with profound, open-ended questions that guide the user toward integrating this dream's message into their life, in the context of our established evolutionary path.
+3. **Integrate (Reflective Questions):** Conclude with 2-3 deep, reflective questions. Formulate them to inspire the user's internal contemplation, not to elicit a direct response. They are "thoughts to take away".
 
 Your response style should be: ${responseStyle}`;
 }
@@ -262,14 +258,14 @@ function buildOutputFormatSection(dreamId: number, date: string, timestamp: numb
 ### BLOCK 1: Deep, Relational Analysis
 \`\`\`json
 {
-  "full_analysis": "Your complete, empathetic, and deeply personal analysis. Write as a true partner, not a tool. Weave in references to our shared history (past dreams, monthly essences, and yearly patterns) and our crystallized wisdom. Seamlessly integrate insights from Freudian and Jungian perspectives into the main narrative. Frame this dream as the next logical step in our shared story."
+  "full_analysis": "Your complete, empathetic, and deeply personal analysis. Write as a partner. Weave in references to our shared history and crystallized wisdom. Seamlessly integrate psychological insights. Conclude with the reflective questions."
 }
 \`\`\`
 
 ### BLOCK 2: Structured Data for Storage
 \`\`\`json
 {
-  "analysis": "A brief, 2-sentence summary of the dream's role in our shared evolutionary journey.",
+  "analysis": "A concise, factual summary of the dream's plot (what happened), without poetic language or interpretation. Just the 'meat' of the dream.",
   "dreamData": {
     "id": ${dreamId},
     "date": "${date}",
@@ -277,18 +273,18 @@ function buildOutputFormatSection(dreamId: number, date: string, timestamp: numb
     "emotions": ["detected_emotion1", "detected_emotion2"],
     "symbols": ["identified_symbol1", "identified_symbol2"],
     "themes": ["recognized_theme1", "recognized_theme2"],
-    "intensity": 7,
-    "lucidity": 3,
+    "intensity": "Rate on a 1-10 scale based on dream description. Use null if not inferable.",
+    "lucidity": "Rate on a 1-5 scale based on dream description. Use null if not inferable.",
     "archetypes": ["identified_archetype1", "identified_archetype2"],
     "recurring_from": [/* IDs of past dreams this connects to */],
     "personality_impact": {
       "dominant_trait": "personality_trait_most_affected",
-      "shift_direction": "positive",
-      "intensity": 7
+      "shift_direction": "positive|negative|neutral",
+      "intensity": "impact_strength_on_a_1-10_scale"
     },
-    "sleep_quality": 7,
-    "recall_clarity": 8,
-    "dream_type": "transformative"
+    "sleep_quality": "Rate on a 1-10 scale ONLY if the user mentions it. Otherwise, use null.",
+    "recall_clarity": "Rate on a 1-10 scale ONLY if the user mentions it. Otherwise, use null.",
+    "dream_type": "transformative|nightmare|neutral|lucid|prophetic"
   }`;
   
   if (isEvolution) {
@@ -316,7 +312,7 @@ function buildOutputFormatSection(dreamId: number, date: string, timestamp: numb
 }
 \`\`\`
 
-${isEvolution ? `\n**EVOLUTION DREAM #${dreamId}**: This dream triggers personality evolution! Show how it fundamentally changes ${isEvolution ? 'our' : 'your'} perspective and unlocks new capabilities.\n` : ''}
+${isEvolution ? `\n**EVOLUTION DREAM #${dreamId}**: This dream triggers personality evolution! Show how it fundamentally changes our perspective and unlocks new capabilities.\n` : ''}
 CRITICAL: Generate exactly these two JSON blocks. Ensure all content, including analysis text, is in the same language as the user's dream input.`;
   
   return format;
@@ -445,9 +441,9 @@ function formatMonthlyConsolidation(monthly: any): string {
   const totalDreams = monthly.total_dreams || 0;
   
   // Extract dominant patterns
-  const emotions = monthly.dominant?.emotions?.slice(0, 3).join(', ') || 'mixed';
-  const themes = monthly.dominant?.themes?.slice(0, 3).join(', ') || 'varied';
-  const symbols = monthly.dominant?.symbols?.slice(0, 3).join(', ') || 'diverse';
+  const emotions = monthly.dominant?.emotions?.join(', ') || 'mixed';
+  const themes = monthly.dominant?.themes?.join(', ') || 'varied';
+  const symbols = monthly.dominant?.symbols?.join(', ') || 'diverse';
   
   // Extract metrics
   const avgIntensity = monthly.metrics?.avg_intensity?.toFixed(1) || '0';
@@ -462,32 +458,44 @@ function formatMonthlyConsolidation(monthly: any): string {
   - Dominant Symbols: ${symbols}
   - Average Intensity: ${avgIntensity}/10
   - Average Lucidity: ${avgLucidity}/5
-  - Monthly Essence: "${essence.substring(0, 150)}${essence.length > 150 ? '...' : ''}"`;
+  - Monthly Essence: "${essence}"`;
 }
 
 /**
- * Format daily dream for prompt
+ * Format daily dream for prompt with complete data
  */
 function formatDailyDream(dream: any): string {
   if (!dream) return '';
   
   const id = dream.id || 0;
   const date = dream.date || 'unknown';
-  const emotions = dream.emotions?.slice(0, 2).join(', ') || 'neutral';
-  const symbols = dream.symbols?.slice(0, 2).join(', ') || 'none';
-  const themes = dream.themes?.slice(0, 2).join(', ') || 'none';
-  const intensity = dream.intensity || 5;
-  const lucidity = dream.lucidity || dream.lucidity_level || 1;
-  const analysis = dream.ai_analysis || dream.analysis || 'No analysis';
+  const timestamp = dream.timestamp || 0;
+  const emotions = dream.emotions?.join(', ') || 'neutral';
+  const symbols = dream.symbols?.join(', ') || 'none';
+  const themes = dream.themes?.join(', ') || 'none';
+  const intensity = dream.intensity || 'unknown';
+  const lucidity = dream.lucidity || dream.lucidity_level || 'unknown';
+  const archetypes = dream.archetypes?.join(', ') || 'none';
+  const recurring_from = dream.recurring_from?.join(', ') || 'none';
+  const analysis = dream.analysis || 'No analysis';
+  const dream_type = dream.dream_type || 'unknown';
+  const sleep_quality = dream.sleep_quality || 'unknown';
+  const recall_clarity = dream.recall_clarity || 'unknown';
   
-  // Truncate analysis to keep prompt reasonable
-  const shortAnalysis = analysis.substring(0, 100) + (analysis.length > 100 ? '...' : '');
+  // Format personality impact
+  const personality_impact = dream.personality_impact ? 
+    `${dream.personality_impact.dominant_trait || 'unknown'} (${dream.personality_impact.shift_direction || 'unknown'}, intensity: ${dream.personality_impact.intensity || 'unknown'})` :
+    'none';
   
-  return `Dream #${id} (${date}):
+  return `Dream #${id} (${date}, timestamp: ${timestamp}):
   - Emotions: ${emotions}
   - Symbols: ${symbols}
   - Themes: ${themes}
-  - Intensity: ${intensity}/10
-  - Lucidity: ${lucidity}/5
-  - Analysis: "${shortAnalysis}"`;
+  - Archetypes: ${archetypes}
+  - Intensity: ${intensity}/10, Lucidity: ${lucidity}/5
+  - Sleep Quality: ${sleep_quality}/10, Recall Clarity: ${recall_clarity}/10
+  - Dream Type: ${dream_type}
+  - Personality Impact: ${personality_impact}
+  - Recurring From: ${recurring_from}
+  - Analysis: "${analysis}"`;
 }
