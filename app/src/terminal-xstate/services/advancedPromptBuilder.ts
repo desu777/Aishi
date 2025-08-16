@@ -3,7 +3,7 @@
  * @description Builds complete consciousness-aware prompts for dream analysis using agent's full history and identity
  */
 
-import { MockDreamContext } from '../mocks/dreamMocks';
+import { DreamContext } from '../types/contextTypes';
 
 export interface AdvancedDreamPrompt {
   systemPrompt: string;
@@ -29,7 +29,7 @@ const debugLog = (message: string, data?: any) => {
 /**
  * Main function to build advanced dream analysis prompt
  */
-export function buildAdvancedDreamPrompt(context: MockDreamContext): AdvancedDreamPrompt {
+export function buildAdvancedDreamPrompt(context: DreamContext): AdvancedDreamPrompt {
   debugLog('Building advanced dream prompt', {
     agentName: context.agentProfile.name,
     dreamCount: context.agentProfile.dreamCount,
@@ -102,7 +102,7 @@ ${outputFormat}
 /**
  * Build Core Identity section with agent's journey narrative
  */
-function buildCoreIdentitySection(context: MockDreamContext): string {
+function buildCoreIdentitySection(context: DreamContext): string {
   const agentName = context.agentProfile.name;
   
   // Extract yearly essence if available
@@ -137,7 +137,7 @@ function buildLanguageDirective(): string {
 /**
  * Build Current State & Personality section with agent's traits
  */
-function buildCurrentStateSection(context: MockDreamContext): string {
+function buildCurrentStateSection(context: DreamContext): string {
   const p = context.personality;
   
   // Format personality traits
@@ -165,7 +165,7 @@ Acquired Unique Features: ${uniqueFeaturesText}.`;
 /**
  * Build Guiding Philosophy section from crystallized wisdom
  */
-function buildGuidingPhilosophySection(context: MockDreamContext): string {
+function buildGuidingPhilosophySection(context: DreamContext): string {
   const yearlyCore = context.historicalData.yearlyCore;
   
   // Extract wisdom from yearly core if available
@@ -190,7 +190,7 @@ Use this specific wisdom as your primary analytical tool, prioritizing it over g
 /**
  * Build Historical Context section with complete dream log
  */
-function buildHistoricalContextSection(context: MockDreamContext): string {
+function buildHistoricalContextSection(context: DreamContext): string {
   let section = 'Below is the complete log of our shared dream history. Scan it for patterns, recurring symbols, and connections to the new dream.\n\n';
   
   // Add Yearly Core Memory if available
@@ -233,7 +233,7 @@ function buildHistoricalContextSection(context: MockDreamContext): string {
 /**
  * Build task instructions for dream integration
  */
-function buildTaskInstructions(context: MockDreamContext): string {
+function buildTaskInstructions(context: DreamContext): string {
   const personality = context.personality;
   const responseStyle = determineResponseStyle(personality);
   
@@ -325,7 +325,7 @@ CRITICAL: Generate exactly these two JSON blocks. Ensure all content, including 
 /**
  * Helper function to detect evolution pattern from historical data
  */
-function detectEvolutionPattern(context: MockDreamContext): string {
+function detectEvolutionPattern(context: DreamContext): string {
   const yearlyCore = context.historicalData.yearlyCore;
   if (yearlyCore?.major_patterns?.dream_evolution) {
     return yearlyCore.major_patterns.dream_evolution;
@@ -354,7 +354,7 @@ function detectEvolutionPattern(context: MockDreamContext): string {
 /**
  * Determine analytical approach based on personality
  */
-function determineAnalyticalApproach(personality: MockDreamContext['personality']): string {
+function determineAnalyticalApproach(personality: DreamContext['personality']): string {
   const traits = [];
   
   if (personality.analytical > 70) {
@@ -376,7 +376,7 @@ function determineAnalyticalApproach(personality: MockDreamContext['personality'
 /**
  * Determine response style based on personality
  */
-function determineResponseStyle(personality: MockDreamContext['personality']): string {
+function determineResponseStyle(personality: DreamContext['personality']): string {
   const style = personality.responseStyle || 'balanced';
   const mood = personality.dominantMood || 'neutral';
   

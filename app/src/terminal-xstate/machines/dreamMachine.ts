@@ -7,16 +7,13 @@ import { setup, assign, fromPromise, sendParent } from 'xstate';
 import { createPublicClient, http } from 'viem';
 import { galileoTestnet } from '../../config/chains';
 import { getContractConfig } from '../services/contractService';
+import { DreamContext, AIResponse, defaultAgentData } from '../types/contextTypes';
 import { 
-  mockAgentData,
   buildMockDreamContext,
-  buildMockPrompt,
   sendMockDreamAnalysis,
   mockUploadToStorage,
   mockDownloadFromStorage,
-  mockUpdateContract,
-  MockDreamContext,
-  MockAIResponse
+  mockUpdateContract
 } from '../mocks/dreamMocks';
 import { XStateStorageService } from '../services/xstateStorage';
 import { TerminalLine } from './types';
@@ -29,16 +26,16 @@ const debugLog = (message: string, data?: any) => {
 };
 
 // Dream machine context
-export interface DreamContext {
+export interface DreamMachineContext {
   // Agent data
   tokenId: number | null;
   agentName: string | null;
   
   // Dream flow data
   dreamInput: string;
-  dreamContext: MockDreamContext | null;
+  dreamContext: DreamContext | null;
   dreamPrompt: string | null;
-  aiResponse: MockAIResponse | null;
+  aiResponse: AIResponse | null;
   
   // Storage data
   storageRootHash: string | null;
@@ -61,7 +58,7 @@ export type DreamEvent =
   | { type: 'RESET' };
 
 // Initial context
-const initialContext: DreamContext = {
+const initialContext: DreamMachineContext = {
   tokenId: null,
   agentName: null,
   dreamInput: '',
@@ -127,14 +124,14 @@ const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data
 const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: string; tokenId?: number; agentName?: string } }) => {
   debugLog('=== BANDYCKA JAZDA: Fetching REAL dream context ===', { 
     dreamLength: input.dreamText.length,
-    tokenId: input.tokenId || mockAgentData.tokenId,
-    agentName: input.agentName || mockAgentData.agentName
+    tokenId: input.tokenId || defaultAgentData.tokenId,
+    agentName: input.agentName || defaultAgentData.agentName
   });
   
   try {
-    // Use provided data or fall back to mocks
-    const effectiveTokenId = input.tokenId || mockAgentData.tokenId;
-    const effectiveAgentName = input.agentName || mockAgentData.agentName;
+    // Use provided data or fall back to defaults
+    const effectiveTokenId = input.tokenId || defaultAgentData.tokenId;
+    const effectiveAgentName = input.agentName || defaultAgentData.agentName;
     
     // 1. Create viem public client
     const contractConfig = getContractConfig();
@@ -353,14 +350,14 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
       debugLog('[INFO] No memory core hash available');
     }
     
-    // 7. Build context compatible with mock structure
-    const context: MockDreamContext = {
+    // 7. Build context for dream analysis
+    const context: DreamContext = {
       userDream: input.dreamText,
       agentProfile: {
         name: parsedAgentName || effectiveAgentName,
-        intelligenceLevel: parsedIntelligenceLevel || mockAgentData.intelligenceLevel,
-        dreamCount: parsedDreamCount || mockAgentData.dreamCount,
-        conversationCount: parsedConversationCount || mockAgentData.conversationCount
+        intelligenceLevel: parsedIntelligenceLevel || defaultAgentData.intelligenceLevel,
+        dreamCount: parsedDreamCount || defaultAgentData.dreamCount,
+        conversationCount: parsedConversationCount || defaultAgentData.conversationCount
       },
       personality: {
         creativity: Number(personalityTraits?.creativity || 50),
@@ -396,14 +393,14 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
     return context;
     
   } catch (error) {
-    debugLog('[ERROR] Failed fetching real context, falling back to mocks', { 
+    debugLog('[ERROR] Failed fetching real context, falling back to defaults', { 
       error: String(error) 
     });
     
-    // Fallback to mock data on error
+    // Fallback to default data on error
     const context = await buildMockDreamContext(
-      mockAgentData.tokenId,
-      mockAgentData,
+      defaultAgentData.tokenId,
+      defaultAgentData,
       input.dreamText
     );
     
@@ -412,7 +409,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
 });
 
 // Service: Build dream prompt
-const buildPromptService = fromPromise(async ({ input }: { input: { context: MockDreamContext } }) => {
+const buildPromptService = fromPromise(async ({ input }: { input: { context: DreamContext } }) => {
   debugLog('Building advanced dream prompt with full consciousness');
   
   // Import advanced prompt builder
@@ -450,7 +447,7 @@ const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: strin
   console.log(input.prompt);
   debugLog('[FULL PROMPT FOR VERIFICATION - END]');
   
-  // For now, use mock response until real AI backend is integrated
+  // TODO: Replace with real AI backend integration
   const response = await sendMockDreamAnalysis(input.prompt, isEvolution);
   
   debugLog('[SUCCESS] AI analysis complete', { 
@@ -463,7 +460,7 @@ const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: strin
 });
 
 // Service: Upload to storage
-const storageUploadService = fromPromise(async ({ input }: { input: { aiResponse: MockAIResponse } }) => {
+const storageUploadService = fromPromise(async ({ input }: { input: { aiResponse: AIResponse } }) => {
   debugLog('Uploading dream to storage');
   
   // In real implementation, would download existing, append, and upload
@@ -499,7 +496,7 @@ const contractUpdateService = fromPromise(async ({
 // Dream state machine
 export const dreamMachine = setup({
   types: {} as {
-    context: DreamContext;
+    context: DreamMachineContext;
     events: DreamEvent;
   },
   actors: {
@@ -512,8 +509,8 @@ export const dreamMachine = setup({
   actions: {
     // Initialize dream session
     initializeDream: assign({
-      tokenId: mockAgentData.tokenId,
-      agentName: mockAgentData.agentName,
+      tokenId: defaultAgentData.tokenId,
+      agentName: defaultAgentData.agentName,
       statusMessage: 'Describe your dream...', // This will be used for placeholder
       errorMessage: null
     }),
@@ -541,7 +538,7 @@ export const dreamMachine = setup({
     
     // Store context
     storeContext: assign({
-      dreamContext: ({ event }) => event.output as MockDreamContext,
+      dreamContext: ({ event }) => event.output as DreamContext,
       statusMessage: 'Building dream analysis prompt...'
     }),
     
@@ -553,7 +550,7 @@ export const dreamMachine = setup({
     
     // Store AI response
     storeAIResponse: assign({
-      aiResponse: ({ event }) => event.output as MockAIResponse,
+      aiResponse: ({ event }) => event.output as AIResponse,
       statusMessage: 'Type y/n to confirm',
       awaitingConfirmation: true
     }),
@@ -689,7 +686,7 @@ export const dreamMachine = setup({
             src: 'aiAnalysis',
             input: ({ context }) => ({ 
               prompt: context.dreamPrompt!,
-              dreamCount: mockAgentData.dreamCount 
+              dreamCount: defaultAgentData.dreamCount 
             }),
             onDone: {
               target: 'displayingAnalysis',
