@@ -88,7 +88,7 @@ const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data
           const hasArrayData = Array.isArray(result) && (result as any)[1] !== undefined;
           
           if (hasNamedProps || hasArrayData) {
-            debugLog(`✅ ${name} fetched successfully on attempt ${i + 1}`, {
+            debugLog(`[SUCCESS] ${name} fetched successfully on attempt ${i + 1}`, {
               hasNamedProps,
               hasArrayData,
               agentName: hasNamedProps ? (result as any).agentName : (result as any)[1]
@@ -97,7 +97,7 @@ const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data
           }
         } else {
           // For other data types, just check if not undefined
-          debugLog(`✅ ${name} fetched successfully on attempt ${i + 1}`);
+          debugLog(`[SUCCESS] ${name} fetched successfully on attempt ${i + 1}`);
           return result;
         }
       }
@@ -105,21 +105,21 @@ const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data
       // If undefined or incomplete, retry
       if (i < retries - 1) {
         const delay = 500 * (i + 1); // Progressive delay: 500ms, 1000ms, 1500ms
-        debugLog(`⚠️ Attempt ${i + 1} for ${name} returned incomplete data, retrying in ${delay}ms...`);
+        debugLog(`[WARNING] Attempt ${i + 1} for ${name} returned incomplete data, retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     } catch (error) {
       if (i === retries - 1) {
-        debugLog(`❌ Failed to fetch ${name} after ${retries} attempts`, { error: String(error) });
+        debugLog(`[ERROR] Failed to fetch ${name} after ${retries} attempts`, { error: String(error) });
         throw error;
       }
       const delay = 500 * (i + 1);
-      debugLog(`⚠️ Attempt ${i + 1} for ${name} failed, retrying in ${delay}ms...`, { error: String(error) });
+      debugLog(`[WARNING] Attempt ${i + 1} for ${name} failed, retrying in ${delay}ms...`, { error: String(error) });
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
   
-  debugLog(`⚠️ Returning undefined for ${name} after ${retries} attempts`);
+  debugLog(`[WARNING] Returning undefined for ${name} after ${retries} attempts`);
   return undefined;
 };
 
@@ -163,9 +163,9 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
     
     // Handle undefined memory data
     if (!memoryData) {
-      debugLog('⚠️ Memory data undefined after retries, using empty hashes');
+      debugLog('[WARNING] Memory data undefined after retries, using empty hashes');
     } else {
-      debugLog('📊 Contract memory data fetched', {
+      debugLog('[DATA] Contract memory data fetched', {
         memoryCoreHash: memoryData.memoryCoreHash,
         currentDreamDailyHash: memoryData.currentDreamDailyHash,
         currentConvDailyHash: memoryData.currentConvDailyHash,
@@ -206,7 +206,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
       parsedConversationCount = Number(agentData.conversationCount !== undefined ? 
         agentData.conversationCount : agentData[6]);
       
-      debugLog('🤖 Agent data parsed', {
+      debugLog('[AGENT] Agent data parsed', {
         agentName: parsedAgentName,
         intelligenceLevel: parsedIntelligenceLevel,
         dreamCount: parsedDreamCount,
@@ -221,7 +221,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
     
     // Handle undefined agent name after parsing
     if (!parsedAgentName) {
-      debugLog('⚠️ Agent name still undefined after parsing, using fallback');
+      debugLog('[WARNING] Agent name still undefined after parsing, using fallback');
       parsedAgentName = effectiveAgentName;
     }
     
@@ -239,9 +239,9 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
     
     // Handle undefined personality traits
     if (!personalityTraits) {
-      debugLog('⚠️ Personality traits undefined after retries, using defaults');
+      debugLog('[WARNING] Personality traits undefined after retries, using defaults');
     } else {
-      debugLog('🎭 Personality traits fetched', {
+      debugLog('[PERSONALITY] Personality traits fetched', {
         creativity: personalityTraits.creativity?.toString(),
         analytical: personalityTraits.analytical?.toString(),
         empathy: personalityTraits.empathy?.toString(),
@@ -264,7 +264,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
       'UniqueFeatures'
     ) as any;
     
-    debugLog('🌟 Unique features fetched', {
+    debugLog('[FEATURES] Unique features fetched', {
       hasData: !!uniqueFeaturesData,
       count: Array.isArray(uniqueFeaturesData) ? uniqueFeaturesData.length : 0
     });
@@ -280,7 +280,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
     
     // Download current daily dreams if hash exists
     if (memoryData?.currentDreamDailyHash && memoryData.currentDreamDailyHash !== emptyHash) {
-      debugLog('📥 Downloading daily dreams from storage', { 
+      debugLog('[DOWNLOAD] Downloading daily dreams from storage', { 
         hash: memoryData.currentDreamDailyHash 
       });
       
@@ -288,7 +288,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
         const result = await storageService.downloadJson(memoryData.currentDreamDailyHash);
         if (result.success && result.data) {
           historicalData.dailyDreams = Array.isArray(result.data) ? result.data : [];
-          debugLog('✅ Daily dreams downloaded successfully', {
+          debugLog('[SUCCESS] Daily dreams downloaded successfully', {
             count: historicalData.dailyDreams.length,
             preview: historicalData.dailyDreams.slice(0, 2).map(d => ({
               id: d.id,
@@ -297,18 +297,18 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
             }))
           });
         } else {
-          debugLog('⚠️ Failed to download daily dreams', { error: result.error });
+          debugLog('[WARNING] Failed to download daily dreams', { error: result.error });
         }
       } catch (error) {
-        debugLog('❌ Error downloading daily dreams', { error: String(error) });
+        debugLog('[ERROR] Error downloading daily dreams', { error: String(error) });
       }
     } else {
-      debugLog('ℹ️ No daily dreams hash available');
+      debugLog('[INFO] No daily dreams hash available');
     }
     
     // Download monthly consolidations if hash exists
     if (memoryData?.lastDreamMonthlyHash && memoryData.lastDreamMonthlyHash !== emptyHash) {
-      debugLog('📥 Downloading monthly consolidations from storage', { 
+      debugLog('[DOWNLOAD] Downloading monthly consolidations from storage', { 
         hash: memoryData.lastDreamMonthlyHash 
       });
       
@@ -316,22 +316,22 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
         const result = await storageService.downloadJson(memoryData.lastDreamMonthlyHash);
         if (result.success && result.data) {
           historicalData.monthlyConsolidations = Array.isArray(result.data) ? result.data : [result.data];
-          debugLog('✅ Monthly consolidations downloaded', {
+          debugLog('[SUCCESS] Monthly consolidations downloaded', {
             count: historicalData.monthlyConsolidations.length
           });
         } else {
-          debugLog('⚠️ Failed to download monthly consolidations', { error: result.error });
+          debugLog('[WARNING] Failed to download monthly consolidations', { error: result.error });
         }
       } catch (error) {
-        debugLog('❌ Error downloading monthly consolidations', { error: String(error) });
+        debugLog('[ERROR] Error downloading monthly consolidations', { error: String(error) });
       }
     } else {
-      debugLog('ℹ️ No monthly consolidation hash available');
+      debugLog('[INFO] No monthly consolidation hash available');
     }
     
     // Download memory core if hash exists
     if (memoryData?.memoryCoreHash && memoryData.memoryCoreHash !== emptyHash) {
-      debugLog('📥 Downloading memory core from storage', { 
+      debugLog('[DOWNLOAD] Downloading memory core from storage', { 
         hash: memoryData.memoryCoreHash 
       });
       
@@ -339,18 +339,18 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
         const result = await storageService.downloadJson(memoryData.memoryCoreHash);
         if (result.success && result.data) {
           historicalData.yearlyCore = result.data;
-          debugLog('✅ Memory core downloaded', {
+          debugLog('[SUCCESS] Memory core downloaded', {
             hasCore: true,
             year: historicalData.yearlyCore?.year
           });
         } else {
-          debugLog('⚠️ Failed to download memory core', { error: result.error });
+          debugLog('[WARNING] Failed to download memory core', { error: result.error });
         }
       } catch (error) {
-        debugLog('❌ Error downloading memory core', { error: String(error) });
+        debugLog('[ERROR] Error downloading memory core', { error: String(error) });
       }
     } else {
-      debugLog('ℹ️ No memory core hash available');
+      debugLog('[INFO] No memory core hash available');
     }
     
     // 7. Build context compatible with mock structure
@@ -379,7 +379,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
       historicalData: historicalData
     };
     
-    debugLog('🎉 REAL context built successfully', { 
+    debugLog('[COMPLETE] REAL context built successfully', { 
       agentName: context.agentProfile.name,
       memoryDepth: context.memoryAccess.memoryDepth,
       dailyDreamsCount: context.historicalData.dailyDreams.length,
@@ -390,7 +390,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
     return context;
     
   } catch (error) {
-    debugLog('❌ ERROR fetching real context, falling back to mocks', { 
+    debugLog('[ERROR] Failed fetching real context, falling back to mocks', { 
       error: String(error) 
     });
     
