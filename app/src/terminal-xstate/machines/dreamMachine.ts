@@ -722,9 +722,10 @@ export const dreamMachine = setup({
       statusMessage: ({ context }) => `${context.agentName} is thinking . . .`
     }),
     
-    // Store context
+    // Store context and update agent name
     storeContext: assign({
       dreamContext: ({ event }) => event.output as DreamContext,
+      agentName: ({ event }) => (event.output as DreamContext).agentProfile?.name || 'Agent',
       statusMessage: 'Building dream analysis prompt...'
     }),
     

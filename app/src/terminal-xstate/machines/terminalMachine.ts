@@ -350,11 +350,29 @@ export const terminalMachine = setup({
       on: {
         'INPUT.SUBMIT': {
           actions: [
-            ({ context, event }) => {
-              // Check if it's y/n confirmation
+            // FIRST: Immediately add user message to view (IMMUTABLE!)
+            assign({
+              lines: ({ context }) => {
+                const timestamp = Date.now();
+                const input = context.currentInput.trim().toLowerCase();
+                const isConfirmation = input === 'y' || input === 'yes' || input === 'n' || input === 'no';
+                
+                // Format according to specification
+                const formattedContent = isConfirmation 
+                  ? `> ${context.currentInput}`  // For y/n responses
+                  : `~ you : ${context.currentInput}`; // For dream content
+                
+                // IMMUTABLE UPDATE - creates NEW array for React re-render
+                return [...context.lines, {
+                  type: 'input',
+                  content: formattedContent,
+                  timestamp
+                }];
+              }
+            }),
+            // SECOND: Send to dream machine
+            ({ context }) => {
               const input = context.currentInput.trim().toLowerCase();
-              
-              // If dream is waiting for input, send it to dream machine
               if (context.dreamRef) {
                 if (input === 'y' || input === 'yes') {
                   context.dreamRef.send({ type: 'CONFIRM_SAVE' });
@@ -368,16 +386,8 @@ export const terminalMachine = setup({
                   });
                 }
               }
-              
-              // Add input to lines
-              const timestamp = Date.now();
-              context.lines.push({
-                type: 'input',
-                content: `~ ${context.currentInput}`,
-                timestamp
-              });
             },
-            // Clear the input after submission
+            // THIRD: Clear the input
             assign({ currentInput: '' })
           ]
         },
