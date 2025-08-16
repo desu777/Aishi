@@ -783,10 +783,10 @@ export const dreamMachine = setup({
       const timestamp = Date.now();
       
       if (context.aiResponse) {
-        // Display AI analysis
+        // Display AI analysis with formatted agent name
         lines.push({
           type: 'info',
-          content: `${context.agentName}: ${context.aiResponse.fullAnalysis}`,
+          content: `~ ${context.agentName} : ${context.aiResponse.fullAnalysis}`,
           timestamp
         });
         

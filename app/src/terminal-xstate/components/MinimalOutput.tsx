@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TerminalLine } from '../machines/types';
+import { CollapsibleText } from './CollapsibleText';
 
 interface MinimalOutputProps {
   lines: TerminalLine[];
@@ -61,11 +62,34 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
     }
   };
 
+  const formatTextWithAgentName = (content: string): React.ReactNode => {
+    // Parse and format agent name in "~ name :" format
+    const agentNameRegex = /~ ([^:]+) :/;
+    const match = content.match(agentNameRegex);
+    if (match) {
+      const beforeAgent = content.substring(0, match.index);
+      const agentName = match[1];
+      const afterAgent = content.substring((match.index || 0) + match[0].length);
+      
+      return (
+        <>
+          {beforeAgent}
+          <span style={{ color: colors.silver, opacity: 0.7 }}>~ </span>
+          <span style={{ color: '#8B5CF6', fontWeight: 500 }}>{agentName}</span>
+          <span style={{ color: colors.silver, opacity: 0.7 }}> : </span>
+          {afterAgent}
+        </>
+      );
+    }
+    return content;
+  };
+  
   const formatContent = (line: TerminalLine) => {
     // Clean, minimal formatting
     if (typeof line.content === 'string') {
-      // Remove any command prefixes for cleaner look
       let content = line.content;
+      
+      // Handle command prefixes
       if (content.startsWith('$ ')) {
         return (
           <>
@@ -74,7 +98,33 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
           </>
         );
       }
-      return content;
+      
+      // Check if this is a dream input or agent response (needs collapsing)
+      const isDreamInput = line.type === 'input' && content.startsWith('~');
+      const isAgentResponse = line.type === 'info' && content.includes('~ ') && content.includes(' :');
+      const isPulsatingQuestion = content.includes('Do u wanna train');
+      
+      // Apply pulsating animation for training question
+      if (isPulsatingQuestion) {
+        return (
+          <span className="pulsating-text">
+            {formatTextWithAgentName(content)}
+          </span>
+        );
+      }
+      
+      // Use CollapsibleText for long content
+      if ((isDreamInput || isAgentResponse) && content.length > 400) {
+        return (
+          <CollapsibleText
+            text={content}
+            maxLength={400}
+            formatContent={formatTextWithAgentName}
+          />
+        );
+      }
+      
+      return formatTextWithAgentName(content);
     }
     return line.content;
   };
@@ -104,6 +154,23 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        
+        @keyframes pulsate {
+          0%, 100% {
+            opacity: 1;
+            text-shadow: 0 0 4px #8B5CF6;
+          }
+          50% {
+            opacity: 0.8;
+            text-shadow: 0 0 12px #8B5CF6, 0 0 20px #8B5CF620;
+          }
+        }
+        
+        .pulsating-text {
+          animation: pulsate 2s ease-in-out infinite;
+          color: #8B5CF6;
+          font-weight: 500;
         }
 
         /* Custom Scrollbar */
