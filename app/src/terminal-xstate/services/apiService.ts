@@ -31,39 +31,205 @@ interface BackendResponse {
 }
 
 /**
- * Extract JSON blocks from AI response text
+ * Sanitize JSON string by removing control characters
+ */
+function sanitizeJsonString(str: string): string {
+  // Remove control characters except for \n in the middle of strings
+  // This regex keeps newlines but removes other control chars
+  return str
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control chars except \t, \n, \r
+    .replace(/\r\n/g, '\\n') // Convert Windows newlines
+    .replace(/\n/g, '\\n')   // Escape remaining newlines
+    .replace(/\r/g, '\\n')   // Convert carriage returns
+    .replace(/\t/g, '\\t');  // Escape tabs
+    // Removed quote escaping - JSON structure quotes should not be escaped
+}
+
+/**
+ * Enhanced JSON diagnostic logging
+ */
+function logJsonDiagnostics(responseText: string, blockContent?: string, blockIndex?: number) {
+  debugLog('=== JSON DIAGNOSTICS START ===');
+  debugLog('Full AI Response Preview', {
+    length: responseText.length,
+    firstChars: responseText.substring(0, 100),
+    lastChars: responseText.substring(responseText.length - 100),
+    containsJsonBlocks: responseText.includes('```json'),
+    jsonBlockCount: (responseText.match(/```json/g) || []).length
+  });
+  
+  if (blockContent !== undefined && blockIndex !== undefined) {
+    debugLog(`JSON Block ${blockIndex + 1} Diagnostics`, {
+      length: blockContent.length,
+      firstChars: blockContent.substring(0, 50),
+      hexDump: Array.from(blockContent.substring(0, 20)).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' '),
+      hasUnicodeChars: /[^\x00-\x7F]/.test(blockContent),
+      startsWithBrace: blockContent.trim().startsWith('{'),
+      endsWithBrace: blockContent.trim().endsWith('}')
+    });
+  }
+  debugLog('=== JSON DIAGNOSTICS END ===');
+}
+
+/**
+ * Robust JSON parsing with multiple strategies
+ */
+function parseJsonSafely(jsonStr: string, blockIndex: number): any | null {
+  const originalStr = jsonStr;
+  
+  // Strategy 1: Direct parsing (fastest path)
+  try {
+    const result = JSON.parse(jsonStr);
+    debugLog(`JSON Block ${blockIndex + 1} parsed successfully (direct)`, { strategy: 'direct' });
+    return result;
+  } catch (directError) {
+    debugLog(`JSON Block ${blockIndex + 1} direct parsing failed`, { 
+      error: String(directError),
+      errorPosition: (directError as any).message?.match(/position (\d+)/)?.[1]
+    });
+  }
+
+  // Strategy 2: Unicode normalization and BOM removal
+  try {
+    let normalized = jsonStr
+      .replace(/^\uFEFF/, '') // Remove BOM
+      .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width chars
+      .normalize('NFC'); // Unicode normalization
+    
+    const result = JSON.parse(normalized);
+    debugLog(`JSON Block ${blockIndex + 1} parsed successfully (normalized)`, { strategy: 'normalized' });
+    return result;
+  } catch (normalizedError) {
+    debugLog(`JSON Block ${blockIndex + 1} normalized parsing failed`, { 
+      error: String(normalizedError) 
+    });
+  }
+
+  // Strategy 3: Conservative string content escaping
+  try {
+    let escaped = jsonStr
+      .replace(/([^\\])\n/g, '$1\\n')  // Escape unescaped newlines
+      .replace(/([^\\])\r/g, '$1\\r')  // Escape unescaped carriage returns
+      .replace(/([^\\])\t/g, '$1\\t')  // Escape unescaped tabs
+      .replace(/\\/g, '\\\\')          // Escape backslashes first
+      .replace(/\\\\n/g, '\\n')        // Fix double-escaped newlines
+      .replace(/\\\\r/g, '\\r')        // Fix double-escaped carriage returns
+      .replace(/\\\\t/g, '\\t');       // Fix double-escaped tabs
+    
+    const result = JSON.parse(escaped);
+    debugLog(`JSON Block ${blockIndex + 1} parsed successfully (escaped)`, { strategy: 'escaped' });
+    return result;
+  } catch (escapedError) {
+    debugLog(`JSON Block ${blockIndex + 1} escaped parsing failed`, { 
+      error: String(escapedError) 
+    });
+  }
+
+  // Strategy 4: Manual content extraction (last resort)
+  try {
+    debugLog(`JSON Block ${blockIndex + 1} attempting manual extraction`, { 
+      originalLength: originalStr.length 
+    });
+    
+    // Try to extract key-value pairs manually for critical fields
+    const fullAnalysisMatch = originalStr.match(/"full_analysis"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    const analysisMatch = originalStr.match(/"analysis"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    const dreamDataMatch = originalStr.match(/"dreamData"\s*:\s*({[^}]+})/);
+    
+    if (fullAnalysisMatch && blockIndex === 0) {
+      const result = { full_analysis: fullAnalysisMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n') };
+      debugLog(`JSON Block ${blockIndex + 1} manual extraction successful`, { strategy: 'manual', extracted: 'full_analysis' });
+      return result;
+    }
+    
+    if (analysisMatch && dreamDataMatch && blockIndex === 1) {
+      const dreamData = JSON.parse(dreamDataMatch[1]);
+      const result = { 
+        analysis: analysisMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'),
+        dreamData 
+      };
+      debugLog(`JSON Block ${blockIndex + 1} manual extraction successful`, { strategy: 'manual', extracted: 'analysis+dreamData' });
+      return result;
+    }
+  } catch (manualError) {
+    debugLog(`JSON Block ${blockIndex + 1} manual extraction failed`, { 
+      error: String(manualError) 
+    });
+  }
+
+  // All strategies failed
+  debugLog(`JSON Block ${blockIndex + 1} ALL PARSING STRATEGIES FAILED`, { 
+    originalLength: originalStr.length,
+    strategies: ['direct', 'normalized', 'escaped', 'manual']
+  });
+  
+  return null;
+}
+
+/**
+ * Extract JSON blocks from AI response text with enhanced error handling
  */
 function extractJsonBlocks(responseText: string): { fullAnalysis?: any; dreamData?: any } {
   debugLog('Extracting JSON blocks from response', { 
     responseLength: responseText.length 
   });
   
-  // Match all JSON code blocks
-  const jsonBlockRegex = /```json\s*(\{[\s\S]*?\})\s*```/g;
+  // Enhanced logging
+  logJsonDiagnostics(responseText);
+  
+  // Improved regex to extract only JSON objects
+  const jsonBlockRegex = /```json\s*({[\s\S]*?})\s*```/g;
   const matches = [...responseText.matchAll(jsonBlockRegex)];
   
   debugLog('Found JSON blocks', { count: matches.length });
   
   if (matches.length === 0) {
-    // Try to parse the entire response as JSON
-    try {
-      const parsed = JSON.parse(responseText);
-      return { fullAnalysis: parsed, dreamData: parsed };
-    } catch {
-      debugLog('No JSON blocks found, treating as plain text');
-      return {};
+    debugLog('No JSON blocks found with enhanced regex, trying fallback');
+    
+    // Fallback: try original regex pattern
+    const fallbackRegex = /```json\s*([\s\S]*?)```/g;
+    const fallbackMatches = [...responseText.matchAll(fallbackRegex)];
+    
+    if (fallbackMatches.length === 0) {
+      debugLog('No JSON blocks found at all, treating as plain text');
+      return { fullAnalysis: responseText };
     }
+    
+    debugLog('Found JSON blocks with fallback regex', { count: fallbackMatches.length });
+    
+    // Process fallback matches
+    const result: any = {};
+    fallbackMatches.forEach((match, index) => {
+      logJsonDiagnostics(responseText, match[1], index);
+      const parsed = parseJsonSafely(match[1].trim(), index);
+      
+      if (parsed) {
+        if (index === 0 && parsed.full_analysis) {
+          result.fullAnalysis = parsed.full_analysis;
+        }
+        if (index === 1 || (index === 0 && parsed.dreamData)) {
+          result.dreamData = parsed;
+        }
+      }
+    });
+    
+    return result;
   }
   
   const result: any = {};
   
-  // Parse each JSON block
+  // Parse each JSON block with enhanced error handling
   matches.forEach((match, index) => {
-    try {
-      const jsonStr = match[1];
-      const parsed = JSON.parse(jsonStr);
-      
-      debugLog(`Parsed JSON block ${index + 1}`, { 
+    const jsonStr = match[1].trim();
+    
+    // Enhanced diagnostics for each block
+    logJsonDiagnostics(responseText, jsonStr, index);
+    
+    // Use robust parsing
+    const parsed = parseJsonSafely(jsonStr, index);
+    
+    if (parsed) {
+      debugLog(`Successfully processed JSON block ${index + 1}`, { 
         hasFullAnalysis: !!parsed.full_analysis,
         hasAnalysis: !!parsed.analysis,
         hasDreamData: !!parsed.dreamData
@@ -78,10 +244,21 @@ function extractJsonBlocks(responseText: string): { fullAnalysis?: any; dreamDat
       if (index === 1 || (index === 0 && parsed.dreamData)) {
         result.dreamData = parsed;
       }
-    } catch (error) {
-      debugLog(`Failed to parse JSON block ${index + 1}`, { error: String(error) });
+    } else {
+      debugLog(`Failed to process JSON block ${index + 1} with all strategies`);
+      
+      // Graceful fallback: if first block fails but second succeeds, use second for both
+      if (index === 0 && matches.length > 1) {
+        debugLog('Will attempt to use second block as fallback for first block content');
+      }
     }
   });
+  
+  // Fallback strategy: if first block failed but we have second block
+  if (!result.fullAnalysis && result.dreamData && result.dreamData.analysis) {
+    debugLog('Using analysis from second block as fallback for full_analysis');
+    result.fullAnalysis = result.dreamData.analysis;
+  }
   
   return result;
 }
@@ -144,13 +321,16 @@ export async function sendDreamToAI(
   prompt: string,
   modelId: string,
   walletAddress?: string,
-  isEvolutionDream: boolean = false
+  isEvolutionDream: boolean = false,
+  dreamCount: number = 0
 ): Promise<AIResponse> {
   debugLog('=== BANDYCKA JAZDA: Sending dream to REAL AI ===', {
     promptLength: prompt.length,
     modelId,
     isEvolutionDream,
-    hasWallet: !!walletAddress
+    hasWallet: !!walletAddress,
+    dreamCount,
+    nextDreamId: dreamCount + 1
   });
   
   try {
@@ -185,11 +365,12 @@ export async function sendDreamToAI(
                    (analysisText.full_analysis || 'Dream analysis completed.'),
       
       dreamData: dreamData?.dreamData || {
-        id: dreamData?.dreamData?.id || Math.floor(Date.now() / 1000),
+        id: dreamData?.dreamData?.id || (dreamCount + 1),
+        date: dreamData?.dreamData?.date || new Date().toISOString().split('T')[0],
         timestamp: dreamData?.dreamData?.timestamp || Math.floor(Date.now() / 1000),
         content: prompt.substring(0, 200),
         emotions: dreamData?.dreamData?.emotions || ['neutral'],
-        symbols: dreamData?.dreamData?.symbols || [],
+        symbols: dreamData?.dreamData?.symbols || ['unidentified'],
         intensity: dreamData?.dreamData?.intensity || 5,
         lucidity: dreamData?.dreamData?.lucidity || 2,
         dreamType: dreamData?.dreamData?.dream_type || 'normal'
@@ -220,11 +401,12 @@ export async function sendDreamToAI(
     const fallbackResponse: AIResponse = {
       fullAnalysis: `I encountered an issue connecting to the AI service (${String(error)}). Your dream has been noted but couldn't be fully analyzed at this time. Please try again later.`,
       dreamData: {
-        id: Math.floor(Date.now() / 1000),
+        id: dreamCount + 1,
+        date: new Date().toISOString().split('T')[0],
         timestamp: Math.floor(Date.now() / 1000),
         content: prompt.substring(0, 200),
         emotions: ['uncertain'],
-        symbols: [],
+        symbols: ['unidentified'],
         intensity: 5,
         lucidity: 1,
         dreamType: 'unanalyzed'

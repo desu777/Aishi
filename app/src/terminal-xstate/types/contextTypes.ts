@@ -87,10 +87,10 @@ export interface DefaultAgentData {
 // Default values for fallback scenarios
 export const defaultAgentData: DefaultAgentData = {
   tokenId: 1,
-  agentName: 'Aurora',
-  intelligenceLevel: 5,
-  dreamCount: 12,
-  conversationCount: 45,
+  agentName: '',  // Empty placeholder - will be filled from contract
+  intelligenceLevel: 1,
+  dreamCount: 0,
+  conversationCount: 0,
   personality: {
     creativity: 50,
     analytical: 50,

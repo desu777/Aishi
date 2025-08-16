@@ -456,8 +456,13 @@ function formatMonthlyConsolidation(monthly: any): string {
   // Extract essence
   const essence = monthly.monthly_essence || 'No essence recorded';
   
-  return `${period} (${totalDreams} dreams): Emotions[${emotions}] Themes[${themes}] Symbols[${symbols}] Intensity[${avgIntensity}/10] Lucidity[${avgLucidity}/5]
-Essence: "${essence.substring(0, 150)}${essence.length > 150 ? '...' : ''}"`;
+  return `Period ${period} (${totalDreams} dreams):
+  - Dominant Emotions: ${emotions}
+  - Dominant Themes: ${themes}  
+  - Dominant Symbols: ${symbols}
+  - Average Intensity: ${avgIntensity}/10
+  - Average Lucidity: ${avgLucidity}/5
+  - Monthly Essence: "${essence.substring(0, 150)}${essence.length > 150 ? '...' : ''}"`;
 }
 
 /**
@@ -468,9 +473,9 @@ function formatDailyDream(dream: any): string {
   
   const id = dream.id || 0;
   const date = dream.date || 'unknown';
-  const emotions = dream.emotions?.slice(0, 2).join(',') || 'neutral';
-  const symbols = dream.symbols?.slice(0, 2).join(',') || 'none';
-  const themes = dream.themes?.slice(0, 2).join(',') || 'none';
+  const emotions = dream.emotions?.slice(0, 2).join(', ') || 'neutral';
+  const symbols = dream.symbols?.slice(0, 2).join(', ') || 'none';
+  const themes = dream.themes?.slice(0, 2).join(', ') || 'none';
   const intensity = dream.intensity || 5;
   const lucidity = dream.lucidity || dream.lucidity_level || 1;
   const analysis = dream.ai_analysis || dream.analysis || 'No analysis';
@@ -478,5 +483,11 @@ function formatDailyDream(dream: any): string {
   // Truncate analysis to keep prompt reasonable
   const shortAnalysis = analysis.substring(0, 100) + (analysis.length > 100 ? '...' : '');
   
-  return `Dream #${id} (${date}): [${emotions}] [${symbols}] Themes[${themes}] I[${intensity}/10] L[${lucidity}/5] "${shortAnalysis}"`;
+  return `Dream #${id} (${date}):
+  - Emotions: ${emotions}
+  - Symbols: ${symbols}
+  - Themes: ${themes}
+  - Intensity: ${intensity}/10
+  - Lucidity: ${lucidity}/5
+  - Analysis: "${shortAnalysis}"`;
 }

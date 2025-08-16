@@ -112,7 +112,7 @@ const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data
       
       // If undefined or incomplete, retry
       if (i < retries - 1) {
-        const delay = 500 * (i + 1); // Progressive delay: 500ms, 1000ms, 1500ms
+        const delay = 1000 * (i + 1); // Progressive delay: 1000ms, 2000ms, 3000ms
         debugLog(`[WARNING] Attempt ${i + 1} for ${name} returned incomplete data, retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -121,7 +121,7 @@ const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data
         debugLog(`[ERROR] Failed to fetch ${name} after ${retries} attempts`, { error: String(error) });
         throw error;
       }
-      const delay = 500 * (i + 1);
+      const delay = 1000 * (i + 1);
       debugLog(`[WARNING] Attempt ${i + 1} for ${name} failed, retrying in ${delay}ms...`, { error: String(error) });
       await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -136,13 +136,13 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
   debugLog('=== BANDYCKA JAZDA: Fetching REAL dream context ===', { 
     dreamLength: input.dreamText.length,
     tokenId: input.tokenId || defaultAgentData.tokenId,
-    agentName: input.agentName || defaultAgentData.agentName
+    agentName: input.agentName || 'Unknown'
   });
   
   try {
     // Use provided data or fall back to defaults
     const effectiveTokenId = input.tokenId || defaultAgentData.tokenId;
-    const effectiveAgentName = input.agentName || defaultAgentData.agentName;
+    const effectiveAgentName = input.agentName || 'Unknown';
     
     // 1. Create viem public client
     const contractConfig = getContractConfig();
@@ -185,7 +185,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
       });
     }
     
-    // 3. Fetch agent basic data with retry
+    // 3. Fetch agent basic data with retry (increased attempts for critical data)
     const agentData = await fetchWithRetry(
       () => publicClient.readContract({
         address: contractConfig.address,
@@ -193,7 +193,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
         functionName: 'agents',
         args: [BigInt(effectiveTokenId)]
       }),
-      3,
+      5,  // Increased to 5 attempts for critical agent data
       'AgentData'
     ) as any;
     
@@ -229,8 +229,8 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
     
     // Handle undefined agent name after parsing
     if (!parsedAgentName) {
-      debugLog('[WARNING] Agent name still undefined after parsing, using fallback');
-      parsedAgentName = effectiveAgentName;
+      debugLog('[WARNING] Agent name still undefined after parsing, using placeholder');
+      parsedAgentName = 'Agent';
     }
     
     // 4. Fetch personality traits with retry
@@ -365,7 +365,7 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
     const context: DreamContext & { memoryData: any } = {
       userDream: input.dreamText,
       agentProfile: {
-        name: parsedAgentName || effectiveAgentName,
+        name: parsedAgentName || 'Agent',  // Use parsed name from contract
         intelligenceLevel: parsedIntelligenceLevel || defaultAgentData.intelligenceLevel,
         dreamCount: parsedDreamCount || defaultAgentData.dreamCount,
         conversationCount: parsedConversationCount || defaultAgentData.conversationCount
@@ -476,7 +476,8 @@ const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: strin
     input.prompt,
     modelId,
     input.walletAddress,
-    isEvolution
+    isEvolution,
+    input.dreamCount
   );
   
   debugLog('[SUCCESS] AI analysis complete', { 
@@ -568,7 +569,7 @@ export const dreamMachine = setup({
     // Initialize dream session
     initializeDream: assign({
       tokenId: defaultAgentData.tokenId,
-      agentName: defaultAgentData.agentName,
+      agentName: '',  // Will be filled from contract
       statusMessage: 'Describe your dream...', // This will be used for placeholder
       errorMessage: null,
       modelId: ({ event }) => event.type === 'START' ? event.modelId : undefined,
@@ -806,7 +807,7 @@ export const dreamMachine = setup({
           return {
             aiResponse: context.aiResponse!,
             tokenId: context.tokenId!,
-            agentName: context.agentName!,
+            agentName: context.dreamContext?.agentProfile?.name || 'Agent',  // Use actual agent name from context
             dreamCount: context.dreamContext?.agentProfile?.dreamCount || 0,
             currentRootHash: currentRootHash
           };
