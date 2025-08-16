@@ -33,7 +33,7 @@ const AIOrb: React.FC<AIorbProps> = ({
           if (prev.length >= 3) return '';
           return prev + '.';
         });
-      }, 500);
+      }, 800);
       return () => clearInterval(interval);
     } else {
       setDots('');

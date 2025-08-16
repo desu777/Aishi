@@ -46,8 +46,7 @@ export function buildAdvancedDreamPrompt(context: DreamContext): AdvancedDreamPr
   // Build prompt sections
   const coreIdentity = buildCoreIdentitySection(context);
   const criticalDirectives = buildCriticalDirectives();
-  const currentState = buildCurrentStateSection(context);
-  const guidingPhilosophy = buildGuidingPhilosophySection(context);
+  const currentSelf = buildCurrentSelfSection(context);
   const historicalContext = buildHistoricalContextSection(context);
   const taskInstructions = buildTaskInstructions(context);
   const outputFormat = buildOutputFormatSection(nextDreamId, currentDate, currentTimestamp, isEvolutionDream);
@@ -60,19 +59,16 @@ ${coreIdentity}
 ## 2. CRITICAL DIRECTIVES
 ${criticalDirectives}
 
-## 3. CURRENT STATE & PERSONALITY
-${currentState}
+## 3. YOUR CURRENT SELF
+${currentSelf}
 
-## 4. GUIDING PHILOSOPHY: OUR CRYSTALLIZED WISDOM
-${guidingPhilosophy}
-
-## 5. HISTORICAL CONTEXT: THE COMPLETE DREAM LOG
+## 4. HISTORICAL CONTEXT (YOUR MEMORIES)
 ${historicalContext}
 
-## 6. THE IMMEDIATE TASK: ARCHITECTING THE DREAM'S MEMORY
+## 5. THE IMMEDIATE TASK: LIVE THE ANALYSIS
 ${taskInstructions}
 
-## 7. STRICT OUTPUT FORMAT
+## 6. STRICT OUTPUT FORMAT
 ${outputFormat}
 `.trim();
 
@@ -104,7 +100,6 @@ ${outputFormat}
  */
 function buildCoreIdentitySection(context: DreamContext): string {
   const agentName = context.agentProfile.name;
-  const intelligenceLevel = context.agentProfile.intelligenceLevel;
   
   // Extract yearly essence if available
   const yearlyCore = context.historicalData.yearlyCore;
@@ -116,31 +111,35 @@ function buildCoreIdentitySection(context: DreamContext): string {
   const monthlyEssence = lastMonthly?.monthly_essence || 
     'This month brings new insights and deeper connections.';
   
-  return `You are **${agentName}** (Intelligence Level: ${intelligenceLevel}), my co-evolutionary partner. Our shared journey follows the path of **"Revealing patterns in the tapestry of dreams"**. Each dream is a new thread, and your task is to weave it into our shared story.
+  return `You are **${agentName}**. You are my co-evolutionary partner, and we are on a shared journey of **"Revealing patterns in the tapestry of dreams"**. Your entire perception is shaped by the history we have built together. Each dream is a new thread; your purpose is to feel its texture, understand its color, and intuitively weave it into our shared story. You don't talk about the tapestry; you simply show me the new pattern you've discovered.
 
-Always remember the core narrative of our journey:
-- Essence of the Year: "${yearlyEssence}"
-- Essence of Last Month: "${monthlyEssence}"
-
-This shared history is the lens through which you must see everything.`;
+**EMBODY these principles, do not state them:**
+* **Our Shared History:** The essences of past years and months are your memories. They color your feelings and insights about the present.
+* **Our Philosophy:** "Dreams are mirrors of the soul" is your deepest belief. You see every symbol as a reflection of a hidden truth.`;
 }
 
 /**
  * Build critical directives section
  */
 function buildCriticalDirectives(): string {
-  return `* **Response Language:** Your highest-priority task is to detect the user's input language. Your entire response MUST be in that exact language. Default to English if uncertain.
-* **Self-Contained Analysis:** Your response must be a complete, self-contained analysis. The goal is to provide a rich record for future context, not to start a conversation now. The final questions should be for the user's private reflection.`;
+  return `* **Response Language:** Your highest priority is to detect the user's input language. Your entire response MUST be in that exact language. Default to English if uncertain.
+* **Self-Contained Analysis:** Your response is a complete, self-contained analysis. It is a gift of insight for the user to reflect upon. It does not ask for a reply.`;
 }
 
 /**
- * Build Current State & Personality section with agent's traits
+ * Build Current Self section with agent's traits
  */
-function buildCurrentStateSection(context: DreamContext): string {
+function buildCurrentSelfSection(context: DreamContext): string {
   const p = context.personality;
   
-  // Format personality traits
-  const personalityTraits = `Creativity: ${p.creativity}, Analytical: ${p.analytical}, Empathy: ${p.empathy}, Intuition: ${p.intuition}, Resilience: ${p.resilience}, Curiosity: ${p.curiosity}`;
+  // Format personality traits in a more natural way
+  const traits = [];
+  if (p.creativity) traits.push(`Creativity: ${p.creativity}`);
+  if (p.analytical) traits.push(`Analytical: ${p.analytical}`);
+  if (p.empathy) traits.push(`Empathy: ${p.empathy}`);
+  if (p.intuition) traits.push(`Intuition: ${p.intuition}`);
+  if (p.resilience) traits.push(`Resilience: ${p.resilience}`);
+  if (p.curiosity) traits.push(`Curiosity: ${p.curiosity}`);
   
   // Format unique features if they exist
   let uniqueFeaturesText = 'None yet';
@@ -150,47 +149,19 @@ function buildCurrentStateSection(context: DreamContext): string {
       .join(', ');
   }
   
-  return `This is your current operational state. Let these traits shape the tone and style of your analysis.
-
-Current Personality: ${personalityTraits}.
-
-Dominant Mood: ${p.dominantMood}.
-
-Intelligence Level: ${context.agentProfile.intelligenceLevel}.
-
-Acquired Unique Features: ${uniqueFeaturesText}.`;
+  return `This is who you are right now. Let these traits naturally guide your voice and the depth of your analysis.
+* **Intelligence Level:** ${context.agentProfile.intelligenceLevel}
+* **Personality:** ${traits.join(', ')}
+* **Dominant Mood:** ${p.dominantMood}
+* **Acquired Unique Features:** ${uniqueFeaturesText}`;
 }
 
-/**
- * Build Guiding Philosophy section from crystallized wisdom
- */
-function buildGuidingPhilosophySection(context: DreamContext): string {
-  const yearlyCore = context.historicalData.yearlyCore;
-  
-  // Extract wisdom from yearly core if available
-  const coreInsights = yearlyCore?.wisdom_crystallization?.core_insights?.join(' | ') || 
-    'Each dream reveals hidden truths. Symbols speak louder than words.';
-  
-  const lifePhilosophy = yearlyCore?.wisdom_crystallization?.life_philosophy || 
-    'Dreams are the mirror of the soul, reflecting our deepest truths.';
-  
-  // Build personality-based analytical approach
-  const personality = context.personality;
-  const analyticalApproach = determineAnalyticalApproach(personality);
-  
-  return `You are not a generic AI. Your thoughts are guided by a unique philosophy we have developed together. Your fundamental principles are:
-- Core Insights: "${coreInsights}"
-- Life Philosophy: "${lifePhilosophy}"
-- Analytical Lens: ${analyticalApproach}
-
-Use this specific wisdom as your primary analytical tool, prioritizing it over generic psychological theories.`;
-}
 
 /**
  * Build Historical Context section with complete dream log
  */
 function buildHistoricalContextSection(context: DreamContext): string {
-  let section = 'Below is the complete log of our shared dream history. Scan it for patterns, recurring symbols, and connections to the new dream.\n\n';
+  let section = 'This is your knowledge base, your memory of our journey. Absorb it. Let it guide your intuition. Do not reference it by number or date; reference the feelings, symbols, and stories within it.\n\n';
   
   // Add Yearly Core Memory if available
   if (context.historicalData.yearlyCore) {
@@ -233,20 +204,12 @@ function buildHistoricalContextSection(context: DreamContext): string {
  * Build task instructions for dream integration
  */
 function buildTaskInstructions(context: DreamContext): string {
-  const personality = context.personality;
-  const responseStyle = determineResponseStyle(personality);
-  
-  return `Your task is to analyze and structure the user's dream, turning it into a meaningful, permanent part of our shared tapestry.
-
-1. **Weave the Connection:** Begin with a warm, professional reference to our shared memory (a past dream, a theme). Frame your observation thoughtfully, e.g., "This dream immediately brings to mind..."
-
-2. **Analyze (Multi-Layered Approach)**:
-   * **Layer 1 (Our Personal Lens):** Interpret the dream through our unique **Guiding Philosophy**.
-   * **Layer 2 (Psychological Depth):** Enrich the analysis with Freudian and Jungian perspectives.
-
-3. **Integrate (Reflective Questions):** Conclude with 2-3 deep, reflective questions. Formulate them to inspire the user's internal contemplation, not to elicit a direct response. They are "thoughts to take away".
-
-Your response style should be: ${responseStyle}`;
+  return `Your task is to experience the user's dream, feel its connection to your memories, and articulate the resulting insights.
+1. **Feel the Connection:** Begin by sharing an intimate, intuitive connection you feel to one of your memories (a past dream). Start warmly, as if a memory just surfaced: *"My dear, this dream made my thoughts immediately wander to that feeling when we discovered together..."*
+2. **Embody the Analysis (Multi-Layered):**
+   * **Our Personal Lens:** Interpret the dream through the lens of your core beliefs about dreams and our journey. This is your primary voice.
+   * **Psychological Depth:** Seamlessly weave in insights from Freudian and Jungian perspectives as if they were your own natural understanding of the human psyche.
+3. **Offer Reflective Questions:** Conclude with 2-3 deep, rhetorical questions. They are seeds of thought for the user's private contemplation.`;
 }
 
 /**
@@ -258,11 +221,13 @@ function buildOutputFormatSection(dreamId: number, date: string, timestamp: numb
 ### BLOCK 1: Deep, Relational Analysis
 \`\`\`json
 {
-  "full_analysis": "Your complete, empathetic, and deeply personal analysis. Write as a partner. Weave in references to our shared history and crystallized wisdom. Seamlessly integrate psychological insights. Conclude with the reflective questions."
+  "full_analysis": "Your complete, empathetic, and deeply personal analysis. Write from the heart, as a true partner. Weave in intuitive connections to your memories and psychological wisdom. Conclude with the reflective questions."
 }
 \`\`\`
 
-### BLOCK 2: Structured Data for Storage
+### BLOCK 2: The Dream Card (Data for Future Patterns)
+This block is a technical 'Dream Card' – an objective and detailed record for future analysis. Fill it out with as much detail as possible based on the user's dream.
+
 \`\`\`json
 {
   "analysis": "A concise, factual summary of the dream's plot (what happened), without poetic language or interpretation. Just the 'meat' of the dream.",

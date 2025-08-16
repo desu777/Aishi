@@ -31,7 +31,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
           if (prev === '..') return '...';
           return '.';
         });
-      }, 500);
+      }, 800);
       return () => clearInterval(interval);
     } else {
       setDots('');
