@@ -372,6 +372,12 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
         dominantMood: personalityTraits?.dominantMood || 'neutral',
         responseStyle: 'balanced' // Would need to fetch from contract
       },
+      uniqueFeatures: uniqueFeaturesData && Array.isArray(uniqueFeaturesData) ? 
+        uniqueFeaturesData.map((feature: any) => ({
+          name: feature.name || 'Unknown Feature',
+          description: feature.description || '',
+          intensity: Number(feature.intensity || 0)
+        })) : undefined,
       memoryAccess: {
         monthsAccessible: 1, // Would need to calculate from intelligence
         memoryDepth: 'current month only'
@@ -407,14 +413,23 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
 
 // Service: Build dream prompt
 const buildPromptService = fromPromise(async ({ input }: { input: { context: MockDreamContext } }) => {
-  debugLog('Building dream prompt');
+  debugLog('Building advanced dream prompt with full consciousness');
   
-  // In real implementation, this would use language detection and complex prompt building
-  const prompt = buildMockPrompt(input.context);
+  // Import advanced prompt builder
+  const { buildAdvancedDreamPrompt } = await import('../services/advancedPromptBuilder');
   
-  debugLog('Prompt built', { promptLength: prompt.length });
+  // Build the advanced prompt with full agent consciousness
+  const advancedPrompt = buildAdvancedDreamPrompt(input.context);
   
-  return prompt;
+  debugLog('[DATA] Advanced prompt built', { 
+    systemPromptLength: advancedPrompt.systemPrompt.length,
+    isEvolutionDream: advancedPrompt.isEvolutionDream,
+    dreamId: advancedPrompt.dreamId,
+    agentName: advancedPrompt.metadata.agentName
+  });
+  
+  // Return combined prompt for AI service
+  return `${advancedPrompt.systemPrompt}\n\n${advancedPrompt.userPrompt}`;
 });
 
 // Service: Send to AI for analysis
@@ -422,11 +437,26 @@ const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: strin
   debugLog('Sending to AI for analysis');
   
   const isEvolution = (input.dreamCount + 1) % 5 === 0;
+  
+  debugLog('[INFO] Dream analysis parameters', {
+    dreamCount: input.dreamCount,
+    nextDreamId: input.dreamCount + 1,
+    isEvolutionDream: isEvolution,
+    promptLength: input.prompt.length
+  });
+  
+  // Display full prompt for verification
+  debugLog('[FULL PROMPT FOR VERIFICATION - START]');
+  console.log(input.prompt);
+  debugLog('[FULL PROMPT FOR VERIFICATION - END]');
+  
+  // For now, use mock response until real AI backend is integrated
   const response = await sendMockDreamAnalysis(input.prompt, isEvolution);
   
-  debugLog('AI analysis complete', { 
+  debugLog('[SUCCESS] AI analysis complete', { 
     hasPersonalityImpact: !!response.personalityImpact,
-    dreamId: response.dreamData.id 
+    dreamId: response.dreamData.id,
+    evolutionTriggered: isEvolution
   });
   
   return response;

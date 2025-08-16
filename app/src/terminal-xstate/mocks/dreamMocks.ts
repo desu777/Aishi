@@ -26,8 +26,16 @@ export interface MockDreamContext {
     name: string;
     intelligenceLevel: number;
     dreamCount: number;
+    conversationCount: number;
   };
-  personality: MockAgentData['personality'];
+  personality: MockAgentData['personality'] & {
+    responseStyle: string;
+  };
+  uniqueFeatures?: Array<{
+    name: string;
+    description: string;
+    intensity: number;
+  }>;
   memoryAccess: {
     monthsAccessible: number;
     memoryDepth: string;
@@ -93,9 +101,20 @@ export const mockDreamContext: MockDreamContext = {
   agentProfile: {
     name: mockAgentData.agentName,
     intelligenceLevel: mockAgentData.intelligenceLevel,
-    dreamCount: mockAgentData.dreamCount
+    dreamCount: mockAgentData.dreamCount,
+    conversationCount: mockAgentData.conversationCount
   },
-  personality: mockAgentData.personality,
+  personality: {
+    ...mockAgentData.personality,
+    responseStyle: 'balanced'
+  },
+  uniqueFeatures: [
+    {
+      name: 'Dream Weaver',
+      description: 'Exceptional ability to connect dream symbols',
+      intensity: 85
+    }
+  ],
   memoryAccess: {
     monthsAccessible: 3,
     memoryDepth: 'quarterly'
@@ -240,9 +259,13 @@ export async function buildMockDreamContext(
     agentProfile: {
       name: agentData.agentName,
       intelligenceLevel: agentData.intelligenceLevel,
-      dreamCount: agentData.dreamCount
+      dreamCount: agentData.dreamCount,
+      conversationCount: agentData.conversationCount
     },
-    personality: agentData.personality
+    personality: {
+      ...agentData.personality,
+      responseStyle: 'balanced'
+    }
   };
 }
 
