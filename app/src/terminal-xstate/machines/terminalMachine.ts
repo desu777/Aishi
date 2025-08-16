@@ -322,10 +322,28 @@ export const terminalMachine = setup({
       entry: [
         // Clear the input
         assign({ currentInput: '' }),
-        // Start the dream machine
+        // Start the dream machine with model and wallet
         ({ context }) => {
           if (context.dreamRef) {
-            context.dreamRef.send({ type: 'START' });
+            // Get selected model from modelRef
+            let selectedModel = 'gemini-2.5-flash-auto';
+            if (context.modelRef) {
+              const modelState = context.modelRef.getSnapshot();
+              selectedModel = modelState?.context?.selectedModel || selectedModel;
+            }
+            
+            // Get wallet address from agentRef
+            let walletAddress: string | undefined;
+            if (context.agentRef) {
+              const agentState = context.agentRef.getSnapshot();
+              walletAddress = agentState?.context?.walletAddress;
+            }
+            
+            context.dreamRef.send({ 
+              type: 'START',
+              modelId: selectedModel,
+              walletAddress: walletAddress
+            });
           }
         }
       ],

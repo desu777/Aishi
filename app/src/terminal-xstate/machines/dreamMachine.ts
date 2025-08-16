@@ -46,11 +46,15 @@ export interface DreamMachineContext {
   
   // Confirmation state
   awaitingConfirmation: boolean;
+  
+  // AI configuration
+  modelId?: string;
+  walletAddress?: string;
 }
 
 // Dream machine events
 export type DreamEvent =
-  | { type: 'START' }
+  | { type: 'START'; modelId?: string; walletAddress?: string }
   | { type: 'SUBMIT_DREAM'; dreamText: string }
   | { type: 'CONFIRM_SAVE' }
   | { type: 'CANCEL_SAVE' }
@@ -68,7 +72,9 @@ const initialContext: DreamMachineContext = {
   storageRootHash: null,
   statusMessage: '',
   errorMessage: null,
-  awaitingConfirmation: false
+  awaitingConfirmation: false,
+  modelId: undefined,
+  walletAddress: undefined
 };
 
 // Helper function for retry logic
@@ -430,7 +436,7 @@ const buildPromptService = fromPromise(async ({ input }: { input: { context: Dre
 });
 
 // Service: Send to AI for analysis
-const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: string; dreamCount: number } }) => {
+const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: string; dreamCount: number; modelId?: string; walletAddress?: string } }) => {
   debugLog('Sending to AI for analysis');
   
   const isEvolution = (input.dreamCount + 1) % 5 === 0;
@@ -439,7 +445,8 @@ const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: strin
     dreamCount: input.dreamCount,
     nextDreamId: input.dreamCount + 1,
     isEvolutionDream: isEvolution,
-    promptLength: input.prompt.length
+    promptLength: input.prompt.length,
+    modelId: input.modelId
   });
   
   // Display full prompt for verification
@@ -447,13 +454,29 @@ const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: strin
   console.log(input.prompt);
   debugLog('[FULL PROMPT FOR VERIFICATION - END]');
   
-  // TODO: Replace with real AI backend integration
-  const response = await sendMockDreamAnalysis(input.prompt, isEvolution);
+  // Import and use real API service
+  const { sendDreamToAI } = await import('../services/apiService');
+  
+  // Use provided model or fallback to default
+  const modelId = input.modelId || 'gemini-2.5-flash-auto';
+  
+  debugLog('[API] Calling real AI backend', {
+    model: modelId,
+    walletAddress: input.walletAddress
+  });
+  
+  const response = await sendDreamToAI(
+    input.prompt,
+    modelId,
+    input.walletAddress,
+    isEvolution
+  );
   
   debugLog('[SUCCESS] AI analysis complete', { 
     hasPersonalityImpact: !!response.personalityImpact,
     dreamId: response.dreamData.id,
-    evolutionTriggered: isEvolution
+    evolutionTriggered: isEvolution,
+    modelUsed: modelId
   });
   
   return response;
@@ -512,7 +535,9 @@ export const dreamMachine = setup({
       tokenId: defaultAgentData.tokenId,
       agentName: defaultAgentData.agentName,
       statusMessage: 'Describe your dream...', // This will be used for placeholder
-      errorMessage: null
+      errorMessage: null,
+      modelId: ({ event }) => event.type === 'START' ? event.modelId : undefined,
+      walletAddress: ({ event }) => event.type === 'START' ? event.walletAddress : undefined
     }),
     
     // Send dream instruction to parent
@@ -686,7 +711,9 @@ export const dreamMachine = setup({
             src: 'aiAnalysis',
             input: ({ context }) => ({ 
               prompt: context.dreamPrompt!,
-              dreamCount: defaultAgentData.dreamCount 
+              dreamCount: defaultAgentData.dreamCount,
+              modelId: context.modelId,
+              walletAddress: context.walletAddress
             }),
             onDone: {
               target: 'displayingAnalysis',
