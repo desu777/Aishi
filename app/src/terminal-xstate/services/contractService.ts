@@ -33,5 +33,44 @@ export const ContractFunctions = {
   OWNER_TO_TOKEN_ID: 'ownerToTokenId',
   GET_PERSONALITY_TRAITS: 'getPersonalityTraits',
   GET_AGENT_MEMORY: 'getAgentMemory',
+  GET_MEMORY_ACCESS: 'getMemoryAccess',
+  GET_UNIQUE_FEATURES: 'getUniqueFeatures',
+  CAN_PROCESS_DREAM_TODAY: 'canProcessDreamToday',
+  PROCESS_DAILY_DREAM: 'processDailyDream',
   MINT_AGENT: 'mintAgent'
 } as const;
+
+/**
+ * Helper type for memory structure returned from contract
+ */
+export interface AgentMemoryStructure {
+  memoryCoreHash: string;
+  currentDreamDailyHash: string;
+  currentConvDailyHash: string;
+  lastDreamMonthlyHash: string;
+  lastConvMonthlyHash: string;
+  lastConsolidation: bigint;
+  currentMonth: number;
+  currentYear: number;
+}
+
+/**
+ * Helper type for personality traits from contract
+ */
+export interface PersonalityTraits {
+  creativity: bigint;
+  analytical: bigint;
+  empathy: bigint;
+  intuition: bigint;
+  resilience: bigint;
+  curiosity: bigint;
+  dominantMood: string;
+}
+
+/**
+ * Check if a hash is empty (all zeros)
+ */
+export const isEmptyHash = (hash: string): boolean => {
+  const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
+  return !hash || hash === emptyHash || hash === '0x0';
+};

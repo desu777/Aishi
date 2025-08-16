@@ -3,7 +3,7 @@
 import { getProvider, getSigner } from '../../../lib/0g/fees';
 import { uploadFileComplete } from '../../../lib/0g/uploader';
 import { Contract } from 'ethers';
-import frontendContracts from '../../../abi/frontend-contracts.json';
+import AishiAgentABI from '../../../abi/AishiAgentABI.json';
 
 // Schemat JSON dla konsolidacji miesięcznej snów (UNIFIED)
 export interface MonthlyDreamConsolidation {
@@ -492,8 +492,8 @@ export const saveConsolidationToStorage = async (
     }
 
     // Get contract to read current monthly hashes
-    const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-    const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+    const contractAddress = AishiAgentABI.address;
+    const contractABI = AishiAgentABI.abi;
     const contract = new Contract(contractAddress, contractABI, signer);
 
     const agentMemory = await contract.getAgentMemory(tokenId);
@@ -645,8 +645,8 @@ export const callConsolidateMonth = async (
     }
 
     // Get contract
-    const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-    const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+    const contractAddress = AishiAgentABI.address;
+    const contractABI = AishiAgentABI.abi;
     const contract = new Contract(contractAddress, contractABI, signer);
 
     // Call consolidateMonth function
@@ -698,8 +698,8 @@ export const clearMonthlyFiles = async (
     }
 
     // Get contract
-    const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-    const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+    const contractAddress = AishiAgentABI.address;
+    const contractABI = AishiAgentABI.abi;
     const contract = new Contract(contractAddress, contractABI, signer);
 
     // Create empty files to "clear" the monthly data

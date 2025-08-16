@@ -4,6 +4,9 @@
  */
 
 import { setup, assign, fromPromise, sendParent } from 'xstate';
+import { createPublicClient, http } from 'viem';
+import { galileoTestnet } from '../../config/chains';
+import { getContractConfig } from '../services/contractService';
 import { 
   mockAgentData,
   buildMockDreamContext,
@@ -71,23 +74,335 @@ const initialContext: DreamContext = {
   awaitingConfirmation: false
 };
 
-// Service: Fetch dream context
-const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: string } }) => {
-  debugLog('Fetching dream context', { dreamLength: input.dreamText.length });
+// Helper function for retry logic
+const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data'): Promise<T | undefined> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const result = await fn();
+      
+      // Check if data is complete (not undefined)
+      if (result !== undefined && result !== null) {
+        // Special handling for AgentData - check both named props and array
+        if (name === 'AgentData') {
+          const hasNamedProps = (result as any).agentName !== undefined;
+          const hasArrayData = Array.isArray(result) && (result as any)[1] !== undefined;
+          
+          if (hasNamedProps || hasArrayData) {
+            debugLog(`✅ ${name} fetched successfully on attempt ${i + 1}`, {
+              hasNamedProps,
+              hasArrayData,
+              agentName: hasNamedProps ? (result as any).agentName : (result as any)[1]
+            });
+            return result;
+          }
+        } else {
+          // For other data types, just check if not undefined
+          debugLog(`✅ ${name} fetched successfully on attempt ${i + 1}`);
+          return result;
+        }
+      }
+      
+      // If undefined or incomplete, retry
+      if (i < retries - 1) {
+        const delay = 500 * (i + 1); // Progressive delay: 500ms, 1000ms, 1500ms
+        debugLog(`⚠️ Attempt ${i + 1} for ${name} returned incomplete data, retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    } catch (error) {
+      if (i === retries - 1) {
+        debugLog(`❌ Failed to fetch ${name} after ${retries} attempts`, { error: String(error) });
+        throw error;
+      }
+      const delay = 500 * (i + 1);
+      debugLog(`⚠️ Attempt ${i + 1} for ${name} failed, retrying in ${delay}ms...`, { error: String(error) });
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
   
-  // In real implementation, this would fetch from blockchain
-  const context = await buildMockDreamContext(
-    mockAgentData.tokenId,
-    mockAgentData,
-    input.dreamText
-  );
-  
-  debugLog('Context built successfully', { 
-    agentName: context.agentProfile.name,
-    memoryDepth: context.memoryAccess.memoryDepth 
+  debugLog(`⚠️ Returning undefined for ${name} after ${retries} attempts`);
+  return undefined;
+};
+
+// Service: Fetch dream context from blockchain
+const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: string; tokenId?: number; agentName?: string } }) => {
+  debugLog('=== BANDYCKA JAZDA: Fetching REAL dream context ===', { 
+    dreamLength: input.dreamText.length,
+    tokenId: input.tokenId || mockAgentData.tokenId,
+    agentName: input.agentName || mockAgentData.agentName
   });
   
-  return context;
+  try {
+    // Use provided data or fall back to mocks
+    const effectiveTokenId = input.tokenId || mockAgentData.tokenId;
+    const effectiveAgentName = input.agentName || mockAgentData.agentName;
+    
+    // 1. Create viem public client
+    const contractConfig = getContractConfig();
+    const publicClient = createPublicClient({
+      chain: galileoTestnet,
+      transport: http()
+    });
+    
+    debugLog('Created viem PublicClient', {
+      chainId: galileoTestnet.id,
+      rpcUrl: galileoTestnet.rpcUrls.default.http[0],
+      contractAddress: contractConfig.address
+    });
+    
+    // 2. Fetch agent memory from contract with retry
+    const memoryData = await fetchWithRetry(
+      () => publicClient.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'getAgentMemory',
+        args: [BigInt(effectiveTokenId)]
+      }),
+      3,
+      'AgentMemory'
+    ) as any;
+    
+    // Handle undefined memory data
+    if (!memoryData) {
+      debugLog('⚠️ Memory data undefined after retries, using empty hashes');
+    } else {
+      debugLog('📊 Contract memory data fetched', {
+        memoryCoreHash: memoryData.memoryCoreHash,
+        currentDreamDailyHash: memoryData.currentDreamDailyHash,
+        currentConvDailyHash: memoryData.currentConvDailyHash,
+        lastDreamMonthlyHash: memoryData.lastDreamMonthlyHash,
+        lastConvMonthlyHash: memoryData.lastConvMonthlyHash,
+        lastConsolidation: memoryData.lastConsolidation?.toString(),
+        currentMonth: memoryData.currentMonth?.toString(),
+        currentYear: memoryData.currentYear?.toString()
+      });
+    }
+    
+    // 3. Fetch agent basic data with retry
+    const agentData = await fetchWithRetry(
+      () => publicClient.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'agents',
+        args: [BigInt(effectiveTokenId)]
+      }),
+      3,
+      'AgentData'
+    ) as any;
+    
+    // Parse agent data with Wagmi v2 compatibility (like useAgentRead.ts)
+    let parsedAgentName: string | undefined;
+    let parsedIntelligenceLevel: number;
+    let parsedDreamCount: number;
+    let parsedConversationCount: number;
+    
+    if (agentData) {
+      // Try named properties first (Wagmi v2)
+      parsedAgentName = (agentData.agentName !== undefined ? 
+        agentData.agentName : agentData[1]) as string;
+      parsedIntelligenceLevel = Number(agentData.intelligenceLevel !== undefined ? 
+        agentData.intelligenceLevel : agentData[4]);
+      parsedDreamCount = Number(agentData.dreamCount !== undefined ? 
+        agentData.dreamCount : agentData[5]);
+      parsedConversationCount = Number(agentData.conversationCount !== undefined ? 
+        agentData.conversationCount : agentData[6]);
+      
+      debugLog('🤖 Agent data parsed', {
+        agentName: parsedAgentName,
+        intelligenceLevel: parsedIntelligenceLevel,
+        dreamCount: parsedDreamCount,
+        conversationCount: parsedConversationCount,
+        dataStructure: {
+          hasNamedProps: agentData.agentName !== undefined,
+          isArray: Array.isArray(agentData),
+          keys: Object.keys(agentData || {})
+        }
+      });
+    }
+    
+    // Handle undefined agent name after parsing
+    if (!parsedAgentName) {
+      debugLog('⚠️ Agent name still undefined after parsing, using fallback');
+      parsedAgentName = effectiveAgentName;
+    }
+    
+    // 4. Fetch personality traits with retry
+    const personalityTraits = await fetchWithRetry(
+      () => publicClient.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'getPersonalityTraits',
+        args: [BigInt(effectiveTokenId)]
+      }),
+      3,
+      'PersonalityTraits'
+    ) as any;
+    
+    // Handle undefined personality traits
+    if (!personalityTraits) {
+      debugLog('⚠️ Personality traits undefined after retries, using defaults');
+    } else {
+      debugLog('🎭 Personality traits fetched', {
+        creativity: personalityTraits.creativity?.toString(),
+        analytical: personalityTraits.analytical?.toString(),
+        empathy: personalityTraits.empathy?.toString(),
+        intuition: personalityTraits.intuition?.toString(),
+        resilience: personalityTraits.resilience?.toString(),
+        curiosity: personalityTraits.curiosity?.toString(),
+        dominantMood: personalityTraits.dominantMood
+      });
+    }
+    
+    // 5. Fetch unique features (like useAgentRead)
+    const uniqueFeaturesData = await fetchWithRetry(
+      () => publicClient.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'getUniqueFeatures',
+        args: [BigInt(effectiveTokenId)]
+      }),
+      3,
+      'UniqueFeatures'
+    ) as any;
+    
+    debugLog('🌟 Unique features fetched', {
+      hasData: !!uniqueFeaturesData,
+      count: Array.isArray(uniqueFeaturesData) ? uniqueFeaturesData.length : 0
+    });
+    
+    // 6. Initialize storage service and download historical data
+    const storageService = new XStateStorageService();
+    const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
+    const historicalData = {
+      dailyDreams: [] as any[],
+      monthlyConsolidations: [] as any[],
+      yearlyCore: null as any
+    };
+    
+    // Download current daily dreams if hash exists
+    if (memoryData?.currentDreamDailyHash && memoryData.currentDreamDailyHash !== emptyHash) {
+      debugLog('📥 Downloading daily dreams from storage', { 
+        hash: memoryData.currentDreamDailyHash 
+      });
+      
+      try {
+        const result = await storageService.downloadJson(memoryData.currentDreamDailyHash);
+        if (result.success && result.data) {
+          historicalData.dailyDreams = Array.isArray(result.data) ? result.data : [];
+          debugLog('✅ Daily dreams downloaded successfully', {
+            count: historicalData.dailyDreams.length,
+            preview: historicalData.dailyDreams.slice(0, 2).map(d => ({
+              id: d.id,
+              date: d.date,
+              emotions: d.emotions?.slice(0, 3)
+            }))
+          });
+        } else {
+          debugLog('⚠️ Failed to download daily dreams', { error: result.error });
+        }
+      } catch (error) {
+        debugLog('❌ Error downloading daily dreams', { error: String(error) });
+      }
+    } else {
+      debugLog('ℹ️ No daily dreams hash available');
+    }
+    
+    // Download monthly consolidations if hash exists
+    if (memoryData?.lastDreamMonthlyHash && memoryData.lastDreamMonthlyHash !== emptyHash) {
+      debugLog('📥 Downloading monthly consolidations from storage', { 
+        hash: memoryData.lastDreamMonthlyHash 
+      });
+      
+      try {
+        const result = await storageService.downloadJson(memoryData.lastDreamMonthlyHash);
+        if (result.success && result.data) {
+          historicalData.monthlyConsolidations = Array.isArray(result.data) ? result.data : [result.data];
+          debugLog('✅ Monthly consolidations downloaded', {
+            count: historicalData.monthlyConsolidations.length
+          });
+        } else {
+          debugLog('⚠️ Failed to download monthly consolidations', { error: result.error });
+        }
+      } catch (error) {
+        debugLog('❌ Error downloading monthly consolidations', { error: String(error) });
+      }
+    } else {
+      debugLog('ℹ️ No monthly consolidation hash available');
+    }
+    
+    // Download memory core if hash exists
+    if (memoryData?.memoryCoreHash && memoryData.memoryCoreHash !== emptyHash) {
+      debugLog('📥 Downloading memory core from storage', { 
+        hash: memoryData.memoryCoreHash 
+      });
+      
+      try {
+        const result = await storageService.downloadJson(memoryData.memoryCoreHash);
+        if (result.success && result.data) {
+          historicalData.yearlyCore = result.data;
+          debugLog('✅ Memory core downloaded', {
+            hasCore: true,
+            year: historicalData.yearlyCore?.year
+          });
+        } else {
+          debugLog('⚠️ Failed to download memory core', { error: result.error });
+        }
+      } catch (error) {
+        debugLog('❌ Error downloading memory core', { error: String(error) });
+      }
+    } else {
+      debugLog('ℹ️ No memory core hash available');
+    }
+    
+    // 7. Build context compatible with mock structure
+    const context: MockDreamContext = {
+      userDream: input.dreamText,
+      agentProfile: {
+        name: parsedAgentName || effectiveAgentName,
+        intelligenceLevel: parsedIntelligenceLevel || mockAgentData.intelligenceLevel,
+        dreamCount: parsedDreamCount || mockAgentData.dreamCount,
+        conversationCount: parsedConversationCount || mockAgentData.conversationCount
+      },
+      personality: {
+        creativity: Number(personalityTraits?.creativity || 50),
+        analytical: Number(personalityTraits?.analytical || 50),
+        empathy: Number(personalityTraits?.empathy || 50),
+        intuition: Number(personalityTraits?.intuition || 50),
+        resilience: Number(personalityTraits?.resilience || 50),
+        curiosity: Number(personalityTraits?.curiosity || 50),
+        dominantMood: personalityTraits?.dominantMood || 'neutral',
+        responseStyle: 'balanced' // Would need to fetch from contract
+      },
+      memoryAccess: {
+        monthsAccessible: 1, // Would need to calculate from intelligence
+        memoryDepth: 'current month only'
+      },
+      historicalData: historicalData
+    };
+    
+    debugLog('🎉 REAL context built successfully', { 
+      agentName: context.agentProfile.name,
+      memoryDepth: context.memoryAccess.memoryDepth,
+      dailyDreamsCount: context.historicalData.dailyDreams.length,
+      monthlyConsolidationsCount: context.historicalData.monthlyConsolidations.length,
+      hasYearlyCore: !!context.historicalData.yearlyCore
+    });
+    
+    return context;
+    
+  } catch (error) {
+    debugLog('❌ ERROR fetching real context, falling back to mocks', { 
+      error: String(error) 
+    });
+    
+    // Fallback to mock data on error
+    const context = await buildMockDreamContext(
+      mockAgentData.tokenId,
+      mockAgentData,
+      input.dreamText
+    );
+    
+    return context;
+  }
 });
 
 // Service: Build dream prompt
