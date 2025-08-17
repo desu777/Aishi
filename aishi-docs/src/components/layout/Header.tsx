@@ -31,24 +31,8 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           <span className="font-grotesk text-xl font-semibold text-text-primary">
             aishiOS
           </span>
-          <span className="text-text-secondary font-normal">Docs</span>
         </Link>
 
-        {/* Navigation links - desktop */}
-        <nav className="hidden md:flex items-center ml-8 space-x-6">
-          <Link href="/docs" className="nav-link">
-            Documentation
-          </Link>
-          <Link href="/docs/api" className="nav-link">
-            API Reference
-          </Link>
-          <Link href="/docs/guides" className="nav-link">
-            Guides
-          </Link>
-          <Link href="/docs/examples" className="nav-link">
-            Examples
-          </Link>
-        </nav>
 
         {/* Right side actions */}
         <div className="ml-auto flex items-center space-x-4">

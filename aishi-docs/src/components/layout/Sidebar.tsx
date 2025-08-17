@@ -13,70 +13,10 @@ interface NavItem {
 
 const navigation: NavItem[] = [
   {
-    title: 'Getting Started',
+    title: 'Documentation',
     items: [
-      { title: 'Introduction', href: '/docs' },
+      { title: 'Introduction', href: '/' },
       { title: 'Quick Start', href: '/docs/quick-start' },
-      { title: 'Installation', href: '/docs/installation' },
-    ],
-  },
-  {
-    title: 'Core Concepts',
-    items: [
-      { title: 'Architecture Overview', href: '/docs/concepts/architecture' },
-      { title: 'Personality Evolution', href: '/docs/concepts/personality' },
-      { title: 'Memory System', href: '/docs/concepts/memory' },
-      { title: 'Agent Autonomy', href: '/docs/concepts/autonomy' },
-    ],
-  },
-  {
-    title: 'Smart Contracts',
-    items: [
-      { title: 'AishiAgent Contract', href: '/docs/contracts/aishi-agent' },
-      { title: 'Deployment Guide', href: '/docs/contracts/deployment' },
-      { title: 'Security', href: '/docs/contracts/security' },
-      { title: 'Testing', href: '/docs/contracts/testing' },
-    ],
-  },
-  {
-    title: 'Frontend',
-    items: [
-      { title: 'Setup', href: '/docs/frontend/setup' },
-      { title: 'Agent Dashboard', href: '/docs/frontend/dashboard' },
-      { title: 'Components', href: '/docs/frontend/components' },
-      { title: 'Hooks', href: '/docs/frontend/hooks' },
-    ],
-  },
-  {
-    title: 'Backend Services',
-    items: [
-      { title: '0G Compute', href: '/docs/backend/compute' },
-      { title: 'AI Processing', href: '/docs/backend/ai' },
-      { title: 'Storage', href: '/docs/backend/storage' },
-    ],
-  },
-  {
-    title: 'API Reference',
-    items: [
-      { title: 'Smart Contract API', href: '/docs/api/contracts' },
-      { title: 'Backend API', href: '/docs/api/backend' },
-      { title: 'Frontend SDK', href: '/docs/api/sdk' },
-    ],
-  },
-  {
-    title: 'Guides',
-    items: [
-      { title: 'Creating Your First Agent', href: '/docs/guides/first-agent' },
-      { title: 'Processing Dreams', href: '/docs/guides/dreams' },
-      { title: 'Memory Consolidation', href: '/docs/guides/consolidation' },
-    ],
-  },
-  {
-    title: 'Resources',
-    items: [
-      { title: 'FAQ', href: '/docs/resources/faq' },
-      { title: 'Troubleshooting', href: '/docs/resources/troubleshooting' },
-      { title: 'Glossary', href: '/docs/resources/glossary' },
     ],
   },
 ]
@@ -88,7 +28,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname()
-  const [expandedSections, setExpandedSections] = useState<string[]>(['Getting Started'])
+  const [expandedSections, setExpandedSections] = useState<string[]>(['Documentation'])
 
   const toggleSection = (title: string) => {
     setExpandedSections(prev =>
