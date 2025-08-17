@@ -7,6 +7,28 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Light mode colors */
+    --background-main: 255 255 255; /* #FFFFFF */
+    --background-card: 248 249 250; /* #F8F9FA */
+    --background-panel: 241 243 244; /* #F1F3F4 */
+    --text-primary: 31 41 55; /* #1F2937 */
+    --text-secondary: 107 114 128; /* #6B7280 */
+    --text-tertiary: 156 163 175; /* #9CA3AF */
+    --border-color: 229 231 235; /* #E5E7EB */
+  }
+
+  .dark {
+    /* Dark mode colors */
+    --background-main: 10 10 10; /* #0A0A0A */
+    --background-card: 18 18 24; /* #121218 */
+    --background-panel: 24 24 31; /* #18181F */
+    --text-primary: 230 230 230; /* #E6E6E6 */
+    --text-secondary: 153 153 165; /* #9999A5 */
+    --text-tertiary: 107 114 128; /* #6B7280 */
+    --border-color: 35 35 48; /* #232330 */
+  }
+
   * {
     @apply box-border m-0 p-0;
   }
@@ -16,8 +38,18 @@
   }
 
   body {
-    @apply bg-background-main text-text-primary font-sans antialiased;
+    @apply bg-background-main text-text-primary font-sans antialiased transition-colors duration-300;
     line-height: 1.6;
+  }
+
+  /* Remove underlines from all links globally */
+  a {
+    @apply no-underline;
+  }
+
+  /* Scroll offset for sticky header */
+  h1[id], h2[id], h3[id], h4[id], h5[id], h6[id] {
+    scroll-margin-top: 5rem;
   }
 
   /* Custom scrollbar */
@@ -80,7 +112,7 @@
   }
 
   .docs-content a {
-    @apply text-accent-primary hover:text-accent-secondary transition-colors;
+    @apply text-accent-primary hover:text-accent-secondary transition-colors no-underline;
   }
 
   .docs-content ul {

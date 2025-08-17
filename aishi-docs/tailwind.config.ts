@@ -6,27 +6,28 @@ const config: Config = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // Background colors from app
+        // Dynamic background colors (dark/light)
         background: {
-          main: '#0A0A0A',
-          card: '#121218',
-          panel: '#18181F',
+          main: 'rgb(var(--background-main) / <alpha-value>)',
+          card: 'rgb(var(--background-card) / <alpha-value>)',
+          panel: 'rgb(var(--background-panel) / <alpha-value>)',
           success: '#10B981',
         },
-        // Text colors from app
+        // Dynamic text colors (dark/light)
         text: {
-          primary: '#E6E6E6',
-          secondary: '#9999A5',
-          tertiary: '#6B7280',
+          primary: 'rgb(var(--text-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--text-secondary) / <alpha-value>)',
+          tertiary: 'rgb(var(--text-tertiary) / <alpha-value>)',
           accent: '#8B5CF6',
           success: '#10B981',
         },
-        // Border color
-        border: '#232330',
-        // Accent colors - Aishi Violet Theme
+        // Dynamic border color
+        border: 'rgb(var(--border-color) / <alpha-value>)',
+        // Static accent colors - Aishi Violet Theme (same for both modes)
         accent: {
           primary: '#8B5CF6',
           secondary: '#FF5CAA',
@@ -34,7 +35,7 @@ const config: Config = {
           success: '#10B981',
           error: '#EF4444',
         },
-        // Dream colors
+        // Dream colors (static)
         dream: {
           violet: '#8B5CF6',
           purple: '#A855F7',

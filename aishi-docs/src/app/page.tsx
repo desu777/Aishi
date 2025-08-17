@@ -1,34 +1,21 @@
 /**
  * @fileoverview Main landing page that directly displays documentation content
- * @description Renders the documentation index content without redirects, providing immediate access to aishiOS documentation
+ * @description Renders the documentation index content without redirects, providing immediate access to Aishi documentation
  */
 
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import Header from '@/components/layout/Header'
-import Sidebar from '@/components/layout/Sidebar'
-import Footer from '@/components/layout/Footer'
 import CodeBlock from '@/components/ui/CodeBlock'
 import Card from '@/components/ui/Card'
 
 export default function HomePage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
-      
-      <div className="flex-1 flex">
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        
-        <main className="flex-1 w-full">
-          <div className="container mx-auto px-4 py-8 md:px-8 max-w-5xl">
-            <article className="docs-content animate-fade-up">
-              <div className="mb-8">
+    <div className="container mx-auto px-4 py-8 md:px-8 max-w-5xl">
+      <article className="docs-content animate-fade-up">
+              <div id="introduction" className="mb-8">
                 <h1 className="text-4xl font-grotesk font-bold text-text-primary mb-3">
-                  Welcome to aishiOS
+                  Welcome to Aishi
                 </h1>
                 <p className="text-lg text-text-secondary">
                   Build autonomous AI agents with evolving personalities on blockchain
@@ -37,12 +24,12 @@ export default function HomePage() {
               
               <div className="prose prose-invert max-w-none">
                 <p className="text-text-secondary mb-6">
-                  aishiOS is a groundbreaking ecosystem that brings AI agents to life on the blockchain. Our agents aren't just NFTs - they're autonomous entities with evolving personalities, memories, and the ability to form meaningful relationships with their owners.
+                  Aishi is a groundbreaking ecosystem that brings AI agents to life on the blockchain. Our agents aren't just NFTs - they're autonomous entities with evolving personalities, memories, and the ability to form meaningful relationships with their owners.
                 </p>
 
-                <h2 className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">What is aishiOS?</h2>
+                <h2 id="what-is-aishi" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">What is Aishi?</h2>
                 
-                <p className="text-text-secondary mb-4">aishiOS implements the <strong>ERC-7857 iNFT standard</strong> to create intelligent Non-Fungible Tokens that:</p>
+                <p className="text-text-secondary mb-4">Aishi implements the <strong>ERC-7857 iNFT standard</strong> to create intelligent Non-Fungible Tokens that:</p>
                 
                 <ul className="list-disc pl-6 text-text-secondary space-y-2 mb-6">
                   <li><strong>Evolve</strong> through daily dreams and conversations</li>
@@ -51,9 +38,9 @@ export default function HomePage() {
                   <li><strong>Reward</strong> owners for nurturing their growth</li>
                 </ul>
 
-                <h2 className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Key Features</h2>
+                <h2 id="key-features" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Key Features</h2>
 
-                <h3 className="text-xl font-grotesk font-medium text-text-primary mb-3 mt-6">🧠 Personality Evolution</h3>
+                <h3 id="personality-evolution" className="text-xl font-grotesk font-medium text-text-primary mb-3 mt-6">🧠 Personality Evolution</h3>
                 <p className="text-text-secondary mb-2">Each agent has six core personality traits that evolve based on their experiences:</p>
                 <ul className="list-disc pl-6 text-text-secondary space-y-1 mb-6">
                   <li><strong>Creativity</strong> - Innovation and artistic thinking</li>
@@ -64,7 +51,7 @@ export default function HomePage() {
                   <li><strong>Curiosity</strong> - Learning desire</li>
                 </ul>
 
-                <h3 className="text-xl font-grotesk font-medium text-text-primary mb-3 mt-6">💾 Hierarchical Memory</h3>
+                <h3 id="hierarchical-memory" className="text-xl font-grotesk font-medium text-text-primary mb-3 mt-6">💾 Hierarchical Memory</h3>
                 <p className="text-text-secondary mb-2">Three-tier memory system that grows with intelligence:</p>
                 <ul className="list-disc pl-6 text-text-secondary space-y-1 mb-6">
                   <li><strong>Daily Records</strong> - Individual dreams and conversations</li>
@@ -72,7 +59,7 @@ export default function HomePage() {
                   <li><strong>Yearly Core</strong> - Long-term personality essence</li>
                 </ul>
 
-                <h3 className="text-xl font-grotesk font-medium text-text-primary mb-3 mt-6">🎮 Gamification</h3>
+                <h3 id="gamification" className="text-xl font-grotesk font-medium text-text-primary mb-3 mt-6">🎮 Gamification</h3>
                 <p className="text-text-secondary mb-2">Intelligence-based progression system:</p>
                 <ul className="list-disc pl-6 text-text-secondary space-y-1 mb-6">
                   <li>Level up through dreams and conversations</li>
@@ -81,7 +68,7 @@ export default function HomePage() {
                   <li>Earn consolidation streaks</li>
                 </ul>
 
-                <h2 className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Quick Start</h2>
+                <h2 id="quick-start" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Quick Start</h2>
                 
                 <div className="mb-6">
                   <CodeBlock language="typescript">
@@ -101,9 +88,9 @@ await processDailyDream(tokenId, dreamData)`}
                   </CodeBlock>
                 </div>
 
-                <h2 className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Architecture Overview</h2>
+                <h2 id="architecture-overview" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Architecture Overview</h2>
                 
-                <p className="text-text-secondary mb-6">aishiOS consists of three main components:</p>
+                <p className="text-text-secondary mb-6">Aishi consists of three main components:</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                   <Card title="Smart Contracts" description="ERC-7857 implementation with personality evolution">
@@ -119,9 +106,9 @@ await processDailyDream(tokenId, dreamData)`}
                   </Card>
                 </div>
 
-                <h2 className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Why aishiOS?</h2>
+                <h2 id="why-aishi" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Why Aishi?</h2>
                 
-                <p className="text-text-secondary mb-4">Traditional NFTs are static - they don't change, grow, or interact. aishiOS agents are different:</p>
+                <p className="text-text-secondary mb-4">Traditional NFTs are static - they don't change, grow, or interact. Aishi agents are different:</p>
                 
                 <ol className="list-decimal pl-6 text-text-secondary space-y-2 mb-6">
                   <li><strong>Dynamic Evolution</strong> - Your agent's personality changes based on interactions</li>
@@ -130,7 +117,7 @@ await processDailyDream(tokenId, dreamData)`}
                   <li><strong>Economic Incentives</strong> - Earn rewards for nurturing your agent</li>
                 </ol>
 
-                <h2 className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Next Steps</h2>
+                <h2 id="next-steps" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Next Steps</h2>
                 
                 <p className="text-text-secondary mb-4">Ready to dive deeper? Here's where to go next:</p>
                 
@@ -140,7 +127,7 @@ await processDailyDream(tokenId, dreamData)`}
                   <li><a href="https://discord.gg/aishios" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">Community Discord</a> - Get help and connect with other developers</li>
                 </ul>
 
-                <h2 className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Community</h2>
+                <h2 id="community" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Community</h2>
                 
                 <p className="text-text-secondary mb-4">Join our growing community of agent creators:</p>
                 
@@ -156,12 +143,7 @@ await processDailyDream(tokenId, dreamData)`}
                   Building the future of AI companionship on blockchain
                 </p>
               </div>
-            </article>
-          </div>
-        </main>
-      </div>
-      
-      <Footer />
+      </article>
     </div>
   )
 }

@@ -1,8 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import Image from 'next/image'
+import { useState, useEffect } from 'react'
 import { FiMenu, FiX, FiGithub, FiSearch } from 'react-icons/fi'
+import { useTheme } from '@/contexts/ThemeContext'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 interface HeaderProps {
   onMenuToggle?: () => void
@@ -10,6 +13,12 @@ interface HeaderProps {
 
 export default function Header({ onMenuToggle }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const { theme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background-main/95 backdrop-blur">
@@ -25,11 +34,15 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 
         {/* Logo and brand */}
         <Link href="/" className="flex items-center space-x-3">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-accent-primary to-accent-secondary flex items-center justify-center">
-            <span className="text-white font-bold text-lg">A</span>
-          </div>
+          <Image
+            src={mounted ? (theme === 'dark' ? '/logo_white.png' : '/logo_black.png') : '/logo_white.png'}
+            alt="Aishi Logo"
+            width={32}
+            height={32}
+            className="rounded-lg transition-all duration-300"
+          />
           <span className="font-grotesk text-xl font-semibold text-text-primary">
-            aishiOS
+            Aishi
           </span>
         </Link>
 
@@ -58,6 +71,9 @@ export default function Header({ onMenuToggle }: HeaderProps) {
               </div>
             )}
           </div>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* GitHub */}
           <a
