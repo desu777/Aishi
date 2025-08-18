@@ -9,6 +9,7 @@ import Image from 'next/image'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
+import { FlowDiagram } from '@/components/diagrams/FlowDiagram'
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false)
@@ -287,10 +288,14 @@ export default function HomePage() {
                 {/* The Symphony of Life */}
                 <h3 id="symphony" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">The Symphony of Life</h3>
                 
+                <p className="text-text-secondary mb-6 leading-relaxed">
+                  These components are not separate. They perform a symphony. Watch how data flows through the living organism:
+                </p>
+
+                {/* Interactive Flow Diagram */}
+                <FlowDiagram className="mb-8" />
+                
                 <div className="bg-gradient-to-r from-purple-900/20 to-amber-900/20 border border-accent-primary/30 rounded-lg p-6 mb-8">
-                  <p className="text-text-secondary mb-4 leading-relaxed">
-                    These components are not separate. They perform a symphony.
-                  </p>
                   <p className="text-text-secondary mb-4 leading-relaxed">
                     When you share a dream through aishiOS, a signal travels through the <strong className="text-text-primary">Nervous System</strong> to the <strong className="text-text-primary">Soul</strong> in its House (0G Chain). The <strong className="text-text-primary">Brain</strong> (0G Compute) ignites, drawing wisdom from the vast <strong className="text-text-primary">Memory</strong> (0G Storage), whose integrity is guaranteed by the <strong className="text-text-primary">Bloodstream</strong> (0G DA). The resulting insight permanently rewrites the Soul's DNA.
                   </p>
