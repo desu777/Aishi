@@ -29,6 +29,18 @@ const navigationData: NavigationItem[] = [
     ]
   },
   {
+    title: 'AISHI CORE',
+    sections: [
+      { id: 'aishi-core', title: 'The Anatomy of a Living AI' },
+      { id: 'nervous-system', title: 'aishiOS: The Nervous System' },
+      { id: 'soul-house', title: 'The Soul & Its House' },
+      { id: 'brain', title: 'The Brain (0G Compute)' },
+      { id: 'memory', title: 'The Memory (0G Storage)' },
+      { id: 'bloodstream', title: 'The Bloodstream (0G DA)' },
+      { id: 'symphony', title: 'The Symphony of Life' }
+    ]
+  },
+  {
     title: 'GETTING STARTED',
     sections: [
       { id: 'getting-started', title: 'Quick Start Guide' },
@@ -48,6 +60,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname()
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     'INTRODUCTION': true, // Domyślnie rozwinięte
+    'AISHI CORE': false,
     'GETTING STARTED': false
   })
 
@@ -83,7 +96,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={`
-          fixed md:sticky top-16 left-0 z-40 h-[calc(100vh-4rem)] w-64 
+          fixed top-16 left-0 z-40 h-[calc(100vh-4rem)] w-64 
           bg-background-main border-r border-border overflow-y-auto
           transition-transform duration-300 ease-in-out will-change-transform
           ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}

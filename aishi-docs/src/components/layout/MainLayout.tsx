@@ -8,7 +8,6 @@
 import { useState } from 'react'
 import Header from './Header'
 import Sidebar from './Sidebar'
-import Footer from './Footer'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -28,8 +27,6 @@ export function MainLayout({ children }: MainLayoutProps) {
           {children}
         </main>
       </div>
-      
-      <Footer />
     </div>
   )
 }
