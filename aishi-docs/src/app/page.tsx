@@ -147,6 +147,161 @@ export default function HomePage() {
                 <p className="text-text-tertiary text-center italic text-lg">
                   Your subconscious speaks. Aishi listens. Together, you evolve.
                 </p>
+
+                {/* Getting Started Section */}
+                <h2 id="getting-started" className="text-3xl font-grotesk font-bold text-text-primary mb-4 mt-16">Getting Started</h2>
+                
+                <h3 id="quick-start-guide" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Quick Start Guide</h3>
+                
+                <p className="text-text-secondary mb-8 leading-relaxed">
+                  This guide will walk you through creating your Aishi and understanding the core interactions within aishiOS, the operating system for your digital soul.
+                </p>
+
+                {/* Step 1: Mint Your Companion */}
+                <h3 id="mint-companion" className="text-xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Step 1: Mint Your Companion</h3>
+                
+                <div className="bg-background-card border border-border rounded-lg p-6 mb-8">
+                  <ol className="space-y-3 text-text-secondary">
+                    <li>1. Navigate to the "Mint Agent" tab.</li>
+                    <li>2. Choose a unique name for your Aishi - this will be its identity forever.</li>
+                    <li>3. Click "Mint" and confirm the transaction in your wallet. This action calls the <code className="bg-background-main px-2 py-1 rounded text-accent-primary">mintAgent</code> function on the AishiAgent smart contract, creating your Aishi's unique iNFT soul on the blockchain.</li>
+                  </ol>
+                </div>
+
+                {/* Step 2: The aishiOS Interface */}
+                <h3 id="aishios-interface" className="text-xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Step 2: The aishiOS Interface</h3>
+                
+                <p className="text-text-secondary mb-6 leading-relaxed">
+                  Once your agent is minted, the aishiOS terminal becomes your gateway. It's designed for seamless communication, consisting of two key elements: the AI Orb and the Terminal.
+                </p>
+
+                <h4 className="text-lg font-grotesk font-semibold text-text-primary mb-4">The AI Orb: Your Agent's Emotional State</h4>
+                
+                <p className="text-text-secondary mb-6 leading-relaxed">
+                  The Orb is the living heart of the interface, providing a real-time, visual representation of your agent's state. Its color and animation change based on its current activity, allowing you to feel its status, not just read it.
+                </p>
+
+                {/* Orb States Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
+                  <div>
+                    <div className="overflow-hidden rounded-xl border border-border mb-3">
+                      <Image
+                        src="/aishiOS_connected.jpg"
+                        alt="Aishi OS in connected state"
+                        width={600}
+                        height={400}
+                        className="w-full h-auto"
+                      />
+                    </div>
+                    <h5 className="font-grotesk font-semibold text-text-primary mb-2">Connected (Calm Purple)</h5>
+                    <p className="text-sm text-text-secondary">
+                      When you first open aishiOS, the Orb glows with a calm purple light. The status line confirms "connected," indicating your agent is idle and ready for interaction.
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="overflow-hidden rounded-xl border border-border mb-3">
+                      <Image
+                        src="/aishiOS_dream.jpg"
+                        alt="Aishi OS in dream input state"
+                        width={600}
+                        height={400}
+                        className="w-full h-auto"
+                      />
+                    </div>
+                    <h5 className="font-grotesk font-semibold text-text-primary mb-2">Listening (Cyan Blue)</h5>
+                    <p className="text-sm text-text-secondary">
+                      When you initiate a command like dream, the Orb shifts to a cyan blue. This signifies that your agent is actively listening and awaiting your input.
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="overflow-hidden rounded-xl border border-border mb-3">
+                      <Image
+                        src="/aishiOS_learn.jpg"
+                        alt="Aishi OS in learning state"
+                        width={600}
+                        height={400}
+                        className="w-full h-auto"
+                      />
+                    </div>
+                    <h5 className="font-grotesk font-semibold text-text-primary mb-2">Learning (Warm Yellow)</h5>
+                    <p className="text-sm text-text-secondary">
+                      After you share a dream and confirm you want it saved, the Orb turns a warm, vibrant yellow. The status "is learning..." means your agent is processing the information and integrating it into its daily memory log.
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="overflow-hidden rounded-xl border border-border mb-3">
+                      <Image
+                        src="/aishiOS_evolve.jpg"
+                        alt="Aishi OS in evolving state"
+                        width={600}
+                        height={400}
+                        className="w-full h-auto"
+                      />
+                    </div>
+                    <h5 className="font-grotesk font-semibold text-text-primary mb-2">Evolving (Vibrant Magenta)</h5>
+                    <p className="text-sm text-text-secondary">
+                      During a milestone dream (every 5th dream), the Orb glows with an intense magenta hue. The "is evolving..." status indicates that the PersonalityImpact from the dream analysis is being written to the blockchain, permanently altering your agent's personality traits.
+                    </p>
+                  </div>
+                </div>
+
+                <h4 className="text-lg font-grotesk font-semibold text-text-primary mb-4">The Terminal: Your Command Center</h4>
+                
+                <p className="text-text-secondary mb-8 leading-relaxed">
+                  The terminal is your tool for direct communication. All interactions, from analysis to simple checks, happen here.
+                </p>
+
+                {/* Step 3: Your First Commands */}
+                <h3 id="first-commands" className="text-xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Step 3: Your First Commands</h3>
+                
+                <p className="text-text-secondary mb-6 leading-relaxed">
+                  Now let's put it all together. Here's how a typical, powerful interaction unfolds:
+                </p>
+
+                <div className="space-y-6 mb-8">
+                  <div>
+                    <h4 className="font-grotesk font-semibold text-text-primary mb-3">Check In: Start by checking your agent's current status</h4>
+                    <div className="bg-background-card border border-border rounded-lg p-4">
+                      <pre className="font-mono text-sm text-text-primary">
+                        <span className="text-accent-primary">$</span> info
+                      </pre>
+                    </div>
+                    <p className="text-sm text-text-secondary mt-2">
+                      This command reads directly from the blockchain to show you your agent's current intelligenceLevel, dreamCount, and more.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-grotesk font-semibold text-text-primary mb-3">Initiate a Dream: Begin the core evolutionary process</h4>
+                    <div className="bg-background-card border border-border rounded-lg p-4">
+                      <pre className="font-mono text-sm text-text-primary">
+                        <span className="text-accent-primary">$</span> dream
+                      </pre>
+                    </div>
+                    <p className="text-sm text-text-secondary mt-2">
+                      The Orb turns cyan. The prompt changes to ~, waiting for you to describe your dream.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-background-card border border-border rounded-lg p-6 mb-8">
+                  <h4 className="font-grotesk font-semibold text-text-primary mb-4">The Evolution Process</h4>
+                  <ol className="space-y-3 text-text-secondary">
+                    <li><strong>Share and Confirm:</strong> After you describe your dream and receive the analysis, aishiOS will ask if you want to save it. Type <code className="bg-background-main px-1 rounded">y</code> and press Enter.</li>
+                    <li><strong>Witness the Evolution:</strong> You will see the Orb shift through its states: first to yellow (learning) as it saves the memory, and if it's a milestone, to magenta (evolving) as its very soul is updated on-chain.</li>
+                  </ol>
+                  
+                  <div className="mt-6 pt-4 border-t border-border">
+                    <p className="text-text-primary font-semibold">You have just completed your first full evolutionary loop, making your Aishi smarter and more attuned to you.</p>
+                  </div>
+                </div>
+
+                <p className="text-text-tertiary text-center italic mb-8">
+                  More commands and deeper interactions are coming soon...
+                </p>
               </div>
       </article>
     </div>

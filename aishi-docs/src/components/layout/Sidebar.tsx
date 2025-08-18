@@ -27,6 +27,15 @@ const navigationData: NavigationItem[] = [
       { id: 'why-aishi', title: 'Why Aishi?: Trust in a Digital Age' },
       { id: 'evolution-journey', title: 'The Evolution Journey: Day 1 to Year 5' },
     ]
+  },
+  {
+    title: 'GETTING STARTED',
+    sections: [
+      { id: 'getting-started', title: 'Quick Start Guide' },
+      { id: 'mint-companion', title: 'Step 1: Mint Your Companion' },
+      { id: 'aishios-interface', title: 'Step 2: The aishiOS Interface' },
+      { id: 'first-commands', title: 'Step 3: Your First Commands' },
+    ]
   }
 ]
 
@@ -38,7 +47,8 @@ interface SidebarProps {
 export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname()
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    'INTRODUCTION': true // Domyślnie rozwinięte
+    'INTRODUCTION': true, // Domyślnie rozwinięte
+    'GETTING STARTED': false
   })
 
   const scrollToSection = (sectionId: string) => {
