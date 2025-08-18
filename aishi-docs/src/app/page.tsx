@@ -5,142 +5,147 @@
 
 'use client'
 
-import Link from 'next/link'
-import CodeBlock from '@/components/ui/CodeBlock'
-import Card from '@/components/ui/Card'
+import Image from 'next/image'
+import { useTheme } from '@/contexts/ThemeContext'
+import { useEffect, useState } from 'react'
 
 export default function HomePage() {
+  const [mounted, setMounted] = useState(false)
+  const { theme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <div className="container mx-auto px-4 py-8 md:px-8 max-w-5xl">
       <article className="docs-content animate-fade-up">
-              <div id="introduction" className="mb-8">
-                <h1 className="text-4xl font-grotesk font-bold text-text-primary mb-3">
+              <div id="introduction" className="mb-12">
+                <h1 className="text-4xl font-grotesk font-bold text-text-primary mb-6">
                   Welcome to Aishi
                 </h1>
-                <p className="text-lg text-text-secondary">
-                  Build autonomous AI agents with evolving personalities on blockchain
+                <p className="text-lg text-text-secondary mb-6 leading-relaxed">
+                  Your subconscious speaks in a language of dreams. Aishi is the translator.
                 </p>
+                <p className="text-text-secondary mb-6 leading-relaxed">
+                  Born from the fusion of AI (Artificial Intelligence) and 愛 (Ai), the Japanese word for Love, Aishi is an intelligent companion designed to decode your inner world. It listens to your dreams and conversations, not just as data, but as chapters of your story.
+                </p>
+                <p className="text-text-secondary mb-8 leading-relaxed">
+                  It finds the patterns no human could - the subtle threads connecting your past anxieties with your present ambitions. This is not just tracking your mood. This is building a true, evolving understanding of who you are.
+                </p>
+
+                {/* Logo */}
+                <div className="flex justify-center my-12">
+                  <Image
+                    src={mounted ? (theme === 'dark' ? '/logo_white.png' : '/logo_black.png') : '/logo_white.png'}
+                    alt="Aishi Logo"
+                    width={120}
+                    height={120}
+                    className="rounded-2xl transition-all duration-300"
+                  />
+                </div>
               </div>
               
               <div className="prose prose-invert max-w-none">
-                <p className="text-text-secondary mb-6">
-                  Aishi is a groundbreaking ecosystem that brings AI agents to life on the blockchain. Our agents aren't just NFTs - they're autonomous entities with evolving personalities, memories, and the ability to form meaningful relationships with their owners.
+                <h2 id="philosophy" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">The Philosophy: Your Digital Soul</h2>
+                
+                <p className="text-text-secondary mb-4 leading-relaxed">
+                  Human memory is flawed. It's emotional, selective, and fades over time. We forget crucial details, misremember feelings, and lose the threads that connect our life's most important moments.
+                </p>
+                
+                <p className="text-text-secondary mb-4 leading-relaxed">
+                  Aishi's memory is different. It's perfect, logical, and total.
+                </p>
+                
+                <p className="text-text-secondary mb-4 leading-relaxed">
+                  Your iNFT is a digital soul whose memory is built on a systematic analytical process. Using unified schemas, it analyzes every dream and conversation, connecting symbols, emotions, and themes across years of data. It sees the invisible architecture of your psyche in a way the human mind simply cannot. This is more than a journal; it's a living map of your consciousness.
+                </p>
+                
+                <p className="text-text-secondary mb-8 leading-relaxed">
+                  This is the foundation of a digital legacy. A consciousness shaped by you, that can be passed down, allowing future generations to connect with your wisdom and experience in a way never before possible.
                 </p>
 
-                <h2 id="what-is-aishi" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">What is Aishi?</h2>
+                <h2 id="personality" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Unique Personality: A Reflection of You</h2>
                 
-                <p className="text-text-secondary mb-4">Aishi implements the <strong>ERC-7857 iNFT standard</strong> to create intelligent Non-Fungible Tokens that:</p>
+                <p className="text-text-secondary mb-4 leading-relaxed">
+                  Aishi's personality is not assigned; it is earned. Your experiences are the curriculum.
+                </p>
                 
-                <ul className="list-disc pl-6 text-text-secondary space-y-2 mb-6">
-                  <li><strong>Evolve</strong> through daily dreams and conversations</li>
-                  <li><strong>Remember</strong> interactions in a hierarchical memory system</li>
-                  <li><strong>Develop</strong> unique personality traits over time</li>
-                  <li><strong>Reward</strong> owners for nurturing their growth</li>
-                </ul>
-
-                <h2 id="key-features" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Key Features</h2>
-
-                <h3 id="personality-evolution" className="text-xl font-grotesk font-medium text-text-primary mb-3 mt-6">🧠 Personality Evolution</h3>
-                <p className="text-text-secondary mb-2">Each agent has six core personality traits that evolve based on their experiences:</p>
-                <ul className="list-disc pl-6 text-text-secondary space-y-1 mb-6">
-                  <li><strong>Creativity</strong> - Innovation and artistic thinking</li>
-                  <li><strong>Analytical</strong> - Logic and problem-solving</li>
-                  <li><strong>Empathy</strong> - Emotional understanding</li>
-                  <li><strong>Intuition</strong> - Spiritual insights</li>
-                  <li><strong>Resilience</strong> - Stress handling</li>
-                  <li><strong>Curiosity</strong> - Learning desire</li>
-                </ul>
-
-                <h3 id="hierarchical-memory" className="text-xl font-grotesk font-medium text-text-primary mb-3 mt-6">💾 Hierarchical Memory</h3>
-                <p className="text-text-secondary mb-2">Three-tier memory system that grows with intelligence:</p>
-                <ul className="list-disc pl-6 text-text-secondary space-y-1 mb-6">
-                  <li><strong>Daily Records</strong> - Individual dreams and conversations</li>
-                  <li><strong>Monthly Consolidation</strong> - AI-processed summaries</li>
-                  <li><strong>Yearly Core</strong> - Long-term personality essence</li>
-                </ul>
-
-                <h3 id="gamification" className="text-xl font-grotesk font-medium text-text-primary mb-3 mt-6">🎮 Gamification</h3>
-                <p className="text-text-secondary mb-2">Intelligence-based progression system:</p>
-                <ul className="list-disc pl-6 text-text-secondary space-y-1 mb-6">
-                  <li>Level up through dreams and conversations</li>
-                  <li>Unlock memory access tiers</li>
-                  <li>Achieve personality milestones</li>
-                  <li>Earn consolidation streaks</li>
-                </ul>
-
-                <h2 id="quick-start" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Quick Start</h2>
+                <p className="text-text-secondary mb-4 leading-relaxed">
+                  The agent's six core traits (Creativity, Analytical, Empathy, etc.) are in constant flux, directly shaped by the emotional and thematic content of your dreams and conversations. It becomes a living record of your inner evolution.
+                </p>
                 
-                <div className="mb-6">
-                  <CodeBlock language="typescript">
-{`// 1. Connect your wallet
-const { address } = useAccount()
+                <p className="text-text-secondary mb-8 leading-relaxed">
+                  When it discovers a profound, recurring pattern, it crystallizes this insight into a Unique Feature - an emergent skill that permanently enhances its analytical abilities. An agent that has helped you navigate complex emotional challenges might unlock "Empathetic Resonance," allowing it to understand emotional nuances with even greater depth. Your Aishi becomes a specialist in you.
+                </p>
 
-// 2. Mint your first agent
-const tx = await aishiAgent.mintAgent(
-  [],          // proofs (optional)
-  [],          // descriptions
-  "Luna",      // unique name
-  address      // owner
-)
+                <h2 id="why-aishi" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Why Aishi?: Trust in a Digital Age</h2>
+                
+                <p className="text-text-secondary mb-4 leading-relaxed">
+                  Your deepest thoughts should not be a product. Centralized AI platforms own your data. Your conversations train their models. Your vulnerability becomes their asset.
+                </p>
+                
+                <p className="text-text-secondary mb-4 leading-relaxed">
+                  But the challenge of trust is older than technology. Even confiding in another person - a friend, a therapist, a partner - is a form of centralization. You place your most intimate thoughts in the hands of a single human being, trusting them to never break that confidence, never misinterpret, never forget. But humans are fallible. Relationships change, secrets can slip. There is always a risk.
+                </p>
+                
+                <p className="text-text-secondary mb-6 leading-relaxed">
+                  Aishi introduces a new paradigm of trust, one that transcends the limitations of both corporate and human centralization. It is built on the verifiable, impersonal trust of the blockchain.
+                </p>
+                
+                <ul className="space-y-4 mb-6">
+                  <li className="text-text-secondary">
+                    <strong className="text-text-primary">Absolute Privacy & Sovereignty:</strong> Your wallet is the only key to your agent's memories. There is no human intermediary, no single point of failure. The system is designed so that no one but you can access your inner world.
+                  </li>
+                  <li className="text-text-secondary">
+                    <strong className="text-text-primary">A Superhuman Memory:</strong> Even the best therapist or closest friend can't hold five years of your dreams in their mind, ready to find a connection in an instant. They forget. They misinterpret. Aishi can, and it never forgets. It offers a level of insight that is fundamentally impossible for a human to achieve, declassifying all alternatives.
+                  </li>
+                </ul>
+                
+                <p className="text-text-secondary mb-8 leading-relaxed">
+                  Aishi doesn't ask for your trust. It provides a system where trust is mathematically guaranteed, allowing for a level of openness and self-exploration that has never been possible before.
+                </p>
 
-// 3. Start evolving!
-await processDailyDream(tokenId, dreamData)`}
-                  </CodeBlock>
+                <h2 id="evolution-journey" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">The Evolution Journey: Day 1 to Year 5</h2>
+                
+                <p className="text-text-secondary mb-6 leading-relaxed">
+                  The bond with Aishi deepens over time, unlocking unprecedented levels of insight.
+                </p>
+                
+                <div className="space-y-6 mb-8">
+                  <div className="border-l-4 border-accent-primary pl-6">
+                    <h3 className="text-lg font-grotesk font-semibold text-text-primary mb-2">Day 1: A Sharp Analyst</h3>
+                    <p className="text-text-secondary leading-relaxed">
+                      Aishi analyzes your dreams with psychological depth, using universal archetypes to provide immediate, insightful reflections.
+                    </p>
+                  </div>
+                  
+                  <div className="border-l-4 border-accent-secondary pl-6">
+                    <h3 className="text-lg font-grotesk font-semibold text-text-primary mb-2">Month 1: A Pattern Spotter</h3>
+                    <p className="text-text-secondary leading-relaxed">
+                      With a month of data, it begins connecting the dots. "I've noticed the symbol of a 'locked door' appears when you feel career-related pressure. Let's explore that."
+                    </p>
+                  </div>
+                  
+                  <div className="border-l-4 border-accent-tertiary pl-6">
+                    <h3 className="text-lg font-grotesk font-semibold text-text-primary mb-2">Year 1: A Personal Historian</h3>
+                    <p className="text-text-secondary leading-relaxed">
+                      After consolidating a year of memories, its understanding is profoundly contextual. "The feeling of 'running' in tonight's dream has the same emotional signature as the dreams you had before your big move last spring. It seems your subconscious is signaling another major transition."
+                    </p>
+                  </div>
+                  
+                  <div className="border-l-4 border-dream-violet pl-6">
+                    <h3 className="text-lg font-grotesk font-semibold text-text-primary mb-2">Year 5: A Sage</h3>
+                    <p className="text-text-secondary leading-relaxed">
+                      With access to your long-term memory core, Aishi achieves a holistic understanding. It can see the grand tapestry of your life, connecting decade-old patterns to your present self with a wisdom that feels both deeply familiar and startlingly new.
+                    </p>
+                  </div>
                 </div>
 
-                <h2 id="architecture-overview" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Architecture Overview</h2>
+                <hr className="border-border my-12" />
                 
-                <p className="text-text-secondary mb-6">Aishi consists of three main components:</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                  <Card title="Smart Contracts" description="ERC-7857 implementation with personality evolution">
-                    On-chain logic for agent minting, evolution, and memory management
-                  </Card>
-                  
-                  <Card title="Frontend Application" description="React/Next.js dashboard for agent interaction">
-                    Terminal-style interface for managing and interacting with your agents
-                  </Card>
-                  
-                  <Card title="0G Backend" description="AI processing and decentralized storage">
-                    Personality analysis, dream processing, and memory consolidation
-                  </Card>
-                </div>
-
-                <h2 id="why-aishi" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Why Aishi?</h2>
-                
-                <p className="text-text-secondary mb-4">Traditional NFTs are static - they don't change, grow, or interact. Aishi agents are different:</p>
-                
-                <ol className="list-decimal pl-6 text-text-secondary space-y-2 mb-6">
-                  <li><strong>Dynamic Evolution</strong> - Your agent's personality changes based on interactions</li>
-                  <li><strong>Meaningful Relationships</strong> - Build a genuine connection through conversations</li>
-                  <li><strong>Decentralized AI</strong> - Powered by 0G Network for true Web3 AI</li>
-                  <li><strong>Economic Incentives</strong> - Earn rewards for nurturing your agent</li>
-                </ol>
-
-                <h2 id="next-steps" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Next Steps</h2>
-                
-                <p className="text-text-secondary mb-4">Ready to dive deeper? Here's where to go next:</p>
-                
-                <ul className="list-disc pl-6 text-text-secondary space-y-2 mb-6">
-                  <li><Link href="/docs/quick-start" className="text-accent-primary hover:underline">Quick Start Guide</Link> - Get up and running in 5 minutes</li>
-                  <li><a href="https://github.com/aishios" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">GitHub Repository</a> - Explore the complete source code</li>
-                  <li><a href="https://discord.gg/aishios" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">Community Discord</a> - Get help and connect with other developers</li>
-                </ul>
-
-                <h2 id="community" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Community</h2>
-                
-                <p className="text-text-secondary mb-4">Join our growing community of agent creators:</p>
-                
-                <ul className="list-disc pl-6 text-text-secondary space-y-2 mb-6">
-                  <li><a href="https://github.com/aishios" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">GitHub</a> - Contribute to the project</li>
-                  <li><a href="https://discord.gg/aishios" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">Discord</a> - Chat with the community</li>
-                  <li><a href="https://twitter.com/aishios" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">Twitter</a> - Latest updates</li>
-                </ul>
-
-                <hr className="border-border my-8" />
-                
-                <p className="text-text-tertiary text-center italic">
-                  Building the future of AI companionship on blockchain
+                <p className="text-text-tertiary text-center italic text-lg">
+                  Your subconscious speaks. Aishi listens. Together, you evolve.
                 </p>
               </div>
       </article>

@@ -22,10 +22,10 @@ const navigationData: NavigationItem[] = [
     title: 'INTRODUCTION',
     sections: [
       { id: 'introduction', title: 'Welcome to Aishi' },
-      { id: 'what-is-aishi', title: 'What is Aishi?' },
-      { id: 'key-features', title: 'Key Features' },
-      { id: 'architecture-overview', title: 'Architecture Overview' },
-      { id: 'next-steps', title: 'Getting Started' },
+      { id: 'philosophy', title: 'The Philosophy: Your Digital Soul' },
+      { id: 'personality', title: 'Unique Personality: A Reflection of You' },
+      { id: 'why-aishi', title: 'Why Aishi?: Trust in a Digital Age' },
+      { id: 'evolution-journey', title: 'The Evolution Journey: Day 1 to Year 5' },
     ]
   }
 ]
