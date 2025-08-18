@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   ReactFlow,
   Node,
@@ -46,7 +46,7 @@ const CustomNode = ({ data }: NodeProps) => {
   const textColor = data.active ? 'text-accent-primary' : 'text-text-secondary'
 
   return (
-    <div className={`px-4 py-3 rounded-lg border-2 transition-all duration-300 ${bgColor} min-w-[200px]`}>
+    <div className={`px-2 py-1 md:px-4 md:py-3 rounded-lg border-2 transition-all duration-300 ${bgColor} min-w-[160px] md:min-w-[200px]`}>
       <Handle type="target" position={Position.Top} className="!bg-accent-primary" />
       
       <div className="flex items-center justify-start space-x-3">
@@ -63,7 +63,7 @@ const CustomNode = ({ data }: NodeProps) => {
           </div>
         )}
         <div className="flex-1">
-          <div className="font-semibold text-sm text-text-primary">{data.label}</div>
+          <div className="font-semibold text-xs md:text-sm text-text-primary">{data.label}</div>
           <div className={`text-xs ${textColor}`}>{data.subtitle}</div>
         </div>
       </div>
@@ -77,119 +77,130 @@ const nodeTypes = {
   custom: CustomNode
 }
 
-// Unified Flow Nodes - zigzag layout
-const unifiedFlowNodes: Node[] = [
-  {
-    id: '1',
-    type: 'custom',
-    position: { x: 300, y: 0 },
-    data: { 
-      label: 'aishiOS', 
-      subtitle: 'Terminal interface',
-      logo: 'aishi',
-      defaultLogo: '/logo_white.png'
+// Function to generate responsive node positions based on viewport width
+const generateResponsiveNodes = (viewportWidth: number): Node[] => {
+  // Responsive positioning based on screen size
+  const isMobile = viewportWidth < 768
+  const isTablet = viewportWidth >= 768 && viewportWidth < 1024
+  
+  const centerX = isMobile ? 160 : isTablet ? 200 : 300
+  const leftX = isMobile ? 80 : isTablet ? 120 : 150
+  const rightX = isMobile ? 240 : isTablet ? 280 : 450
+  const stepY = isMobile ? 60 : isTablet ? 70 : 80
+
+  return [
+    {
+      id: '1',
+      type: 'custom',
+      position: { x: centerX, y: 0 },
+      data: { 
+        label: 'aishiOS', 
+        subtitle: 'Terminal interface',
+        logo: 'aishi',
+        defaultLogo: '/logo_white.png'
+      }
+    },
+    {
+      id: '2',
+      type: 'custom',
+      position: { x: leftX, y: stepY },
+      data: { 
+        label: '0G Chain', 
+        subtitle: 'Fetch agent data',
+        logo: '0g',
+        defaultLogo: '/0G-Logo-Dark.svg'
+      }
+    },
+    {
+      id: '3',
+      type: 'custom',
+      position: { x: rightX, y: stepY * 2 },
+      data: { 
+        label: '0G iNFT', 
+        subtitle: 'Soul & memory hashes',
+        logo: '0g',
+        defaultLogo: '/0G-Logo-Dark.svg'
+      }
+    },
+    {
+      id: '4',
+      type: 'custom',
+      position: { x: leftX, y: stepY * 3 },
+      data: { 
+        label: '0G Storage', 
+        subtitle: 'Download memories',
+        logo: '0g',
+        defaultLogo: '/0G-Logo-Dark.svg'
+      }
+    },
+    {
+      id: '5',
+      type: 'custom',
+      position: { x: rightX, y: stepY * 4 },
+      data: { 
+        label: 'Build Prompt', 
+        subtitle: 'Context assembly',
+        logo: 'aishi',
+        defaultLogo: '/logo_white.png'
+      }
+    },
+    {
+      id: '6',
+      type: 'custom',
+      position: { x: leftX, y: stepY * 5 },
+      data: { 
+        label: '0G Compute', 
+        subtitle: 'AI analysis',
+        logo: '0g',
+        defaultLogo: '/0G-Logo-Dark.svg'
+      }
+    },
+    {
+      id: '7',
+      type: 'custom',
+      position: { x: rightX, y: stepY * 6 },
+      data: { 
+        label: 'Memory Manager', 
+        subtitle: 'Process & update',
+        logo: 'aishi',
+        defaultLogo: '/logo_white.png'
+      }
+    },
+    {
+      id: '8',
+      type: 'custom',
+      position: { x: leftX, y: stepY * 7 },
+      data: { 
+        label: '0G Storage', 
+        subtitle: 'Upload & get hash',
+        logo: '0g',
+        defaultLogo: '/0G-Logo-Dark.svg'
+      }
+    },
+    {
+      id: '9',
+      type: 'custom',
+      position: { x: rightX, y: stepY * 8 },
+      data: { 
+        label: 'Update iNFT', 
+        subtitle: 'Save hash in contract',
+        logo: '0g',
+        defaultLogo: '/0G-Logo-Dark.svg'
+      }
+    },
+    {
+      id: '10',
+      type: 'custom',
+      position: { x: centerX, y: stepY * 9 },
+      data: { 
+        label: '0G DA', 
+        subtitle: 'Verify integrity',
+        logo: '0g',
+        defaultLogo: '/0G-Logo-Dark.svg'
+      }
     }
-  },
-  {
-    id: '2',
-    type: 'custom',
-    position: { x: 150, y: 80 },
-    data: { 
-      label: '0G Chain', 
-      subtitle: 'Fetch agent data',
-      logo: '0g',
-      defaultLogo: '/0G-Logo-Dark.svg'
-    }
-  },
-  {
-    id: '3',
-    type: 'custom',
-    position: { x: 450, y: 160 },
-    data: { 
-      label: '0G iNFT', 
-      subtitle: 'Soul & memory hashes',
-      logo: '0g',
-      defaultLogo: '/0G-Logo-Dark.svg'
-    }
-  },
-  {
-    id: '4',
-    type: 'custom',
-    position: { x: 150, y: 240 },
-    data: { 
-      label: '0G Storage', 
-      subtitle: 'Download memories',
-      logo: '0g',
-      defaultLogo: '/0G-Logo-Dark.svg'
-    }
-  },
-  {
-    id: '5',
-    type: 'custom',
-    position: { x: 450, y: 320 },
-    data: { 
-      label: 'Build Prompt', 
-      subtitle: 'Context assembly',
-      logo: 'aishi',
-      defaultLogo: '/logo_white.png'
-    }
-  },
-  {
-    id: '6',
-    type: 'custom',
-    position: { x: 150, y: 400 },
-    data: { 
-      label: '0G Compute', 
-      subtitle: 'AI analysis',
-      logo: '0g',
-      defaultLogo: '/0G-Logo-Dark.svg'
-    }
-  },
-  {
-    id: '7',
-    type: 'custom',
-    position: { x: 450, y: 480 },
-    data: { 
-      label: 'Memory Manager', 
-      subtitle: 'Process & update',
-      logo: 'aishi',
-      defaultLogo: '/logo_white.png'
-    }
-  },
-  {
-    id: '8',
-    type: 'custom',
-    position: { x: 150, y: 560 },
-    data: { 
-      label: '0G Storage', 
-      subtitle: 'Upload & get hash',
-      logo: '0g',
-      defaultLogo: '/0G-Logo-Dark.svg'
-    }
-  },
-  {
-    id: '9',
-    type: 'custom',
-    position: { x: 450, y: 640 },
-    data: { 
-      label: 'Update iNFT', 
-      subtitle: 'Save hash in contract',
-      logo: '0g',
-      defaultLogo: '/0G-Logo-Dark.svg'
-    }
-  },
-  {
-    id: '10',
-    type: 'custom',
-    position: { x: 300, y: 720 },
-    data: { 
-      label: '0G DA', 
-      subtitle: 'Verify integrity',
-      logo: '0g',
-      defaultLogo: '/0G-Logo-Dark.svg'
-    }
-  }
-]
+  ]
+}
 
 // Unified Flow Edges - linear flow
 const unifiedFlowEdges: Edge[] = [
@@ -205,10 +216,34 @@ const unifiedFlowEdges: Edge[] = [
 ]
 
 export const FlowDiagram: React.FC<{ className?: string }> = ({ className = '' }) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(unifiedFlowNodes)
+  const [viewportWidth, setViewportWidth] = useState(800)
+  const [nodes, setNodes, onNodesChange] = useNodesState(generateResponsiveNodes(800))
   const [edges, , onEdgesChange] = useEdgesState(unifiedFlowEdges)
   const [activeStep, setActiveStep] = useState(0)
   const { theme } = useTheme()
+
+  // Handle window resize for responsive positioning
+  const handleResize = useCallback(() => {
+    const width = window.innerWidth
+    setViewportWidth(width)
+    const newNodes = generateResponsiveNodes(width)
+    setNodes(newNodes.map(node => ({
+      ...node,
+      data: {
+        ...node.data,
+        active: parseInt(node.id) <= activeStep
+      }
+    })))
+  }, [activeStep, setNodes])
+
+  // Setup resize listener
+  useEffect(() => {
+    // Initial setup
+    handleResize()
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [handleResize])
 
   // Animate steps
   useEffect(() => {
@@ -246,7 +281,7 @@ export const FlowDiagram: React.FC<{ className?: string }> = ({ className = '' }
       </div>
 
       {/* Flow Diagram */}
-      <div className="h-[800px] bg-background-card rounded-xl border border-border overflow-hidden">
+      <div className="h-[500px] md:h-[600px] lg:h-[800px] bg-background-card rounded-xl border border-border overflow-hidden">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -256,6 +291,13 @@ export const FlowDiagram: React.FC<{ className?: string }> = ({ className = '' }
           fitView
           attributionPosition="bottom-left"
           proOptions={{ hideAttribution: true }}
+          minZoom={0.3}
+          maxZoom={1.5}
+          panOnScroll={viewportWidth >= 768}
+          zoomOnDoubleClick={false}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
         >
           <Background 
             color={theme === 'dark' ? '#374151' : '#E5E7EB'}
@@ -270,16 +312,16 @@ export const FlowDiagram: React.FC<{ className?: string }> = ({ className = '' }
 
       {/* Step Description */}
       <div className="mt-4 p-4 bg-background-card rounded-lg border border-border">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
+          <div className="flex flex-col sm:flex-row sm:items-center">
             <span className="text-sm font-medium text-text-primary">
               Step {activeStep} of 10
             </span>
-            <span className="ml-3 text-sm text-text-secondary">
+            <span className="sm:ml-3 text-sm text-text-secondary">
               {getStepDescription(activeStep)}
             </span>
           </div>
-          <div className="text-xs text-text-tertiary">
+          <div className="text-xs text-text-tertiary hidden sm:block">
             Powered by 0G Network • iNFT by 0G Labs
           </div>
         </div>
