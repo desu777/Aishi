@@ -19,9 +19,28 @@ import {
   NodeProps
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import Image from 'next/image'
 import { useTheme } from '@/contexts/ThemeContext'
 
 const CustomMemoryNode = ({ data }: NodeProps) => {
+  const [mounted, setMounted] = useState(false)
+  const { theme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const getLogoSrc = () => {
+    if (!mounted) return data.defaultLogo
+    
+    if (data.logo === 'aishi') {
+      return theme === 'dark' ? '/logo_white.png' : '/logo_black.png'
+    } else {
+      // 0G logo: Dark.svg has white logo, Light.svg has black logo
+      return theme === 'dark' ? '/0G-Logo-Dark.svg' : '/0G-Logo-Light.svg'
+    }
+  }
+
   const bgColor = data.active 
     ? `${data.color}/20 border-2 ${data.borderColor}` 
     : 'bg-background-card border border-border'
@@ -32,13 +51,35 @@ const CustomMemoryNode = ({ data }: NodeProps) => {
     <div className={`px-3 py-2 md:px-4 md:py-3 rounded-lg transition-all duration-300 ${bgColor} min-w-[140px] md:min-w-[180px]`}>
       <Handle type="target" position={Position.Top} className="!bg-accent-primary" />
       
-      <div className="text-center">
-        <div className="font-semibold text-xs md:text-sm text-text-primary mb-1">{data.label}</div>
-        <div className={`text-xs ${textColor} font-medium`}>{data.subtitle}</div>
-        {data.fileType && (
-          <div className="text-xs text-text-tertiary mt-1 font-mono">{data.fileType}</div>
-        )}
-      </div>
+      {data.logo ? (
+        <div className="flex items-center justify-start space-x-2">
+          <div className="w-6 h-6 md:w-8 md:h-8 flex items-center justify-center flex-shrink-0">
+            <Image
+              src={getLogoSrc()}
+              alt={data.label}
+              width={32}
+              height={32}
+              className={data.logo === 'aishi' ? 'rounded' : ''}
+              style={{ objectFit: 'contain' }}
+            />
+          </div>
+          <div className="flex-1">
+            <div className="font-semibold text-xs md:text-sm text-text-primary mb-1">{data.label}</div>
+            <div className={`text-xs ${textColor} font-medium`}>{data.subtitle}</div>
+            {data.fileType && (
+              <div className="text-xs text-text-tertiary mt-1 font-mono">{data.fileType}</div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="text-center">
+          <div className="font-semibold text-xs md:text-sm text-text-primary mb-1">{data.label}</div>
+          <div className={`text-xs ${textColor} font-medium`}>{data.subtitle}</div>
+          {data.fileType && (
+            <div className="text-xs text-text-tertiary mt-1 font-mono">{data.fileType}</div>
+          )}
+        </div>
+      )}
 
       <Handle type="source" position={Position.Bottom} className="!bg-accent-primary" />
     </div>
@@ -119,8 +160,10 @@ const generateMemoryNodes = (viewportWidth: number): Node[] => {
       type: 'memory',
       position: { x: centerX, y: stepY * 2 },
       data: { 
-        label: 'AI Brain @ 0G Compute', 
+        label: '0G Compute', 
         subtitle: 'Pattern Analysis',
+        logo: '0g',
+        defaultLogo: '/0G-Logo-Dark.svg',
         color: 'bg-amber-500',
         borderColor: 'border-amber-500',
         textColor: 'text-amber-600'
@@ -161,8 +204,10 @@ const generateMemoryNodes = (viewportWidth: number): Node[] => {
       type: 'memory',
       position: { x: centerX, y: stepY * 4 },
       data: { 
-        label: 'AI Brain @ 0G Compute', 
+        label: '0G Compute', 
         subtitle: 'Yearly Synthesis',
+        logo: '0g',
+        defaultLogo: '/0G-Logo-Dark.svg',
         color: 'bg-amber-500',
         borderColor: 'border-amber-500',
         textColor: 'text-amber-600'
@@ -278,6 +323,7 @@ export const MemoryFlowDiagram: React.FC<{ className?: string }> = ({ className 
           minZoom={0.4}
           maxZoom={1.5}
           panOnScroll={false}
+          zoomOnScroll={false}
           zoomOnDoubleClick={false}
           nodesDraggable={false}
           nodesConnectable={false}
@@ -319,10 +365,10 @@ function getMemoryStepDescription(step: number): string {
     'Data flows to daily storage files',
     'Raw interactions stored as JSON',
     'Daily logs accumulate over time',
-    'AI Brain analyzes patterns monthly',
+    '0G Compute analyzes patterns monthly',
     'Monthly essence extracted and saved',
     'Conversations consolidated monthly',
-    'AI Brain performs yearly synthesis',
+    '0G Compute performs yearly synthesis',
     'Yearly core crystallizes all wisdom'
   ]
   return descriptions[Math.min(step - 1, descriptions.length - 1)] || 'Processing memories...'

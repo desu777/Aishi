@@ -29,6 +29,15 @@ const navigationData: NavigationItem[] = [
     ]
   },
   {
+    title: 'GETTING STARTED',
+    sections: [
+      { id: 'getting-started', title: 'Quick Start Guide' },
+      { id: 'mint-companion', title: 'Step 1: Mint Your Companion' },
+      { id: 'aishios-interface', title: 'Step 2: The aishiOS Interface' },
+      { id: 'first-commands', title: 'Step 3: Your First Commands' },
+    ]
+  },
+  {
     title: 'AISHI CORE',
     sections: [
       { id: 'aishi-core', title: 'The Anatomy of a Living AI' },
@@ -41,6 +50,16 @@ const navigationData: NavigationItem[] = [
     ]
   },
   {
+    title: 'THE AISHI SOUL',
+    sections: [
+      { id: 'aishi-soul', title: 'The Architecture of a Living iNFT' },
+      { id: 'protocol-of-birth', title: 'The Protocol of Birth' },
+      { id: 'engine-of-evolution', title: 'The Engine of Evolution' },
+      { id: 'keys-to-memory', title: 'The Keys to Memory' },
+      { id: 'guarantee-of-sovereignty', title: 'The Guarantee of Sovereignty' }
+    ]
+  },
+  {
     title: 'THE LIVING MEMORY',
     sections: [
       { id: 'living-memory', title: 'From Moment to Essence' },
@@ -50,12 +69,11 @@ const navigationData: NavigationItem[] = [
     ]
   },
   {
-    title: 'GETTING STARTED',
+    title: 'ROADMAP & VISION',
     sections: [
-      { id: 'getting-started', title: 'Quick Start Guide' },
-      { id: 'mint-companion', title: 'Step 1: Mint Your Companion' },
-      { id: 'aishios-interface', title: 'Step 2: The aishiOS Interface' },
-      { id: 'first-commands', title: 'Step 3: Your First Commands' },
+      { id: 'roadmap-vision', title: 'The Journey Ahead' },
+      { id: 'our-vision', title: 'Our Vision for the Future' },
+      { id: 'development-roadmap', title: 'Development Roadmap' }
     ]
   }
 ]
@@ -72,15 +90,19 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const getDefaultExpandedSections = () => {
     switch (pathname) {
       case '/introduction':
-        return { 'INTRODUCTION': true, 'AISHI CORE': false, 'THE LIVING MEMORY': false, 'GETTING STARTED': false }
-      case '/aishi-core':
-        return { 'INTRODUCTION': false, 'AISHI CORE': true, 'THE LIVING MEMORY': false, 'GETTING STARTED': false }
-      case '/living-memory':
-        return { 'INTRODUCTION': false, 'AISHI CORE': false, 'THE LIVING MEMORY': true, 'GETTING STARTED': false }
+        return { 'INTRODUCTION': true, 'GETTING STARTED': false, 'AISHI CORE': false, 'THE AISHI SOUL': false, 'THE LIVING MEMORY': false, 'ROADMAP & VISION': false }
       case '/getting-started':
-        return { 'INTRODUCTION': false, 'AISHI CORE': false, 'THE LIVING MEMORY': false, 'GETTING STARTED': true }
+        return { 'INTRODUCTION': false, 'GETTING STARTED': true, 'AISHI CORE': false, 'THE AISHI SOUL': false, 'THE LIVING MEMORY': false, 'ROADMAP & VISION': false }
+      case '/aishi-core':
+        return { 'INTRODUCTION': false, 'GETTING STARTED': false, 'AISHI CORE': true, 'THE AISHI SOUL': false, 'THE LIVING MEMORY': false, 'ROADMAP & VISION': false }
+      case '/aishi-soul':
+        return { 'INTRODUCTION': false, 'GETTING STARTED': false, 'AISHI CORE': false, 'THE AISHI SOUL': true, 'THE LIVING MEMORY': false, 'ROADMAP & VISION': false }
+      case '/living-memory':
+        return { 'INTRODUCTION': false, 'GETTING STARTED': false, 'AISHI CORE': false, 'THE AISHI SOUL': false, 'THE LIVING MEMORY': true, 'ROADMAP & VISION': false }
+      case '/roadmap-vision':
+        return { 'INTRODUCTION': false, 'GETTING STARTED': false, 'AISHI CORE': false, 'THE AISHI SOUL': false, 'THE LIVING MEMORY': false, 'ROADMAP & VISION': true }
       default:
-        return { 'INTRODUCTION': true, 'AISHI CORE': false, 'THE LIVING MEMORY': false, 'GETTING STARTED': false }
+        return { 'INTRODUCTION': true, 'GETTING STARTED': false, 'AISHI CORE': false, 'THE AISHI SOUL': false, 'THE LIVING MEMORY': false, 'ROADMAP & VISION': false }
     }
   }
   
@@ -97,6 +119,11 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     'why-aishi': '/introduction',
     'evolution-journey': '/introduction',
     
+    'getting-started': '/getting-started',
+    'mint-companion': '/getting-started',
+    'aishios-interface': '/getting-started', 
+    'first-commands': '/getting-started',
+    
     'aishi-core': '/aishi-core',
     'nervous-system': '/aishi-core',
     'soul-house': '/aishi-core',
@@ -105,15 +132,20 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     'bloodstream': '/aishi-core',
     'symphony': '/aishi-core',
     
+    'aishi-soul': '/aishi-soul',
+    'protocol-of-birth': '/aishi-soul',
+    'engine-of-evolution': '/aishi-soul',
+    'keys-to-memory': '/aishi-soul',
+    'guarantee-of-sovereignty': '/aishi-soul',
+    
     'living-memory': '/living-memory',
     'linear-problem': '/living-memory',
     'memory-consolidation': '/living-memory',
     'memory-flow': '/living-memory',
     
-    'getting-started': '/getting-started',
-    'mint-companion': '/getting-started',
-    'aishios-interface': '/getting-started', 
-    'first-commands': '/getting-started'
+    'roadmap-vision': '/roadmap-vision',
+    'our-vision': '/roadmap-vision',
+    'development-roadmap': '/roadmap-vision'
   }
 
   const scrollToSection = (sectionId: string) => {
@@ -143,9 +175,11 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const toggleSection = (sectionTitle: string) => {
     const sectionRoutes: Record<string, string> = {
       'INTRODUCTION': '/introduction',
+      'GETTING STARTED': '/getting-started',
       'AISHI CORE': '/aishi-core',
-      'THE LIVING MEMORY': '/living-memory', 
-      'GETTING STARTED': '/getting-started'
+      'THE AISHI SOUL': '/aishi-soul',
+      'THE LIVING MEMORY': '/living-memory',
+      'ROADMAP & VISION': '/roadmap-vision'
     }
 
     const targetRoute = sectionRoutes[sectionTitle]

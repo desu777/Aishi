@@ -294,6 +294,7 @@ export const FlowDiagram: React.FC<{ className?: string }> = ({ className = '' }
           minZoom={0.3}
           maxZoom={1.5}
           panOnScroll={false}
+          zoomOnScroll={false}
           zoomOnDoubleClick={false}
           nodesDraggable={false}
           nodesConnectable={false}
