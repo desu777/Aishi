@@ -19,7 +19,7 @@ export function Breadcrumbs() {
   }
 
   return (
-    <nav className="bg-background-main border-b border-border py-3 px-4 md:px-8 md:pl-72">
+    <nav className="bg-background-main py-2 px-4 md:px-8 md:pl-72">
       <div className="flex items-center space-x-2 text-sm text-text-secondary">
         {breadcrumbs.map((crumb, index) => (
           <div key={index} className="flex items-center space-x-2">

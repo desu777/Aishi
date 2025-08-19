@@ -173,6 +173,7 @@
     @apply hover:text-accent-primary transition-colors;
   }
 
+
   /* Cards */
   .card {
     @apply bg-background-card rounded-lg border border-border p-6 transition-all duration-200;

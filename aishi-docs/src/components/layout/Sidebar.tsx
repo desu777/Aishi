@@ -108,6 +108,20 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(getDefaultExpandedSections())
 
+  // Function to check if sectionId is the main section of a page
+  const isMainSectionOfPage = (sectionId: string, targetPage: string): boolean => {
+    const mainSections: Record<string, string> = {
+      'introduction': '/introduction',
+      'getting-started': '/getting-started', 
+      'aishi-core': '/aishi-core',
+      'aishi-soul': '/aishi-soul',
+      'living-memory': '/living-memory',
+      'roadmap-vision': '/roadmap-vision'
+    }
+    
+    return mainSections[sectionId] === targetPage
+  }
+
   useEffect(() => {
     setExpandedSections(getDefaultExpandedSections())
   }, [pathname])
@@ -165,9 +179,19 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     const currentPath = pathname
     
     if (currentPath === targetPage) {
+      // Jeśli jesteśmy już na właściwej stronie, tylko scroll
       scrollToSection(sectionId)
     } else {
-      router.push(`${targetPage}#${sectionId}`)
+      // Sprawdź czy sectionId to główna sekcja strony
+      const isMainSection = isMainSectionOfPage(sectionId, targetPage)
+      
+      if (isMainSection) {
+        // Idź do strony bez hash dla głównych sekcji
+        router.push(targetPage)
+      } else {
+        // Idź do strony z hashem dla podsekcji
+        router.push(`${targetPage}#${sectionId}`)
+      }
       if (onClose) onClose()
     }
   }
@@ -209,22 +233,24 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 <span className="text-xs font-bold tracking-wider uppercase">
                   {item.title}
                 </span>
-                {expandedSections[item.title] ? (
-                  <FiChevronDown 
-                    size={16} 
-                    className="text-text-tertiary transition-transform duration-200" 
-                  />
-                ) : (
-                  <FiChevronRight 
-                    size={16} 
-                    className="text-text-tertiary transition-transform duration-200" 
-                  />
-                )}
+                <FiChevronRight 
+                  size={16} 
+                  className={`
+                    text-text-tertiary transition-transform duration-300 ease-in-out
+                    ${expandedSections[item.title] ? 'rotate-90' : 'rotate-0'}
+                  `} 
+                />
               </button>
 
-              {/* Subsections */}
-              {expandedSections[item.title] && (
-                <div className="ml-4 space-y-1 border-l-2 border-border pl-3">
+              {/* Subsections with Animation */}
+              <div 
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  expandedSections[item.title] 
+                    ? 'max-h-96 opacity-100' 
+                    : 'max-h-0 opacity-0'
+                }`}
+              >
+                <div className="ml-4 space-y-1 border-l-2 border-border pl-3 py-1">
                   {item.sections.map((section) => (
                     <button
                       key={section.id}
@@ -235,7 +261,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                     </button>
                   ))}
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </nav>
