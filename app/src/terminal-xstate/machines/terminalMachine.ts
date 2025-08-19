@@ -4,7 +4,13 @@ import { brokerMachine } from './brokerMachine';
 import { modelMachine } from './modelMachine';
 import { agentMachine } from './agentMachine';
 import { dreamMachine } from './dreamMachine';
-import { parseCommand, validateCommandArgs } from '../services/commandParser';
+import { 
+  parseCommand, 
+  validateCommandArgs, 
+  getInteractiveHelp,
+  getDetailedCommandHelp,
+  COMMAND_TOOLTIPS 
+} from '../services/commandParser';
 
 // Initial context - extended with actor refs
 const initialContext: TerminalContext = {
@@ -90,38 +96,65 @@ export const terminalMachine = setup({
         
         // Handle other commands
         if (parsed.command === 'help') {
-          const helpLines = [
-            '╔════════════════════════════════════════════════════╗',
-            '║             aishiOS Terminal Commands              ║',
-            '╚════════════════════════════════════════════════════╝',
-            '',
-            '[Agent Operations]',
-            '  mint <name> - Create a new AI agent NFT',
-            '  info - Display agent information',
-            '  stats - Show agent statistics',
-            '',
-            '[Interactions]',
-            '  dream - Process and analyze a dream',
-            '  chat - Start a conversation',
-            '',
-            '[System]',
-            '  help - Show this help message',
-            '  clear - Clear terminal screen'
-          ];
+          const helpArg = parsed.args[0];
           
-          helpLines.forEach((line, index) => {
-            newLines.push({
-              type: 'help-command',
-              content: line,
-              timestamp: timestamp + 1 + index
+          // If help has an argument, show detailed help for that command
+          if (helpArg) {
+            const detailedHelp = getDetailedCommandHelp(helpArg);
+            detailedHelp.forEach((line, index) => {
+              newLines.push({
+                type: 'help-command',
+                content: line,
+                timestamp: timestamp + 1 + index
+              });
             });
-          });
+          } else {
+            // Show interactive help
+            const interactiveHelp = getInteractiveHelp();
+            
+            interactiveHelp.forEach((line, index) => {
+              // Parse lines with ⓘ for interactive elements
+              const hasInfoIcon = line.includes('ⓘ');
+              let lineType: TerminalLine['type'] = 'help-command';
+              let command: string | undefined = undefined;
+              let tooltip: string | undefined = undefined;
+              
+              if (hasInfoIcon) {
+                lineType = 'help-interactive';
+                // Extract command name from the line
+                const match = line.match(/^\s*(\w+)/);
+                if (match) {
+                  command = match[1];
+                  tooltip = COMMAND_TOOLTIPS[command];
+                }
+              }
+              
+              newLines.push({
+                type: lineType,
+                content: line,
+                timestamp: timestamp + 1 + index,
+                command,
+                hasTooltip: hasInfoIcon,
+                tooltip
+              });
+            });
+          }
           
           return newLines;
         }
         
         if (parsed.command === 'clear') {
           return [];
+        }
+        
+        // Handle coming soon commands
+        if (parsed.command === 'chat' || parsed.command === 'memory') {
+          newLines.push({
+            type: 'info',
+            content: `Command '${parsed.command}' - coming soon...`,
+            timestamp: timestamp + 1
+          });
+          return newLines;
         }
         
         // Default for unimplemented commands

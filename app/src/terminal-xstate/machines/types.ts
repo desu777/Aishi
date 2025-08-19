@@ -10,12 +10,18 @@ export type LineType =
   | 'info'
   | 'system'
   | 'help-command'
+  | 'help-interactive'
+  | 'help-header'
   | 'info-labeled';
 
 export interface TerminalLine {
   type: LineType;
   content: string | ReactNode;
   timestamp: number;
+  // Additional data for interactive help lines
+  command?: string;
+  hasTooltip?: boolean;
+  tooltip?: string;
 }
 
 // Context for the terminal machine

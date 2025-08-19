@@ -57,6 +57,12 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
         return { ...baseStyle, color: colors.success, opacity: 0.8 };
       case 'warning':
         return { ...baseStyle, color: colors.warning, opacity: 0.9 };
+      case 'help-command':
+        return { ...baseStyle, color: colors.pearl, opacity: 0.95, fontFamily: 'monospace' };
+      case 'help-header':
+        return { ...baseStyle, color: colors.pearl, fontSize: '15px', fontWeight: 500, opacity: 1 };
+      case 'help-interactive':
+        return { ...baseStyle, color: colors.pearl, opacity: 0.95, fontFamily: 'monospace' };
       default:
         return { ...baseStyle, color: colors.pearl };
     }
@@ -83,8 +89,157 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
     }
     return content;
   };
+
+  // Component for interactive help lines with tooltips
+  const InteractiveHelpLine: React.FC<{ line: TerminalLine }> = ({ line }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+    
+    useEffect(() => {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+    
+    if (line.type !== 'help-interactive' || !line.hasTooltip) {
+      return <>{line.content}</>;
+    }
+
+    // Parse the line to separate command and description
+    const content = line.content as string;
+    const parts = content.match(/^(\s*)(\w+)(\s+)(.+?)(\s+)(ⓘ)$/);
+    
+    if (!parts) {
+      return <>{content}</>;
+    }
+
+    const [_, indent, command, space1, description, space2, icon] = parts;
+
+    return (
+      <>
+        <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>
+            {indent}
+            <span style={{ color: '#8B5CF6', fontWeight: 500 }}>{command}</span>
+            {space1}
+            <span style={{ opacity: 0.9 }}>{description}</span>
+          </span>
+          <span 
+            style={{ 
+              cursor: 'pointer', 
+              color: showTooltip ? '#8B5CF6' : colors.silver,
+              transition: 'color 0.2s',
+              marginLeft: '1rem'
+            }}
+            onMouseEnter={() => !isMobile && setShowTooltip(true)}
+            onMouseLeave={() => !isMobile && setShowTooltip(false)}
+            onClick={() => isMobile && setShowTooltip(!showTooltip)}
+          >
+            {icon}
+          </span>
+          
+          {/* Desktop tooltip */}
+          {showTooltip && line.tooltip && !isMobile && (
+            <div style={{
+              position: 'absolute',
+              right: '2rem',
+              top: '1.5rem',
+              width: '320px',
+              padding: '12px',
+              backgroundColor: 'rgba(30, 30, 30, 0.98)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+              zIndex: 50,
+              fontSize: '12px',
+              lineHeight: '1.5',
+              color: colors.pearl,
+              whiteSpace: 'pre-line'
+            }}>
+              {line.tooltip}
+            </div>
+          )}
+        </div>
+        
+        {/* Mobile modal overlay */}
+        {showTooltip && line.tooltip && isMobile && (
+          <>
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                zIndex: 999
+              }}
+              onClick={() => setShowTooltip(false)}
+            />
+            
+            {/* Mobile centered modal */}
+            <div style={{
+              position: 'fixed',
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '90%',
+              maxWidth: '400px',
+              padding: '20px',
+              backgroundColor: 'rgba(30, 30, 30, 0.98)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: '12px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
+              zIndex: 1000,
+              fontSize: '14px',
+              lineHeight: '1.6',
+              color: colors.pearl,
+              whiteSpace: 'pre-line'
+            }}>
+              {/* Close button */}
+              <div 
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '12px',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  color: colors.silver,
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                onClick={() => setShowTooltip(false)}
+              >
+                ✕
+              </div>
+              
+              {/* Command name header */}
+              <div style={{ 
+                color: '#8B5CF6', 
+                fontWeight: 600, 
+                marginBottom: '12px',
+                fontSize: '16px'
+              }}>
+                {command.toUpperCase()}
+              </div>
+              
+              {line.tooltip}
+            </div>
+          </>
+        )}
+      </>
+    );
+  };
   
   const formatContent = (line: TerminalLine) => {
+    // Handle interactive help lines
+    if (line.type === 'help-interactive' && line.hasTooltip) {
+      return <InteractiveHelpLine line={line} />;
+    }
+    
     // Clean, minimal formatting
     if (typeof line.content === 'string') {
       let content = line.content;

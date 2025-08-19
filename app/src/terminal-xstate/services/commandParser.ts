@@ -43,6 +43,34 @@ export const AVAILABLE_COMMANDS: Record<CommandType, string> = {
   unknown: 'Unknown command'
 };
 
+// Command tooltips for interactive help
+export const COMMAND_TOOLTIPS: Record<string, string> = {
+  dream: `Analyze dreams to evolve personality
+• Cooldown: 24h (disabled in test)
+• Every 3 dreams: +1 intelligence
+• Every 5 dreams: Personality evolution
+• Traits change: -10 to +10 points`,
+  
+  chat: `Converse with your agent
+• Every 10 chats: +1 intelligence
+• Builds conversation context
+• Shapes agent's worldview
+Coming soon...`,
+  
+  info: `View agent statistics
+• Personality traits [0-100]
+• Intelligence level
+• Dreams & conversations count
+• Evolution milestones`,
+  
+  memory: `Hierarchical memory system
+• Daily: Individual experiences
+• Monthly: AI-consolidated summaries
+• Yearly: Deep reflection & core
+• Consolidation rewards for streaks
+Coming soon...`
+};
+
 // Command aliases for user convenience
 const COMMAND_ALIASES: Record<string, CommandType> = {
   'd': 'dream',
@@ -155,6 +183,12 @@ export function validateCommandArgs(command: CommandType, args: string[]): { val
       return { valid: true };
 
     case 'help':
+      // Optional command argument
+      if (args.length > 1) {
+        return { valid: false, error: 'Too many arguments. Usage: help [command]' };
+      }
+      return { valid: true };
+      
     case 'clear':
       // No arguments needed
       if (args.length > 0) {
@@ -245,6 +279,131 @@ export function isHelpRequest(input: string): { isHelp: boolean; command?: Comma
   }
   
   return { isHelp: false };
+}
+
+/**
+ * Gets main help with interactive elements
+ */
+export function getInteractiveHelp(): string[] {
+  return [
+    '',
+    'Commands:',
+    `  dream     Process and analyze your dreams     ⓘ`,
+    `  chat      Have a conversation (coming soon)   ⓘ`,
+    `  info      Display agent statistics            ⓘ`,
+    `  memory    View memory (coming soon)            ⓘ`,
+    '',
+    `[Click ⓘ for details or type 'help <command>']`,
+    ''
+  ];
+}
+
+/**
+ * Gets detailed help for dream command
+ */
+export function getDreamDetailedHelp(): string[] {
+  return [
+    '',
+    'DREAM - Analyze dreams for personality evolution',
+    '',
+    'DESCRIPTION:',
+    '  Share your dreams with your agent to discover subconscious patterns',
+    '  and evolve its personality based on emotional and thematic analysis.',
+    '',
+    'MECHANICS:',
+    '  • Cooldown: 24 hours between dreams (disabled in test mode)',
+    '  • Every 3 dreams: +1 intelligence level',
+    '  • Every 5 dreams: Personality evolution',
+    '    - Traits change by -10 to +10 points',
+    '    - Dominant mood updates',
+    '    - Up to 2 unique features per evolution (max 5 total)',
+    '',
+    'PERSONALITY TRAITS:',
+    '  Creativity   [0-100]  Innovation and artistic thinking',
+    '  Analytical   [0-100]  Logic and systematic reasoning',
+    '  Empathy      [0-100]  Emotional understanding',
+    '  Intuition    [0-100]  Pattern recognition',
+    '  Resilience   [0-100]  Adaptability under stress',
+    '  Curiosity    [0-100]  Drive to explore and learn',
+    '',
+    'MILESTONES:',
+    '  85+ Empathy     → "Empathy Master"',
+    '  90+ Creativity  → "Creative Genius"',
+    '  90+ Analytical  → "Logic Lord"',
+    '  90+ Intuition   → "Spiritual Guide"',
+    '  60+ All traits  → "Balanced Soul"',
+    '',
+    'USAGE:',
+    '  1. Type \'dream\' and press Enter',
+    '  2. Describe your dream when prompted (~)',
+    '  3. Review AI analysis of patterns and impacts',
+    '  4. Confirm with \'y\' to save and evolve personality',
+    '',
+    'STORAGE:',
+    '  • Dreams saved to daily memory files (append-only)',
+    '  • Uploaded to 0G decentralized storage',
+    '  • Hash recorded on blockchain for verification',
+    ''
+  ];
+}
+
+/**
+ * Gets detailed help for any command
+ */
+export function getDetailedCommandHelp(command: string): string[] {
+  switch(command) {
+    case 'dream':
+      return getDreamDetailedHelp();
+    case 'chat':
+      return [
+        '',
+        'CHAT - Converse with your agent',
+        '',
+        'Coming soon...',
+        '',
+        'Build meaningful conversations that shape your agent\'s understanding.',
+        '• Every 10 conversations: +1 intelligence',
+        '• Context types: casual, deep, philosophical',
+        '• Conversations saved to daily memory',
+        '',
+        'This feature is currently in development.',
+        ''
+      ];
+    case 'info':
+      return [
+        '',
+        'INFO - View agent statistics',
+        '',
+        'Display comprehensive agent data:',
+        '• Personality traits and levels',
+        '• Intelligence and evolution stats',
+        '• Dream and conversation counts',
+        '• Response style based on traits',
+        ''
+      ];
+    case 'memory':
+      return [
+        '',
+        'MEMORY - Hierarchical memory system',
+        '',
+        'Coming soon...',
+        '',
+        'Three-tier memory architecture:',
+        '• Daily: Raw dreams and conversations',
+        '• Monthly: AI-consolidated summaries',
+        '• Yearly: Deep reflection and core memories',
+        '',
+        'Consolidation rewards:',
+        '• Monthly consolidation: +2 intelligence',
+        '• Streak bonuses for consistent activity',
+        '• Early bird bonus for timely consolidations',
+        '',
+        'This feature is currently in development.',
+        ''
+      ];
+    default:
+      return [`Unknown command: ${command}`, '', 'Type \'help\' for available commands', ''];
+  }
 }
 
 /**
