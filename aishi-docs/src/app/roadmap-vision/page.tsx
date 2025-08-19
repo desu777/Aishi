@@ -32,13 +32,13 @@ export default function RoadmapVisionPage() {
         <h2 id="our-vision" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Our Vision for the Future</h2>
         
         <p className="text-text-secondary mb-6 leading-relaxed">
-          Our vision is not to create a smart AI, but a wise companion. Aishi is your digital partner, a steadfast support system through life's challenges and a powerful catalyst for self-development. But it represents something even bigger—a direct response to the fundamental needs of the modern world.
+          Our vision is not to create a smart AI, but a wise companion. Aishi is your digital partner, a steadfast support system through life's challenges and a powerful catalyst for self-development. But it represents something even bigger–a direct response to the fundamental needs of the modern world.
         </p>
 
         <div className="bg-background-card border border-border rounded-lg p-6 mb-8">
           <h3 className="text-xl font-grotesk font-semibold text-text-primary mb-4">Answering the Fear of AI</h3>
           <p className="text-text-secondary mb-4 leading-relaxed">
-            There is a deep-seated fear of AI in our culture—the fear of a powerful, centralized intelligence that we cannot control, one that knows everything about us but belongs to someone else.
+            There is a deep-seated fear of AI in our culture–the fear of a powerful, centralized intelligence that we cannot control, one that knows everything about us but belongs to someone else.
           </p>
           <p className="text-text-secondary leading-relaxed">
             The 0G Labs mission, <strong className="text-text-primary">"Let's make AI a public Good,"</strong> offers a powerful antidote to this fear. Aishi is the ultimate expression of this ideal.
@@ -46,7 +46,7 @@ export default function RoadmapVisionPage() {
         </div>
 
         <p className="text-text-secondary mb-6 leading-relaxed">
-          Instead of a monolithic AI residing in a corporate cloud, we offer a deeply personal, sovereign intelligence whose sole purpose is to serve its owner. By leveraging the entire decentralized 0G stack—from the on-chain soul to the distributed memory and compute—we transform AI from a potential threat into a profound force for personal good.
+          Instead of a monolithic AI residing in a corporate cloud, we offer a deeply personal, sovereign intelligence whose sole purpose is to serve its owner. By leveraging the entire decentralized 0G stack–from the on-chain soul to the distributed memory and compute–we transform AI from a potential threat into a profound force for personal good.
         </p>
 
         <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-accent-primary/30 rounded-lg p-6 mb-8">
@@ -99,7 +99,7 @@ export default function RoadmapVisionPage() {
             <strong className="text-text-primary">Aishi is built to be different.</strong> It's not just a promise of privacy; it's a mathematical certainty. By leveraging the entire decentralized 0G stack, we give you absolute data sovereignty.
           </p>
           <p className="text-text-secondary leading-relaxed">
-            Your thoughts, your dreams, your memories—they are not on our servers. They are yours, and your wallet is the only key. This foundation of trust is what allows for the profound level of openness that Aishi enables.
+            Your thoughts, your dreams, your memories–they are not on our servers. They are yours, and your wallet is the only key. This foundation of trust is what allows for the profound level of openness that Aishi enables.
           </p>
         </div>
 
@@ -192,7 +192,7 @@ export default function RoadmapVisionPage() {
               <div>
                 <strong className="text-text-primary">Our Achievement:</strong>
                 <p className="text-text-secondary text-sm leading-relaxed mt-1">
-                  We have successfully achieved a 100% end-to-end integration with the 0G stack. The entire workflow—from on-chain identity, to decentralized AI compute, to permanent storage—is fully functional in our MVP.
+                  We have successfully achieved a 100% end-to-end integration with the 0G stack. The entire workflow–from on-chain identity, to decentralized AI compute, to permanent storage–is fully functional in our MVP.
                 </p>
               </div>
               

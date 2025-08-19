@@ -29,7 +29,7 @@ export default function HeroSection() {
     'Built 100% on 0G: Compute · Storage · DA · Chain.',
     'Your dreams and chats become a private memory.',
     'Auto month‑learn/year‑learn keeps long‑term context.',
-    'You choose what Aishi remembers — always.',
+    'You choose what Aishi remembers – always.',
     'Talk in real time with a Live2D persona.',
     'Spot hidden patterns and self‑defeating loops.',
     'An ownable self‑learning iNFT you name and keep.',

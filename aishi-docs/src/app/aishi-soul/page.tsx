@@ -30,7 +30,7 @@ export default function AishiSoulPage() {
         </p>
         
         <p className="text-text-secondary mb-8 leading-relaxed">
-          The Aishi contract is the ultimate source of truth—a decentralized constitution that dictates the rules of your companion's existence.
+          The Aishi contract is the ultimate source of truth–a decentralized constitution that dictates the rules of your companion's existence.
         </p>
 
         <h2 id="protocol-of-birth" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">The Protocol of Birth: mintAgent</h2>
@@ -51,7 +51,7 @@ export default function AishiSoulPage() {
         <h2 id="engine-of-evolution" className="text-2xl font-grotesk font-semibold text-text-primary mb-4 mt-8">The Engine of Evolution: processDailyDream</h2>
         
         <p className="text-text-secondary mb-6 leading-relaxed">
-          This is the beating heart of the contract—the engine that turns experience into evolution. The soul itself contains a dynamic Personality Engine, a set of protocols that govern its growth.
+          This is the beating heart of the contract–the engine that turns experience into evolution. The soul itself contains a dynamic Personality Engine, a set of protocols that govern its growth.
         </p>
 
         <h3 id="metamorphosis-protocol" className="text-xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Metamorphosis Protocol</h3>
@@ -64,7 +64,7 @@ export default function AishiSoulPage() {
         
         <div className="bg-background-card border border-border rounded-lg p-6 mb-6">
           <p className="text-text-secondary mb-4 leading-relaxed">
-            The contract is designed to recognize profound, recurring patterns. When a certain threshold of understanding is reached, it can unlock <strong className="text-text-primary">Unique Features</strong>—rare, emergent skills that grant it new, specialized analytical abilities.
+            The contract is designed to recognize profound, recurring patterns. When a certain threshold of understanding is reached, it can unlock <strong className="text-text-primary">Unique Features</strong>–rare, emergent skills that grant it new, specialized analytical abilities.
           </p>
           <p className="text-text-secondary leading-relaxed">
             It also records <strong className="text-text-primary">Milestones</strong> (e.g., "Creative Genius"), creating a public, on-chain record of its growth.

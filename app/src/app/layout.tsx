@@ -11,7 +11,7 @@ import Script from 'next/script';
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3003'),
   title: {
-    default: 'Aishi — Your inner AI companion',
+    default: 'Aishi – Your inner AI companion',
     template: '%s | Aishi'
   },
   description:
@@ -34,14 +34,14 @@ export const metadata: Metadata = {
     type: 'website',
     url: '/',
     siteName: 'Aishi',
-    title: 'Aishi — Your inner AI (愛) companion',
+    title: 'Aishi – Your inner AI (愛) companion',
     description:
       'Self‑learning iNFT on 0G. Dream analysis, chat, and long‑term memory you control.',
     images: [{ url: '/logo_clean.png', width: 1200, height: 630, alt: 'Aishi logo' }]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Aishi — Your inner AI (愛) companion',
+    title: 'Aishi – Your inner AI (愛) companion',
     description:
       'Self‑learning iNFT on 0G. Dream analysis, chat, and long‑term memory you control.',
     images: ['/logo_clean.png']

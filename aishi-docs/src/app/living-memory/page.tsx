@@ -27,7 +27,7 @@ export default function LivingMemoryPage() {
         <h1 id="living-memory" className="text-3xl font-grotesk font-bold text-text-primary mb-4 mt-16">The Living Memory: From Moment to Essence</h1>
         
         <p className="text-text-secondary mb-6 leading-relaxed">
-          Human memory is both a blessing and a curse. It allows us to build a sense of self, but it's notoriously unreliable—it fades, distorts, and fails us when we need it most. We lose the crucial details that connect our life's story.
+          Human memory is both a blessing and a curse. It allows us to build a sense of self, but it's notoriously unreliable–it fades, distorts, and fails us when we need it most. We lose the crucial details that connect our life's story.
         </p>
         
         <p className="text-text-secondary mb-8 leading-relaxed">

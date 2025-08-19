@@ -46,7 +46,7 @@ export const valueProps: ValueProp[] = [
   {
     icon: Lock,
     title: 'Private by design',
-    description: '0G Compute/Storage/DA/Chain — you choose what to remember; we can\'t see your data.'
+    description: '0G Compute/Storage/DA/Chain – you choose what to remember; we can\'t see your data.'
   },
   {
     icon: Diamond,
@@ -58,7 +58,7 @@ export const valueProps: ValueProp[] = [
 export const steps: Step[] = [
   { title: 'Connect & mint', desc: 'Name your Aishi iNFT on 0G Chain.' },
   { title: 'Share a dream or chat', desc: 'Type dream to analyze your night dream, chat to talk freely, or use the Live2D "talk" mode for real-time voice.' },
-  { title: 'You choose what to remember', desc: 'After each dream/chat/talk you can teach Aishi about yourself — you decide what is saved.' },
+  { title: 'You choose what to remember', desc: 'After each dream/chat/talk you can teach Aishi about yourself – you decide what is saved.' },
   { title: 'Auto-consolidation', desc: 'The backend automatically runs month-learn and year-learn when due; long-term memory is kept without linear bloat. Unlike typical agents that lose month-scale context, Aishi\'s optimized method preserves an entire month (and years) coherently.' },
   { title: 'Evolve', desc: 'Watch intelligence, traits, and response style improve as Aishi learns.' }
 ];

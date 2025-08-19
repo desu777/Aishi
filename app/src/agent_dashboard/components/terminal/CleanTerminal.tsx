@@ -585,9 +585,9 @@ const CleanTerminal: React.FC<TerminalProps> = ({
   // Generate dynamic title based on agent status
   const getTerminalTitle = (): string => {
     if (hasAgent && agentData?.agentName) {
-      return isMobile ? `${agentData.agentName}OS — zeroG` : `${agentData.agentName}OS — zeroG — 80x24`;
+      return isMobile ? `${agentData.agentName}OS – zeroG` : `${agentData.agentName}OS – zeroG – 80x24`;
     }
-    return title || (isMobile ? "Agent DashboardOS — zeroG" : "Agent DashboardOS — zeroG — 80x24");
+    return title || (isMobile ? "Agent DashboardOS – zeroG" : "Agent DashboardOS – zeroG – 80x24");
   };
 
   // Focus input when terminal is clicked

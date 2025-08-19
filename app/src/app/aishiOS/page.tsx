@@ -104,7 +104,7 @@ export default function AishiOSPage() {
           }}>
             <SplitText
               texts={[
-                "Type help to get started — try dream, chat, agent-info.",
+                "Type help to get started – try dream, chat, agent-info.",
                 "Train your agent with dream or talk in real time with chat.",
                 "Evolve personality over time with month-learn and year-learn.",
                 "Use commands to analyze dreams, chat, and update memory.",
