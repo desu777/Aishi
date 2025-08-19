@@ -1,0 +1,13 @@
+<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- 0G Logo - based on the provided image -->
+  <!-- Left circle with diagonal line (0) -->
+  <circle cx="40" cy="50" r="35" fill="currentColor" stroke="none"/>
+  <circle cx="40" cy="50" r="20" fill="white" stroke="none"/>
+  <rect x="25" y="35" width="30" height="8" fill="currentColor" transform="rotate(45 40 50)"/>
+  
+  <!-- Right circle with horizontal line (G) -->
+  <circle cx="120" cy="50" r="35" fill="currentColor" stroke="none"/>
+  <circle cx="120" cy="50" r="20" fill="white" stroke="none"/>
+  <rect x="120" y="46" width="15" height="8" fill="currentColor"/>
+  <rect x="127" y="39" width="8" height="15" fill="currentColor"/>
+</svg>

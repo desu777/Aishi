@@ -4,6 +4,7 @@ import React, { CSSProperties } from 'react';
 import { Home, Upload, X, User, ChevronLeft, ChevronRight, Brain, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '../../contexts/ThemeContext';
+import SVGIcon from '../ui/SVGIcon';
 import SidebarItem from './SidebarItem';
 
 interface SidebarProps {
@@ -151,25 +152,39 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
       {/* Navigation Items */}
       <div style={{ flex: 1 }}>
         <SidebarItem 
-          icon={<Home size={18} />} 
+          icon={<SVGIcon src="/home.svg" size={18} alt="Home" />} 
           label="Home" 
           to="/"
           isCollapsed={isCollapsed}
           onClick={isMobile ? onClose : undefined}
         />
         <SidebarItem 
-          icon={<Sparkles size={18} />} 
-          label="Mint" 
+          icon={<SVGIcon src="/magic-wand.svg" size={18} alt="Mint Aishi" />} 
+          label="Mint Aishi" 
           to="/aishi-mint"
           isCollapsed={isCollapsed}
           onClick={isMobile ? onClose : undefined}
         />
         <SidebarItem 
-          icon={<Brain size={18} />} 
+          icon={<SVGIcon src="/microchip-ai.svg" size={18} alt="AishiOS" />} 
           label="aishiOS" 
           to="/aishiOS"
           isCollapsed={isCollapsed}
           onClick={isMobile ? onClose : undefined}
+        />
+        <SidebarItem 
+          icon={<SVGIcon src="/document.svg" size={18} alt="Documentation" />} 
+          label="Documentation" 
+          onClick={() => {
+            const docsUrl = process.env.NEXT_PUBLIC_DOCS_AISHI_URL;
+            if (docsUrl && docsUrl.trim()) {
+              window.open(docsUrl, '_blank', 'noopener,noreferrer');
+            } else {
+              console.warn('NEXT_PUBLIC_DOCS_AISHI_URL not configured');
+            }
+            if (isMobile) onClose();
+          }}
+          isCollapsed={isCollapsed}
         />
         <SidebarItem 
           icon={<User size={18} />} 
@@ -227,16 +242,30 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
           transition: 'all 0.3s ease'
         }}>
           {isCollapsed ? (
-            <span style={{ 
-              writingMode: 'vertical-rl' as any,
-              textOrientation: 'mixed' as any,
-              fontSize: '10px',
-              lineHeight: '1.2'
-            }}>
-              0G
-            </span>
+            <img 
+              src="/og.png" 
+              alt="0G Network"
+              style={{ 
+                width: '40px',
+                height: '20px',
+                objectFit: 'contain',
+                opacity: 0.8 
+              }}
+            />
           ) : (
-            <span>Powered by 0G Network</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>Powered by</span>
+              <img 
+                src="/og.png" 
+                alt="0G Network"
+                style={{ 
+                  width: '40px',
+                  height: '20px',
+                  objectFit: 'contain',
+                  opacity: 0.9 
+                }}
+              />
+            </div>
           )}
         </div>
       </div>

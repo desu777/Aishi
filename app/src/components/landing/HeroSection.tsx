@@ -174,9 +174,9 @@ export default function HeroSection() {
           <PillNav
             items={[
               {
-                label: 'Terminal',
+                label: 'AishiOS',
                 href: '/aishiOS',
-                ariaLabel: 'Open Terminal'
+                ariaLabel: 'Open AishiOS'
               },
               {
                 label: 'Mint',

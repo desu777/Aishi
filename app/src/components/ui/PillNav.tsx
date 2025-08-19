@@ -9,6 +9,7 @@ import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { gsap } from 'gsap';
 import { useTheme } from '../../contexts/ThemeContext';
+import { ShimmerButton } from './ShimmerButton';
 import './PillNav.css';
 
 export type PillNavItem = {
@@ -31,63 +32,29 @@ const PillNav: React.FC<PillNavProps> = ({
 }) => {
   const { theme } = useTheme();
   const router = useRouter();
-  const circleRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const labelStackRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const tlRefs = useRef<Array<gsap.core.Timeline | null>>([]);
   const activeTweenRefs = useRef<Array<gsap.core.Tween | null>>([]);
 
   useEffect(() => {
     const layout = () => {
-      circleRefs.current.forEach((circle, index) => {
-        if (!circle?.parentElement) return;
+      labelStackRefs.current.forEach((labelStack, index) => {
+        if (!labelStack) return;
 
-        const pill = circle.parentElement as HTMLElement;
-        const rect = pill.getBoundingClientRect();
-        const { width: w, height: h } = rect;
-        const R = ((w * w) / 4 + h * h) / (2 * h);
-        const D = Math.ceil(2 * R) + 2;
-        const delta = Math.ceil(R - Math.sqrt(Math.max(0, R * R - (w * w) / 4))) + 1;
-        const originY = D - delta;
-
-        circle.style.width = `${D}px`;
-        circle.style.height = `${D}px`;
-        circle.style.bottom = `-${delta}px`;
-
-        gsap.set(circle, {
-          xPercent: -50,
-          scale: 0,
-          transformOrigin: `50% ${originY}px`,
-        });
-
-        const label = pill.querySelector<HTMLElement>('.pill-label');
-        const hover = pill.querySelector<HTMLElement>('.pill-label-hover');
-
-        if (label) gsap.set(label, { y: 0 });
-        if (hover) gsap.set(hover, { y: h + 12, opacity: 0 });
+        const label = labelStack.querySelector<HTMLElement>('.pill-label');
+        const hover = labelStack.querySelector<HTMLElement>('.pill-label-hover');
+        
+        // Simple text hover animation - no circle
+        if (label) gsap.set(label, { y: 0, opacity: 1 });
+        if (hover) gsap.set(hover, { y: 0, opacity: 0 });
 
         tlRefs.current[index]?.kill();
         const tl = gsap.timeline({ paused: true });
 
-        tl.to(
-          circle,
-          { scale: 1.2, xPercent: -50, duration: 2, ease, overwrite: 'auto' },
-          0
-        );
-
-        if (label) {
-          tl.to(
-            label,
-            { y: -(h + 8), duration: 2, ease, overwrite: 'auto' },
-            0
-          );
-        }
-
-        if (hover) {
-          gsap.set(hover, { y: Math.ceil(h + 100), opacity: 0 });
-          tl.to(
-            hover,
-            { y: 0, opacity: 1, duration: 2, ease, overwrite: 'auto' },
-            0
-          );
+        // Text swap animation
+        if (label && hover) {
+          tl.to(label, { y: -30, opacity: 0, duration: 0.3, ease }, 0);
+          tl.to(hover, { y: 0, opacity: 1, duration: 0.3, ease }, 0.1);
         }
 
         tlRefs.current[index] = tl;
@@ -158,29 +125,39 @@ const PillNav: React.FC<PillNavProps> = ({
         <ul className="pill-list" role="menubar">
           {items.map((item, index) => (
             <li key={`${item.label}-${index}`} role="none">
-              <button
-                type="button"
-                role="menuitem"
-                className="pill"
-                aria-label={item.ariaLabel || item.label}
+              <div 
+                className="pill-shimmer-container"
                 onMouseEnter={() => handlePillEnter(index)}
                 onMouseLeave={() => handlePillLeave(index)}
-                onClick={() => handleItemClick(item)}
+                style={{ position: 'relative' }}
               >
-                <span
-                  className="hover-circle"
-                  aria-hidden="true"
-                  ref={(el) => {
-                    circleRefs.current[index] = el;
+                <ShimmerButton
+                  onClick={() => handleItemClick(item)}
+                  aria-label={item.ariaLabel || item.label}
+                  shimmerColor="#ffffff"
+                  background={theme.accent.primary}
+                  borderRadius="9999px"
+                  shimmerDuration="3s"
+                  className="pill-shimmer"
+                  style={{
+                    padding: `0 ${24}px`,
+                    height: `${48}px`,
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.2px'
                   }}
-                />
-                <span className="label-stack">
-                  <span className="pill-label">{item.label}</span>
-                  <span className="pill-label-hover" aria-hidden="true">
-                    {item.label}
+                >
+                  <span className="label-stack" ref={(el) => {
+                    labelStackRefs.current[index] = el;
+                  }}>
+                    <span className="pill-label">{item.label}</span>
+                    <span className="pill-label-hover" aria-hidden="true">
+                      {item.label}
+                    </span>
                   </span>
-                </span>
-              </button>
+                </ShimmerButton>
+              </div>
             </li>
           ))}
         </ul>
