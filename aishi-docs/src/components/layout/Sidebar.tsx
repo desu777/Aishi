@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { FiChevronDown, FiChevronRight } from 'react-icons/fi'
 
 interface NavigationSection {
@@ -58,11 +58,47 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname()
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    'INTRODUCTION': true, // Domyślnie rozwinięte
-    'AISHI CORE': false,
-    'GETTING STARTED': false
-  })
+  const router = useRouter()
+  
+  const getDefaultExpandedSections = () => {
+    switch (pathname) {
+      case '/introduction':
+        return { 'INTRODUCTION': true, 'AISHI CORE': false, 'GETTING STARTED': false }
+      case '/aishi-core':
+        return { 'INTRODUCTION': false, 'AISHI CORE': true, 'GETTING STARTED': false }
+      case '/getting-started':
+        return { 'INTRODUCTION': false, 'AISHI CORE': false, 'GETTING STARTED': true }
+      default:
+        return { 'INTRODUCTION': true, 'AISHI CORE': false, 'GETTING STARTED': false }
+    }
+  }
+  
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(getDefaultExpandedSections())
+
+  useEffect(() => {
+    setExpandedSections(getDefaultExpandedSections())
+  }, [pathname])
+
+  const sectionToPage: Record<string, string> = {
+    'introduction': '/introduction',
+    'philosophy': '/introduction', 
+    'personality': '/introduction',
+    'why-aishi': '/introduction',
+    'evolution-journey': '/introduction',
+    
+    'aishi-core': '/aishi-core',
+    'nervous-system': '/aishi-core',
+    'soul-house': '/aishi-core',
+    'brain': '/aishi-core', 
+    'memory': '/aishi-core',
+    'bloodstream': '/aishi-core',
+    'symphony': '/aishi-core',
+    
+    'getting-started': '/getting-started',
+    'mint-companion': '/getting-started',
+    'aishios-interface': '/getting-started', 
+    'first-commands': '/getting-started'
+  }
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId)
@@ -76,11 +112,35 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     if (onClose) onClose()
   }
 
+  const handleNavigation = (sectionId: string) => {
+    const targetPage = sectionToPage[sectionId]
+    const currentPath = pathname
+    
+    if (currentPath === targetPage) {
+      scrollToSection(sectionId)
+    } else {
+      router.push(`${targetPage}#${sectionId}`)
+      if (onClose) onClose()
+    }
+  }
+
   const toggleSection = (sectionTitle: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [sectionTitle]: !prev[sectionTitle]
-    }))
+    const sectionRoutes: Record<string, string> = {
+      'INTRODUCTION': '/introduction',
+      'AISHI CORE': '/aishi-core', 
+      'GETTING STARTED': '/getting-started'
+    }
+
+    const targetRoute = sectionRoutes[sectionTitle]
+    if (targetRoute && pathname !== targetRoute) {
+      router.push(targetRoute)
+      if (onClose) onClose()
+    } else {
+      setExpandedSections(prev => ({
+        ...prev,
+        [sectionTitle]: !prev[sectionTitle]
+      }))
+    }
   }
 
   return (
@@ -132,7 +192,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                   {item.sections.map((section) => (
                     <button
                       key={section.id}
-                      onClick={() => scrollToSection(section.id)}
+                      onClick={() => handleNavigation(section.id)}
                       className="block w-full text-left py-1.5 px-2 text-sm text-text-secondary hover:text-accent-primary hover:bg-background-card transition-colors rounded-md"
                     >
                       {section.title}

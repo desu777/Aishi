@@ -1,5 +1,5 @@
 # CLAUDE.md
-
+**⚠️ MANDATORY: Claude must ALWAYS confirm reading this file at the start of every session by stating "I have read and confirmed CLAUDE.md" before beginning any work.**
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Development Commands

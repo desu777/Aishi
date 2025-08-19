@@ -6,6 +6,7 @@
 'use client'
 
 import { useState } from 'react'
+import { usePathname } from 'next/navigation'
 import Header from './Header'
 import Sidebar from './Sidebar'
 
@@ -15,13 +16,17 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const pathname = usePathname()
+  const showSidebar = pathname !== '/'
   
   return (
     <div className="min-h-screen flex flex-col">
       <Header onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
       
       <div className="flex-1 flex">
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        {showSidebar && (
+          <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        )}
         
         <main className="flex-1 w-full">
           {children}
