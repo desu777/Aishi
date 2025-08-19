@@ -20,7 +20,7 @@ const SVGIcon: React.FC<SVGIconProps> = ({
   size = 18, 
   className = '', 
   style = {}, 
-  alt = 'Icon' 
+  alt = 'Icon'
 }) => {
   return (
     <div 
