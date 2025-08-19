@@ -41,6 +41,15 @@ const navigationData: NavigationItem[] = [
     ]
   },
   {
+    title: 'THE LIVING MEMORY',
+    sections: [
+      { id: 'living-memory', title: 'From Moment to Essence' },
+      { id: 'linear-problem', title: 'The Problem with Linear Memory' },
+      { id: 'memory-consolidation', title: 'Memory Consolidation' },
+      { id: 'memory-flow', title: 'The Flow of Consciousness' }
+    ]
+  },
+  {
     title: 'GETTING STARTED',
     sections: [
       { id: 'getting-started', title: 'Quick Start Guide' },
@@ -63,13 +72,15 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const getDefaultExpandedSections = () => {
     switch (pathname) {
       case '/introduction':
-        return { 'INTRODUCTION': true, 'AISHI CORE': false, 'GETTING STARTED': false }
+        return { 'INTRODUCTION': true, 'AISHI CORE': false, 'THE LIVING MEMORY': false, 'GETTING STARTED': false }
       case '/aishi-core':
-        return { 'INTRODUCTION': false, 'AISHI CORE': true, 'GETTING STARTED': false }
+        return { 'INTRODUCTION': false, 'AISHI CORE': true, 'THE LIVING MEMORY': false, 'GETTING STARTED': false }
+      case '/living-memory':
+        return { 'INTRODUCTION': false, 'AISHI CORE': false, 'THE LIVING MEMORY': true, 'GETTING STARTED': false }
       case '/getting-started':
-        return { 'INTRODUCTION': false, 'AISHI CORE': false, 'GETTING STARTED': true }
+        return { 'INTRODUCTION': false, 'AISHI CORE': false, 'THE LIVING MEMORY': false, 'GETTING STARTED': true }
       default:
-        return { 'INTRODUCTION': true, 'AISHI CORE': false, 'GETTING STARTED': false }
+        return { 'INTRODUCTION': true, 'AISHI CORE': false, 'THE LIVING MEMORY': false, 'GETTING STARTED': false }
     }
   }
   
@@ -93,6 +104,11 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     'memory': '/aishi-core',
     'bloodstream': '/aishi-core',
     'symphony': '/aishi-core',
+    
+    'living-memory': '/living-memory',
+    'linear-problem': '/living-memory',
+    'memory-consolidation': '/living-memory',
+    'memory-flow': '/living-memory',
     
     'getting-started': '/getting-started',
     'mint-companion': '/getting-started',
@@ -127,7 +143,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const toggleSection = (sectionTitle: string) => {
     const sectionRoutes: Record<string, string> = {
       'INTRODUCTION': '/introduction',
-      'AISHI CORE': '/aishi-core', 
+      'AISHI CORE': '/aishi-core',
+      'THE LIVING MEMORY': '/living-memory', 
       'GETTING STARTED': '/getting-started'
     }
 

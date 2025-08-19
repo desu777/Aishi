@@ -293,7 +293,7 @@ export const FlowDiagram: React.FC<{ className?: string }> = ({ className = '' }
           proOptions={{ hideAttribution: true }}
           minZoom={0.3}
           maxZoom={1.5}
-          panOnScroll={viewportWidth >= 768}
+          panOnScroll={false}
           zoomOnDoubleClick={false}
           nodesDraggable={false}
           nodesConnectable={false}
