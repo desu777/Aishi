@@ -30,7 +30,7 @@ export default function IntroductionPage() {
   }, [])
 
   return (
-    <div className="container mx-auto px-4 py-8 md:px-8 md:ml-80 max-w-5xl">
+    <div className="container mx-auto px-4 py-8 md:px-8 md:ml-80 max-w-5xl pb-32 xl:pb-8">
       <article className="docs-content animate-fade-up">
         <div id="introduction" className="mb-12">
           <h1 className="text-4xl font-grotesk font-bold text-text-primary mb-6">

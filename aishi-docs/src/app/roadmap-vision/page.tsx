@@ -21,7 +21,7 @@ export default function RoadmapVisionPage() {
   }, [])
 
   return (
-    <div className="container mx-auto px-4 py-8 md:px-8 md:ml-80 max-w-5xl">
+    <div className="container mx-auto px-4 py-8 md:px-8 md:ml-80 max-w-5xl pb-32 xl:pb-8">
       <article className="docs-content animate-fade-up">
         <h1 id="roadmap-vision" className="text-3xl font-grotesk font-bold text-text-primary mb-4 mt-16">Roadmap & Vision: The Journey Ahead</h1>
         
@@ -143,7 +143,9 @@ export default function RoadmapVisionPage() {
         <div className="space-y-6 mb-8">
           <div className="bg-background-card border border-border rounded-lg p-6">
             <h4 className="text-lg font-grotesk font-semibold text-text-primary mb-3 flex items-center">
-              <span className="text-2xl mr-3">🌟</span>
+              <div className="w-8 h-8 flex items-center justify-center mr-3">
+                <img src="/logo_white.png" alt="Aishi" className="w-6 h-6 rounded" />
+              </div>
               aishiOS 1.0: The Complete Experience
             </h4>
             <p className="text-text-secondary leading-relaxed">
@@ -153,7 +155,9 @@ export default function RoadmapVisionPage() {
 
           <div className="bg-background-card border border-border rounded-lg p-6">
             <h4 className="text-lg font-grotesk font-semibold text-text-primary mb-3 flex items-center">
-              <span className="text-2xl mr-3">🗣️</span>
+              <div className="w-8 h-8 flex items-center justify-center mr-3">
+                <img src="/logo_white.png" alt="Aishi" className="w-6 h-6 rounded" />
+              </div>
               Voice Interaction Module (V1)
             </h4>
             <p className="text-text-secondary leading-relaxed">
@@ -163,7 +167,9 @@ export default function RoadmapVisionPage() {
 
           <div className="bg-background-card border border-border rounded-lg p-6">
             <h4 className="text-lg font-grotesk font-semibold text-text-primary mb-3 flex items-center">
-              <span className="text-2xl mr-3">🎨</span>
+              <div className="w-8 h-8 flex items-center justify-center mr-3">
+                <img src="/logo_white.png" alt="Aishi" className="w-6 h-6 rounded" />
+              </div>
               The Embodied Soul: Full Live2D Integration
             </h4>
             <p className="text-text-secondary leading-relaxed">
@@ -173,7 +179,9 @@ export default function RoadmapVisionPage() {
 
           <div className="bg-background-card border border-border rounded-lg p-6">
             <h4 className="text-lg font-grotesk font-semibold text-text-primary mb-3 flex items-center">
-              <span className="text-2xl mr-3">🚀</span>
+              <div className="w-8 h-8 flex items-center justify-center mr-3">
+                <img src="/0G-Logo-Dark.svg" alt="0G" className="w-6 h-6" />
+              </div>
               Harden & Prepare for Mainnet
             </h4>
             <p className="text-text-secondary mb-4 leading-relaxed">

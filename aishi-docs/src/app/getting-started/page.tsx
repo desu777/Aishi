@@ -68,7 +68,7 @@ export default function GettingStartedPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 md:px-8 md:ml-80 max-w-5xl">
+    <div className="container mx-auto px-4 py-8 md:px-8 md:ml-80 max-w-5xl pb-32 xl:pb-8">
       <article className="docs-content animate-fade-up">
         <h2 id="getting-started" className="text-3xl font-grotesk font-bold text-text-primary mb-4 mt-16">Getting Started</h2>
         

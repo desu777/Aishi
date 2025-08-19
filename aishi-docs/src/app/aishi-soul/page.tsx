@@ -21,7 +21,7 @@ export default function AishiSoulPage() {
   }, [])
 
   return (
-    <div className="container mx-auto px-4 py-8 md:px-8 md:ml-80 max-w-5xl">
+    <div className="container mx-auto px-4 py-8 md:px-8 md:ml-80 max-w-5xl pb-32 xl:pb-8">
       <article className="docs-content animate-fade-up">
         <h1 id="aishi-soul" className="text-3xl font-grotesk font-bold text-text-primary mb-4 mt-16">The Aishi Soul: The Architecture of a Living iNFT</h1>
         

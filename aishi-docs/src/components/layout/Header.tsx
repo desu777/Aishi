@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { FiMenu, FiX, FiGithub, FiSearch } from 'react-icons/fi'
 import { useTheme } from '@/contexts/ThemeContext'
 import ThemeToggle from '@/components/ui/ThemeToggle'
@@ -15,13 +16,21 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { theme } = useTheme()
+  const pathname = usePathname()
+  
+  const isHomePage = pathname === '/'
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  // Different header styles for home page vs documentation pages
+  const headerClasses = isHomePage 
+    ? "sticky top-0 z-50 w-full bg-background-main/20 backdrop-blur-xl" 
+    : "sticky top-0 z-50 w-full border-b border-border bg-background-main/95 backdrop-blur"
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background-main/95 backdrop-blur">
+    <header className={headerClasses}>
       <div className="flex h-16 items-center px-4 md:px-6">
         {/* Mobile menu button */}
         <button
@@ -77,7 +86,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 
           {/* GitHub */}
           <a
-            href="https://github.com/aishios"
+            href="https://github.com/desu777/Aishi"
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 text-text-secondary hover:text-text-primary transition-colors"
