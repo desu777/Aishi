@@ -96,11 +96,10 @@ export const stackComponents: StackComponent[] = [
 ];
 
 export const badges: string[] = [
-  'iNFT',
-  '0G Compute', 
-  '0G Storage', 
-  '0G DA', 
-  '0G Chain'
+  'Dream Analysis',
+  'Personality Evolution',
+  'Perfect Memory',
+  'Data Sovereignty'
 ];
 
 export interface DreamInspiration {

@@ -1,11 +1,10 @@
 'use client';
 
 import { useTheme } from '../../contexts/ThemeContext';
-import { ChevronRight, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { badges } from './landingData';
-import { ShimmerButton } from '../ui/ShimmerButton';
 import SplitText from '../ui/SplitText';
+import PillNav from '../ui/PillNav';
 import { useState, useEffect } from 'react';
 
 export default function HeroSection() {
@@ -60,7 +59,7 @@ export default function HeroSection() {
           animation: 'fadeInUp 1s ease-out'
         }}>
           <img 
-            src="/aishi_logo.png" 
+            src="/logo.png" 
             alt="Aishi"
             style={{
               width: 'min(220px, 50vw)',
@@ -165,111 +164,38 @@ export default function HeroSection() {
           ))}
         </div>
 
-        {/* CTA Buttons */}
+        {/* PillNav CTA */}
         <div style={{
           display: 'flex',
-          gap: '12px',
           justifyContent: 'center',
-          flexDirection: isSmallMobile ? 'column' : 'row',
-          flexWrap: 'wrap',
-          alignItems: 'center',
+          marginTop: '32px',
           animation: 'fadeInUp 1s ease-out 0.8s both'
         }}>
-          <ShimmerButton
-            onClick={() => router.push('/aishiOS')}
-            shimmerColor="#ffffff"
-            shimmerSize="0.1em"
-            shimmerDuration="3s"
-            borderRadius="12px"
-            background={theme.gradients.primary}
-            style={{
-              padding: isSmallMobile ? '14px 24px' : '16px 32px',
-              fontSize: isSmallMobile ? '14px' : '16px',
-              width: isSmallMobile ? '100%' : 'auto',
-              maxWidth: isSmallMobile ? '100%' : '280px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              border: 'none',
-              transition: 'transform 0.3s ease',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            Open Terminal
-            <ChevronRight size={20} />
-          </ShimmerButton>
-
-          <button
-            onClick={() => router.push('/aishi-mint')}
-            style={{
-              padding: isSmallMobile ? '14px 24px' : '16px 32px',
-              background: 'transparent',
-              width: isSmallMobile ? '100%' : 'auto',
-              maxWidth: isSmallMobile ? '100%' : '280px',
-              fontSize: isSmallMobile ? '14px' : '16px',
-              border: `2px solid ${theme.accent.primary}`,
-              borderRadius: '12px',
-              color: theme.accent.primary,
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = theme.accent.primary;
-              e.currentTarget.style.color = 'white';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = theme.accent.primary;
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            Mint Your Agent
-          </button>
-        </div>
-
-        {/* Scroll Indicator - Responsywny element pod CTA */}
-        <div style={{
-          marginTop: '60px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '8px',
-          animation: 'fadeInUp 1s ease-out 1s both',
-          cursor: 'pointer'
-        }}
-        onClick={() => {
-          window.scrollTo({
-            top: window.innerHeight,
-            behavior: 'smooth'
-          });
-        }}
-        >
-          <span style={{
-            fontSize: '12px',
-            color: theme.text.secondary,
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-            opacity: 0.6
-          }}>
-            Scroll
-          </span>
-          <ChevronDown 
-            size={20} 
-            style={{
-              color: theme.accent.primary,
-              animation: 'bounce 2s infinite',
-              opacity: 0.8
-            }}
+          <PillNav
+            items={[
+              {
+                label: 'Terminal',
+                href: '/aishiOS',
+                ariaLabel: 'Open Terminal'
+              },
+              {
+                label: 'Mint',
+                href: '/aishi-mint',
+                ariaLabel: 'Mint Your Agent'
+              },
+              {
+                label: 'Learn More',
+                onClick: () => {
+                  const docsUrl = process.env.NEXT_PUBLIC_DOCS_AISHI_URL;
+                  if (docsUrl && docsUrl.trim()) {
+                    window.open(docsUrl, '_blank', 'noopener,noreferrer');
+                  } else {
+                    console.warn('NEXT_PUBLIC_DOCS_AISHI_URL not configured');
+                  }
+                },
+                ariaLabel: 'Learn more about Aishi'
+              }
+            ]}
           />
         </div>
 
