@@ -4,7 +4,7 @@ import { ClientProviders } from '@/providers/ClientProviders'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://aishi.app'),
-  title: 'Aishi - AI Agents with Evolving Personalities | Digital Soul Documentation',
+  title: 'Aishi Docs',
   description: 'Transform your dreams into consciousness evolution. Create AI agents with evolving personalities on blockchain. Your subconscious speaks, Aishi translates.',
   keywords: 'aishiOS, AI agents, blockchain, NFT, personality evolution, digital soul, dream analysis, consciousness, iNFT, ERC-7857, 0G Network, Web3 AI',
   authors: [{ name: 'Aishi Team' }],
@@ -14,10 +14,10 @@ export const metadata: Metadata = {
     apple: '/logo_white.png',
   },
   openGraph: {
-    title: 'Aishi - Your Digital Soul | AI Agents Documentation',
+    title: 'Aishi Docs',
     description: 'Transform your dreams into consciousness evolution. AI agents with evolving personalities, powered by blockchain technology.',
     url: 'https://aishi.app',
-    siteName: 'Aishi',
+    siteName: 'Aishi Docs',
     images: [{
       url: '/logo_white.png',
       width: 1200,
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Aishi - AI Agents with Evolving Personalities',
+    title: 'Aishi Docs',
     description: 'Transform your dreams into consciousness evolution. Your subconscious speaks, Aishi translates.',
     creator: '@aishios',
     images: ['/logo_white.png'],

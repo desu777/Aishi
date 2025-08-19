@@ -173,25 +173,10 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   }
 
   const toggleSection = (sectionTitle: string) => {
-    const sectionRoutes: Record<string, string> = {
-      'INTRODUCTION': '/introduction',
-      'GETTING STARTED': '/getting-started',
-      'AISHI CORE': '/aishi-core',
-      'THE AISHI SOUL': '/aishi-soul',
-      'THE LIVING MEMORY': '/living-memory',
-      'ROADMAP & VISION': '/roadmap-vision'
-    }
-
-    const targetRoute = sectionRoutes[sectionTitle]
-    if (targetRoute && pathname !== targetRoute) {
-      router.push(targetRoute)
-      if (onClose) onClose()
-    } else {
-      setExpandedSections(prev => ({
-        ...prev,
-        [sectionTitle]: !prev[sectionTitle]
-      }))
-    }
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionTitle]: !prev[sectionTitle]
+    }))
   }
 
   return (
