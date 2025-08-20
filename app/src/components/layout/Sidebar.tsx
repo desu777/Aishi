@@ -186,13 +186,15 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
           }}
           isCollapsed={isCollapsed}
         />
-        <SidebarItem 
-          icon={<User size={18} />} 
-          label="Agent Dashboard" 
-          to="/agent-dashboard"
-          isCollapsed={isCollapsed}
-          onClick={isMobile ? onClose : undefined}
-        />
+        {!isDreamTest && (
+          <SidebarItem 
+            icon={<User size={18} />} 
+            label="Agent Dashboard" 
+            to="/agent-dashboard"
+            isCollapsed={isCollapsed}
+            onClick={isMobile ? onClose : undefined}
+          />
+        )}
         {isDreamTest && (
           <SidebarItem 
             icon={<Upload size={18} />} 
