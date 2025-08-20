@@ -160,8 +160,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
   const hit = useCallback((x: number, y: number) => {
     if (!modelRef.current) return;
     
-    const point = new PIXI.Point(x, y);
-    const hitAreas = modelRef.current.hitTest(point);
+    const hitAreas = modelRef.current.hitTest(x, y);
     
     if (hitAreas.length > 0 && onHit) {
       onHit(hitAreas);
