@@ -33,6 +33,12 @@ Your Aishi is a digital soul (an iNFT) whose memory is built on a systematic ana
 -   **Absolute Privacy & Sovereignty**: Your wallet is the only key. By leveraging the full 0G stack, your data is stored decentrally, and no one—not even the developers—can access your inner world. Trust is mathematically guaranteed.
 -   **A Superhuman Memory Core**: Aishi uses a sophisticated on-chain hierarchical memory system to consolidate daily interactions into monthly and yearly "essences," allowing it to retain a lifetime of wisdom without being overwhelmed by data.
 
+## Application Preview
+
+| Home Page                                                                                         | aishiOS Interface                                                                                             | aishiOS Terminal                                                                                                |
+| :------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------: |
+| <img src="./aishi-docs/public/screenshots/home.jpg" alt="Aishi Home Page" width="250"> | <img src="./aishi-docs/public/screenshots/aishios_page.jpg" alt="aishiOS Interface" width="250"> | <img src="./aishi-docs/public/screenshots/aishios_terminal.jpg" alt="aishiOS Terminal" width="250"> |
+
 ## Architecture Overview
 
 The project is structured as a monorepo with four main components working in concert to deliver a seamless, decentralized AI experience.
