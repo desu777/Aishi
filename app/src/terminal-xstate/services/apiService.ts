@@ -272,7 +272,7 @@ async function routeToBackend(request: DreamAPIRequest): Promise<BackendResponse
                       'http://localhost:3001';
   
   const isGeminiModel = request.modelId.startsWith('gemini-');
-  const endpoint = isGeminiModel ? '/gemini' : '/0g-compute';
+  const endpoint = isGeminiModel ? '/api/gemini' : '/api/0g-compute';
   
   debugLog('Routing request to backend', {
     model: request.modelId,
