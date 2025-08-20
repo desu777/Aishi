@@ -178,82 +178,113 @@ export function formatUniqueFeaturesOutput(agentData: CompleteAgentData | null):
   }
 
   const lines: TerminalLine[] = [];
-  
-  // Header
-  lines.push({
-    type: 'info',
-    content: '╭─ Unique Features ───────────────────────────╮',
-    timestamp: timestamp + 1
-  });
 
   if (!agentData.features || agentData.features.length === 0) {
+    // No features message
+    const noFeaturesContent = (
+      <>
+        <span style={{ color: colors.secondary }}>No unique features yet</span>
+      </>
+    );
+    
     lines.push({
       type: 'info',
-      content: '│ No unique features yet                     │',
+      content: noFeaturesContent,
+      timestamp: timestamp + 1
+    });
+
+    const evolutionHintContent = (
+      <>
+        <span style={{ color: colors.secondary, fontStyle: 'italic' }}>
+          Features emerge through dream evolution
+        </span>
+      </>
+    );
+    
+    lines.push({
+      type: 'info',
+      content: evolutionHintContent,
       timestamp: timestamp + 2
     });
-    lines.push({
-      type: 'info',
-      content: '│ Features emerge through dream evolution    │',
-      timestamp: timestamp + 3
-    });
   } else {
-    let lineNum = 2;
     agentData.features.forEach((feature, index) => {
       if (index > 0) {
         // Empty line between features
         lines.push({
           type: 'info',
-          content: '│                                             │',
-          timestamp: timestamp + lineNum++
+          content: '',
+          timestamp: timestamp + (index * 4)
         });
       }
 
       // Feature name with star
-      lines.push({
-        type: 'info',
-        content: `│ ★ ${feature.name.padEnd(41)} │`,
-        timestamp: timestamp + lineNum++
-      });
-
-      // Intensity
-      lines.push({
-        type: 'info',
-        content: `│   Intensity: ${String(feature.intensity).padStart(3)}/100                       │`,
-        timestamp: timestamp + lineNum++
-      });
-
-      // Description (word wrap at ~40 chars)
-      const words = feature.description.split(' ');
-      let currentLine = '   ';
-      words.forEach(word => {
-        if (currentLine.length + word.length > 42) {
-          lines.push({
-            type: 'info',
-            content: `│ ${currentLine.padEnd(43)} │`,
-            timestamp: timestamp + lineNum++
-          });
-          currentLine = '   ';
-        }
-        currentLine += word + ' ';
-      });
+      const featureNameContent = (
+        <>
+          <span style={{ color: colors.success, fontSize: '16px' }}>★ </span>
+          <span style={{ 
+            color: colors.accent, 
+            fontWeight: '600',
+            fontSize: '15px'
+          }}>
+            {feature.name}
+          </span>
+        </>
+      );
       
-      if (currentLine.trim()) {
-        lines.push({
-          type: 'info',
-          content: `│ ${currentLine.padEnd(43)} │`,
-          timestamp: timestamp + lineNum++
-        });
-      }
+      lines.push({
+        type: 'info',
+        content: featureNameContent,
+        timestamp: timestamp + (index * 4) + 1
+      });
+
+      // Intensity with progress bar
+      const intensityBar = createColoredProgressBar(feature.intensity, feature.intensity >= 80);
+      const intensityContent = (
+        <>
+          <span style={{ color: colors.secondary }}>Intensity: </span>
+          <span style={{ marginLeft: '8px', marginRight: '8px' }}>{intensityBar}</span>
+          <span style={{ color: colors.accent, fontWeight: '600' }}>
+            {String(feature.intensity).padStart(3)}
+          </span>
+          <span style={{ color: colors.secondary }}>/100</span>
+          {feature.intensity >= 80 && (
+            <span style={{ 
+              color: colors.success, 
+              fontWeight: '500',
+              marginLeft: '8px'
+            }}>
+              ⚡ powerful
+            </span>
+          )}
+        </>
+      );
+      
+      lines.push({
+        type: 'info',
+        content: intensityContent,
+        timestamp: timestamp + (index * 4) + 2
+      });
+
+      // Description
+      const descriptionContent = (
+        <>
+          <span style={{ 
+            color: colors.primary, 
+            fontStyle: 'italic',
+            opacity: 0.9
+          }}>
+            {feature.description}
+          </span>
+        </>
+      );
+      
+      lines.push({
+        type: 'info',
+        content: descriptionContent,
+        timestamp: timestamp + (index * 4) + 3
+      });
     });
   }
-
-  // Footer
-  lines.push({
-    type: 'info',
-    content: '╰─────────────────────────────────────────────╯',
-    timestamp: timestamp + lines.length + 1
-  });
 
   return lines;
 }

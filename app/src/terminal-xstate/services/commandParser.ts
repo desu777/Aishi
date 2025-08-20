@@ -18,6 +18,7 @@ export type CommandType =
   | 'mint'
   | 'memory'
   | 'personality'
+  | 'unique-features'
   | 'chat'
   | 'help'
   | 'clear'
@@ -34,6 +35,7 @@ export const AVAILABLE_COMMANDS: Record<CommandType, string> = {
   mint: 'Create a new AI agent NFT',
   memory: 'Access agent memory and consolidation tools',
   personality: 'View agent personality traits and mood',
+  'unique-features': 'Display agent unique features and abilities',
   chat: 'Start a conversation with your agent',
   help: 'Show available commands',
   clear: 'Clear terminal screen',
@@ -79,6 +81,8 @@ const COMMAND_ALIASES: Record<string, CommandType> = {
   'm': 'mint',
   'mem': 'memory',
   'p': 'personality',
+  'uf': 'unique-features',
+  'features': 'unique-features',
   'c': 'chat',
   'h': 'help',
   'cls': 'clear',
@@ -146,6 +150,7 @@ export function validateCommandArgs(command: CommandType, args: string[]): { val
     case 'stats':
     case 'memory':
     case 'personality':
+    case 'unique-features':
     case 'status':
       // Optional agent ID argument
       if (args.length > 1) {
@@ -240,7 +245,7 @@ export function formatHelpOutput(): string[] {
 
   // Group commands by category
   const categories = {
-    'Agent Operations': ['personality', 'stats', 'memory'],
+    'Agent Operations': ['personality', 'unique-features', 'stats', 'memory'],
     'Interactions': ['dream', 'chat'],
     'System': ['broker', 'model', 'status'],
     'Terminal': ['help', 'clear']
