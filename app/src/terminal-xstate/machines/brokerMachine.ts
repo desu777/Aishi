@@ -25,7 +25,15 @@ type BrokerEvent =
   | { type: 'FUND'; amount: number; txHash?: string }
   | { type: 'UPDATE_BALANCE'; balance: number }
   | { type: 'REFRESH' }
-  | { type: 'RETRY' };
+  | { type: 'RETRY' }
+  // XState actor completion events
+  | { type: 'xstate.done.actor.fetchBrokerStatus'; output: { exists: boolean; balance: number } }
+  | { type: 'xstate.done.actor.createBroker'; output: { success: boolean; balance: number; message?: string } }
+  | { type: 'xstate.done.actor.fundBroker'; output: { success: boolean; balance: number; txHash?: string; message?: string } }
+  // XState actor error events
+  | { type: 'xstate.error.actor.fetchBrokerStatus'; error: { message?: string } }
+  | { type: 'xstate.error.actor.createBroker'; error: { message?: string } }
+  | { type: 'xstate.error.actor.fundBroker'; error: { message?: string } };
 
 // API service actors
 const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress: string } }) => {

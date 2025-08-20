@@ -65,7 +65,23 @@ export type DreamEvent =
   | { type: 'CONFIRM_SAVE' }
   | { type: 'CANCEL_SAVE' }
   | { type: 'RETRY' }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  // XState actor completion events
+  | { type: 'xstate.done.actor.fetchContext'; output: DreamContext }
+  | { type: 'xstate.done.actor.buildPrompt'; output: string }
+  | { type: 'xstate.done.actor.analyzeWithAI'; output: AIResponse }
+  | { type: 'xstate.done.actor.persistDream'; output: { persistenceResult: any; rootHash: string; txHash: string; isEvolutionDream: boolean } }
+  | { type: 'xstate.done.actor.manageFile'; output: any }
+  | { type: 'xstate.done.actor.uploadToStorage'; output: { rootHash: string } }
+  | { type: 'xstate.done.actor.updateContract'; output: { txHash: string; isEvolutionDream: boolean } }
+  // XState actor error events
+  | { type: 'xstate.error.actor.fetchContext'; error: { message?: string } }
+  | { type: 'xstate.error.actor.buildPrompt'; error: { message?: string } }
+  | { type: 'xstate.error.actor.analyzeWithAI'; error: { message?: string } }
+  | { type: 'xstate.error.actor.persistDream'; error: { message?: string } }
+  | { type: 'xstate.error.actor.manageFile'; error: { message?: string } }
+  | { type: 'xstate.error.actor.uploadToStorage'; error: { message?: string } }
+  | { type: 'xstate.error.actor.updateContract'; error: { message?: string } };
 
 // Initial context
 const initialContext: DreamMachineContext = {
@@ -510,6 +526,7 @@ const fileManagementService = fromPromise(async ({
 
   const dreamData = {
     ...input.aiResponse.dreamData,
+    date: new Date().toISOString().split('T')[0],
     analysis: input.aiResponse.analysis || 'Dream analysis available.'
   };
 
@@ -655,7 +672,7 @@ const dreamPersistenceService = fromPromise(async ({
   if (!result.success) {
     debugLog('❌ Dream Persistence Protocol failed', { 
       error: result.error,
-      completedStages: result.validation ? 1 : 0
+      completedStages: result.fileManagement?.success ? 1 : 0
     });
     throw new Error(`Dream persistence failed: ${result.error}`);
   }

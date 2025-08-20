@@ -4,10 +4,11 @@
  */
 
 import { useSelector } from '@xstate/react';
+import type { AnyActorRef } from 'xstate';
 
 // Dummy actor used as fallback when real actor is null/undefined
 // This ensures useSelector is always called with a valid reference
-const dummyActor = {
+const dummyActor: Pick<AnyActorRef, 'subscribe' | 'getSnapshot' | 'send' | 'id'> = {
   subscribe: () => ({ unsubscribe: () => {} }),
   getSnapshot: () => ({ 
     context: {
@@ -29,7 +30,7 @@ const dummyActor = {
  * @param defaultValue - Optional default value when actor is null
  * @returns Selected state or defaultValue/undefined
  */
-export function useSafeSelector<TActor, TSelected>(
+export function useSafeSelector<TActor extends Pick<AnyActorRef, 'subscribe' | 'getSnapshot'>, TSelected>(
   actor: TActor | null | undefined,
   selector: (snapshot: any) => TSelected,
   defaultValue?: TSelected
@@ -37,7 +38,7 @@ export function useSafeSelector<TActor, TSelected>(
   // Always call useSelector to satisfy Rules of Hooks
   // Use dummy actor as fallback when real actor doesn't exist
   const selected = useSelector(
-    actor || dummyActor,
+    actor || dummyActor as Pick<AnyActorRef, 'subscribe' | 'getSnapshot'>,
     (snapshot) => {
       // If no real actor, return default value
       if (!actor) {
@@ -61,7 +62,7 @@ export function useSafeSelector<TActor, TSelected>(
  * Specialized version for getting full actor state
  * Common pattern in the codebase
  */
-export function useSafeActorState<TActor>(
+export function useSafeActorState<TActor extends Pick<AnyActorRef, 'subscribe' | 'getSnapshot'>>(
   actor: TActor | null | undefined
 ) {
   return useSafeSelector(

@@ -428,8 +428,8 @@ export function useAgentChat(tokenId?: number) {
       // 1. Get current conversation hash from contract
       const [provider] = await getProvider();
       const [signer] = await getSigner(provider!);
-      const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-      const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+      const contractAddress = AishiAgentABI.address;
+      const contractABI = AishiAgentABI.abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       const agentMemory = await contract.getAgentMemory(tokenId);
@@ -503,8 +503,8 @@ export function useAgentChat(tokenId?: number) {
       const [signer] = await getSigner(provider!);
 
       // 2. Connect to contract
-      const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-      const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+      const contractAddress = AishiAgentABI.address;
+      const contractABI = AishiAgentABI.abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       // 3. Convert hash to bytes32

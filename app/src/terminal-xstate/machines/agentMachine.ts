@@ -29,7 +29,9 @@ type AgentEvent =
   | { type: 'SYNC'; walletAddress: string; provider: any }
   | { type: 'RETRY' }
   | { type: 'REFRESH' }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'xstate.done.actor.fetchAgentData'; output: { hasAgent: boolean; tokenId?: number; agentName?: string; intelligenceLevel?: number; dreamCount?: number; conversationCount?: number } }
+  | { type: 'xstate.error.actor.fetchAgentData'; error: { message?: string } };
 
 // Service to fetch agent data from contract using viem
 const fetchAgentData = fromPromise(async ({ 

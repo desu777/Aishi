@@ -23,7 +23,13 @@ type ModelEvent =
   | { type: 'SELECT_MODEL'; modelId: string }
   | { type: 'DISCOVER_MODELS' }
   | { type: 'REFRESH' }
-  | { type: 'SET_MODEL_FROM_STORAGE'; modelId: string };
+  | { type: 'SET_MODEL_FROM_STORAGE'; modelId: string }
+  // XState actor completion events
+  | { type: 'xstate.done.actor.discoverModels'; output: Model[] }
+  | { type: 'xstate.done.actor.loadModelFromStorage'; output: string | null }
+  // XState actor error events
+  | { type: 'xstate.error.actor.discoverModels'; error: { message?: string } }
+  | { type: 'xstate.error.actor.loadModelFromStorage'; error: { message?: string } };
 
 // Service to discover available models
 const discoverModels = fromPromise(async () => {
