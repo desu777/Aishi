@@ -20,8 +20,9 @@ import geminiService from './services/geminiService';
 const expressApplication = express();
 const SERVER_PORT = process.env.PORT || 3001;
 
-// Trust proxy headers from Nginx/Cloudflare
-expressApplication.set('trust proxy', true);
+// Trust proxy headers from Nginx (localhost) and Cloudflare
+// Using specific number of proxies for security
+expressApplication.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 expressApplication.use(helmet());
 expressApplication.use(cors({

@@ -11,6 +11,7 @@ import { Request, Response } from 'express';
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
+  validate: false,
   message: {
     success: false,
     error: 'Too many requests. Please try again in 15 minutes.',
@@ -33,6 +34,7 @@ export const generalLimiter = rateLimit({
 export const aiQueryLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   limit: 20,
+  validate: false,
   message: {
     success: false,
     error: 'Too many AI requests. AI processing is limited to 20 requests per minute.',
@@ -56,6 +58,7 @@ export const aiQueryLimiter = rateLimit({
 export const brokerCreationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 3,
+  validate: false,
   message: {
     success: false,
     error: 'Too many broker creation attempts. Limited to 3 per hour.',
@@ -78,6 +81,7 @@ export const brokerCreationLimiter = rateLimit({
 export const costEstimationLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   limit: 20,
+  validate: false,
   message: {
     success: false,
     error: 'Too many cost estimation requests. Limited to 20 per 5 minutes.',
@@ -100,6 +104,7 @@ export const costEstimationLimiter = rateLimit({
 export const fundingLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   limit: 5,
+  validate: false,
   message: {
     success: false,
     error: 'Too many funding requests. Limited to 5 per 10 minutes.',
@@ -122,6 +127,7 @@ export const fundingLimiter = rateLimit({
 export const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
+  validate: false,
   message: {
     success: false,
     error: 'Rate limit exceeded for sensitive endpoint. Limited to 5 requests per 15 minutes.',
