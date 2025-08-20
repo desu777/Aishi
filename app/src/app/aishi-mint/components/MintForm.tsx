@@ -92,9 +92,9 @@ export default function MintForm({
               paddingRight: '60px',
               minHeight: '48px',
               backgroundColor: `${theme.bg.primary}88`,
-              border: `1px solid ${nameError ? theme.accent.error : theme.accent.primary}44`,
+              border: `1px solid ${theme.accent.primary}44`,
               borderRadius: theme.radius.md,
-              color: '#000000',
+              color: theme.text.primary,
               fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
               outline: 'none',
               transition: theme.effects.transitions.normal,
@@ -106,7 +106,7 @@ export default function MintForm({
               e.currentTarget.style.boxShadow = `0 0 0 3px ${theme.accent.primary}22`;
             }}
             onBlur={(e) => {
-              e.currentTarget.style.borderColor = `${nameError ? theme.accent.error : theme.accent.primary}44`;
+              e.currentTarget.style.borderColor = `${theme.accent.primary}44`;
               e.currentTarget.style.boxShadow = 'none';
             }}
           />
@@ -125,12 +125,12 @@ export default function MintForm({
           </div>
         </div>
         
-        {/* Name validation feedback */}
+        {/* Name validation feedback (no underline/error decoration) */}
         {agentName && (
           <div style={{
             marginTop: theme.spacing.xs,
             fontSize: theme.typography.fontSizes.xs,
-            color: nameError ? theme.accent.error : theme.accent.success,
+            color: nameError ? theme.text.secondary : theme.accent.success,
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
@@ -194,7 +194,7 @@ export default function MintForm({
           minHeight: '52px',
           fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
           fontWeight: theme.typography.fontWeights.bold,
-          color: canMint && !isProcessing ? theme.bg.primary : theme.text.secondary,
+          color: canMint && !isProcessing ? theme.text.primary : theme.text.secondary,
           backgroundColor: canMint && !isProcessing ? theme.accent.primary : `${theme.accent.primary}44`,
           border: 'none',
           borderRadius: theme.radius.md,

@@ -65,3 +65,6 @@ temp/
 ffmpeg/ 
 # TypeScript incremental compilation cache
 tsconfig.tsbuildinfo
+
+DEPLOYMENT_GUIDE.md
+about.md

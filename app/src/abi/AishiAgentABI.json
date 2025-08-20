@@ -1,6 +1,6 @@
 {
   "contractName": "AishiAgent",
-  "address": "0x5D4C40b627e8C1e900f616CF952d352f764D32Dd",
+  "address": "0xEd4fd95346897aA4D0A7894aFE4446bAd33B071f",
   "network": "galileo",
   "chainId": 16601,
   "abi": [
@@ -2218,5 +2218,5 @@
       "type": "function"
     }
   ],
-  "deployedAt": "2025-08-20T17:34:36.804Z"
+  "deployedAt": "2025-08-20T21:52:08.789Z"
 }
