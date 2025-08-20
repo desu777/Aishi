@@ -110,7 +110,7 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
 
     // Parse the line to separate command and description
     const content = line.content as string;
-    const parts = content.match(/^(\s*)(\w+)(\s+)(.+?)(\s+)(ⓘ)$/);
+    const parts = content.match(/^(\s*)([\w-]+)(\s+)(.+?)(\s+)(ⓘ)$/);
     
     if (!parts) {
       return <>{content}</>;
