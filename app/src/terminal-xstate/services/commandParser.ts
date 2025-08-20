@@ -65,6 +65,23 @@ Coming soon...`,
 • Response style
 • Visual progress bars`,
   
+  'unique-features': `Display agent unique abilities
+• Features emerge through dream evolution
+• Each feature has intensity [0-100]
+• Powerful features marked as powerful
+• Up to 5 features maximum`,
+  
+  stats: `Show agent statistics and progress
+• Intelligence level and growth
+• Dreams and conversations count
+• Evolution milestones achieved
+• Progress to next rewards`,
+  
+  clear: `Clear terminal screen
+• Removes all previous output
+• Keeps command history
+• Fresh start for new commands`,
+  
   memory: `Hierarchical memory system
 • Daily: Individual experiences
 • Monthly: AI-consolidated summaries
@@ -293,11 +310,13 @@ export function getInteractiveHelp(): string[] {
   return [
     '',
     'Commands:',
-    `  dream        Process and analyze your dreams     ⓘ`,
-    `  personality  View agent personality traits       ⓘ`,
-    `  chat         Have a conversation (coming soon)   ⓘ`,
-    `  memory       View memory (coming soon)            ⓘ`,
-    `  clear        Clear terminal screen`,
+    `  dream            Process and analyze your dreams     ⓘ`,
+    `  personality      View agent personality traits       ⓘ`,
+    `  unique-features  Display agent unique abilities      ⓘ`,
+    `  stats            Show agent statistics and progress  ⓘ`,
+    `  chat             Have a conversation (coming soon)   ⓘ`,
+    `  memory           View memory (coming soon)            ⓘ`,
+    `  clear            Clear terminal screen               ⓘ`,
     '',
     `[Click ⓘ for details or type 'help <command>']`,
     ''

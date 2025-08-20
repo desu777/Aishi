@@ -253,7 +253,7 @@ export function formatUniqueFeaturesOutput(agentData: CompleteAgentData | null):
               fontWeight: '500',
               marginLeft: '8px'
             }}>
-              ⚡ powerful
+              powerful
             </span>
           )}
         </>
@@ -304,103 +304,225 @@ export function formatStatsOutput(agentData: CompleteAgentData | null): Terminal
   }
 
   const lines: TerminalLine[] = [];
+
+  // Agent name
+  const nameContent = (
+    <>
+      <span style={{ color: colors.secondary }}>Name: </span>
+      <span style={{ 
+        color: colors.accent, 
+        fontWeight: '600',
+        fontSize: '16px'
+      }}>
+        {agentData.basic.agentName}
+      </span>
+    </>
+  );
   
-  // Header
   lines.push({
     type: 'info',
-    content: '╭─ Agent Statistics ──────────────────────────╮',
+    content: nameContent,
     timestamp: timestamp + 1
   });
 
-  // Basic info
+  // Token ID
+  const tokenIdContent = (
+    <>
+      <span style={{ color: colors.secondary }}>Token ID: </span>
+      <span style={{ 
+        color: colors.primary, 
+        fontWeight: '500'
+      }}>
+        #{agentData.tokenId}
+      </span>
+    </>
+  );
+  
   lines.push({
     type: 'info',
-    content: `│ Name: ${agentData.basic.agentName.padEnd(38)} │`,
+    content: tokenIdContent,
     timestamp: timestamp + 2
-  });
-
-  lines.push({
-    type: 'info',
-    content: `│ Token ID: #${String(agentData.tokenId).padEnd(33)} │`,
-    timestamp: timestamp + 3
   });
 
   // Empty line
   lines.push({
     type: 'info',
-    content: '│                                             │',
-    timestamp: timestamp + 4
+    content: '',
+    timestamp: timestamp + 3
   });
 
   // Intelligence
+  const intelligenceContent = (
+    <>
+      <span style={{ color: colors.secondary }}>Intelligence Level: </span>
+      <span style={{ 
+        color: colors.success, 
+        fontWeight: '600',
+        fontSize: '16px'
+      }}>
+        {agentData.basic.intelligenceLevel}
+      </span>
+      <span style={{ color: colors.success, marginLeft: '4px' }}>★</span>
+    </>
+  );
+  
   lines.push({
     type: 'info',
-    content: `│ Intelligence Level: ${String(agentData.basic.intelligenceLevel).padStart(3)} ⚡                  │`,
-    timestamp: timestamp + 5
+    content: intelligenceContent,
+    timestamp: timestamp + 4
   });
 
   // Dreams
   const nextEvolution = Math.ceil((agentData.basic.dreamCount + 1) / 5) * 5;
   const dreamsToEvolve = nextEvolution - agentData.basic.dreamCount;
+  const dreamsContent = (
+    <>
+      <span style={{ color: colors.secondary }}>Dreams: </span>
+      <span style={{ 
+        color: colors.accent, 
+        fontWeight: '600'
+      }}>
+        {agentData.basic.dreamCount}
+      </span>
+      <span style={{ color: colors.secondary, fontStyle: 'italic' }}>
+        {' (next evolution: '}
+        <span style={{ color: colors.primary }}>{dreamsToEvolve}</span>
+        {')'}
+      </span>
+    </>
+  );
+  
   lines.push({
     type: 'info',
-    content: `│ Dreams: ${String(agentData.basic.dreamCount).padStart(3)} (next evolution: ${dreamsToEvolve})          │`,
-    timestamp: timestamp + 6
+    content: dreamsContent,
+    timestamp: timestamp + 5
   });
 
   // Conversations
   const nextIntBoost = Math.ceil((agentData.basic.conversationCount + 1) / 10) * 10;
   const convosToBoost = nextIntBoost - agentData.basic.conversationCount;
+  const conversationsContent = (
+    <>
+      <span style={{ color: colors.secondary }}>Conversations: </span>
+      <span style={{ 
+        color: colors.accent, 
+        fontWeight: '600'
+      }}>
+        {agentData.basic.conversationCount}
+      </span>
+      <span style={{ color: colors.secondary, fontStyle: 'italic' }}>
+        {' (next boost: '}
+        <span style={{ color: colors.primary }}>{convosToBoost}</span>
+        {')'}
+      </span>
+    </>
+  );
+  
   lines.push({
     type: 'info',
-    content: `│ Conversations: ${String(agentData.basic.conversationCount).padStart(3)} (next boost: ${convosToBoost})       │`,
-    timestamp: timestamp + 7
+    content: conversationsContent,
+    timestamp: timestamp + 6
   });
 
   // Evolution stats
   if (agentData.evolutionStats) {
+    // Empty line before evolution stats
     lines.push({
       type: 'info',
-      content: `│ Total Evolutions: ${String(agentData.evolutionStats.totalEvolutions).padStart(3)}                       │`,
+      content: '',
+      timestamp: timestamp + 7
+    });
+
+    const totalEvolutionsContent = (
+      <>
+        <span style={{ color: colors.secondary }}>Total Evolutions: </span>
+        <span style={{ 
+          color: colors.success, 
+          fontWeight: '600'
+        }}>
+          {agentData.evolutionStats.totalEvolutions}
+        </span>
+      </>
+    );
+    
+    lines.push({
+      type: 'info',
+      content: totalEvolutionsContent,
       timestamp: timestamp + 8
     });
 
+    const evolutionRateContent = (
+      <>
+        <span style={{ color: colors.secondary }}>Evolution Rate: </span>
+        <span style={{ 
+          color: colors.accent, 
+          fontWeight: '600'
+        }}>
+          {agentData.evolutionStats.evolutionRate}%
+        </span>
+        <span style={{ color: colors.secondary }}> per day</span>
+      </>
+    );
+    
     lines.push({
       type: 'info',
-      content: `│ Evolution Rate: ${String(agentData.evolutionStats.evolutionRate).padStart(3)}% per day              │`,
+      content: evolutionRateContent,
       timestamp: timestamp + 9
     });
   }
 
   // Milestones
   if (agentData.basic.achievedMilestones && agentData.basic.achievedMilestones.length > 0) {
+    // Empty line before milestones
     lines.push({
       type: 'info',
-      content: '│                                             │',
+      content: '',
       timestamp: timestamp + 10
     });
 
+    const milestonesHeaderContent = (
+      <>
+        <span style={{ 
+          color: colors.success, 
+          fontWeight: '600'
+        }}>
+          Achieved Milestones:
+        </span>
+      </>
+    );
+    
     lines.push({
       type: 'info',
-      content: '│ Achieved Milestones:                       │',
+      content: milestonesHeaderContent,
       timestamp: timestamp + 11
     });
 
     agentData.basic.achievedMilestones.forEach((milestone, index) => {
+      const milestoneContent = (
+        <>
+          <span style={{ 
+            color: colors.success, 
+            fontWeight: '600',
+            marginRight: '6px'
+          }}>
+            ✓
+          </span>
+          <span style={{ 
+            color: colors.primary, 
+            fontWeight: '500'
+          }}>
+            {milestone}
+          </span>
+        </>
+      );
+      
       lines.push({
         type: 'info',
-        content: `│ ✓ ${milestone.padEnd(41)} │`,
+        content: milestoneContent,
         timestamp: timestamp + 12 + index
       });
     });
   }
-
-  // Footer
-  lines.push({
-    type: 'info',
-    content: '╰─────────────────────────────────────────────╯',
-    timestamp: timestamp + lines.length + 1
-  });
 
   return lines;
 }

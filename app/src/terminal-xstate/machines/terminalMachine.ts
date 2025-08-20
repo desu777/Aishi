@@ -335,6 +335,98 @@ export const terminalMachine = setup({
           return newLines;
         }
         
+        // Handle stats command
+        if (parsed.command === 'stats') {
+          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+            console.log('[Terminal] Processing stats command');
+          }
+          
+          // Asynchronous fetch without spawn - proven pattern from dreamMachine
+          setTimeout(async () => {
+            try {
+              const { formatStatsOutput } = await import('../services/formatHelpers.tsx');
+              
+              // Get token ID from agent machine
+              const agentState = context.agentRef?.getSnapshot();
+              const tokenId = agentState?.context?.tokenId;
+              const agentName = agentState?.context?.agentName || 'agent';
+              
+              if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+                console.log('[Terminal] Token ID:', tokenId);
+                console.log('[Terminal] Agent state:', agentState?.context);
+              }
+              
+              if (!tokenId) {
+                self.send({
+                  type: 'APPEND_LINES',
+                  lines: [{
+                    type: 'error',
+                    content: 'No agent found. Please connect your wallet first.',
+                    timestamp: Date.now()
+                  }]
+                });
+                return;
+              }
+              
+              // Show thinking status
+              self.send({
+                type: 'UPDATE_STATUS',
+                status: `${agentName} is thinking...`
+              });
+              
+              // Fetch agent data
+              const contractReader = new ContractReaderService();
+              const agentData = await contractReader.getCompleteAgentData(tokenId);
+              
+              if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+                console.log('[Terminal] Agent data fetched:', !!agentData);
+                if (agentData) {
+                  console.log('[Terminal] Stats data:', agentData.basic);
+                }
+              }
+              
+              // Format and display
+              const formattedLines = formatStatsOutput(agentData);
+              
+              if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+                console.log('[Terminal] Formatted lines:', formattedLines.length);
+              }
+              
+              // Clear status and append formatted lines
+              self.send({
+                type: 'UPDATE_STATUS',
+                status: null
+              });
+              
+              self.send({
+                type: 'APPEND_LINES',
+                lines: formattedLines
+              });
+            } catch (error) {
+              if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+                console.error('[Terminal] Error fetching stats:', error);
+              }
+              
+              // Clear status on error
+              self.send({
+                type: 'UPDATE_STATUS',
+                status: null
+              });
+              
+              self.send({
+                type: 'APPEND_LINES',
+                lines: [{
+                  type: 'error',
+                  content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+                  timestamp: Date.now()
+                }]
+              });
+            }
+          }, 0);
+          
+          return newLines;
+        }
+        
         // Handle coming soon commands
         if (parsed.command === 'chat' || parsed.command === 'memory') {
           newLines.push({
