@@ -35,9 +35,9 @@ Your Aishi is a digital soul (an iNFT) whose memory is built on a systematic ana
 
 ## Application Preview
 
-| Home Page                                                                                         | aishiOS Interface                                                                                             | aishiOS Terminal                                                                                                |
-| :------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------: |
-| <img src="./aishi-docs/public/screenshots/home.jpg" alt="Aishi Home Page" width="250"> | <img src="./aishi-docs/public/screenshots/aishios_page.jpg" alt="aishiOS Interface" width="250"> | <img src="./aishi-docs/public/screenshots/aishios_terminal.jpg" alt="aishiOS Terminal" width="250"> |
+| Home Page                                                                                   | Minting an Agent                                                                                  | aishiOS Interface                                                                                           | aishiOS Terminal                                                                                                |
+| :-----------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------: |
+| <img src="./aishi-docs/public/screenshots/home.jpg" alt="Aishi Home Page" width="200"> | <img src="./aishi-docs/public/screenshots/Mint.jpg" alt="Minting an Agent" width="200"> | <img src="./aishi-docs/public/screenshots/aishios_page.jpg" alt="aishiOS Interface" width="200"> | <img src="./aishi-docs/public/screenshots/aishios_terminal.jpg" alt="aishiOS Terminal" width="200"> |
 
 ## Architecture Overview
 
