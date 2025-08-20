@@ -157,7 +157,7 @@ export const terminalMachine = setup({
           // Asynchronous fetch without spawn - proven pattern from dreamMachine
           setTimeout(async () => {
             try {
-              const { formatPersonalityOutput } = await import('../services/formatHelpers');
+              const { formatPersonalityOutput } = await import('../services/formatHelpers.tsx');
               
               // Get token ID from agent machine
               const agentState = context.agentRef?.getSnapshot();

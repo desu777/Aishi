@@ -1,19 +1,40 @@
 /**
  * @fileoverview Helper functions for formatting agent data in terminal
- * @description Provides utilities for displaying agent information in ASCII boxes
+ * @description Provides utilities for displaying agent information with theme colors
  */
 
+import React from 'react';
 import { TerminalLine } from '../machines/types';
 import { CompleteAgentData } from './contractReader';
 
+// Theme colors matching ThemeContext
+const colors = {
+  primary: '#E6E6E6',      // text.primary
+  secondary: '#9999A5',    // text.secondary
+  accent: '#8B5CF6',       // accent.primary (violet)
+  success: '#10B981',      // accent.success
+  background: '#2D2D2D',   // bg for empty progress
+  bar: '#8B5CF6',          // filled progress bar
+  barEmpty: '#333333',     // empty progress bar
+  highest: '#10B981',      // highlight color for highest trait
+};
+
 /**
- * Creates a progress bar for trait visualization
+ * Creates a colored progress bar for trait visualization
  */
-function createProgressBar(value: number, max: number = 100): string {
+function createColoredProgressBar(value: number, isHighest: boolean = false, max: number = 100): React.ReactNode {
   const barLength = 10;
   const filled = Math.round((value / max) * barLength);
   const empty = barLength - filled;
-  return '█'.repeat(filled) + '░'.repeat(empty);
+  
+  const barColor = isHighest ? colors.highest : colors.bar;
+  
+  return (
+    <>
+      <span style={{ color: barColor }}>{'█'.repeat(filled)}</span>
+      <span style={{ color: colors.barEmpty }}>{'░'.repeat(empty)}</span>
+    </>
+  );
 }
 
 /**
@@ -54,14 +75,34 @@ export function formatPersonalityOutput(agentData: CompleteAgentData | null): Te
     trait.value > max.value ? trait : max, traits[0]);
 
   traits.forEach((trait, index) => {
-    const bar = createProgressBar(trait.value);
     const isHighest = trait.value === maxTrait.value && trait.value > 50;
-    const label = isHighest ? ' [highest]' : '';
-    const line = `${trait.name.padEnd(12)} ${bar} ${String(trait.value).padStart(3)}/100${label}`;
+    const bar = createColoredProgressBar(trait.value, isHighest);
+    
+    const content = (
+      <>
+        <span style={{ color: colors.primary, fontWeight: '500' }}>
+          {trait.name.padEnd(12)}
+        </span>
+        <span style={{ marginLeft: '8px', marginRight: '8px' }}>{bar}</span>
+        <span style={{ color: colors.accent, fontWeight: '600' }}>
+          {String(trait.value).padStart(3)}
+        </span>
+        <span style={{ color: colors.secondary }}>/100</span>
+        {isHighest && (
+          <span style={{ 
+            color: colors.highest, 
+            fontWeight: '500',
+            marginLeft: '8px'
+          }}>
+            ★ highest
+          </span>
+        )}
+      </>
+    );
     
     lines.push({
       type: 'info',
-      content: line,
+      content,
       timestamp: timestamp + 1 + index
     });
   });
@@ -74,17 +115,43 @@ export function formatPersonalityOutput(agentData: CompleteAgentData | null): Te
   });
 
   // Dominant mood
+  const moodContent = (
+    <>
+      <span style={{ color: colors.secondary }}>Dominant Mood: </span>
+      <span style={{ 
+        color: colors.accent, 
+        fontWeight: '600',
+        textTransform: 'capitalize'
+      }}>
+        {agentData.personality.dominantMood}
+      </span>
+    </>
+  );
+  
   lines.push({
     type: 'info',
-    content: `Dominant Mood: ${agentData.personality.dominantMood}`,
+    content: moodContent,
     timestamp: timestamp + 8
   });
 
   // Response style
   const responseStyle = agentData.computed?.responseStyle || agentData.cachedResponseStyle || 'balanced thinker';
+  const styleContent = (
+    <>
+      <span style={{ color: colors.secondary }}>Response Style: </span>
+      <span style={{ 
+        color: colors.success, 
+        fontWeight: '600',
+        fontStyle: 'italic'
+      }}>
+        {responseStyle}
+      </span>
+    </>
+  );
+  
   lines.push({
     type: 'info',
-    content: `Response Style: ${responseStyle}`,
+    content: styleContent,
     timestamp: timestamp + 9
   });
 
