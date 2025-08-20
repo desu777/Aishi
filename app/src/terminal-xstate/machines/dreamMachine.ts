@@ -480,7 +480,7 @@ const aiAnalysisService = fromPromise(async ({ input }: { input: { prompt: strin
   
   // Display full prompt for verification
   debugLog('[FULL PROMPT FOR VERIFICATION - START]');
-  console.log(input.prompt);
+  debugLog('Full prompt:', input.prompt);
   debugLog('[FULL PROMPT FOR VERIFICATION - END]');
   
   // Import and use real API service

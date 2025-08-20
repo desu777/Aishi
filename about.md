@@ -55,7 +55,6 @@ Aishi was built in three distinct phases, mirroring the creation of a living bei
 
 3.  **The Consciousness (The Interface):** Finally, I built `aishiOS`. This is where the agent awakens. Using XState, I created a reactive, state-driven terminal that translates complex on-chain and off-chain events into an intuitive, emotional experience, centered around the pulsing AI Orb.
 
-*[Image: A diagram of the Aishi data flow, showing interaction from aishiOS to the 0G Stack and back.]*
 
 ### What I learned
 

@@ -111,29 +111,35 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     if (isConnected && address) {
       // Initialize broker
       if (brokerRef) {
-        console.log('[GlassTerminal] Initializing broker', { address });
+        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+          console.log('[GlassTerminal] Initializing broker', { address });
+        }
         brokerRef.send({ type: 'INITIALIZE', walletAddress: address });
       }
       
       // Sync agent with contract
       if (agentRef && publicClient) {
-        console.log('[GlassTerminal] Syncing agent with viem publicClient', { 
-          address,
-          chainId: publicClient.chain?.id,
-          chainName: publicClient.chain?.name,
-          transportType: publicClient.transport?.type
-        });
+        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+          console.log('[GlassTerminal] Syncing agent with viem publicClient', { 
+            address,
+            chainId: publicClient.chain?.id,
+            chainName: publicClient.chain?.name,
+            transportType: publicClient.transport?.type
+          });
+        }
         agentRef.send({ 
           type: 'SYNC', 
           walletAddress: address,
           provider: publicClient
         });
       } else {
-        console.log('[GlassTerminal] Cannot sync agent', {
-          hasAgentRef: !!agentRef,
-          hasPublicClient: !!publicClient,
-          address
-        });
+        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+          console.log('[GlassTerminal] Cannot sync agent', {
+            hasAgentRef: !!agentRef,
+            hasPublicClient: !!publicClient,
+            address
+          });
+        }
       }
     }
   }, [isConnected, address, brokerRef, agentRef, publicClient]);
