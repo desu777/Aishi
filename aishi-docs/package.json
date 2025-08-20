@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3004",
+    "dev": "next dev -p ${PORT:-3302}",
     "build": "next build",
-    "start": "next start -p 3004",
+    "start": "node start.js",
+    "start:direct": "next start -p ${PORT:-3302}",
     "lint": "next lint"
   },
   "dependencies": {
