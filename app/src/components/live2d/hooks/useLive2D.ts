@@ -1,7 +1,7 @@
 // Core hook for managing Live2D model lifecycle
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as PIXI from 'pixi.js';
-import { Live2DModel, type Cubism4InternalModel } from 'pixi-live2d-display-lipsyncpatch/cubism4';
+import { Live2DModel, type Cubism4InternalModel, type Cubism4ModelSettings } from 'pixi-live2d-display-lipsyncpatch/cubism4';
 import { 
   createPixiApp, 
   loadLive2DModel, 
@@ -181,7 +181,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
         motionManager: !!modelRef.current.internalModel.motionManager,
         expressionManager: !!modelRef.current.internalModel.motionManager.expressionManager,
         expressions: modelRef.current.internalModel.motionManager.expressionManager?.expressions,
-        settings: modelRef.current.internalModel.settings?.expressions,
+        settings: (modelRef.current.internalModel.settings as Cubism4ModelSettings)?.expressions,
       });
     }
     
@@ -205,7 +205,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
     }
     
     // Method 2: Try to get from settings.expressions
-    const settings = modelRef.current.internalModel.settings;
+    const settings = modelRef.current.internalModel.settings as Cubism4ModelSettings;
     if (settings?.expressions && Array.isArray(settings.expressions)) {
       try {
         const names = settings.expressions.map((exp: any) => exp.Name || exp.name || exp);
@@ -420,9 +420,9 @@ export const useLive2D = (options: UseLive2DOptions) => {
         expressionManagerRef.current.setModel(model);
         
         // Load expression parameters for category management
-        if (model.internalModel.settings?.expressions) {
+        if ((model.internalModel.settings as Cubism4ModelSettings)?.expressions) {
           const baseUrl = modelPath.substring(0, modelPath.lastIndexOf('/') + 1);
-          const expressions = model.internalModel.settings.expressions.map((expr: any) => ({
+          const expressions = (model.internalModel.settings as Cubism4ModelSettings).expressions!.map((expr: any) => ({
             name: expr.Name || expr.name,
             file: baseUrl + (expr.File || expr.file)
           }));
@@ -434,12 +434,12 @@ export const useLive2D = (options: UseLive2DOptions) => {
           console.log('[DEBUG] Model loaded, checking expression structure:', {
             hasMotionManager: !!model.internalModel.motionManager,
             hasExpressionManager: !!model.internalModel.motionManager.expressionManager,
-            settingsExpressions: model.internalModel.settings?.expressions?.length || 0,
+            settingsExpressions: (model.internalModel.settings as Cubism4ModelSettings)?.expressions?.length || 0,
             motionGroups: Object.keys(model.internalModel.motionManager.motionGroups || {}),
           });
           
           // Try to force expression manager initialization if it doesn't exist
-          if (!model.internalModel.motionManager.expressionManager && model.internalModel.settings?.expressions) {
+          if (!model.internalModel.motionManager.expressionManager && (model.internalModel.settings as Cubism4ModelSettings)?.expressions) {
             console.log('[DEBUG] Attempting to initialize expression manager...');
             try {
               // Check if there's a method to initialize expressions
