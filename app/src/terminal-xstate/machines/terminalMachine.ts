@@ -1,4 +1,4 @@
-import { setup, assign } from 'xstate';
+import { setup, assign, fromPromise } from 'xstate';
 import { TerminalContext, TerminalEvent, TerminalLine } from './types';
 import { brokerMachine } from './brokerMachine';
 import { modelMachine } from './modelMachine';
@@ -11,6 +11,7 @@ import {
   getDetailedCommandHelp,
   COMMAND_TOOLTIPS 
 } from '../services/commandParser';
+import { ContractReaderService } from '../services/contractReader';
 
 // Initial context - extended with actor refs
 const initialContext: TerminalContext = {
@@ -147,6 +148,101 @@ export const terminalMachine = setup({
           return [];
         }
         
+        // Handle personality command
+        if (parsed.command === 'personality') {
+          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+            console.log('[Terminal] Processing personality command');
+          }
+          
+          // Asynchronous fetch without spawn - proven pattern from dreamMachine
+          setTimeout(async () => {
+            try {
+              const { formatPersonalityOutput } = await import('../services/formatHelpers');
+              
+              // Get token ID from agent machine
+              const agentState = context.agentRef?.getSnapshot();
+              const tokenId = agentState?.context?.tokenId;
+              const agentName = agentState?.context?.agentName || 'agent';
+              
+              if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+                console.log('[Terminal] Token ID:', tokenId);
+                console.log('[Terminal] Agent state:', agentState?.context);
+              }
+              
+              if (!tokenId) {
+                self.send({
+                  type: 'APPEND_LINES',
+                  lines: [{
+                    type: 'error',
+                    content: 'No agent found. Please connect your wallet first.',
+                    timestamp: Date.now()
+                  }]
+                });
+                return;
+              }
+              
+              // Show thinking status
+              self.send({
+                type: 'UPDATE_STATUS',
+                status: `${agentName} is thinking...`
+              });
+              
+              // Fetch agent data
+              const contractReader = new ContractReaderService();
+              const agentData = await contractReader.getCompleteAgentData(tokenId);
+              
+              if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+                console.log('[Terminal] Agent data fetched:', !!agentData);
+                if (agentData) {
+                  console.log('[Terminal] Agent name:', agentData.basic?.agentName);
+                  console.log('[Terminal] Intelligence:', agentData.basic?.intelligenceLevel);
+                }
+              }
+              
+              // Format and display
+              const formattedLines = formatPersonalityOutput(agentData);
+              
+              if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+                console.log('[Terminal] Formatted lines:', formattedLines);
+                console.log('[Terminal] Number of lines:', formattedLines.length);
+                console.log('[Terminal] About to send APPEND_LINES event');
+              }
+              
+              // Clear status and append formatted lines
+              self.send({
+                type: 'UPDATE_STATUS',
+                status: null
+              });
+              
+              self.send({
+                type: 'APPEND_LINES',
+                lines: formattedLines
+              });
+            } catch (error) {
+              if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+                console.error('[Terminal] Error fetching personality:', error);
+              }
+              
+              // Clear status on error
+              self.send({
+                type: 'UPDATE_STATUS',
+                status: null
+              });
+              
+              self.send({
+                type: 'APPEND_LINES',
+                lines: [{
+                  type: 'error',
+                  content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+                  timestamp: Date.now()
+                }]
+              });
+            }
+          }, 0);
+          
+          return newLines;
+        }
+        
         // Handle coming soon commands
         if (parsed.command === 'chat' || parsed.command === 'memory') {
           newLines.push({
@@ -271,6 +367,11 @@ export const terminalMachine = setup({
     appendLines: assign({
       lines: ({ context, event }) => {
         if (event.type === 'APPEND_LINES') {
+          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+            console.log('[Terminal] appendLines action triggered');
+            console.log('[Terminal] Appending lines:', event.lines?.length);
+            console.log('[Terminal] Current lines:', context.lines.length);
+          }
           return [...context.lines, ...event.lines];
         }
         return context.lines;
@@ -330,6 +431,12 @@ export const terminalMachine = setup({
         },
         CLEAR: {
           actions: 'clearTerminal'
+        },
+        'APPEND_LINES': {
+          actions: 'appendLines'
+        },
+        'UPDATE_STATUS': {
+          actions: 'updateDreamStatus'
         }
       }
     },

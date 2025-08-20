@@ -33,7 +33,7 @@ export const AVAILABLE_COMMANDS: Record<CommandType, string> = {
   stats: 'Show agent statistics and progress',
   mint: 'Create a new AI agent NFT',
   memory: 'Access agent memory and consolidation tools',
-  personality: 'View agent personality matrix',
+  personality: 'View agent personality traits and mood',
   chat: 'Start a conversation with your agent',
   help: 'Show available commands',
   clear: 'Clear terminal screen',
@@ -57,11 +57,11 @@ export const COMMAND_TOOLTIPS: Record<string, string> = {
 • Shapes agent's worldview
 Coming soon...`,
   
-  info: `View agent statistics
-• Personality traits [0-100]
-• Intelligence level
-• Dreams & conversations count
-• Evolution milestones`,
+  personality: `View personality traits
+• Six core traits [0-100]
+• Dominant mood
+• Response style
+• Visual progress bars`,
   
   memory: `Hierarchical memory system
 • Daily: Individual experiences
@@ -240,7 +240,7 @@ export function formatHelpOutput(): string[] {
 
   // Group commands by category
   const categories = {
-    'Agent Operations': ['mint', 'info', 'stats', 'personality', 'memory'],
+    'Agent Operations': ['personality', 'stats', 'memory'],
     'Interactions': ['dream', 'chat'],
     'System': ['broker', 'model', 'status'],
     'Terminal': ['help', 'clear']
@@ -288,10 +288,11 @@ export function getInteractiveHelp(): string[] {
   return [
     '',
     'Commands:',
-    `  dream     Process and analyze your dreams     ⓘ`,
-    `  chat      Have a conversation (coming soon)   ⓘ`,
-    `  info      Display agent statistics            ⓘ`,
-    `  memory    View memory (coming soon)            ⓘ`,
+    `  dream        Process and analyze your dreams     ⓘ`,
+    `  personality  View agent personality traits       ⓘ`,
+    `  chat         Have a conversation (coming soon)   ⓘ`,
+    `  memory       View memory (coming soon)            ⓘ`,
+    `  clear        Clear terminal screen`,
     '',
     `[Click ⓘ for details or type 'help <command>']`,
     ''
