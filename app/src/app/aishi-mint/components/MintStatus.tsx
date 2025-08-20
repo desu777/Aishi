@@ -124,7 +124,17 @@ export default function MintStatus(props: MintStatusProps) {
           onShare={shareOnX}
           onReset={reset}
         />
-        <MintForm {...props} />
+        <MintForm
+          agentName={props.agentName}
+          setAgentName={props.setAgentName}
+          nameError={props.nameError}
+          isCheckingName={props.isCheckingName}
+          canMint={props.canMint}
+          isProcessing={props.isProcessing}
+          maxNameLength={props.maxNameLength}
+          mintingFee={props.mintingFee}
+          onMint={props.handleMint}
+        />
       </>
     );
   }

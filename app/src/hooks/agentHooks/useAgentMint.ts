@@ -5,7 +5,7 @@ import { useWriteContract, useAccount, useChainId, useBalance, useWaitForTransac
 import { parseEther, decodeEventLog } from 'viem';
 import { useTheme } from '../../contexts/ThemeContext';
 import { galileoTestnet } from '../../config/chains';
-import contractData from '../../abi/frontend-contracts.json';
+import AishiAgentABI from '../../abi/AishiAgentABI.json';
 
 // Error parsing utility for viem errors
 const parseViemError = (error: any): string => {
@@ -86,8 +86,8 @@ const parseViemError = (error: any): string => {
 
 // Contract configuration imported from JSON
 const contractConfig = {
-  address: contractData.galileo.DreamscapeAgent.address as `0x${string}`,
-  abi: contractData.galileo.DreamscapeAgent.abi,
+  address: AishiAgentABI.address as `0x${string}`,
+  abi: AishiAgentABI.abi,
 } as const;
 
 // Types from ABI

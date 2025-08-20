@@ -99,7 +99,7 @@ export default function CompanionIsYours() {
         if (modelRef.current && isModelReady) {
           if (isEnhancedPhysics) {
             // Use enhanced controller for full 50 physics settings
-            shizukuControllerEnhanced.applyResponseToModel(modelRef, response);
+            shizukuControllerEnhanced.applyResponseToModel(modelRef.current, response);
           } else {
             // Use standard controller for basic physics
             shizukuController.applyShizukuResponse(response);

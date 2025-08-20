@@ -15,6 +15,7 @@ export interface ThemeColors {
     card: string;
     panel: string;
     success: string;
+    primary: string;
   };
   text: {
     primary: string;

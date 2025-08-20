@@ -5,7 +5,7 @@ import { useWallet } from '../useWallet';
 import { useStorageDownload } from '../storage/useStorageDownload';
 import { useAgentRead } from './useAgentRead';
 import { Contract } from 'ethers';
-import frontendContracts from '../../abi/frontend-contracts.json';
+import AishiAgentABI from '../../abi/AishiAgentABI.json';
 import { getProvider, getSigner } from '../../lib/0g/fees';
 import {
   consolidateDreamsWithLLM,
@@ -130,8 +130,8 @@ export function useAgentConsolidation(tokenId?: number) {
         throw new Error(`Signer error: ${signerErr?.message}`);
       }
 
-      const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-      const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+      const contractAddress = AishiAgentABI.address;
+      const contractABI = AishiAgentABI.abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       // Check if consolidation is needed
@@ -206,8 +206,8 @@ export function useAgentConsolidation(tokenId?: number) {
         throw new Error(`Signer error: ${signerErr?.message}`);
       }
 
-      const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-      const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+      const contractAddress = AishiAgentABI.address;
+      const contractABI = AishiAgentABI.abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       // Get current memory structure

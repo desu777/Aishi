@@ -1,7 +1,7 @@
 'use client';
 
 import { Contract } from 'ethers';
-import frontendContracts from '../../../abi/frontend-contracts.json';
+import AishiAgentABI from '../../../abi/AishiAgentABI.json';
 
 export interface ChatMessage {
   id: string;

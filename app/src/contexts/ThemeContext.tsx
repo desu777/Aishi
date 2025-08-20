@@ -34,6 +34,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       card: '#121218',      // Sidebar - dark gray
       panel: '#18181F',     // Panele - darker gray
       success: '#10B981',   // Success background - green
+      primary: '#8B5CF6',   // Primary background - violet (matching accent.primary)
     },
     
     // Teksty (z /client)

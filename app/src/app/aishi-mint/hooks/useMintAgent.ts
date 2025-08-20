@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import toast from 'react-hot-toast';
+import { galileoTestnet } from '../../../config/chains';
 
 // Import ABI dynamically
 import AishiAgentABI from '../../../abi/AishiAgentABI.json';
@@ -52,7 +53,7 @@ export function useMintAgent() {
 
   // Mint transaction
   const { 
-    writeContract, 
+    writeContractAsync, 
     data: txHash,
     isPending: isWritePending,
     error: writeError,
@@ -117,7 +118,7 @@ export function useMintAgent() {
     if (!address || !agentName || nameError) return;
 
     try {
-      writeContract({
+      await writeContractAsync({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'mintAgent',
@@ -128,6 +129,8 @@ export function useMintAgent() {
           address
         ],
         value: MINTING_FEE,
+        account: address,
+        chain: galileoTestnet,
       });
     } catch (error) {
       console.error('Mint error:', error);

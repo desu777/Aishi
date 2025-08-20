@@ -144,7 +144,7 @@ export default function TransactionStatus({
             }}
           >
             Open Terminal
-            <span>></span>
+            <span>&gt;</span>
           </ShimmerButton>
           
           <button

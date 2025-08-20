@@ -1,7 +1,6 @@
 'use client';
 
 import { useTheme } from '../../../contexts/ThemeContext';
-import { FiWallet } from 'react-icons/fi';
 import { formatEther } from 'viem';
 import ConnectButton from '../../../components/wallet/ConnectButton';
 import WalletPrompt from '../../../components/wallet/WalletPrompt';

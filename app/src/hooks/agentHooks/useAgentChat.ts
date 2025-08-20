@@ -9,7 +9,7 @@ import { useAgentConversationPrompt, buildConversationSummaryPrompt } from './us
 import { ConversationContextBuilder, ConversationContext, ChatMessage } from './services/conversationContextBuilder';
 import { ConversationSummary, ConversationUnifiedSchema } from './types/agentChatTypes';
 import { Contract, ethers } from 'ethers';
-import frontendContracts from '../../abi/frontend-contracts.json';
+import AishiAgentABI from '../../abi/AishiAgentABI.json';
 import { getProvider, getSigner } from '../../lib/0g/fees';
 
 interface ChatSession {
@@ -120,8 +120,8 @@ export function useAgentChat(tokenId?: number) {
           throw new Error(`Signer error: ${signerErr?.message}`);
         }
 
-        const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-        const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+        const contractAddress = AishiAgentABI.address;
+        const contractABI = AishiAgentABI.abi;
         const contract = new Contract(contractAddress, contractABI, signer);
 
         const contextBuilder = new ConversationContextBuilder(contract, debugLog);

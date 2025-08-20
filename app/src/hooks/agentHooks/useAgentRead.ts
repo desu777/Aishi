@@ -1,7 +1,7 @@
 'use client';
 
 import { useReadContract } from 'wagmi'
-import contractData from '../../abi/frontend-contracts.json'
+import AishiAgentABI from '../../abi/AishiAgentABI.json'
 import { useWallet } from '../useWallet'
 import { Address } from 'viem'
 
@@ -14,8 +14,8 @@ const debugLog = (message: string, data?: any) => {
 
 export function useAgentRead(tokenId?: number) {
   const { address } = useWallet()
-  const contractAddress = contractData.galileo.DreamscapeAgent.address as Address
-  const contractAbi = contractData.galileo.DreamscapeAgent.abi
+  const contractAddress = AishiAgentABI.address as Address
+  const contractAbi = AishiAgentABI.abi
 
   // Pobierz tokenId dla zalogowanego użytkownika
   const { data: userTokenId, isLoading: tokenIdLoading, error: tokenIdError } = useReadContract({

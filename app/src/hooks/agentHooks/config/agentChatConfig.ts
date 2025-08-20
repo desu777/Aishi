@@ -2,13 +2,13 @@
  * Configuration for Agent Chat functionality
  */
 
-import contractData from '../../../abi/frontend-contracts.json';
+import AishiAgentABI from '../../../abi/AishiAgentABI.json';
 import { StorageConfig, ComputeConfig } from '../types/agentChatTypes';
 
 // Contract configuration
 export const contractConfig = {
-  address: contractData.galileo.DreamscapeAgent.address as `0x${string}`,
-  abi: contractData.galileo.DreamscapeAgent.abi,
+  address: AishiAgentABI.address as `0x${string}`,
+  abi: AishiAgentABI.abi,
 } as const;
 
 // 0G Storage configuration - używamy te same URL co useAgentDream

@@ -3,7 +3,7 @@
 import { getProvider, getSigner } from '../../../lib/0g/fees';
 import { uploadFileComplete } from '../../../lib/0g/uploader';
 import { Contract } from 'ethers';
-import frontendContracts from '../../../abi/frontend-contracts.json';
+import AishiAgentABI from '../../../abi/AishiAgentABI.json';
 import type { MonthlyDreamConsolidation, MonthlyConversationConsolidation } from './agentConsolidationService';
 
 // Schemat JSON dla rocznej esencji (memory core) - UNIFIED
@@ -330,8 +330,8 @@ export const saveMemoryCoreToStorage = async (
     }
 
     // Get contract to read current yearly hash
-    const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-    const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+    const contractAddress = AishiAgentABI.address;
+    const contractABI = AishiAgentABI.abi;
     const contract = new Contract(contractAddress, contractABI, signer);
 
     const agentMemory = await contract.getAgentMemory(tokenId);
@@ -437,8 +437,8 @@ export const callUpdateMemoryCore = async (
     }
 
     // Get contract
-    const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-    const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+    const contractAddress = AishiAgentABI.address;
+    const contractABI = AishiAgentABI.abi;
     const contract = new Contract(contractAddress, contractABI, signer);
 
     // Call updateMemoryCore function

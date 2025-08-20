@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '../useWallet';
 import { Contract } from 'ethers';
-import frontendContracts from '../../abi/frontend-contracts.json';
+import AishiAgentABI from '../../abi/AishiAgentABI.json';
 import { getProvider, getSigner } from '../../lib/0g/fees';
 
 // Types for agent statistics
@@ -117,8 +117,8 @@ export function useAgentStats(tokenId?: number) {
         throw new Error(`Signer error: ${signerErr?.message}`);
       }
 
-      const contractAddress = frontendContracts.galileo.DreamscapeAgent.address;
-      const contractABI = frontendContracts.galileo.DreamscapeAgent.abi;
+      const contractAddress = AishiAgentABI.address;
+      const contractABI = AishiAgentABI.abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       debugLog('Contract connected for stats loading');

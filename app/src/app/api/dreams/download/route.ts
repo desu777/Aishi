@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { downloadByRootHashAPI } from '../../../../lib/0g/downloader';
-import contractData from '../../../../abi/frontend-contracts.json';
+import AishiAgentABI from '../../../../abi/AishiAgentABI.json';
 import { createPublicClient, http } from 'viem';
 import { galileoTestnet } from '../../../../config/chains';
 
@@ -12,8 +12,8 @@ const STORAGE_CONFIG = {
 
 // Contract configuration
 const contractConfig = {
-  address: contractData.galileo.DreamscapeAgent.address as `0x${string}`,
-  abi: contractData.galileo.DreamscapeAgent.abi,
+  address: AishiAgentABI.address as `0x${string}`,
+  abi: AishiAgentABI.abi,
 } as const;
 
 export async function GET(request: NextRequest) {

@@ -87,12 +87,12 @@ export function useShizukuControllerEnhanced() {
   }, []);
 
   const applyResponseToModel = useCallback((modelRef: Live2DModelRef, response: ShizukuResponse) => {
-    if (!modelRef.current) return;
+    if (!modelRef) return;
 
     clearCurrentTimelines();
 
     // CRITICAL FIX: Clear expressions once at the beginning
-    modelRef.current.resetExpression();
+    modelRef.resetExpression();
 
     // Apply enhanced physics
     if (response.physics) {
@@ -137,34 +137,34 @@ export function useShizukuControllerEnhanced() {
 
   // Enhanced physics application with all 50 settings
   const applyEnhancedPhysics = useCallback((modelRef: Live2DModelRef, physics: EnhancedPhysics) => {
-    if (!modelRef.current) return;
+    if (!modelRef) return;
 
     // Foundation parameters (Settings 1-3)
-    modelRef.current.setParameterValue('ParamAngleX', physics.headMovement.x);
-    modelRef.current.setParameterValue('ParamAngleY', physics.headMovement.y);
-    modelRef.current.setParameterValue('ParamAngleZ', physics.headMovement.z);
+    modelRef.setParameterValue('ParamAngleX', physics.headMovement.x);
+    modelRef.setParameterValue('ParamAngleY', physics.headMovement.y);
+    modelRef.setParameterValue('ParamAngleZ', physics.headMovement.z);
 
     // Body movement
-    modelRef.current.setParameterValue('ParamBodyX', physics.bodyMovement.x);
-    modelRef.current.setParameterValue('ParamBodyY', physics.bodyMovement.y);
-    modelRef.current.setParameterValue('ParamBodyZ', physics.bodyMovement.z);
+    modelRef.setParameterValue('ParamBodyX', physics.bodyMovement.x);
+    modelRef.setParameterValue('ParamBodyY', physics.bodyMovement.y);
+    modelRef.setParameterValue('ParamBodyZ', physics.bodyMovement.z);
 
     // Breathing
-    modelRef.current.setParameterValue('ParamBreath', physics.breathing);
+    modelRef.setParameterValue('ParamBreath', physics.breathing);
 
     // Eye tracking (Settings 4-7)
-    modelRef.current.setParameterValue('ParamEyeBallX', physics.eyeTracking.x);
-    modelRef.current.setParameterValue('ParamEyeBallY', physics.eyeTracking.y);
+    modelRef.setParameterValue('ParamEyeBallX', physics.eyeTracking.x);
+    modelRef.setParameterValue('ParamEyeBallY', physics.eyeTracking.y);
 
     // Eye opening (Settings 8-17)
-    modelRef.current.setParameterValue('ParamEyeLOpen', physics.eyeOpening.left);
-    modelRef.current.setParameterValue('ParamEyeROpen', physics.eyeOpening.right);
+    modelRef.setParameterValue('ParamEyeLOpen', physics.eyeOpening.left);
+    modelRef.setParameterValue('ParamEyeROpen', physics.eyeOpening.right);
 
     // Eyebrow control (Settings 22-29)
-    modelRef.current.setParameterValue('ParamBrowLY', physics.eyebrowMovement.leftY);
-    modelRef.current.setParameterValue('ParamBrowRY', physics.eyebrowMovement.rightY);
-    modelRef.current.setParameterValue('ParamBrowLForm', physics.eyebrowMovement.leftForm);
-    modelRef.current.setParameterValue('ParamBrowRForm', physics.eyebrowMovement.rightForm);
+    modelRef.setParameterValue('ParamBrowLY', physics.eyebrowMovement.leftY);
+    modelRef.setParameterValue('ParamBrowRY', physics.eyebrowMovement.rightY);
+    modelRef.setParameterValue('ParamBrowLForm', physics.eyebrowMovement.leftForm);
+    modelRef.setParameterValue('ParamBrowRForm', physics.eyebrowMovement.rightForm);
 
     // Hair dynamics (Settings 30-35) - Enhanced mapping with head movement synchronization
     const hairFrontScale = PHYSICS_PARAM_SCALING.hairDynamics.front.scale;
@@ -181,23 +181,23 @@ export function useShizukuControllerEnhanced() {
     
     // Front hair (頭髮1) - Most responsive to head movement
     const frontHairValue = (physics.hairDynamics.front + headInfluence.x) * hairFrontScale;
-    modelRef.current.setParameterValue('Param21', Math.min(frontHairValue, hairFrontScale));
-    modelRef.current.setParameterValue('Param22', Math.min(frontHairValue * 0.8, hairFrontScale)); // Secondary front
+    modelRef.setParameterValue('Param21', Math.min(frontHairValue, hairFrontScale));
+    modelRef.setParameterValue('Param22', Math.min(frontHairValue * 0.8, hairFrontScale)); // Secondary front
     
     // Side hair (頭髮2) - Responsive to head tilt
     const sideHairValue = (physics.hairDynamics.side + headInfluence.z) * hairSideScale;
-    modelRef.current.setParameterValue('Param23', Math.min(sideHairValue, hairSideScale));
-    modelRef.current.setParameterValue('Param24', Math.min(sideHairValue * 0.9, hairSideScale)); // Secondary side
+    modelRef.setParameterValue('Param23', Math.min(sideHairValue, hairSideScale));
+    modelRef.setParameterValue('Param24', Math.min(sideHairValue * 0.9, hairSideScale)); // Secondary side
     
     // Back hair (頭髮11, 頭髮22) - Delayed response with head Y movement
     const backHairValue = (physics.hairDynamics.back + headInfluence.y) * hairBackScale;
-    modelRef.current.setParameterValue('Param25', Math.min(backHairValue, hairBackScale));
-    modelRef.current.setParameterValue('Param26', Math.min(backHairValue * 0.7, hairBackScale)); // Delayed back hair
+    modelRef.setParameterValue('Param25', Math.min(backHairValue, hairBackScale));
+    modelRef.setParameterValue('Param26', Math.min(backHairValue * 0.7, hairBackScale)); // Delayed back hair
     
     // Hair accessories (蝴蝶结L, 蝴蝶结R) - Subtle movement
     const accessoryValue = physics.hairDynamics.accessories * accessoriesScale;
-    modelRef.current.setParameterValue('Param33', accessoryValue); // Left bow
-    modelRef.current.setParameterValue('Param34', accessoryValue); // Right bow
+    modelRef.setParameterValue('Param33', accessoryValue); // Left bow
+    modelRef.setParameterValue('Param34', accessoryValue); // Right bow
 
     // Body dynamics (Settings 43-48) - Enhanced with breathing and movement synchronization
     const chestScale = PHYSICS_PARAM_SCALING.bodyDynamics.chest.scale;
@@ -214,49 +214,49 @@ export function useShizukuControllerEnhanced() {
     // Enhanced chest physics (胸x, 胸y) - synchronized with breathing and body movement
     const chestXValue = (physics.bodyDynamics.chest + bodyInfluence.breathing + bodyInfluence.sway) * chestScale;
     const chestYValue = (physics.bodyDynamics.chest + bodyInfluence.breathing + bodyInfluence.bounce) * chestScale;
-    modelRef.current.setParameterValue('Param27', Math.min(chestXValue, chestScale)); // Chest X movement
-    modelRef.current.setParameterValue('Param28', Math.min(chestYValue, chestScale)); // Chest Y movement
+    modelRef.setParameterValue('Param27', Math.min(chestXValue, chestScale)); // Chest X movement
+    modelRef.setParameterValue('Param28', Math.min(chestYValue, chestScale)); // Chest Y movement
     
     // Enhanced skirt physics (裙子xz, 裙子, 裙子xz（繁）, 裙子y（繁）) - responsive to body movement
     const skirtBaseValue = physics.bodyDynamics.skirt + bodyInfluence.sway;
     const skirtComplexValue = physics.bodyDynamics.skirt + bodyInfluence.sway + bodyInfluence.bounce;
     
-    modelRef.current.setParameterValue('Param45', Math.min(skirtBaseValue * skirtScale, skirtScale)); // Skirt XZ
-    modelRef.current.setParameterValue('Param46', Math.min(physics.bodyDynamics.skirt * skirtScale, skirtScale)); // Skirt general
-    modelRef.current.setParameterValue('Param47', Math.min(skirtComplexValue * skirtScale * 1.2, skirtScale)); // Skirt XZ complex
-    modelRef.current.setParameterValue('Param48', Math.min(skirtComplexValue * skirtScale * 0.8, skirtScale)); // Skirt Y complex
+    modelRef.setParameterValue('Param45', Math.min(skirtBaseValue * skirtScale, skirtScale)); // Skirt XZ
+    modelRef.setParameterValue('Param46', Math.min(physics.bodyDynamics.skirt * skirtScale, skirtScale)); // Skirt general
+    modelRef.setParameterValue('Param47', Math.min(skirtComplexValue * skirtScale * 1.2, skirtScale)); // Skirt XZ complex
+    modelRef.setParameterValue('Param48', Math.min(skirtComplexValue * skirtScale * 0.8, skirtScale)); // Skirt Y complex
     
     // Enhanced leg physics (腿, 腿(2), 腿(3)) - coordinated movement simulation
     const legBaseValue = physics.bodyDynamics.legs + bodyInfluence.bounce;
     const legAlternateValue = physics.bodyDynamics.legs + bodyInfluence.sway;
     
-    modelRef.current.setParameterValue('Param108', Math.min(legBaseValue * legsScale, legsScale)); // Primary leg
-    modelRef.current.setParameterValue('Param109', Math.min(legAlternateValue * legsScale * 0.8, legsScale)); // Secondary leg (offset)
-    modelRef.current.setParameterValue('Param110', Math.min((legBaseValue + legAlternateValue) * 0.5 * legsScale, legsScale)); // Combined leg movement
+    modelRef.setParameterValue('Param108', Math.min(legBaseValue * legsScale, legsScale)); // Primary leg
+    modelRef.setParameterValue('Param109', Math.min(legAlternateValue * legsScale * 0.8, legsScale)); // Secondary leg (offset)
+    modelRef.setParameterValue('Param110', Math.min((legBaseValue + legAlternateValue) * 0.5 * legsScale, legsScale)); // Combined leg movement
 
     // Special features (Settings 41-42, 49-50)
     // Animal ears
-    modelRef.current.setParameterValue('Param33', physics.specialFeatures.animalEars * 30);
-    modelRef.current.setParameterValue('Param34', physics.specialFeatures.animalEars * 20);
-    modelRef.current.setParameterValue('Param35', physics.specialFeatures.animalEars * 30);
-    modelRef.current.setParameterValue('Param36', physics.specialFeatures.animalEars * 20);
+    modelRef.setParameterValue('Param33', physics.specialFeatures.animalEars * 30);
+    modelRef.setParameterValue('Param34', physics.specialFeatures.animalEars * 20);
+    modelRef.setParameterValue('Param35', physics.specialFeatures.animalEars * 30);
+    modelRef.setParameterValue('Param36', physics.specialFeatures.animalEars * 20);
     
     // Wings
-    modelRef.current.setParameterValue('Param117', physics.specialFeatures.wings * 35);
-    modelRef.current.setParameterValue('Param118', physics.specialFeatures.wings * 35);
+    modelRef.setParameterValue('Param117', physics.specialFeatures.wings * 35);
+    modelRef.setParameterValue('Param118', physics.specialFeatures.wings * 35);
 
   }, []);
 
   // Apply emotion with intensity
   const applyEmotionWithIntensity = useCallback((modelRef: Live2DModelRef, emotions: any) => {
-    if (!modelRef.current) return;
+    if (!modelRef) return;
 
     // FIXED: Don't clear expressions here - already cleared in main function
 
     // Apply new emotion (Live2D uses setExpression, not setExpressionValue)
     const emotionKey = EMOTION_MAP[emotions.base as keyof typeof EMOTION_MAP];
     if (emotionKey) {
-      modelRef.current.setExpression(emotionKey);
+      modelRef.setExpression(emotionKey);
       currentEmotionRef.current = emotionKey;
       
       // Enhanced debug logging
@@ -271,7 +271,7 @@ export function useShizukuControllerEnhanced() {
     if (emotions.eyeEffect && emotions.eyeEffect !== 'none' && emotions.eyeEffect !== emotions.base) {
       const eyeEffectKey = EMOTION_MAP[emotions.eyeEffect as keyof typeof EMOTION_MAP];
       if (eyeEffectKey) {
-        modelRef.current.setExpression(eyeEffectKey);
+        modelRef.setExpression(eyeEffectKey);
         if (process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true') {
           console.log(`[Enhanced Controller] ✓ Applied eye effect "${emotions.eyeEffect}" (${eyeEffectKey})`);
         }
@@ -281,7 +281,7 @@ export function useShizukuControllerEnhanced() {
 
   // Apply enhanced decorations
   const applyEnhancedDecorations = useCallback((modelRef: Live2DModelRef, decorations: any) => {
-    if (!modelRef.current) return;
+    if (!modelRef) return;
 
     // FIXED: Don't clear expressions here - only clear decoration tracking
     currentDecorationsRef.current.clear();
@@ -289,13 +289,13 @@ export function useShizukuControllerEnhanced() {
     // Apply new decorations with intensity
     Object.entries(decorations).forEach(([type, value]) => {
       if (type === 'anger_mark' && value === true) {
-        modelRef.current.setExpression('怒');
+        modelRef.setExpression('怒');
         currentDecorationsRef.current.add('怒');
       } else if (type in DECORATION_INTENSITY_MAP) {
         const intensityMap = DECORATION_INTENSITY_MAP[type as keyof typeof DECORATION_INTENSITY_MAP];
         const decorationKey = intensityMap[value as keyof typeof intensityMap];
         if (decorationKey) {
-          modelRef.current.setExpression(decorationKey);
+          modelRef.setExpression(decorationKey);
           currentDecorationsRef.current.add(decorationKey);
         }
       }
@@ -304,14 +304,14 @@ export function useShizukuControllerEnhanced() {
 
   // Apply hand item
   const applyHandItem = useCallback((modelRef: Live2DModelRef, handItem: string) => {
-    if (!modelRef.current) return;
+    if (!modelRef) return;
 
     // Clear current hand item (handled by resetExpression in decorations)
     
     // Apply new hand item
     const itemKey = HAND_ITEM_MAP[handItem as keyof typeof HAND_ITEM_MAP];
     if (itemKey) {
-      modelRef.current.setExpression(itemKey);
+      modelRef.setExpression(itemKey);
       currentHandItemRef.current = itemKey;
     } else {
       currentHandItemRef.current = null;
@@ -320,22 +320,22 @@ export function useShizukuControllerEnhanced() {
 
   // Apply mouth settings
   const applyMouthSettings = useCallback((modelRef: Live2DModelRef, mouth: any) => {
-    if (!modelRef.current) return;
+    if (!modelRef) return;
 
-    modelRef.current.setParameterValue('ParamMouthOpenY', mouth.openness / 50);
-    modelRef.current.setParameterValue('ParamMouthForm', mouth.form / 100);
+    modelRef.setParameterValue('ParamMouthOpenY', mouth.openness / 50);
+    modelRef.setParameterValue('ParamMouthForm', mouth.form / 100);
   }, []);
 
   // Apply mouth timeline for lip sync
   const applyMouthTimeline = useCallback((modelRef: Live2DModelRef, timeline: number[]) => {
-    if (!modelRef.current || timeline.length === 0) return;
+    if (!modelRef || timeline.length === 0) return;
 
     let index = 0;
     const applyNextMouthValue = () => {
-      if (!modelRef.current || index >= timeline.length) return;
+      if (!modelRef || index >= timeline.length) return;
 
       const mouthValue = timeline[index] || 0;
-      modelRef.current.setParameterValue('ParamMouthOpenY', mouthValue / 50);
+      modelRef.setParameterValue('ParamMouthOpenY', mouthValue / 50);
       
       index++;
       if (index < timeline.length) {
@@ -348,7 +348,7 @@ export function useShizukuControllerEnhanced() {
 
   // Apply physics timeline for complex movements
   const applyPhysicsTimeline = useCallback((modelRef: Live2DModelRef, timeline: any[]) => {
-    if (!modelRef.current || timeline.length === 0) return;
+    if (!modelRef || timeline.length === 0) return;
 
     // FIXED: Clear any existing physics timeline before starting new one
     if (physicsTimelineRef.current) {
@@ -358,7 +358,7 @@ export function useShizukuControllerEnhanced() {
 
     let index = 0;
     const applyNextPhysics = () => {
-      if (!modelRef.current || index >= timeline.length) return;
+      if (!modelRef || index >= timeline.length) return;
 
       const physicsStep = timeline[index];
       if (physicsStep) {
@@ -390,7 +390,7 @@ export function useShizukuControllerEnhanced() {
 
   // Apply advanced physics timeline for smooth keyframe animations
   const applyAdvancedPhysicsTimeline = useCallback((modelRef: Live2DModelRef, timeline: any[]) => {
-    if (!modelRef.current || timeline.length === 0) return;
+    if (!modelRef || timeline.length === 0) return;
 
     // FIXED: Clear any existing physics timeline before starting new one
     if (physicsTimelineRef.current) {
@@ -400,7 +400,7 @@ export function useShizukuControllerEnhanced() {
 
     let index = 0;
     const applyNextAdvancedPhysics = () => {
-      if (!modelRef.current || index >= timeline.length) return;
+      if (!modelRef || index >= timeline.length) return;
 
       const physicsStep = timeline[index];
       if (physicsStep) {
