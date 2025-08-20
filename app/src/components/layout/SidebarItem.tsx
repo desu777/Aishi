@@ -56,25 +56,20 @@ const SidebarItem = ({ icon, label, active, to, isCollapsed, onClick }: SidebarI
       onClick={handleClick}
       onMouseEnter={(e) => {
         if (!isActive) {
-          // Hover effect - tylko tło
-          e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.05)';
-          e.currentTarget.style.transform = 'translateX(3px)';
-          e.currentTarget.style.boxShadow = `0 0 20px rgba(139, 92, 246, 0.2)`;
-          // Dodajemy subtelny border glow
-          if (isCollapsed) {
-            e.currentTarget.style.border = `1px solid rgba(139, 92, 246, 0.3)`;
-          }
+          // Hover effect - subtelny i nie powodujący overflow
+          e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.08)';
+          // Używamy inset shadow aby nie wychodził poza element
+          e.currentTarget.style.boxShadow = `inset 0 0 10px rgba(139, 92, 246, 0.15)`;
+          // Subtelna zmiana koloru tekstu
+          e.currentTarget.style.color = theme.text.primary;
         }
       }}
       onMouseLeave={(e) => {
         if (!isActive) {
           // Powrót do normalnego stanu
           e.currentTarget.style.backgroundColor = 'transparent';
-          e.currentTarget.style.transform = 'translateX(0)';
           e.currentTarget.style.boxShadow = 'none';
-          if (isCollapsed) {
-            e.currentTarget.style.border = 'none';
-          }
+          e.currentTarget.style.color = theme.text.secondary;
         }
       }}
       // Dodajemy tooltip dla collapsed items

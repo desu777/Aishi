@@ -38,7 +38,9 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
     transition: 'all 0.3s ease',
     transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
     boxShadow: isMobile && isOpen ? '0 0 15px rgba(0, 0, 0, 0.1)' : 'none',
-    overflowY: 'auto'
+    overflow: 'hidden',
+    overflowY: 'auto',
+    overflowX: 'hidden'
   };
   
   const handleLogoClick = (): void => {

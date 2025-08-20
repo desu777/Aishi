@@ -22,8 +22,17 @@ import '@xyflow/react/dist/style.css'
 import Image from 'next/image'
 import { useTheme } from '@/contexts/ThemeContext'
 
+// Type definition for custom node
+type CustomNodeType = Node<{
+  label: string
+  subtitle: string
+  logo?: string
+  defaultLogo: string
+  active?: boolean
+}, 'custom'>
+
 // Custom Node Component
-const CustomNode = ({ data }: NodeProps) => {
+const CustomNode = ({ data }: NodeProps<CustomNodeType>) => {
   const [mounted, setMounted] = useState(false)
   const { theme } = useTheme()
 
@@ -78,7 +87,7 @@ const nodeTypes = {
 }
 
 // Function to generate responsive node positions based on viewport width
-const generateResponsiveNodes = (viewportWidth: number): Node[] => {
+const generateResponsiveNodes = (viewportWidth: number): CustomNodeType[] => {
   // Responsive positioning based on screen size
   const isMobile = viewportWidth < 768
   const isTablet = viewportWidth >= 768 && viewportWidth < 1024

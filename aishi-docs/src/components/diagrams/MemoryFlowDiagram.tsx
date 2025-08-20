@@ -22,7 +22,20 @@ import '@xyflow/react/dist/style.css'
 import Image from 'next/image'
 import { useTheme } from '@/contexts/ThemeContext'
 
-const CustomMemoryNode = ({ data }: NodeProps) => {
+// Type definition for memory node
+type MemoryNodeType = Node<{
+  label: string
+  subtitle: string
+  logo?: string
+  defaultLogo?: string
+  active?: boolean
+  color?: string
+  borderColor?: string
+  textColor?: string
+  fileType?: string
+}, 'memory'>
+
+const CustomMemoryNode = ({ data }: NodeProps<MemoryNodeType>) => {
   const [mounted, setMounted] = useState(false)
   const { theme } = useTheme()
 
@@ -31,7 +44,7 @@ const CustomMemoryNode = ({ data }: NodeProps) => {
   }, [])
 
   const getLogoSrc = () => {
-    if (!mounted) return data.defaultLogo
+    if (!mounted) return data.defaultLogo || '/logo_white.png'
     
     if (data.logo === 'aishi') {
       return theme === 'dark' ? '/logo_white.png' : '/logo_black.png'
@@ -90,7 +103,7 @@ const nodeTypes = {
   memory: CustomMemoryNode
 }
 
-const generateMemoryNodes = (viewportWidth: number): Node[] => {
+const generateMemoryNodes = (viewportWidth: number): MemoryNodeType[] => {
   const isMobile = viewportWidth < 768
   const isTablet = viewportWidth >= 768 && viewportWidth < 1024
   
