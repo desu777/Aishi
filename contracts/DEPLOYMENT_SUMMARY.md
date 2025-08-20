@@ -1,14 +1,14 @@
 # Aishi Agent Deployment Summary
 
 ## Network: galileo
-**Deployed at:** 2025-08-20T17:34:36.809Z
+**Deployed at:** 2025-08-20T21:52:08.792Z
 
 ## Contract Addresses
 
 | Contract | Address |
 |----------|---------|
-| AishiVerifier | `0x0448eC5eDB69a2721d5a5Cf46bC45b1a78f0a0d0` |
-| AishiAgent | `0x5D4C40b627e8C1e900f616CF952d352f764D32Dd` |
+| AishiVerifier | `0xDe7a3c68b94FFE9f8E57EB6FF4DadB2D3210e3bf` |
+| AishiAgent | `0xEd4fd95346897aA4D0A7894aFE4446bAd33B071f` |
 | Treasury | `0x0f13e85B575964B8b4b77E37d43A6aE9E354e94C` |
 
 ## Configuration
@@ -23,8 +23,8 @@
 Add these to your `.env` file:
 
 ```bash
-AISHI_VERIFIER_ADDRESS=0x0448eC5eDB69a2721d5a5Cf46bC45b1a78f0a0d0
-AISHI_AGENT_ADDRESS=0x5D4C40b627e8C1e900f616CF952d352f764D32Dd
+AISHI_VERIFIER_ADDRESS=0xDe7a3c68b94FFE9f8E57EB6FF4DadB2D3210e3bf
+AISHI_AGENT_ADDRESS=0xEd4fd95346897aA4D0A7894aFE4446bAd33B071f
 TREASURY_ADDRESS=0x0f13e85B575964B8b4b77E37d43A6aE9E354e94C
 ```
 
