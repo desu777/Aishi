@@ -48,7 +48,7 @@ contract AishiAgent is
 {
     /* ───────────────────────────────────────────────────────── CONSTANTS ───── */
 
-    uint256 public constant MAX_AGENTS   = 1_000;      // test‑net cap (adjust for main‑net)
+    uint256 public constant MAX_AGENTS   = 50;         // test‑net cap (adjust for main‑net)
     uint256 public constant MINTING_FEE  = 0.1 ether;  // price per agent – sent to `treasury`
 
     /* ───────────────────────────────────────────────────────── IMMUTABLES ──── */
