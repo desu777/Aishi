@@ -5,7 +5,9 @@
 </p>
 
 <p align="center">
-  <strong><a href="https://aishi.app">► Try the App</a> • <a href="https://docs.aishi.app">► Read the Docs</a></strong>
+  <a href="https://aishi.app" target="_blank"><img src="https://img.shields.io/badge/►%20Try%20the%20App-8B5CF6?style=for-the-badge" alt="Try the App"></a>
+  &nbsp;&nbsp;
+  <a href="https://docs.aishi.app" target="_blank"><img src="https://img.shields.io/badge/►%20Read%20the%20Docs-8B5CF6?style=for-the-badge" alt="Read the Docs"></a>
 </p>
 
 Aishi is an intelligent iNFT companion designed to decode your inner world by analyzing dreams and conversations. It is built on a fully decentralized 0G stack (Chain, Compute, Storage, and Data Availability) to ensure absolute user privacy and data sovereignty.
@@ -58,8 +60,8 @@ Follow these steps to set up and run the Aishi project locally.
 
 ### Prerequisites
 
--   [Node.js](https://nodejs.org/) (v18.x or later recommended)
--   [npm](https://www.npmjs.com/) (v9.x or later)
+-   [Node.js](https://nodejs.org/) (v20.x or later recommended)
+-   [npm](https://www.npmjs.com/) (v10.x or later)
 -   Access to Google Cloud with Vertex AI enabled.
 -   A Web3 wallet (e.g., MetaMask) funded with 0G Galileo Testnet tokens.
 
@@ -143,6 +145,10 @@ npm run dev
 ```
 
 You can now open `http://localhost:3003` in your browser to start interacting with Aishi.
+
+## Development Status
+
+> **Note**: This project is under active development and should be considered a work in progress. Features are subject to change, and new updates are frequent.
 
 ## Full Documentation
 
