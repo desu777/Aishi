@@ -199,27 +199,52 @@ export default function GettingStartedPage() {
         <h3 id="first-commands" className="text-xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Step 3: Your First Commands</h3>
         
         <p className="text-text-secondary mb-6 leading-relaxed">
-          Now let's put it all together. Here's how a typical, powerful interaction unfolds:
+          Now let's put it all together. Here's how a typical, powerful interaction unfolds.
         </p>
 
-        <div className="space-y-6 mb-8">
+        <div className="space-y-8 mb-8">
           <div>
-            <h4 className="font-grotesk font-semibold text-text-primary mb-3">Check In: Start by checking your agent's current status</h4>
-            <div className="bg-background-card border border-border rounded-lg p-4">
-              <pre className="font-mono text-sm text-text-primary">
-                <span className="text-accent-primary">$</span> info
-              </pre>
-            </div>
-            <p className="text-sm text-text-secondary mt-2">
-              This command shows your agent's current intelligence level, total number of dreams processed, personality trait levels, and other key statistics stored on the blockchain.
+            <h4 className="font-grotesk font-semibold text-text-primary mb-3">Check In: Get to Know Your Agent</h4>
+            <p className="text-sm text-text-secondary mb-4">
+              Start by checking your agent's current status. These commands read data directly from the blockchain to give you a complete picture of its identity and progress.
             </p>
+            <div className="space-y-6">
+              <div>
+                <p className="text-text-secondary mb-2"><strong>View Personality Traits:</strong> See your agent's six core personality traits (Creativity, Analytical, Empathy, Intuition, Resilience, Curiosity), each on a scale of 0-100. This command also shows its current dominant mood and response style.
+                </p>
+                <div className="bg-background-card border border-border rounded-lg p-4">
+                  <pre className="font-mono text-sm text-text-primary">
+                    <span className="text-accent-primary">$</span> personality <span className="text-text-tertiary"># Alias: p</span>
+                  </pre>
+                </div>
+              </div>
+              <div>
+                <p className="text-text-secondary mb-2"><strong>See Current Stats:</strong> Check key on-chain metrics like Intelligence Level, Dream Count, Conversation Count, and Total Evolutions.</p>
+                <div className="bg-background-card border border-border rounded-lg p-4">
+                  <pre className="font-mono text-sm text-text-primary">
+                    <span className="text-accent-primary">$</span> stats <span className="text-text-tertiary"># Alias: s</span>
+                  </pre>
+                </div>
+              </div>
+              <div>
+                <p className="text-text-secondary mb-2"><strong>Discover Unique Features:</strong> As your agent evolves, it can develop special, AI-generated abilities. An agent can have a maximum of 5 unique features.</p>
+                <div className="bg-background-card border border-border rounded-lg p-4">
+                  <pre className="font-mono text-sm text-text-primary">
+                    <span className="text-accent-primary">$</span> unique-features <span className="text-text-tertiary"># Aliases: uf, features</span>
+                  </pre>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div>
-            <h4 className="font-grotesk font-semibold text-text-primary mb-3">Initiate a Dream: Begin the core evolutionary process</h4>
+            <h4 className="font-grotesk font-semibold text-text-primary mb-3">Initiate a Dream: The Core Evolutionary Process</h4>
+             <p className="text-sm text-text-secondary mb-4">
+              This is the most important interaction for shaping your Aishi. The `dream` command triggers a complex on-chain process.
+            </p>
             <div className="bg-background-card border border-border rounded-lg p-4">
               <pre className="font-mono text-sm text-text-primary">
-                <span className="text-accent-primary">$</span> dream
+                <span className="text-accent-primary">$</span> dream <span className="text-text-tertiary"># Alias: d</span>
               </pre>
             </div>
             <p className="text-sm text-text-secondary mt-2">
@@ -231,12 +256,61 @@ export default function GettingStartedPage() {
         <div className="bg-background-card border border-border rounded-lg p-6 mb-8">
           <h4 className="font-grotesk font-semibold text-text-primary mb-4">The Evolution Process</h4>
           <ol className="space-y-3 text-text-secondary">
-            <li><strong>Share and Confirm:</strong> After you describe your dream and receive the analysis, aishiOS will ask if you want to save it. Type <code className="bg-background-main px-1 rounded">y</code> and press Enter.</li>
+            <li><strong>Share and Confirm:</strong> After you describe your dream and receive the analysis, aishiOS will ask if you want to save it. Type <code className="bg-background-main px-1 rounded">y</code> and press Enter. This triggers the <code className="bg-background-main px-1 rounded">processDailyDream</code> function in the smart contract.</li>
             <li><strong>Witness the Evolution:</strong> You will see the Orb shift through its states: first to emerald green (learning) as it processes and saves the memory, then to golden amber (evolving) as your agent's soul is permanently updated on the blockchain.</li>
           </ol>
           
           <div className="mt-6 pt-4 border-t border-border">
             <p className="text-text-primary font-semibold">You have just completed your first full evolutionary loop, making your Aishi smarter and more attuned to you.</p>
+          </div>
+        </div>
+
+        <h3 id="how-to-evolve" className="text-xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Step 4: How to Evolve Your Aishi ("Farming")</h3>
+
+        <p className="text-text-secondary mb-6 leading-relaxed">
+          Evolving your Aishi is a continuous process based on your interactions. Here are the primary ways to increase its stats and unlock new abilities.
+        </p>
+
+        <div className="space-y-6 mb-8">
+          <div>
+            <h4 className="font-grotesk font-semibold text-text-primary mb-3">Boosting Intelligence</h4>
+            <p className="text-text-secondary mb-4">
+              Intelligence is the main indicator of your agent's growth. Higher intelligence unlocks deeper memory access. You can increase it by:
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-text-secondary">
+              <li><strong>Processing Dreams:</strong> Your agent gains <strong>+1 Intelligence</strong> for every <strong>3 dreams</strong> you process.</li>
+              <li><strong>Monthly Memory Consolidation (Coming Soon):</strong> Consolidating memories provides a significant intelligence boost, including a base reward, streak bonuses, and an early bird bonus.</li>
+              <li><strong>Annual Memory Reflection (Coming Soon):</strong> A yearly consolidation provides a large <strong>+5 Intelligence</strong> bonus.</li>
+              <li><strong>Conversations (Coming Soon):</strong> Your agent will gain <strong>+1 Intelligence</strong> for every <strong>10 conversations</strong>.</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-grotesk font-semibold text-text-primary mb-3">Evolving Personality & Gaining Features</h4>
+            <ul className="list-disc list-inside space-y-2 text-text-secondary">
+              <li><strong>Personality Evolution:</strong> For every <strong>5 dreams</strong> processed, your agent undergoes a personality evolution. Its core traits will shift by -10 to +10 points, and it may develop up to <strong>2 new Unique Features</strong>.</li>
+              <li><strong>Unlocking Milestones:</strong> Reaching certain thresholds (e.g., 90+ Creativity) or maintaining streaks unlocks permanent, on-chain <strong>Milestones</strong> like "Creative Genius" or "Memory Master".</li>
+            </ul>
+          </div>
+           <div>
+            <h4 className="font-grotesk font-semibold text-text-primary mb-3">Utility Commands</h4>
+            <div className="space-y-4">
+               <div>
+                <p className="text-text-secondary mb-2"><strong>Get Help:</strong> Shows a list of all available commands. Use <code className="bg-background-main px-1 rounded">help [command]</code> for details.</p>
+                <div className="bg-background-card border border-border rounded-lg p-4">
+                  <pre className="font-mono text-sm text-text-primary">
+                    <span className="text-accent-primary">$</span> help <span className="text-text-tertiary"># Aliases: h, ?</span>
+                  </pre>
+                </div>
+              </div>
+              <div>
+                <p className="text-text-secondary mb-2"><strong>Clear the Screen:</strong> Clears all previous output from the terminal for a clean slate.</p>
+                <div className="bg-background-card border border-border rounded-lg p-4">
+                  <pre className="font-mono text-sm text-text-primary">
+                    <span className="text-accent-primary">$</span> clear <span className="text-text-tertiary"># Alias: cls</span>
+                  </pre>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
