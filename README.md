@@ -50,6 +50,11 @@ The project is structured as a monorepo with four main components working in con
 
 The entire system is a symphony of decentralized components, where user data flows from the frontend (`aishiOS`) to the on-chain soul (`iNFT on 0G Chain`), processed by the AI brain (`0G Compute`), and stored in a vast, private memory (`0G Storage`), all with its integrity guaranteed by `0G's Data Availability layer`.
 
+<p align="center">
+  <strong>The Symphony of Life: Data Flow</strong><br>
+  <img src="./aishi-docs/public/screenshots/flow.jpg" alt="Aishi Data Flow Diagram" width="700">
+</p>
+
 ## Tech Stack
 
 | Category         | Technology                                                                                                  |
