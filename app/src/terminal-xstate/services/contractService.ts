@@ -37,7 +37,14 @@ export const ContractFunctions = {
   GET_UNIQUE_FEATURES: 'getUniqueFeatures',
   CAN_PROCESS_DREAM_TODAY: 'canProcessDreamToday',
   PROCESS_DAILY_DREAM: 'processDailyDream',
-  MINT_AGENT: 'mintAgent'
+  MINT_AGENT: 'mintAgent',
+  // Additional view functions
+  GET_CONSOLIDATION_REWARD: 'getConsolidationReward',
+  GET_EVOLUTION_STATS: 'getEvolutionStats',
+  CONSOLIDATION_STREAK: 'consolidationStreak',
+  RESPONSE_STYLES: 'responseStyles',
+  PENDING_REWARDS: 'pendingRewards',
+  HAS_MILESTONE: 'hasMilestone'
 } as const;
 
 /**

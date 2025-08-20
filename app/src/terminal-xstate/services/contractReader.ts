@@ -75,6 +75,31 @@ export interface CompleteAgentData {
     memoryAccessDepth?: string;
   };
   
+  // Consolidation reward preview
+  consolidationReward?: {
+    baseReward: number;
+    streakBonus: number;
+    earlyBirdBonus: number;
+    totalReward: number;
+  };
+  
+  // Evolution statistics
+  evolutionStats?: {
+    totalEvolutions: number;
+    evolutionRate: number;
+    lastEvolution: bigint;
+  };
+  
+  // Pending rewards from mapping
+  pendingRewards?: {
+    intelligenceBonus: number;
+    specialMilestone: string;
+    yearlyReflection: boolean;
+  };
+  
+  // Cached response style from contract mapping
+  cachedResponseStyle?: string;
+  
   // Computed/derived fields
   computed: {
     responseStyle: string;
@@ -179,17 +204,45 @@ export class ContractReaderService {
 
     try {
       // Fetch all data in parallel for efficiency
-      const [basic, personality, memory, features, status] = await Promise.all([
+      const [
+        basic, 
+        personality, 
+        memory, 
+        features, 
+        status,
+        consolidationReward,
+        evolutionStats,
+        pendingRewards,
+        cachedResponseStyle,
+        consolidationStreak
+      ] = await Promise.all([
         this.getBasicData(tokenId),
         this.getPersonalityTraits(tokenId),
         this.getMemoryData(tokenId),
         this.getUniqueFeatures(tokenId),
-        this.getStatusData(tokenId)
+        this.getStatusData(tokenId),
+        this.getConsolidationReward(tokenId),
+        this.getEvolutionStats(tokenId),
+        this.getPendingRewards(tokenId),
+        this.getCachedResponseStyle(tokenId),
+        this.getConsolidationStreak(tokenId)
       ]);
 
       if (!basic) {
         debugLog('No basic data found for token', { tokenId });
         return null;
+      }
+
+      // Update status with consolidation streak
+      if (status && consolidationStreak !== undefined) {
+        status.consolidationStreak = consolidationStreak;
+      }
+
+      // Check if has pending rewards
+      if (status && pendingRewards) {
+        status.hasPendingRewards = pendingRewards.intelligenceBonus > 0 || 
+                                  pendingRewards.specialMilestone !== '' || 
+                                  pendingRewards.yearlyReflection;
       }
 
       // Compute derived fields
@@ -202,6 +255,10 @@ export class ContractReaderService {
         memory: memory || this.getDefaultMemory(),
         features: features || [],
         status: status || this.getDefaultStatus(),
+        consolidationReward,
+        evolutionStats,
+        pendingRewards,
+        cachedResponseStyle,
         computed
       };
 
@@ -422,6 +479,184 @@ export class ContractReaderService {
     } catch (error) {
       debugLog('Error fetching status data', { error: String(error) });
       return this.getDefaultStatus();
+    }
+  }
+
+  /**
+   * Get consolidation reward preview
+   */
+  async getConsolidationReward(tokenId: number): Promise<CompleteAgentData['consolidationReward'] | null> {
+    const cacheKey = `consolidation_reward_${tokenId}`;
+    const cached = this.getCached<CompleteAgentData['consolidationReward']>(cacheKey);
+    if (cached) return cached;
+
+    debugLog('Fetching consolidation reward', { tokenId });
+
+    try {
+      const reward = await this.fetchWithRetry(
+        () => this.publicClient.readContract({
+          address: this.contractConfig.address,
+          abi: this.contractConfig.abi,
+          functionName: ContractFunctions.GET_CONSOLIDATION_REWARD,
+          args: [BigInt(tokenId)]
+        }),
+        2,
+        'ConsolidationReward'
+      ) as any;
+
+      if (!reward) return null;
+
+      const parsed: CompleteAgentData['consolidationReward'] = {
+        baseReward: Number(reward.baseReward || reward[0] || 0),
+        streakBonus: Number(reward.streakBonus || reward[1] || 0),
+        earlyBirdBonus: Number(reward.earlyBirdBonus || reward[2] || 0),
+        totalReward: Number(reward.totalReward || reward[3] || 0)
+      };
+
+      this.setCached(cacheKey, parsed);
+      return parsed;
+    } catch (error) {
+      debugLog('Error fetching consolidation reward', { error: String(error) });
+      return null;
+    }
+  }
+
+  /**
+   * Get evolution statistics
+   */
+  async getEvolutionStats(tokenId: number): Promise<CompleteAgentData['evolutionStats'] | null> {
+    const cacheKey = `evolution_stats_${tokenId}`;
+    const cached = this.getCached<CompleteAgentData['evolutionStats']>(cacheKey);
+    if (cached) return cached;
+
+    debugLog('Fetching evolution stats', { tokenId });
+
+    try {
+      const stats = await this.fetchWithRetry(
+        () => this.publicClient.readContract({
+          address: this.contractConfig.address,
+          abi: this.contractConfig.abi,
+          functionName: ContractFunctions.GET_EVOLUTION_STATS,
+          args: [BigInt(tokenId)]
+        }),
+        2,
+        'EvolutionStats'
+      ) as any;
+
+      if (!stats) return null;
+
+      const parsed: CompleteAgentData['evolutionStats'] = {
+        totalEvolutions: Number(stats.totalEvolutions || stats[0] || 0),
+        evolutionRate: Number(stats.evolutionRate || stats[1] || 0),
+        lastEvolution: BigInt(stats.lastEvolution || stats[2] || 0)
+      };
+
+      this.setCached(cacheKey, parsed);
+      return parsed;
+    } catch (error) {
+      debugLog('Error fetching evolution stats', { error: String(error) });
+      return null;
+    }
+  }
+
+  /**
+   * Get consolidation streak from mapping
+   */
+  async getConsolidationStreak(tokenId: number): Promise<number> {
+    const cacheKey = `consolidation_streak_${tokenId}`;
+    const cached = this.getCached<number>(cacheKey);
+    if (cached !== null) return cached;
+
+    debugLog('Fetching consolidation streak', { tokenId });
+
+    try {
+      const streak = await this.fetchWithRetry(
+        () => this.publicClient.readContract({
+          address: this.contractConfig.address,
+          abi: this.contractConfig.abi,
+          functionName: ContractFunctions.CONSOLIDATION_STREAK,
+          args: [BigInt(tokenId)]
+        }),
+        2,
+        'ConsolidationStreak'
+      ) as any;
+
+      const parsed = Number(streak || 0);
+      this.setCached(cacheKey, parsed);
+      return parsed;
+    } catch (error) {
+      debugLog('Error fetching consolidation streak', { error: String(error) });
+      return 0;
+    }
+  }
+
+  /**
+   * Get cached response style from contract mapping
+   */
+  async getCachedResponseStyle(tokenId: number): Promise<string | null> {
+    const cacheKey = `response_style_${tokenId}`;
+    const cached = this.getCached<string>(cacheKey);
+    if (cached) return cached;
+
+    debugLog('Fetching cached response style', { tokenId });
+
+    try {
+      const style = await this.fetchWithRetry(
+        () => this.publicClient.readContract({
+          address: this.contractConfig.address,
+          abi: this.contractConfig.abi,
+          functionName: ContractFunctions.RESPONSE_STYLES,
+          args: [BigInt(tokenId)]
+        }),
+        2,
+        'ResponseStyle'
+      ) as string;
+
+      if (!style || style === '') return null;
+
+      this.setCached(cacheKey, style);
+      return style;
+    } catch (error) {
+      debugLog('Error fetching response style', { error: String(error) });
+      return null;
+    }
+  }
+
+  /**
+   * Get pending rewards from mapping
+   */
+  async getPendingRewards(tokenId: number): Promise<CompleteAgentData['pendingRewards'] | null> {
+    const cacheKey = `pending_rewards_${tokenId}`;
+    const cached = this.getCached<CompleteAgentData['pendingRewards']>(cacheKey);
+    if (cached) return cached;
+
+    debugLog('Fetching pending rewards', { tokenId });
+
+    try {
+      const rewards = await this.fetchWithRetry(
+        () => this.publicClient.readContract({
+          address: this.contractConfig.address,
+          abi: this.contractConfig.abi,
+          functionName: ContractFunctions.PENDING_REWARDS,
+          args: [BigInt(tokenId)]
+        }),
+        2,
+        'PendingRewards'
+      ) as any;
+
+      if (!rewards) return null;
+
+      const parsed: CompleteAgentData['pendingRewards'] = {
+        intelligenceBonus: Number(rewards.intelligenceBonus || rewards[0] || 0),
+        specialMilestone: (rewards.specialMilestone || rewards[1] || '') as string,
+        yearlyReflection: Boolean(rewards.yearlyReflection || rewards[2] || false)
+      };
+
+      this.setCached(cacheKey, parsed);
+      return parsed;
+    } catch (error) {
+      debugLog('Error fetching pending rewards', { error: String(error) });
+      return null;
     }
   }
 
