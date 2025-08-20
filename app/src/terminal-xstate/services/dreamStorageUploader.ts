@@ -5,6 +5,7 @@
 
 import { XStateStorageService, UploadResult } from './xstateStorage';
 import { StandardDreamFields } from './dreamDataValidator';
+import { safeJsonStringify } from '../utils/jsonSerializer';
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {
@@ -64,7 +65,7 @@ export async function uploadDreamDataSecurely(
   debugLog('Starting secure dream data upload', {
     fileName,
     dreamsCount: dreamFileData.length,
-    fileSize: JSON.stringify(dreamFileData).length,
+    fileSize: safeJsonStringify(dreamFileData).length,
     config: finalConfig
   });
 
@@ -132,7 +133,7 @@ export async function uploadDreamDataSecurely(
       verified,
       metadata: {
         fileName,
-        fileSize: JSON.stringify(dreamFileData).length,
+        fileSize: safeJsonStringify(dreamFileData).length,
         dreamsCount: dreamFileData.length,
         uploadTime: Date.now() - uploadStartTime,
         verificationTime
@@ -269,8 +270,8 @@ async function performVerification(
 function compareJsonData(original: StandardDreamFields[], uploaded: any): boolean {
   try {
     // Convert both to strings for comparison
-    const originalStr = JSON.stringify(sortDreamsForComparison(original));
-    const uploadedStr = JSON.stringify(sortDreamsForComparison(uploaded));
+    const originalStr = safeJsonStringify(sortDreamsForComparison(original));
+    const uploadedStr = safeJsonStringify(sortDreamsForComparison(uploaded));
 
     const isEqual = originalStr === uploadedStr;
 
@@ -337,7 +338,7 @@ function validateUploadData(
   }
 
   // Validate file size (approximate)
-  const fileSize = JSON.stringify(dreamFileData).length;
+  const fileSize = safeJsonStringify(dreamFileData).length;
   const maxSize = 10 * 1024 * 1024; // 10MB limit
 
   if (fileSize > maxSize) {
@@ -410,7 +411,7 @@ export function getUploadStats(dreamFileData: StandardDreamFields[]): {
     };
   }
 
-  const estimatedSize = JSON.stringify(dreamFileData).length;
+  const estimatedSize = safeJsonStringify(dreamFileData).length;
   const sortedByDate = [...dreamFileData].sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );

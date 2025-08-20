@@ -548,44 +548,4 @@ export type {
   PersistenceProtocolInput as ProtocolInput
 };
 
-// Default export with all types
-export default {
-  // Core types
-  StandardDreamFields,
-  EvolutionFields,
-  AIResponseData,
-  
-  // Result types
-  ValidationResult,
-  FileManagementResult,
-  SecureUploadResult,
-  ContractUpdateResult,
-  PersistenceProtocolResult,
-  
-  // Configuration types
-  UploadConfig,
-  PersistenceProtocolInput,
-  
-  // Utility types
-  DreamFileStats,
-  UploadStats,
-  OperationResult,
-  
-  // Enums
-  DreamType,
-  PersonalityShiftDirection,
-  ProtocolStage,
-  ProtocolStatus,
-  
-  // Type guards
-  isStandardDreamFields,
-  isEvolutionFields,
-  isValidationResult,
-  
-  // Constants
-  DEFAULT_UPLOAD_CONFIG,
-  EMPTY_HASH,
-  VALID_DREAM_TYPES,
-  VALID_SHIFT_DIRECTIONS,
-  PROTOCOL_STAGES
-};
+// Note: No default export to avoid using types as values at runtime

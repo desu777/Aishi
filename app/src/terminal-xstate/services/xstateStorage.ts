@@ -7,6 +7,7 @@ import { uploadFileComplete } from '../../lib/0g/uploader';
 import { downloadByRootHashAPI } from '../../lib/0g/downloader';
 import { getNetworkConfig, getDefaultNetworkType, NetworkType } from '../../lib/0g/network';
 import { getProvider, getSigner } from '../../lib/0g/fees';
+import { safeJsonStringifyPretty } from '../utils/jsonSerializer';
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {
@@ -165,7 +166,7 @@ export class XStateStorageService {
    * Converts JSON object to File for upload
    */
   jsonToFile(data: any, fileName: string): File {
-    const jsonString = JSON.stringify(data, null, 2);
+    const jsonString = safeJsonStringifyPretty(data);
     const blob = new Blob([jsonString], { type: 'application/json' });
     return new File([blob], fileName, { type: 'application/json' });
   }

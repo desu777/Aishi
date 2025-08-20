@@ -3,7 +3,7 @@
  * @description Centralized service for reading all agent-related data from the blockchain contract
  */
 
-import { createPublicClient, http, PublicClient, Address } from 'viem';
+import { createPublicClient, http, Address } from 'viem';
 import { galileoTestnet } from '../../config/chains';
 import { getContractConfig, ContractFunctions } from './contractService';
 
@@ -115,12 +115,12 @@ export interface CompleteAgentData {
  * Service for reading comprehensive agent data from the contract
  */
 export class ContractReaderService {
-  private publicClient: PublicClient;
+  private publicClient: any;
   private contractConfig: ReturnType<typeof getContractConfig>;
   private cache: Map<string, { data: any; timestamp: number }> = new Map();
   private cacheTTL: number = 60000; // 1 minute cache
 
-  constructor(publicClient?: PublicClient) {
+  constructor(publicClient?: any) {
     this.contractConfig = getContractConfig();
     
     // Use provided client or create new one

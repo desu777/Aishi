@@ -23,6 +23,8 @@ export interface PersistenceProtocolResult {
   error?: string;
   
   // Stage results
+  // Optional validation stage (present in some flows)
+  validation?: { isValid: boolean; error?: string };
   fileManagement?: FileManagementResult;
   storageUpload?: SecureUploadResult;
   contractUpdate?: ContractUpdateResult;

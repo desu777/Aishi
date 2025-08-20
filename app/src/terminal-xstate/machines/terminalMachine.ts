@@ -157,7 +157,7 @@ export const terminalMachine = setup({
           // Asynchronous fetch without spawn - proven pattern from dreamMachine
           setTimeout(async () => {
             try {
-              const { formatPersonalityOutput } = await import('../services/formatHelpers.tsx');
+              const { formatPersonalityOutput } = await import('../services/formatHelpers');
               
               // Get token ID from agent machine
               const agentState = context.agentRef?.getSnapshot();
@@ -252,7 +252,7 @@ export const terminalMachine = setup({
           // Asynchronous fetch without spawn - proven pattern from dreamMachine
           setTimeout(async () => {
             try {
-              const { formatUniqueFeaturesOutput } = await import('../services/formatHelpers.tsx');
+              const { formatUniqueFeaturesOutput } = await import('../services/formatHelpers');
               
               // Get token ID from agent machine
               const agentState = context.agentRef?.getSnapshot();
@@ -344,7 +344,7 @@ export const terminalMachine = setup({
           // Asynchronous fetch without spawn - proven pattern from dreamMachine
           setTimeout(async () => {
             try {
-              const { formatStatsOutput } = await import('../services/formatHelpers.tsx');
+              const { formatStatsOutput } = await import('../services/formatHelpers');
               
               // Get token ID from agent machine
               const agentState = context.agentRef?.getSnapshot();

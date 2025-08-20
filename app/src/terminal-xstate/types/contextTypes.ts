@@ -41,6 +41,7 @@ export interface AIResponse {
   fullAnalysis: string;
   dreamData: {
     id: number;
+    date?: string;
     timestamp: number;
     content: string;
     emotions: string[];

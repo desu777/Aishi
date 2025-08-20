@@ -8,6 +8,7 @@ import { createPublicClient, http } from 'viem';
 import { galileoTestnet } from '../../config/chains';
 import { getContractConfig } from '../services/contractService';
 import { DreamContext, AIResponse, defaultAgentData } from '../types/contextTypes';
+import { convertBigIntToString } from '../utils/jsonSerializer';
 import { 
   buildMockDreamContext,
   sendMockDreamAnalysis,
@@ -422,7 +423,8 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
       hasYearlyCore: !!context.historicalData.yearlyCore
     });
     
-    return context;
+    // Convert all BigInt values to strings before returning to avoid XState serialization errors
+    return convertBigIntToString(context);
     
   } catch (error) {
     debugLog('[ERROR] Failed fetching real context, falling back to defaults', { 
@@ -436,7 +438,8 @@ const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: 
       input.dreamText
     );
     
-    return context;
+    // Convert all BigInt values to strings before returning to avoid XState serialization errors
+    return convertBigIntToString(context);
   }
 });
 
@@ -741,31 +744,45 @@ export const dreamMachine = setup({
     
     // Store context and update agent name
     storeContext: assign({
-      dreamContext: ({ event }) => event.output as DreamContext,
-      agentName: ({ event }) => (event.output as DreamContext).agentProfile?.name || 'Agent',
+      dreamContext: ({ event }) => {
+        return (event as any).output as DreamContext;
+      },
+      agentName: ({ event }) => {
+        return ((event as any).output as DreamContext).agentProfile?.name || 'Agent';
+      },
       statusMessage: 'Building dream analysis prompt...'
     }),
     
     // Store prompt
     storePrompt: assign({
-      dreamPrompt: ({ event }) => event.output as string,
+      dreamPrompt: ({ event }) => {
+        return (event as any).output as string;
+      },
       statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} is thinking`
     }),
     
     // Store AI response
     storeAIResponse: assign({
-      aiResponse: ({ event }) => event.output as AIResponse,
+      aiResponse: ({ event }) => {
+        return (event as any).output as AIResponse;
+      },
       statusMessage: 'Type y/n to confirm',
       awaitingConfirmation: true
     }),
     
     // Store persistence result
     storePersistenceResult: assign({
-      persistenceResult: ({ event }) => event.output.persistenceResult,
-      storageRootHash: ({ event }) => event.output.rootHash,
-      contractTxHash: ({ event }) => event.output.txHash,
+      persistenceResult: ({ event }) => {
+        return (event as any).output.persistenceResult;
+      },
+      storageRootHash: ({ event }) => {
+        return (event as any).output.rootHash;
+      },
+      contractTxHash: ({ event }) => {
+        return (event as any).output.txHash;
+      },
       statusMessage: ({ event }) => {
-        const output = event.output;
+        const output = (event as any).output;
         return output.isEvolutionDream ? 
           'Evolution dream persisted! Agent has evolved.' :
           'Dream persisted successfully!';
@@ -955,7 +972,9 @@ export const dreamMachine = setup({
             onDone: {
               target: 'storageUpload',
               actions: assign({
-                persistenceResult: ({ event }) => ({ fileData: event.output })
+                persistenceResult: ({ event }) => {
+                  return ({ fileData: (event as any).output });
+                }
               })
             },
             onError: {
@@ -982,10 +1001,12 @@ export const dreamMachine = setup({
             onDone: {
               target: 'contractUpdate',
               actions: assign({
-                storageRootHash: ({ event }) => event.output.rootHash,
+                storageRootHash: ({ event }) => {
+                  return (event as any).output.rootHash;
+                },
                 persistenceResult: ({ context, event }) => ({
                   ...context.persistenceResult,
-                  storageData: event.output
+                  storageData: (event as any).output
                 })
               })
             },
@@ -1013,11 +1034,13 @@ export const dreamMachine = setup({
               target: '#dream.completed',
               actions: [
                 assign({
-                  contractTxHash: ({ event }) => event.output.txHash,
+                  contractTxHash: ({ event }) => {
+                    return (event as any).output.txHash;
+                  },
                   persistenceResult: ({ context, event }) => ({
                     ...context.persistenceResult,
-                    contractData: event.output,
-                    isEvolutionDream: event.output.isEvolutionDream
+                    contractData: (event as any).output,
+                    isEvolutionDream: (event as any).output.isEvolutionDream
                   })
                 }),
                 'markCompleted',
