@@ -1,5 +1,5 @@
 // Expression Category Manager for handling multiple expressions with categories
-import type { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4';
+import type { Live2DModel, Cubism4InternalModel } from 'pixi-live2d-display-lipsyncpatch/cubism4';
 import {
   ExpressionState,
   findExpressionCategory,
@@ -159,7 +159,7 @@ export class ExpressionCategoryManager {
 
     // Apply parameters manually for additive support
     for (const param of parameters) {
-      const currentValue = this.model.internalModel.coreModel.getParameterValueById(param.Id) || 0;
+      const currentValue = (this.model.internalModel as Cubism4InternalModel).coreModel.getParameterValueById(param.Id) || 0;
       let newValue = currentValue;
 
       switch (param.Blend) {
@@ -175,7 +175,7 @@ export class ExpressionCategoryManager {
           break;
       }
 
-      this.model.internalModel.coreModel.setParameterValueById(param.Id, newValue);
+      (this.model.internalModel as Cubism4InternalModel).coreModel.setParameterValueById(param.Id, newValue);
     }
   }
 
@@ -190,7 +190,7 @@ export class ExpressionCategoryManager {
 
     // Reset parameters based on blend mode
     for (const param of parameters) {
-      const currentValue = this.model.internalModel.coreModel.getParameterValueById(param.Id) || 0;
+      const currentValue = (this.model.internalModel as Cubism4InternalModel).coreModel.getParameterValueById(param.Id) || 0;
       let newValue = currentValue;
 
       switch (param.Blend) {
@@ -206,7 +206,7 @@ export class ExpressionCategoryManager {
           break;
       }
 
-      this.model.internalModel.coreModel.setParameterValueById(param.Id, newValue);
+      (this.model.internalModel as Cubism4InternalModel).coreModel.setParameterValueById(param.Id, newValue);
     }
   }
 

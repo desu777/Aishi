@@ -1,15 +1,11 @@
 // Live2D model loader with error handling and performance optimization
 import * as PIXI from 'pixi.js';
-import { Live2DModel, config } from 'pixi-live2d-display-lipsyncpatch/cubism4';
+import { Live2DModel, config, MotionPreloadStrategy } from 'pixi-live2d-display-lipsyncpatch/cubism4';
 import { Ticker } from '@pixi/ticker';
 import { Live2DLoadError, Live2DWebGLError } from './live2d-types';
 
 // Register Ticker for Live2DModel to enable automatic updates
 Live2DModel.registerTicker(Ticker);
-
-// Configure Cubism 4 specific settings
-config.cubism4.setOpacityFromMotion = true;
-config.preserveExpressionOnMotion = false; // Allow expressions during motions
 
 // Expose PIXI globally for pixi-live2d-display (legacy support)
 if (typeof window !== 'undefined') {
@@ -74,7 +70,7 @@ export const loadLive2DModel = async (
   modelPath: string,
   options?: {
     autoUpdate?: boolean;
-    motionPreload?: string;
+    motionPreload?: MotionPreloadStrategy;
     autoFocus?: boolean;
     autoHitTest?: boolean;
   }
@@ -88,7 +84,7 @@ export const loadLive2DModel = async (
     // Load model with options
     const model = await Live2DModel.from(modelPath, {
       autoUpdate: options?.autoUpdate ?? true,
-      motionPreload: options?.motionPreload ?? 'IDLE',
+      motionPreload: options?.motionPreload ?? MotionPreloadStrategy.IDLE,
       autoFocus: options?.autoFocus ?? true,
       autoHitTest: options?.autoHitTest ?? true,
     });
