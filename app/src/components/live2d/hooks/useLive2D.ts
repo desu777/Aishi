@@ -1,7 +1,7 @@
 // Core hook for managing Live2D model lifecycle
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as PIXI from 'pixi.js';
-import { Live2DModel } from 'pixi-live2d-display-lipsyncpatch/cubism4';
+import { Live2DModel, type Cubism4InternalModel } from 'pixi-live2d-display-lipsyncpatch/cubism4';
 import { 
   createPixiApp, 
   loadLive2DModel, 
@@ -137,7 +137,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
   const startLipSync = useCallback((audioLevel: number) => {
     if (!modelRef.current) return;
     try {
-      modelRef.current.internalModel.coreModel.setParameterValueById('ParamMouthOpenY', audioLevel);
+      (modelRef.current.internalModel as Cubism4InternalModel).coreModel.setParameterValueById('ParamMouthOpenY', audioLevel);
     } catch (error) {
       console.warn('Failed to start lip sync:', error);
     }
@@ -147,7 +147,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
     if (!modelRef.current) return;
     const clampedValue = Math.max(0, Math.min(1, value));
     try {
-      modelRef.current.internalModel.coreModel.setParameterValueById('ParamMouthOpenY', clampedValue);
+      (modelRef.current.internalModel as Cubism4InternalModel).coreModel.setParameterValueById('ParamMouthOpenY', clampedValue);
     } catch (error) {
       console.warn('Failed to set lip sync value:', error);
     }

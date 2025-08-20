@@ -211,7 +211,7 @@ export const Live2DTestControls: React.FC<Live2DTestControlsProps> = ({
     }
   }, [modelRef]);
 
-  const tabStyle = {
+  const tabStyle: React.CSSProperties = {
     padding: '10px 16px',
     backgroundColor: 'transparent',
     border: 'none',
