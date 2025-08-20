@@ -12,7 +12,7 @@ const CONTRACT_ADDRESS = AishiAgentABI.address as `0x${string}`;
 const CONTRACT_ABI = AishiAgentABI.abi;
 const MINTING_FEE = parseEther('0.1'); // 0.1 OG
 const MAX_NAME_LENGTH = 32;
-const MAX_AGENTS = 1000;
+const MAX_AGENTS = Number(process.env.NEXT_PUBLIC_AGENTS) || 50;
 
 export function useMintAgent() {
   const { address, isConnected } = useAccount();
