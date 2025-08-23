@@ -85,7 +85,7 @@ interface ShizukuAIState {
 
 export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
   const {
-    backendUrl = process.env.NEXT_PUBLIC_0G_COMPUTE_URL || 'http://localhost:3001',
+    backendUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api',
     temperature = 0.8,
     maxTokens = 2048,
     enableTestMode = process.env.NEXT_PUBLIC_LIVE2MODEL_SHIZUKU_TEST === 'true',

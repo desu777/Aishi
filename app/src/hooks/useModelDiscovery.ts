@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Model } from '../components/ModelSelector';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 export const useModelDiscovery = () => {
@@ -25,7 +25,7 @@ export const useModelDiscovery = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${BACKEND_URL}/api/models/discover`, {
+      const response = await fetch(`${BACKEND_URL}/models/discover`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

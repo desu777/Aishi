@@ -267,12 +267,11 @@ function extractJsonBlocks(responseText: string): { fullAnalysis?: any; dreamDat
  * Route request to appropriate backend endpoint based on model
  */
 async function routeToBackend(request: DreamAPIRequest): Promise<BackendResponse> {
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 
-                      process.env.NEXT_PUBLIC_COMPUTE_API_URL || 
-                      'http://localhost:3001';
+  const BACKEND_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 
+                      'http://localhost:3001/api';
   
   const isGeminiModel = request.modelId.startsWith('gemini-');
-  const endpoint = isGeminiModel ? '/api/gemini' : '/api/0g-compute';
+  const endpoint = isGeminiModel ? '/gemini' : '/0g-compute';
   
   debugLog('Routing request to backend', {
     model: request.modelId,

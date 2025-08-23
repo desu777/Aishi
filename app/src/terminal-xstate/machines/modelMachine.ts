@@ -33,10 +33,10 @@ type ModelEvent =
 
 // Service to discover available models
 const discoverModels = fromPromise(async () => {
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+  const BACKEND_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
   
   try {
-    const response = await fetch(`${BACKEND_URL}/api/models/discover`, {
+    const response = await fetch(`${BACKEND_URL}/models/discover`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
