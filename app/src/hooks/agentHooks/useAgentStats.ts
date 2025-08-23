@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '../useWallet';
 import { Contract } from 'ethers';
-import AishiAgentABI from '../../abi/AishiAgentABI.json';
+import { getContractConfig } from './config/contractConfig';
 import { getProvider, getSigner } from '../../lib/0g/fees';
 
 // Types for agent statistics
@@ -117,8 +117,9 @@ export function useAgentStats(tokenId?: number) {
         throw new Error(`Signer error: ${signerErr?.message}`);
       }
 
-      const contractAddress = AishiAgentABI.address;
-      const contractABI = AishiAgentABI.abi;
+      const contractConfig = getContractConfig();
+      const contractAddress = contractConfig.address;
+      const contractABI = contractConfig.abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       debugLog('Contract connected for stats loading');

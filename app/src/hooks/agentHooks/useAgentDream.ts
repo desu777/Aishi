@@ -5,7 +5,8 @@ import { useStorageDownload } from '../storage/useStorageDownload';
 import { useStorageUpload } from '../storage/useStorageUpload';
 import { useWallet } from '../useWallet';
 import { Contract, ethers } from 'ethers';
-import AishiAgentABI from '../../abi/AishiAgentABI.json';
+import { aishiAgentAbi } from '../../generated';
+import { getContractConfig } from './config/contractConfig';
 import { DreamContextBuilder, DreamContext } from './services/dreamContextBuilder';
 import { getProvider, getSigner } from '../../lib/0g/fees';
 
@@ -213,8 +214,8 @@ export function useAgentDream() {
 
         setDreamState(prev => ({ ...prev, contextStatus: 'Connecting to contract...' }));
 
-        const contractAddress = AishiAgentABI.address;
-        const contractABI = AishiAgentABI.abi;
+        const contractAddress = getContractConfig().address;
+        const contractABI = getContractConfig().abi;
         const contract = new Contract(contractAddress, contractABI, signer);
 
         debugLog('Contract connected', { address: contractAddress });
@@ -302,8 +303,8 @@ export function useAgentDream() {
         throw new Error(`Signer error: ${signerErr?.message}`);
       }
 
-      const contractAddress = AishiAgentABI.address;
-      const contractABI = AishiAgentABI.abi;
+      const contractAddress = getContractConfig().address;
+      const contractABI = getContractConfig().abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       debugLog('Contract connected for storage');
@@ -627,8 +628,8 @@ export function useAgentDream() {
         throw new Error(`Signer error: ${signerErr?.message}`);
       }
 
-      const contractAddress = AishiAgentABI.address;
-      const contractABI = AishiAgentABI.abi;
+      const contractAddress = getContractConfig().address;
+      const contractABI = getContractConfig().abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       debugLog('Contract connected for processDailyDream');

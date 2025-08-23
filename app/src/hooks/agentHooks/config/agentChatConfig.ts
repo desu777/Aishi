@@ -2,14 +2,11 @@
  * Configuration for Agent Chat functionality
  */
 
-import AishiAgentABI from '../../../abi/AishiAgentABI.json';
+import { getContractConfig } from './contractConfig';
 import { StorageConfig, ComputeConfig } from '../types/agentChatTypes';
 
 // Contract configuration
-export const contractConfig = {
-  address: AishiAgentABI.address as `0x${string}`,
-  abi: AishiAgentABI.abi,
-} as const;
+export const contractConfig = getContractConfig();
 
 // 0G Storage configuration - używamy te same URL co useAgentDream
 export const STORAGE_CONFIG: StorageConfig = {

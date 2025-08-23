@@ -1,7 +1,7 @@
 'use client';
 
 import { Contract } from 'ethers';
-import AishiAgentABI from '../../../abi/AishiAgentABI.json';
+import { getContractConfig } from '../config/contractConfig';
 
 export interface DreamContext {
   userDream: string;

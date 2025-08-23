@@ -3,7 +3,7 @@
 import { getProvider, getSigner } from '../../../lib/0g/fees';
 import { uploadFileComplete } from '../../../lib/0g/uploader';
 import { Contract } from 'ethers';
-import AishiAgentABI from '../../../abi/AishiAgentABI.json';
+import { getContractConfig } from '../config/contractConfig';
 import type { MonthlyDreamConsolidation, MonthlyConversationConsolidation } from './agentConsolidationService';
 
 // Schemat JSON dla rocznej esencji (memory core) - UNIFIED
@@ -330,8 +330,9 @@ export const saveMemoryCoreToStorage = async (
     }
 
     // Get contract to read current yearly hash
-    const contractAddress = AishiAgentABI.address;
-    const contractABI = AishiAgentABI.abi;
+    const contractConfig = getContractConfig();
+    const contractAddress = contractConfig.address;
+    const contractABI = contractConfig.abi;
     const contract = new Contract(contractAddress, contractABI, signer);
 
     const agentMemory = await contract.getAgentMemory(tokenId);
@@ -437,8 +438,9 @@ export const callUpdateMemoryCore = async (
     }
 
     // Get contract
-    const contractAddress = AishiAgentABI.address;
-    const contractABI = AishiAgentABI.abi;
+    const contractConfig = getContractConfig();
+    const contractAddress = contractConfig.address;
+    const contractABI = contractConfig.abi;
     const contract = new Contract(contractAddress, contractABI, signer);
 
     // Call updateMemoryCore function

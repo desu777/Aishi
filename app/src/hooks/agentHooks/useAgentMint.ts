@@ -5,7 +5,7 @@ import { useWriteContract, useAccount, useChainId, useBalance, useWaitForTransac
 import { parseEther, decodeEventLog } from 'viem';
 import { useTheme } from '../../contexts/ThemeContext';
 import { galileoTestnet } from '../../config/chains';
-import AishiAgentABI from '../../abi/AishiAgentABI.json';
+import { getContractConfig } from './config/contractConfig';
 
 // Error parsing utility for viem errors
 const parseViemError = (error: any): string => {
@@ -84,11 +84,8 @@ const parseViemError = (error: any): string => {
   return error?.message || 'An unexpected error occurred during minting.';
 };
 
-// Contract configuration imported from JSON
-const contractConfig = {
-  address: AishiAgentABI.address as `0x${string}`,
-  abi: AishiAgentABI.abi,
-} as const;
+// Contract configuration from generated ABI
+const contractConfig = getContractConfig();
 
 // Types from ABI
 interface MintResult {

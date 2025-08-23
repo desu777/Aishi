@@ -6,7 +6,8 @@
     "dev": "next dev -p 3003",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-abi": "wagmi generate"
   },
   "dependencies": {
     "@0glabs/0g-ts-sdk": "0.3.0",
@@ -36,6 +37,8 @@
   },
   "devDependencies": {
     "@types/react": "19.1.8",
+    "@wagmi/cli": "^2.1.21",
+    "abitype": "^1.0.7",
     "assert": "^2.1.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",

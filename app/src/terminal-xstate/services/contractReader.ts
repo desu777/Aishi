@@ -6,6 +6,7 @@
 import { createPublicClient, http, Address } from 'viem';
 import { galileoTestnet } from '../../config/chains';
 import { getContractConfig, ContractFunctions } from './contractService';
+import { aishiAgentAbi } from '../../generated';
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {

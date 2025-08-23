@@ -5,7 +5,7 @@ import { useWallet } from '../useWallet';
 import { useStorageDownload } from '../storage/useStorageDownload';
 import { useAgentRead } from './useAgentRead';
 import { Contract } from 'ethers';
-import AishiAgentABI from '../../abi/AishiAgentABI.json';
+import { getContractConfig } from './config/contractConfig';
 import { getProvider, getSigner } from '../../lib/0g/fees';
 import {
   consolidateDreamsWithLLM,
@@ -130,8 +130,9 @@ export function useAgentConsolidation(tokenId?: number) {
         throw new Error(`Signer error: ${signerErr?.message}`);
       }
 
-      const contractAddress = AishiAgentABI.address;
-      const contractABI = AishiAgentABI.abi;
+      const contractConfig = getContractConfig();
+      const contractAddress = contractConfig.address;
+      const contractABI = contractConfig.abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       // Check if consolidation is needed
@@ -206,8 +207,9 @@ export function useAgentConsolidation(tokenId?: number) {
         throw new Error(`Signer error: ${signerErr?.message}`);
       }
 
-      const contractAddress = AishiAgentABI.address;
-      const contractABI = AishiAgentABI.abi;
+      const contractConfig = getContractConfig();
+      const contractAddress = contractConfig.address;
+      const contractABI = contractConfig.abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       // Get current memory structure

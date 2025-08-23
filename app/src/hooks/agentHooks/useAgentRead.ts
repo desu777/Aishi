@@ -1,7 +1,7 @@
 'use client';
 
 import { useReadContract } from 'wagmi'
-import AishiAgentABI from '../../abi/AishiAgentABI.json'
+import { getContractConfig } from './config/contractConfig'
 import { useWallet } from '../useWallet'
 import { Address } from 'viem'
 
@@ -14,8 +14,9 @@ const debugLog = (message: string, data?: any) => {
 
 export function useAgentRead(tokenId?: number) {
   const { address } = useWallet()
-  const contractAddress = AishiAgentABI.address as Address
-  const contractAbi = AishiAgentABI.abi
+  const contractConfig = getContractConfig();
+  const contractAddress = contractConfig.address;
+  const contractAbi = contractConfig.abi;
 
   // Pobierz tokenId dla zalogowanego użytkownika
   const { data: userTokenId, isLoading: tokenIdLoading, error: tokenIdError } = useReadContract({

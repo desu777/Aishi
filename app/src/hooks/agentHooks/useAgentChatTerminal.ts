@@ -9,7 +9,7 @@ import { useAgentConversationPrompt, buildConversationSummaryPrompt } from './us
 import { ConversationContextBuilder, ConversationContext, ChatMessage } from './services/conversationContextBuilder';
 import { ConversationUnifiedSchema } from './types/agentChatTypes';
 import { Contract, ethers } from 'ethers';
-import AishiAgentABI from '../../abi/AishiAgentABI.json';
+import { getContractConfig } from './config/contractConfig';
 import { getProvider, getSigner } from '../../lib/0g/fees';
 
 interface TerminalChatSession {
@@ -108,8 +108,9 @@ export function useAgentChatTerminal(tokenId?: number) {
           throw new Error(`Signer error: ${signerErr?.message}`);
         }
 
-        const contractAddress = AishiAgentABI.address;
-        const contractABI = AishiAgentABI.abi;
+        const contractConfig = getContractConfig();
+        const contractAddress = contractConfig.address;
+        const contractABI = contractConfig.abi;
         const contract = new Contract(contractAddress, contractABI, signer);
 
         const contextBuilder = new ConversationContextBuilder(contract, debugLog);
@@ -414,8 +415,9 @@ export function useAgentChatTerminal(tokenId?: number) {
       // 1. Get current conversation hash from contract
       const [provider] = await getProvider();
       const [signer] = await getSigner(provider!);
-      const contractAddress = AishiAgentABI.address;
-      const contractABI = AishiAgentABI.abi;
+      const contractConfig = getContractConfig();
+      const contractAddress = contractConfig.address;
+      const contractABI = contractConfig.abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       const agentMemory = await contract.getAgentMemory(tokenId);
@@ -481,8 +483,9 @@ export function useAgentChatTerminal(tokenId?: number) {
       const [signer] = await getSigner(provider!);
 
       // 2. Connect to contract
-      const contractAddress = AishiAgentABI.address;
-      const contractABI = AishiAgentABI.abi;
+      const contractConfig = getContractConfig();
+      const contractAddress = contractConfig.address;
+      const contractABI = contractConfig.abi;
       const contract = new Contract(contractAddress, contractABI, signer);
 
       // 3. Convert hash to bytes32
