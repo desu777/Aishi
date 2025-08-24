@@ -2,22 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { parseEther } from 'viem';
 import toast from 'react-hot-toast';
 import { galileoTestnet } from '../../../config/chains';
-
-// Import ABI dynamically
-import AishiAgentABI from '../../../abi/AishiAgentABI.json';
-
-const CONTRACT_ADDRESS = AishiAgentABI.address as `0x${string}`;
-const CONTRACT_ABI = AishiAgentABI.abi;
-const MINTING_FEE = parseEther('0.1'); // 0.1 OG
-const MAX_NAME_LENGTH = 32;
-const MAX_AGENTS = Number(process.env.NEXT_PUBLIC_AGENTS) || 50;
+import { getContractConfig, MINTING_FEE, MAX_NAME_LENGTH, MAX_AGENTS } from '../config/contractConfig';
 
 export function useMintAgent() {
   const { address, isConnected } = useAccount();
   const { data: balance } = useBalance({ address });
+  
+  // Get contract configuration
+  const contractConfig = getContractConfig();
   
   // Form state
   const [agentName, setAgentName] = useState('');
@@ -30,24 +24,24 @@ export function useMintAgent() {
 
   // Check if wallet already has an agent
   const { data: existingTokenId } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
+    address: contractConfig.address,
+    abi: contractConfig.abi,
     functionName: 'ownerToTokenId',
     args: address ? [address] : undefined,
   });
 
   // Check if name exists
   const { data: nameExists, refetch: refetchNameExists } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
+    address: contractConfig.address,
+    abi: contractConfig.abi,
     functionName: 'nameExists',
     args: agentName ? [agentName] : undefined,
   });
 
   // Get total agents for stats
   const { data: totalAgents } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
+    address: contractConfig.address,
+    abi: contractConfig.abi,
     functionName: 'totalAgents',
   });
 
@@ -119,8 +113,8 @@ export function useMintAgent() {
 
     try {
       await writeContractAsync({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
+        address: contractConfig.address,
+        abi: contractConfig.abi,
         functionName: 'mintAgent',
         args: [
           [], // empty proofs
@@ -204,6 +198,6 @@ export function useMintAgent() {
     // Constants
     MINTING_FEE,
     MAX_NAME_LENGTH,
-    CONTRACT_ADDRESS,
+    CONTRACT_ADDRESS: contractConfig.address,
   };
 }

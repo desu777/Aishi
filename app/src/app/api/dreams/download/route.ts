@@ -1,20 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { downloadByRootHashAPI } from '../../../../lib/0g/downloader';
-import AishiAgentABI from '../../../../abi/AishiAgentABI.json';
 import { createPublicClient, http } from 'viem';
 import { galileoTestnet } from '../../../../config/chains';
-
-// 0G Storage configuration
-const STORAGE_CONFIG = {
-  storageRpc: process.env.NEXT_PUBLIC_TURBO_STORAGE_RPC || 'https://indexer-storage-testnet-turbo.0g.ai',
-  l1Rpc: process.env.NEXT_PUBLIC_L1_RPC || 'https://evmrpc-testnet.0g.ai'
-};
-
-// Contract configuration
-const contractConfig = {
-  address: AishiAgentABI.address as `0x${string}`,
-  abi: AishiAgentABI.abi,
-} as const;
+import { getContractConfig, STORAGE_CONFIG } from '../../config/contractConfig';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,6 +17,9 @@ export async function GET(request: NextRequest) {
     }
 
     const tokenIdBigInt = BigInt(tokenId);
+    
+    // Get contract configuration
+    const contractConfig = getContractConfig();
 
     // Create public client to read from contract
     const publicClient = createPublicClient({
