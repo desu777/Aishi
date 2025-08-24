@@ -5,9 +5,9 @@ import { useStorageDownload } from '../storage/useStorageDownload';
 import { useStorageUpload } from '../storage/useStorageUpload';
 import { useWallet } from '../useWallet';
 import { useAgentRead } from './useAgentRead';
-import { Contract } from 'ethers';
 import { getContractConfig } from './config/contractConfig';
-import { getProvider, getSigner } from '../../lib/0g/fees';
+import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
+import { galileoTestnet } from '../../config/chains';
 import {
   sendYearlyConsolidation,
   validateYearlyDataCompleteness,
@@ -507,31 +507,35 @@ export function useYearLearn(tokenId?: number) {
   const updateMemoryCore = async (memoryCoreHash: string): Promise<string> => {
     debugLog('Updating contract with memory core hash', { memoryCoreHash });
 
-    const [provider, providerErr] = await getProvider();
-    if (!provider || providerErr) {
-      throw new Error(`Provider error: ${providerErr?.message}`);
+    const [walletClient, walletErr] = await getViemSigner();
+    if (!walletClient || walletErr) {
+      throw new Error(`WalletClient error: ${walletErr?.message}`);
     }
 
-    const [signer, signerErr] = await getSigner(provider);
-    if (!signer || signerErr) {
-      throw new Error(`Signer error: ${signerErr?.message}`);
+    // Get account from walletClient
+    const [account] = await walletClient.getAddresses();
+    if (!account) {
+      throw new Error('No account available');
     }
 
     const contractConfig = getContractConfig();
-    const contractAddress = contractConfig.address;
-    const contractABI = contractConfig.abi;
-    const contract = new Contract(contractAddress, contractABI, signer);
 
     // Call updateMemoryCore function
-    const tx = await contract.updateMemoryCore(
-      operationalTokenId,
-      memoryCoreHash
-    );
+    const txHash = await walletClient.writeContract({
+      address: contractConfig.address,
+      abi: contractConfig.abi,
+      functionName: 'updateMemoryCore',
+      chain: galileoTestnet,
+      account,
+      args: [operationalTokenId, memoryCoreHash]
+    });
 
-    await tx.wait();
+    // Wait for transaction confirmation
+    const [publicClient] = await getViemProvider();
+    const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
 
-    debugLog('Contract updated successfully with memory core', { txHash: tx.hash });
-    return tx.hash;
+    debugLog('Contract updated successfully with memory core', { txHash, blockNumber: receipt.blockNumber });
+    return txHash;
   };
 
   /**

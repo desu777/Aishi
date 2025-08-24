@@ -1,6 +1,5 @@
 'use client';
 
-import { Contract } from 'ethers';
 import { getContractConfig } from '../config/contractConfig';
 
 export interface ChatMessage {

@@ -3,8 +3,9 @@
  * @description Updates smart contract with dream data and personality evolution
  */
 
-import { Contract } from 'ethers';
-import { getProvider, getSigner } from '../../lib/0g/fees';
+import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
+import { galileoTestnet } from '../../config/chains';
+import type { PublicClient, WalletClient } from 'viem';
 import { getContractConfig } from './contractService';
 import { EvolutionFields, clampToContractRanges } from './dreamDataValidator';
 
@@ -80,14 +81,25 @@ export async function updateDreamContract(
       throw new Error(`Contract input validation failed: ${validationResult.error}`);
     }
 
-    // Get contract instance
-    const contract = await getContractInstance();
+    // Get viem clients for transaction
+    const [walletClient, walletErr] = await getViemSigner();
+    if (!walletClient || walletErr) {
+      throw new Error(`WalletClient error: ${walletErr?.message || 'No wallet client available'}`);
+    }
+
+    // Get account from walletClient
+    const [account] = await walletClient.getAddresses();
+    if (!account) {
+      throw new Error('No account available');
+    }
+
+    const contractConfig = getContractConfig();
     
     // Prepare personality impact data
     const contractImpact = preparePersonalityImpact(personalityImpact, isEvolutionDream);
 
     debugLog('Prepared contract data', {
-      contractAddress: contract.target,
+      contractAddress: contractConfig.address,
       impactData: {
         moodShift: contractImpact.moodShift,
         evolutionWeight: contractImpact.evolutionWeight,
@@ -98,7 +110,8 @@ export async function updateDreamContract(
 
     // Execute transaction
     const txResult = await executeContractTransaction(
-      contract,
+      walletClient,
+      account,
       tokenId,
       dreamHash,
       contractImpact,
@@ -153,45 +166,13 @@ export async function updateDreamContract(
   }
 }
 
-/**
- * Get contract instance with provider and signer
- */
-async function getContractInstance(): Promise<Contract> {
-  debugLog('Getting contract instance');
-
-  // Get provider
-  const [provider, providerErr] = await getProvider();
-  if (!provider || providerErr) {
-    throw new Error(`Provider error: ${providerErr?.message || 'No provider available'}`);
-  }
-
-  // Get signer
-  const [signer, signerErr] = await getSigner(provider);
-  if (!signer || signerErr) {
-    throw new Error(`Signer error: ${signerErr?.message || 'No signer available'}`);
-  }
-
-  // Get contract configuration
-  const contractConfig = getContractConfig();
-  
-  debugLog('Contract configuration loaded', {
-    address: contractConfig.address,
-    network: contractConfig.network,
-    chainId: contractConfig.chainId
-  });
-
-  // Create contract instance
-  const contract = new Contract(contractConfig.address, contractConfig.abi, signer);
-
-  debugLog('Contract instance created successfully');
-  return contract;
-}
 
 /**
- * Execute the contract transaction
+ * Execute the contract transaction using viem
  */
 async function executeContractTransaction(
-  contract: Contract,
+  walletClient: WalletClient,
+  account: `0x${string}`,
   tokenId: number,
   dreamHash: string,
   personalityImpact: ContractPersonalityImpact,
@@ -210,32 +191,42 @@ async function executeContractTransaction(
     isEvolutionDream
   });
 
+  const contractConfig = getContractConfig();
+
   // Call processDailyDream function
-  const tx = await contract.processDailyDream(
-    tokenId,
-    dreamHash,
-    personalityImpact
-  );
+  const txHash = await walletClient.writeContract({
+    address: contractConfig.address,
+    abi: contractConfig.abi,
+    functionName: 'processDailyDream',
+    chain: galileoTestnet,
+    account,
+    args: [tokenId, dreamHash, personalityImpact]
+  });
 
   debugLog('Transaction sent, waiting for confirmation', { 
-    txHash: tx.hash.substring(0, 10) + '...' 
+    txHash: txHash.substring(0, 10) + '...' 
   });
 
   // Wait for confirmation
-  const receipt = await tx.wait();
+  const [publicClient] = await getViemProvider();
+  if (!publicClient) {
+    throw new Error('PublicClient not available for transaction receipt');
+  }
+
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
   const confirmationTime = Date.now() - transactionStartTime;
 
   debugLog('Transaction confirmed', {
-    txHash: tx.hash.substring(0, 10) + '...',
-    blockNumber: receipt.blockNumber,
+    txHash: txHash.substring(0, 10) + '...',
+    blockNumber: Number(receipt.blockNumber),
     gasUsed: receipt.gasUsed?.toString(),
     confirmationTime
   });
 
   return {
-    txHash: tx.hash,
+    txHash,
     gasUsed: receipt.gasUsed?.toString(),
-    blockNumber: receipt.blockNumber,
+    blockNumber: Number(receipt.blockNumber),
     confirmationTime
   };
 }
@@ -346,14 +337,24 @@ export async function canProcessDreamToday(tokenId: number): Promise<{
   debugLog('Checking if agent can process dream today', { tokenId });
 
   try {
-    const contract = await getContractInstance();
+    const [publicClient, err] = await getViemProvider();
+    if (!publicClient || err) {
+      throw new Error(`PublicClient error: ${err?.message || 'No public client available'}`);
+    }
+
+    const contractConfig = getContractConfig();
     
     // Call canProcessDreamToday view function
-    const canProcess = await contract.canProcessDreamToday(tokenId);
+    const canProcess = await publicClient.readContract({
+      address: contractConfig.address,
+      abi: contractConfig.abi,
+      functionName: 'canProcessDreamToday',
+      args: [tokenId]
+    });
     
     debugLog('Dream processing check completed', { tokenId, canProcess });
     
-    return { canProcess };
+    return { canProcess: canProcess as boolean };
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -378,10 +379,20 @@ export async function getAgentMemory(tokenId: number): Promise<{
   debugLog('Getting agent memory', { tokenId });
 
   try {
-    const contract = await getContractInstance();
+    const [publicClient, err] = await getViemProvider();
+    if (!publicClient || err) {
+      throw new Error(`PublicClient error: ${err?.message || 'No public client available'}`);
+    }
+
+    const contractConfig = getContractConfig();
     
     // Call getAgentMemory view function
-    const memory = await contract.getAgentMemory(tokenId);
+    const memory = await publicClient.readContract({
+      address: contractConfig.address,
+      abi: contractConfig.abi,
+      functionName: 'getAgentMemory',
+      args: [tokenId]
+    }) as any;
     
     debugLog('Agent memory retrieved', { 
       tokenId,
@@ -429,15 +440,22 @@ export async function estimateGasForDreamUpdate(
   debugLog('Estimating gas for dream update', { tokenId, isEvolution: !!personalityImpact });
 
   try {
-    const contract = await getContractInstance();
+    const [publicClient, err] = await getViemProvider();
+    if (!publicClient || err) {
+      throw new Error(`PublicClient error: ${err?.message || 'No public client available'}`);
+    }
+
+    const contractConfig = getContractConfig();
     const contractImpact = preparePersonalityImpact(personalityImpact, !!personalityImpact);
     
-    // Estimate gas
-    const gasEstimate = await contract.processDailyDream.estimateGas(
-      tokenId,
-      dreamHash,
-      contractImpact
-    );
+    // Estimate gas using a dummy account
+    const gasEstimate = await publicClient.estimateContractGas({
+      address: contractConfig.address,
+      abi: contractConfig.abi,
+      functionName: 'processDailyDream',
+      account: '0x0000000000000000000000000000000000000000' as `0x${string}`, // dummy account for estimation
+      args: [tokenId, dreamHash, contractImpact]
+    });
     
     debugLog('Gas estimation completed', { 
       gasEstimate: gasEstimate.toString(),

@@ -8,9 +8,10 @@ import { useAgentConversation } from './useAgentConversation';
 import { useAgentConversationPrompt, buildConversationSummaryPrompt } from './useAgentConversationPrompt';
 import { ConversationContextBuilder, ConversationContext, ChatMessage } from './services/conversationContextBuilder';
 import { ConversationSummary, ConversationUnifiedSchema } from './types/agentChatTypes';
-import { Contract, ethers } from 'ethers';
 import { getContractConfig } from './config/contractConfig';
-import { getProvider, getSigner } from '../../lib/0g/fees';
+import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
+import { galileoTestnet } from '../../config/chains';
+import type { PublicClient, WalletClient } from 'viem';
 
 interface ChatSession {
   sessionId: string;
@@ -110,22 +111,12 @@ export function useAgentChat(tokenId?: number) {
         );
       } else {
         // Fallback to contract calls
-        const [provider, providerErr] = await getProvider();
-        if (!provider || providerErr) {
-          throw new Error(`Provider error: ${providerErr?.message}`);
+        const [publicClient, publicErr] = await getViemProvider();
+        if (!publicClient || publicErr) {
+          throw new Error(`PublicClient error: ${publicErr?.message}`);
         }
 
-        const [signer, signerErr] = await getSigner(provider);
-        if (!signer || signerErr) {
-          throw new Error(`Signer error: ${signerErr?.message}`);
-        }
-
-        const contractConfig = getContractConfig();
-        const contractAddress = contractConfig.address;
-        const contractABI = contractConfig.abi;
-        const contract = new Contract(contractAddress, contractABI, signer);
-
-        const contextBuilder = new ConversationContextBuilder(contract, debugLog);
+        const contextBuilder = new ConversationContextBuilder(publicClient, debugLog);
         context = await contextBuilder.buildContext(
           tokenId,
           sessionId,
@@ -427,14 +418,15 @@ export function useAgentChat(tokenId?: number) {
       });
 
       // 1. Get current conversation hash from contract
-      const [provider] = await getProvider();
-      const [signer] = await getSigner(provider!);
+      const [publicClient] = await getViemProvider();
       const contractConfig = getContractConfig();
-      const contractAddress = contractConfig.address;
-      const contractABI = contractConfig.abi;
-      const contract = new Contract(contractAddress, contractABI, signer);
 
-      const agentMemory = await contract.getAgentMemory(tokenId);
+      const agentMemory = await publicClient!.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'getAgentMemory',
+        args: [tokenId]
+      });
       const currentConvHash = (agentMemory as any).currentConvDailyHash;
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -500,20 +492,21 @@ export function useAgentChat(tokenId?: number) {
         contractStatus: 'Connecting to contract...'
       }));
 
-      // 1. Get provider and signer
-      const [provider] = await getProvider();
-      const [signer] = await getSigner(provider!);
+      const [walletClient, walletErr] = await getViemSigner();
+      if (!walletClient || walletErr) {
+        throw new Error(`WalletClient error: ${walletErr?.message}`);
+      }
 
-      // 2. Connect to contract
+      // Get account from walletClient
+      const [account] = await walletClient.getAddresses();
+      if (!account) {
+        throw new Error('No account available');
+      }
+
       const contractConfig = getContractConfig();
-      const contractAddress = contractConfig.address;
-      const contractABI = contractConfig.abi;
-      const contract = new Contract(contractAddress, contractABI, signer);
 
-      // 3. Convert hash to bytes32
       const hashBytes32 = conversationHash.startsWith('0x') ? conversationHash : `0x${conversationHash}`;
 
-      // 4. Use GENERAL_CHAT for all conversations (simplified)
       const contextType = ContextType.GENERAL_CHAT;
 
       setChatState(prev => ({ 
@@ -521,16 +514,22 @@ export function useAgentChat(tokenId?: number) {
         contractStatus: 'Calling recordConversation...'
       }));
 
-      // 5. Call recordConversation
-      const tx = await contract.recordConversation(tokenId, hashBytes32, contextType);
+      const txHash = await walletClient.writeContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'recordConversation',
+        chain: galileoTestnet,
+        account,
+        args: [tokenId, hashBytes32, contextType]
+      });
 
       setChatState(prev => ({ 
         ...prev, 
         contractStatus: 'Waiting for confirmation...'
       }));
 
-      // 6. Wait for confirmation
-      const receipt = await tx.wait();
+      const [publicClient] = await getViemProvider();
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
 
       setChatState(prev => ({ 
         ...prev, 
@@ -539,7 +538,7 @@ export function useAgentChat(tokenId?: number) {
       }));
 
       debugLog('Conversation recorded in contract', {
-        txHash: receipt.transactionHash,
+        txHash,
         gasUsed: receipt.gasUsed?.toString()
       });
 

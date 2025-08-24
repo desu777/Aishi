@@ -1,5 +1,12 @@
+/**
+ * @fileoverview 0G Storage upload functionality using viem adapter
+ * @description Handles file uploads to 0G Network storage using @0glabs/0g-ts-sdk
+ * with ethers compatibility through viemAdapter
+ */
+
 import { Indexer, Blob, ZgFile } from '@0glabs/0g-ts-sdk';
-import { ethers, Contract } from 'ethers';
+import { Contract } from 'ethers';
+import { getEthersSignerForZeroG, getEthersProviderForZeroG } from './adapter/viemAdapter';
 
 /**
  * Submits a transaction to the flow contract
@@ -27,7 +34,7 @@ export async function submitTransaction(
  * @param blob The blob to upload
  * @param storageRpc The storage RPC URL
  * @param l1Rpc The L1 RPC URL
- * @param signer The signer
+ * @param signer The signer (now using adapter)
  * @param uniqueTag Optional unique tag for upload
  * @returns A promise that resolves to upload result and any error
  */
@@ -127,18 +134,18 @@ export async function createZgFileFromPath(filePath: string): Promise<[ZgFile | 
 // Note: generateMerkleTree function removed - 0G SDK Blob has built-in merkleTree() method
 
 /**
- * Upload file with complete workflow like 0gdrive-main (create blob + upload)
+ * Complete upload flow for a file with viem adapter integration
  * @param file The file to upload
- * @param storageRpc Storage RPC URL
- * @param l1Rpc L1 RPC URL  
- * @param signer The signer
+ * @param l1Rpc The L1 RPC URL  
+ * @param storageRpc The storage RPC URL
+ * @param signer Optional ethers signer (deprecated, will be ignored)
  * @returns Upload result with root hash and transaction info
  */
 export async function uploadFileComplete(
   file: File,
   storageRpc: string,
   l1Rpc: string,
-  signer: any
+  signer?: any // Deprecated parameter for backward compatibility
 ): Promise<{
   success: boolean;
   rootHash?: string;
@@ -147,7 +154,7 @@ export async function uploadFileComplete(
   alreadyExists?: boolean;
 }> {
   try {
-    console.log('[uploadFileComplete] Starting upload process...');
+    console.log('[uploadFileComplete] Starting complete upload flow');
     console.log('[uploadFileComplete] File:', file.name, 'Size:', file.size);
 
     // 1. Create 0G SDK Blob from file
@@ -158,43 +165,49 @@ export async function uploadFileComplete(
     console.log('[uploadFileComplete] 0G SDK Blob created successfully');
 
     // 2. Generate unique tag for upload (like 0gdrive-main)
-    const timestamp = Date.now();
-    const randomValue = Math.floor(Math.random() * 1000000);
-    const combinedValue = timestamp + randomValue;
-    const hexString = combinedValue.toString(16);
-    const paddedHex = hexString.length % 2 === 0 ? hexString : '0' + hexString;
-    const uniqueTag = '0x' + paddedHex;
-    console.log('[uploadFileComplete] Generated unique tag:', uniqueTag);
+    const [merkleTree, merkleErr] = await blob.merkleTree();
+    if (!merkleTree || merkleErr) {
+      return { success: false, error: `Failed to create merkle tree: ${merkleErr?.message}` };
+    }
+    const rootHashHex = merkleTree.rootHash();
+    if (!rootHashHex) {
+      return { success: false, error: 'Failed to get root hash from merkle tree' };
+    }
+    const uniqueTag = rootHashHex; // Already includes 0x prefix
+    console.log('[uploadFileComplete] Root hash generated:', uniqueTag);
 
-    // 3. Upload to storage with options like 0gdrive-main
-    const [uploadResult, uploadErr] = await uploadToStorage(blob, storageRpc, l1Rpc, signer, uniqueTag);
+    // 3. Get signer using adapter (ignore deprecated parameter)
+    console.log('[uploadFileComplete] Getting signer via adapter...');
+    if (signer) {
+      console.log('[uploadFileComplete] Warning: signer parameter is deprecated and will be ignored');
+    }
+    const adapterSigner = await getEthersSignerForZeroG();
+    console.log('[uploadFileComplete] Signer obtained');
+
+    // 4. Upload to 0G storage
+    const [uploadResult, uploadErr] = await uploadToStorage(
+      blob, 
+      storageRpc, 
+      l1Rpc, 
+      adapterSigner,
+      uniqueTag
+    );
+    
     if (!uploadResult || uploadErr) {
-      return { success: false, error: `Upload failed: ${uploadErr?.message}` };
+      return { 
+        success: false, 
+        error: `Upload failed: ${uploadErr?.message}` 
+      };
     }
 
-    // 4. Get root hash from blob's merkle tree (like 0gdrive-main)
-    let rootHash: string;
-    try {
-      const [merkleTree, merkleError] = await blob.merkleTree();
-      if (merkleError || !merkleTree) {
-        throw new Error('Failed to get merkle tree');
-      }
-      const hash = merkleTree.rootHash();
-      if (!hash) {
-        throw new Error('Root hash is null');
-      }
-      rootHash = hash;
-      console.log('[uploadFileComplete] Got root hash from blob:', rootHash);
-    } catch (rootHashError) {
-      return { success: false, error: `Failed to get root hash: ${rootHashError.message}` };
-    }
-
+    // 5. Return success with root hash
     return {
       success: true,
-      rootHash,
-      txHash: uploadResult.txHash || 'upload-success',
-      alreadyExists: uploadResult.alreadyExists || false
+      rootHash: uniqueTag,
+      txHash: uploadResult.txHash,
+      alreadyExists: uploadResult.alreadyExists
     };
+    
   } catch (error) {
     console.error('[uploadFileComplete] Error:', error);
     return {
@@ -202,4 +215,4 @@ export async function uploadFileComplete(
       error: error instanceof Error ? error.message : String(error)
     };
   }
-} 
+}

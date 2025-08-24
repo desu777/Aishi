@@ -4,11 +4,11 @@ import { useState } from 'react';
 import { useStorageDownload } from '../storage/useStorageDownload';
 import { useStorageUpload } from '../storage/useStorageUpload';
 import { useWallet } from '../useWallet';
-import { Contract, ethers } from 'ethers';
 import { aishiAgentAbi } from '../../generated';
 import { getContractConfig } from './config/contractConfig';
 import { DreamContextBuilder, DreamContext } from './services/dreamContextBuilder';
-import { getProvider, getSigner } from '../../lib/0g/fees';
+import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
+import type { PublicClient, WalletClient } from 'viem';
 
 interface DreamState {
   dreamText: string;
@@ -198,31 +198,18 @@ export function useAgentDream() {
 
       } else {
         // Fallback to contract calls (backward compatibility)
-        setDreamState(prev => ({ ...prev, contextStatus: 'Connecting to provider...' }));
+        setDreamState(prev => ({ ...prev, contextStatus: 'Connecting to viem client...' }));
 
-        const [provider, providerErr] = await getProvider();
-        if (!provider || providerErr) {
-          throw new Error(`Provider error: ${providerErr?.message}`);
+        const [publicClient, publicErr] = await getViemProvider();
+        if (!publicClient || publicErr) {
+          throw new Error(`PublicClient error: ${publicErr?.message}`);
         }
 
-        const [signer, signerErr] = await getSigner(provider);
-        if (!signer || signerErr) {
-          throw new Error(`Signer error: ${signerErr?.message}`);
-        }
-
-        debugLog('Provider and signer connected');
-
-        setDreamState(prev => ({ ...prev, contextStatus: 'Connecting to contract...' }));
-
-        const contractAddress = getContractConfig().address;
-        const contractABI = getContractConfig().abi;
-        const contract = new Contract(contractAddress, contractABI, signer);
-
-        debugLog('Contract connected', { address: contractAddress });
+        debugLog('PublicClient connected');
 
         setDreamState(prev => ({ ...prev, contextStatus: 'Building context...' }));
 
-        const contextBuilder = new DreamContextBuilder(contract, debugLog);
+        const contextBuilder = new DreamContextBuilder(publicClient, debugLog);
 
         const context = await contextBuilder.buildContext(
           tokenId,
@@ -293,24 +280,21 @@ export function useAgentDream() {
       // 1. Get contract instance to read current memory
       setDreamState(prev => ({ ...prev, uploadStatus: 'Reading agent memory...' }));
       
-      const [provider, providerErr] = await getProvider();
-      if (!provider || providerErr) {
-        throw new Error(`Provider error: ${providerErr?.message}`);
+      const [publicClient, publicErr] = await getViemProvider();
+      if (!publicClient || publicErr) {
+        throw new Error(`PublicClient error: ${publicErr?.message}`);
       }
 
-      const [signer, signerErr] = await getSigner(provider);
-      if (!signer || signerErr) {
-        throw new Error(`Signer error: ${signerErr?.message}`);
-      }
+      const contractConfig = getContractConfig();
 
-      const contractAddress = getContractConfig().address;
-      const contractABI = getContractConfig().abi;
-      const contract = new Contract(contractAddress, contractABI, signer);
+      debugLog('PublicClient connected for storage');
 
-      debugLog('Contract connected for storage');
-
-      // 2. Get current memory structure
-      const agentMemory = await contract.getAgentMemory(tokenId);
+      const agentMemory = await publicClient.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'getAgentMemory',
+        args: [tokenId]
+      });
       const currentDreamHash = agentMemory.currentDreamDailyHash;
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -616,54 +600,54 @@ export function useAgentDream() {
       });
 
       // 1. Get contract instance
-      setDreamState(prev => ({ ...prev, contractStatus: 'Connecting to contract...' }));
+      setDreamState(prev => ({ ...prev, contractStatus: 'Connecting to wallet client...' }));
       
-      const [provider, providerErr] = await getProvider();
-      if (!provider || providerErr) {
-        throw new Error(`Provider error: ${providerErr?.message}`);
+      const [walletClient, walletErr] = await getViemSigner();
+      if (!walletClient || walletErr) {
+        throw new Error(`WalletClient error: ${walletErr?.message}`);
       }
 
-      const [signer, signerErr] = await getSigner(provider);
-      if (!signer || signerErr) {
-        throw new Error(`Signer error: ${signerErr?.message}`);
+      // Get account from walletClient
+      const [account] = await walletClient.getAddresses();
+      if (!account) {
+        throw new Error('No account available');
       }
 
-      const contractAddress = getContractConfig().address;
-      const contractABI = getContractConfig().abi;
-      const contract = new Contract(contractAddress, contractABI, signer);
+      const contractConfig = getContractConfig();
 
-      debugLog('Contract connected for processDailyDream');
+      debugLog('WalletClient connected for processDailyDream');
 
-      // 2. Use dreamHash directly (already in correct bytes32 format from 0G Storage)
-      const dreamHashBytes32 = dreamHash; // 0G Storage returns hex string "0x..." which is valid bytes32
+      const dreamHashBytes32 = dreamHash;
       
       debugLog('Using root hash from storage as bytes32', { 
         originalHash: dreamHash,
         bytes32Hash: dreamHashBytes32
       });
 
-      // 3. Call processDailyDream
       setDreamState(prev => ({ ...prev, contractStatus: 'Calling processDailyDream...' }));
       
-      const tx = await contract.processDailyDream(
-        tokenId,
-        dreamHashBytes32,
-        personalityImpact
-      );
+      const txHash = await walletClient.writeContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'processDailyDream',
+        chain: galileoTestnet,
+        account,
+        args: [tokenId, dreamHashBytes32, personalityImpact]
+      });
 
       debugLog('processDailyDream transaction sent', { 
-        txHash: tx.hash,
+        txHash,
         tokenId,
         dreamHash: dreamHashBytes32
       });
 
-      // 4. Wait for transaction confirmation
       setDreamState(prev => ({ ...prev, contractStatus: 'Waiting for confirmation...' }));
       
-      const receipt = await tx.wait();
+      const [publicClient] = await getViemProvider();
+      const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
       
       debugLog('processDailyDream transaction confirmed', {
-        txHash: receipt.transactionHash,
+        txHash,
         blockNumber: receipt.blockNumber,
         gasUsed: receipt.gasUsed.toString()
       });
@@ -676,7 +660,7 @@ export function useAgentDream() {
 
       return {
         success: true,
-        txHash: receipt.transactionHash
+        txHash
       };
 
     } catch (error) {

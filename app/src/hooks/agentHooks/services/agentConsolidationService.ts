@@ -1,9 +1,10 @@
 'use client';
 
-import { getProvider, getSigner } from '../../../lib/0g/fees';
+import { getViemProvider, getViemSigner } from '../../../lib/0g/fees';
 import { uploadFileComplete } from '../../../lib/0g/uploader';
-import { Contract } from 'ethers';
 import { getContractConfig } from '../config/contractConfig';
+import { getEthersSignerForZeroG } from '../../../lib/0g/adapter/viemAdapter';
+import type { PublicClient, WalletClient } from 'viem';
 
 // Schemat JSON dla konsolidacji miesięcznej snów (UNIFIED)
 export interface MonthlyDreamConsolidation {
@@ -480,24 +481,21 @@ export const saveConsolidationToStorage = async (
       convMonth: `${conversationConsolidation.year}-${conversationConsolidation.month}`
     });
 
-    // Get provider and signer
-    const [provider, providerErr] = await getProvider();
-    if (!provider || providerErr) {
-      throw new Error(`Provider error: ${providerErr?.message}`);
-    }
-
-    const [signer, signerErr] = await getSigner(provider);
-    if (!signer || signerErr) {
-      throw new Error(`Signer error: ${signerErr?.message}`);
+    // Get viem clients
+    const [publicClient, publicErr] = await getViemProvider();
+    if (!publicClient || publicErr) {
+      throw new Error(`PublicClient error: ${publicErr?.message}`);
     }
 
     // Get contract to read current monthly hashes
     const contractConfig = getContractConfig();
-    const contractAddress = contractConfig.address;
-    const contractABI = contractConfig.abi;
-    const contract = new Contract(contractAddress, contractABI, signer);
-
-    const agentMemory = await contract.getAgentMemory(tokenId);
+    
+    const agentMemory = await publicClient.readContract({
+      address: contractConfig.address,
+      abi: contractConfig.abi,
+      functionName: 'getAgentMemory',
+      args: [tokenId]
+    });
     const currentDreamMonthlyHash = agentMemory.lastDreamMonthlyHash;
     const currentConvMonthlyHash = agentMemory.lastConvMonthlyHash;
     const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -634,43 +632,43 @@ export const callConsolidateMonth = async (
       year 
     });
 
-    // Get provider and signer
-    const [provider, providerErr] = await getProvider();
-    if (!provider || providerErr) {
-      throw new Error(`Provider error: ${providerErr?.message}`);
+    // Get viem clients
+    const [walletClient, walletErr] = await getViemSigner();
+    if (!walletClient || walletErr) {
+      throw new Error(`WalletClient error: ${walletErr?.message}`);
     }
 
-    const [signer, signerErr] = await getSigner(provider);
-    if (!signer || signerErr) {
-      throw new Error(`Signer error: ${signerErr?.message}`);
+    // Get account from walletClient
+    const [account] = await walletClient.getAddresses();
+    if (!account) {
+      throw new Error('No account available');
     }
 
-    // Get contract
+    // Get contract config
     const contractConfig = getContractConfig();
-    const contractAddress = contractConfig.address;
-    const contractABI = contractConfig.abi;
-    const contract = new Contract(contractAddress, contractABI, signer);
 
     // Call consolidateMonth function
-    const tx = await contract.consolidateMonth(
-      tokenId,
-      dreamHash,
-      convHash,
-      month,
-      year
-    );
+    const txHash = await walletClient.writeContract({
+      address: contractConfig.address,
+      abi: contractConfig.abi,
+      functionName: 'consolidateMonth',
+      chain: galileoTestnet,
+      account,
+      args: [tokenId, dreamHash, convHash, month, year]
+    });
 
-    debugLog('ConsolidateMonth transaction sent', { txHash: tx.hash });
+    debugLog('ConsolidateMonth transaction sent', { txHash });
 
     // Wait for confirmation
-    const receipt = await tx.wait();
+    const [publicClient] = await getViemProvider();
+    const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
     
     debugLog('ConsolidateMonth transaction confirmed', { 
-      txHash: tx.hash, 
+      txHash, 
       blockNumber: receipt.blockNumber 
     });
 
-    return { success: true, txHash: tx.hash };
+    return { success: true, txHash };
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -688,22 +686,7 @@ export const clearMonthlyFiles = async (
   try {
     debugLog('Clearing monthly files', { tokenId });
 
-    // Get provider and signer
-    const [provider, providerErr] = await getProvider();
-    if (!provider || providerErr) {
-      throw new Error(`Provider error: ${providerErr?.message}`);
-    }
-
-    const [signer, signerErr] = await getSigner(provider);
-    if (!signer || signerErr) {
-      throw new Error(`Signer error: ${signerErr?.message}`);
-    }
-
-    // Get contract
-    const contractConfig = getContractConfig();
-    const contractAddress = contractConfig.address;
-    const contractABI = contractConfig.abi;
-    const contract = new Contract(contractAddress, contractABI, signer);
+    const signer = await getEthersSignerForZeroG();
 
     // Create empty files to "clear" the monthly data
     const emptyDreamFile = new File(['[]'], 'empty_dreams.json', { type: 'application/json' });

@@ -1,3 +1,9 @@
+/**
+ * @fileoverview 0G Storage download functionality using viem adapter
+ * @description Handles file downloads from 0G Network storage using @0glabs/0g-ts-sdk
+ * with ethers compatibility through viemAdapter
+ */
+
 import { Indexer } from '@0glabs/0g-ts-sdk';
 
 /**

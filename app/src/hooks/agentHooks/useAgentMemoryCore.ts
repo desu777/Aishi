@@ -4,9 +4,9 @@ import { useState, useCallback } from 'react';
 import { useWallet } from '../useWallet';
 import { useStorageDownload } from '../storage/useStorageDownload';
 import { useAgentRead } from './useAgentRead';
-import { Contract } from 'ethers';
 import { getContractConfig } from './config/contractConfig';
-import { getProvider, getSigner } from '../../lib/0g/fees';
+import { getViemProvider } from '../../lib/0g/fees';
+import type { PublicClient } from 'viem';
 import {
   consolidateYearWithLLM,
   saveMemoryCoreToStorage,
@@ -103,23 +103,19 @@ export function useAgentMemoryCore(tokenId?: number) {
     try {
       debugLog('Checking yearly reflection status', { tokenId: operationalTokenId });
 
-      const [provider, providerErr] = await getProvider();
-      if (!provider || providerErr) {
-        throw new Error(`Provider error: ${providerErr?.message}`);
-      }
-
-      const [signer, signerErr] = await getSigner(provider);
-      if (!signer || signerErr) {
-        throw new Error(`Signer error: ${signerErr?.message}`);
+      const [publicClient, publicErr] = await getViemProvider();
+      if (!publicClient || publicErr) {
+        throw new Error(`PublicClient error: ${publicErr?.message}`);
       }
 
       const contractConfig = getContractConfig();
-      const contractAddress = contractConfig.address;
-      const contractABI = contractConfig.abi;
-      const contract = new Contract(contractAddress, contractABI, signer);
 
-      // Check if yearly reflection is available (flag set in December consolidation)
-      const pendingRewards = await contract.pendingRewards(operationalTokenId);
+      const pendingRewards = await publicClient.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'pendingRewards',
+        args: [operationalTokenId]
+      });
       const hasYearlyReflection = pendingRewards.yearlyReflection;
 
       setMemoryCoreState(prev => ({
@@ -172,23 +168,19 @@ export function useAgentMemoryCore(tokenId?: number) {
     try {
       debugLog('Loading monthly consolidations', { tokenId: operationalTokenId, year });
 
-      const [provider, providerErr] = await getProvider();
-      if (!provider || providerErr) {
-        throw new Error(`Provider error: ${providerErr?.message}`);
-      }
-
-      const [signer, signerErr] = await getSigner(provider);
-      if (!signer || signerErr) {
-        throw new Error(`Signer error: ${signerErr?.message}`);
+      const [publicClient, publicErr] = await getViemProvider();
+      if (!publicClient || publicErr) {
+        throw new Error(`PublicClient error: ${publicErr?.message}`);
       }
 
       const contractConfig = getContractConfig();
-      const contractAddress = contractConfig.address;
-      const contractABI = contractConfig.abi;
-      const contract = new Contract(contractAddress, contractABI, signer);
 
-      // Get agent memory to find consolidation hashes
-      const agentMemory = await contract.getAgentMemory(operationalTokenId);
+      const agentMemory = await publicClient.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'getAgentMemory',
+        args: [operationalTokenId]
+      });
       
       debugLog('Agent memory retrieved', {
         lastDreamMonthlyHash: agentMemory.lastDreamMonthlyHash,

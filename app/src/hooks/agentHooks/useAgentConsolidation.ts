@@ -4,9 +4,9 @@ import { useState, useCallback } from 'react';
 import { useWallet } from '../useWallet';
 import { useStorageDownload } from '../storage/useStorageDownload';
 import { useAgentRead } from './useAgentRead';
-import { Contract } from 'ethers';
 import { getContractConfig } from './config/contractConfig';
-import { getProvider, getSigner } from '../../lib/0g/fees';
+import { getViemProvider } from '../../lib/0g/fees';
+import type { PublicClient } from 'viem';
 import {
   consolidateDreamsWithLLM,
   consolidateConversationsWithLLM,
@@ -120,26 +120,26 @@ export function useAgentConsolidation(tokenId?: number) {
     try {
       debugLog('Checking consolidation need', { tokenId: operationalTokenId });
 
-      const [provider, providerErr] = await getProvider();
-      if (!provider || providerErr) {
-        throw new Error(`Provider error: ${providerErr?.message}`);
-      }
-
-      const [signer, signerErr] = await getSigner(provider);
-      if (!signer || signerErr) {
-        throw new Error(`Signer error: ${signerErr?.message}`);
+      const [publicClient, publicErr] = await getViemProvider();
+      if (!publicClient || publicErr) {
+        throw new Error(`PublicClient error: ${publicErr?.message}`);
       }
 
       const contractConfig = getContractConfig();
-      const contractAddress = contractConfig.address;
-      const contractABI = contractConfig.abi;
-      const contract = new Contract(contractAddress, contractABI, signer);
 
-      // Check if consolidation is needed
-      const [isNeeded, currentMonth, currentYear] = await contract.needsConsolidation(operationalTokenId);
+      const [isNeeded, currentMonth, currentYear] = await publicClient.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'needsConsolidation',
+        args: [operationalTokenId]
+      });
       
-      // Get consolidation reward preview
-      const [baseReward, streakBonus, earlyBirdBonus, totalReward] = await contract.getConsolidationReward(operationalTokenId);
+      const [baseReward, streakBonus, earlyBirdBonus, totalReward] = await publicClient.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'getConsolidationReward',
+        args: [operationalTokenId]
+      });
 
       setConsolidationState(prev => ({
         ...prev,
@@ -197,23 +197,19 @@ export function useAgentConsolidation(tokenId?: number) {
     try {
       debugLog('Loading monthly data', { tokenId: operationalTokenId });
 
-      const [provider, providerErr] = await getProvider();
-      if (!provider || providerErr) {
-        throw new Error(`Provider error: ${providerErr?.message}`);
-      }
-
-      const [signer, signerErr] = await getSigner(provider);
-      if (!signer || signerErr) {
-        throw new Error(`Signer error: ${signerErr?.message}`);
+      const [publicClient, publicErr] = await getViemProvider();
+      if (!publicClient || publicErr) {
+        throw new Error(`PublicClient error: ${publicErr?.message}`);
       }
 
       const contractConfig = getContractConfig();
-      const contractAddress = contractConfig.address;
-      const contractABI = contractConfig.abi;
-      const contract = new Contract(contractAddress, contractABI, signer);
 
-      // Get current memory structure
-      const agentMemory = await contract.getAgentMemory(operationalTokenId);
+      const agentMemory = await publicClient.readContract({
+        address: contractConfig.address,
+        abi: contractConfig.abi,
+        functionName: 'getAgentMemory',
+        args: [operationalTokenId]
+      });
       const currentDreamHash = agentMemory.currentDreamDailyHash;
       const currentConvHash = agentMemory.currentConvDailyHash;
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';

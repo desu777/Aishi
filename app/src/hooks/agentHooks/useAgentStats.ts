@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useWallet } from '../useWallet';
-import { Contract } from 'ethers';
 import { getContractConfig } from './config/contractConfig';
-import { getProvider, getSigner } from '../../lib/0g/fees';
+import { getViemProvider } from '../../lib/0g/fees';
+import type { PublicClient } from 'viem';
 
 // Types for agent statistics
 interface EvolutionStats {
@@ -106,25 +106,15 @@ export function useAgentStats(tokenId?: number) {
     try {
       debugLog('Loading agent statistics', { tokenId });
 
-      // Get contract instance
-      const [provider, providerErr] = await getProvider();
-      if (!provider || providerErr) {
-        throw new Error(`Provider error: ${providerErr?.message}`);
-      }
-
-      const [signer, signerErr] = await getSigner(provider);
-      if (!signer || signerErr) {
-        throw new Error(`Signer error: ${signerErr?.message}`);
+      const [publicClient, publicErr] = await getViemProvider();
+      if (!publicClient || publicErr) {
+        throw new Error(`PublicClient error: ${publicErr?.message}`);
       }
 
       const contractConfig = getContractConfig();
-      const contractAddress = contractConfig.address;
-      const contractABI = contractConfig.abi;
-      const contract = new Contract(contractAddress, contractABI, signer);
 
-      debugLog('Contract connected for stats loading');
+      debugLog('PublicClient connected for stats loading');
 
-      // Parallel loading of all stats
       const [
         evolutionStatsRaw,
         uniqueFeaturesRaw,
@@ -132,11 +122,36 @@ export function useAgentStats(tokenId?: number) {
         pendingRewardsRaw,
         responseStyleRaw
       ] = await Promise.all([
-        contract.getEvolutionStats(tokenId),
-        contract.getUniqueFeatures(tokenId),
-        contract.consolidationStreak(tokenId),
-        contract.pendingRewards(tokenId),
-        contract.responseStyles(tokenId)
+        publicClient.readContract({
+          address: contractConfig.address,
+          abi: contractConfig.abi,
+          functionName: 'getEvolutionStats',
+          args: [tokenId]
+        }),
+        publicClient.readContract({
+          address: contractConfig.address,
+          abi: contractConfig.abi,
+          functionName: 'getUniqueFeatures',
+          args: [tokenId]
+        }),
+        publicClient.readContract({
+          address: contractConfig.address,
+          abi: contractConfig.abi,
+          functionName: 'consolidationStreak',
+          args: [tokenId]
+        }),
+        publicClient.readContract({
+          address: contractConfig.address,
+          abi: contractConfig.abi,
+          functionName: 'pendingRewards',
+          args: [tokenId]
+        }),
+        publicClient.readContract({
+          address: contractConfig.address,
+          abi: contractConfig.abi,
+          functionName: 'responseStyles',
+          args: [tokenId]
+        })
       ]);
 
       debugLog('Raw contract data loaded', {
@@ -189,7 +204,7 @@ export function useAgentStats(tokenId?: number) {
       });
 
       // Load milestones separately (they need individual calls)
-      await loadMilestones(contract, tokenId);
+      await loadMilestones(publicClient, tokenId);
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -206,14 +221,20 @@ export function useAgentStats(tokenId?: number) {
   };
 
   // Load milestones (individual calls required)
-  const loadMilestones = async (contract: Contract, tokenId: number) => {
+  const loadMilestones = async (publicClient: PublicClient, tokenId: number) => {
     try {
       debugLog('Loading milestones', { tokenId, milestonesToCheck: MILESTONE_NAMES.length });
 
-      // Check each milestone individually
+      const contractConfig = getContractConfig();
+      
       const milestonePromises = MILESTONE_NAMES.map(async (milestoneName) => {
         try {
-          const result = await contract.hasMilestone(tokenId, milestoneName);
+          const result = await publicClient.readContract({
+            address: contractConfig.address,
+            abi: contractConfig.abi,
+            functionName: 'hasMilestone',
+            args: [tokenId, milestoneName]
+          });
           return {
             milestoneName,
             achieved: result.achieved,

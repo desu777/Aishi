@@ -5,9 +5,10 @@ import { useStorageDownload } from '../storage/useStorageDownload';
 import { useStorageUpload } from '../storage/useStorageUpload';
 import { useWallet } from '../useWallet';
 import { useAgentRead } from './useAgentRead';
-import { Contract } from 'ethers';
 import { getContractConfig } from './config/contractConfig';
-import { getProvider, getSigner } from '../../lib/0g/fees';
+import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
+import { galileoTestnet } from '../../config/chains';
+import type { PublicClient, WalletClient } from 'viem';
 import {
   MonthLearnAPIResponse,
   MonthlyDreamConsolidation,
@@ -595,17 +596,21 @@ export function useMonthLearn(tokenId?: number) {
       // Debug: Check if daily hashes were cleared after consolidation
       if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
         try {
-          const [provider] = await getProvider();
-          const [signer] = await getSigner(provider!);
+          const [publicClient, publicErr] = await getViemProvider();
+          if (!publicClient || publicErr) {
+            throw new Error(`PublicClient error: ${publicErr?.message}`);
+          }
           const contractConfig = getContractConfig();
-          const contractAddress = contractConfig.address;
-          const contractABI = contractConfig.abi;
-          const contract = new Contract(contractAddress, contractABI, signer);
           
           // Wait a bit for transaction to be mined
           await new Promise(resolve => setTimeout(resolve, 2000));
           
-          const memoryAfterConsolidation = await contract.getAgentMemory(operationalTokenId);
+          const memoryAfterConsolidation = await publicClient.readContract({
+            address: contractConfig.address,
+            abi: contractConfig.abi,
+            functionName: 'getAgentMemory',
+            args: [operationalTokenId]
+          }) as any;
           debugLog('Memory state after consolidation', {
             currentDreamDailyHash: memoryAfterConsolidation.currentDreamDailyHash,
             currentConvDailyHash: memoryAfterConsolidation.currentConvDailyHash,
@@ -654,34 +659,40 @@ export function useMonthLearn(tokenId?: number) {
   const updateContract = async (dreamHash: string | null, conversationHash: string | null, month: number, year: number): Promise<string> => {
     debugLog('Updating contract with consolidation hashes', { dreamHash, conversationHash, month, year });
 
-    const [provider, providerErr] = await getProvider();
-    if (!provider || providerErr) {
-      throw new Error(`Provider error: ${providerErr?.message}`);
+    const [walletClient, walletErr] = await getViemSigner();
+    if (!walletClient || walletErr) {
+      throw new Error(`WalletClient error: ${walletErr?.message}`);
     }
 
-    const [signer, signerErr] = await getSigner(provider);
-    if (!signer || signerErr) {
-      throw new Error(`Signer error: ${signerErr?.message}`);
+    // Get account from walletClient
+    const [account] = await walletClient.getAddresses();
+    if (!account) {
+      throw new Error('No account available');
     }
 
     const contractConfig = getContractConfig();
-    const contractAddress = contractConfig.address;
-    const contractABI = contractConfig.abi;
-    const contract = new Contract(contractAddress, contractABI, signer);
 
     // Call consolidateMonth function
-    const tx = await contract.consolidateMonth(
-      operationalTokenId,
-      dreamHash || '0x0000000000000000000000000000000000000000000000000000000000000000',
-      conversationHash || '0x0000000000000000000000000000000000000000000000000000000000000000',
-      month,
-      year
-    );
+    const txHash = await walletClient.writeContract({
+      address: contractConfig.address,
+      abi: contractConfig.abi,
+      functionName: 'consolidateMonth',
+      chain: galileoTestnet,
+      account,
+      args: [
+        operationalTokenId,
+        dreamHash || '0x0000000000000000000000000000000000000000000000000000000000000000',
+        conversationHash || '0x0000000000000000000000000000000000000000000000000000000000000000',
+        month,
+        year
+      ]
+    });
 
-    await tx.wait();
+    const [publicClient] = await getViemProvider();
+    const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
 
-    debugLog('Contract updated successfully', { txHash: tx.hash });
-    return tx.hash;
+    debugLog('Contract updated successfully', { txHash });
+    return txHash;
   };
 
   /**
