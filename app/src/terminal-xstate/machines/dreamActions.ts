@@ -3,7 +3,7 @@
  * @description All actions for the dream state machine
  */
 
-import { assign, sendParent } from 'xstate';
+import { assign, sendParent, type ActionFunction } from 'xstate';
 import { DreamMachineContext, DreamEvent } from './dreamMachine';
 import { defaultAgentData } from '../types/contextTypes';
 import { TerminalLine } from './types';

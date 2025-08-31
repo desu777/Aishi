@@ -147,7 +147,7 @@ export function useAgentMint() {
               abi: contractConfig.abi,
               data: log.data,
               topics: log.topics,
-            });
+            }) as { eventName: string; args: any };
             return decoded.eventName === 'Minted';
           } catch {
             return false;
@@ -159,9 +159,9 @@ export function useAgentMint() {
             abi: contractConfig.abi,
             data: mintedEvent.data,
             topics: mintedEvent.topics,
-          });
+          }) as { eventName: string; args: { _tokenId: bigint } };
           
-          const tokenId = (decoded.args as any)._tokenId as bigint;
+          const tokenId = decoded.args._tokenId;
           
           setState(prev => ({
             ...prev,

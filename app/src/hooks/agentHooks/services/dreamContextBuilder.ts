@@ -1,6 +1,7 @@
 'use client';
 
 import { getContractConfig } from '../config/contractConfig';
+import type { PublicClient } from 'viem';
 
 export interface DreamContext {
   userDream: string;
@@ -49,10 +50,10 @@ export interface MemoryStructure {
 }
 
 export class DreamContextBuilder {
-  private contract: Contract;
+  private contract: PublicClient | any;
   private debugLog: (message: string, data?: any) => void;
 
-  constructor(contract: Contract, debugLog: (message: string, data?: any) => void) {
+  constructor(contract: PublicClient | any, debugLog: (message: string, data?: any) => void) {
     this.contract = contract;
     this.debugLog = debugLog;
   }

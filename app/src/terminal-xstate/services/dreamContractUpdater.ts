@@ -35,24 +35,9 @@ export interface ContractUpdateResult {
 }
 
 /**
- * Contract personality impact structure (matches ABI)
+ * Contract personality impact structure
+ * Let wagmi/viem infer the type from ABI automatically
  */
-interface ContractPersonalityImpact {
-  creativityChange: number;    // int8 (-10 to +10)
-  analyticalChange: number;    // int8 (-10 to +10)  
-  empathyChange: number;       // int8 (-10 to +10)
-  intuitionChange: number;     // int8 (-10 to +10)
-  resilienceChange: number;    // int8 (-10 to +10)
-  curiosityChange: number;     // int8 (-10 to +10)
-  moodShift: string;          // string (cannot be empty)
-  evolutionWeight: number;     // uint8 (1-100)
-  newFeatures: Array<{
-    name: string;             // string (cannot be empty)
-    description: string;      // string (cannot be empty)
-    intensity: number;        // uint8 (1-100)
-    addedAt: number;         // uint256 (timestamp)
-  }>;                        // max 2 features
-}
 
 /**
  * Main function to update dream contract with conditional personality evolution
@@ -175,7 +160,7 @@ async function executeContractTransaction(
   account: `0x${string}`,
   tokenId: number,
   dreamHash: string,
-  personalityImpact: ContractPersonalityImpact,
+  personalityImpact: ReturnType<typeof preparePersonalityImpact>,
   isEvolutionDream: boolean
 ): Promise<{
   txHash: string;
@@ -200,7 +185,7 @@ async function executeContractTransaction(
     functionName: 'processDailyDream',
     chain: galileoTestnet,
     account,
-    args: [tokenId, dreamHash, personalityImpact]
+    args: [BigInt(tokenId), `0x${dreamHash.replace('0x', '')}` as `0x${string}`, personalityImpact]
   });
 
   debugLog('Transaction sent, waiting for confirmation', { 
@@ -237,7 +222,7 @@ async function executeContractTransaction(
 function preparePersonalityImpact(
   personalityImpact: EvolutionFields['personalityImpact'] | undefined,
   isEvolutionDream: boolean
-): ContractPersonalityImpact {
+) {
   const currentTimestamp = Math.floor(Date.now() / 1000);
 
   if (isEvolutionDream && personalityImpact) {
@@ -251,7 +236,7 @@ function preparePersonalityImpact(
       name: feature.name,
       description: feature.description,
       intensity: feature.intensity,
-      addedAt: currentTimestamp
+      addedAt: BigInt(currentTimestamp)
     }));
 
     return {
@@ -349,7 +334,7 @@ export async function canProcessDreamToday(tokenId: number): Promise<{
       address: contractConfig.address,
       abi: contractConfig.abi,
       functionName: 'canProcessDreamToday',
-      args: [tokenId]
+      args: [BigInt(tokenId)]
     });
     
     debugLog('Dream processing check completed', { tokenId, canProcess });
@@ -391,7 +376,7 @@ export async function getAgentMemory(tokenId: number): Promise<{
       address: contractConfig.address,
       abi: contractConfig.abi,
       functionName: 'getAgentMemory',
-      args: [tokenId]
+      args: [BigInt(tokenId)]
     }) as any;
     
     debugLog('Agent memory retrieved', { 
@@ -454,7 +439,7 @@ export async function estimateGasForDreamUpdate(
       abi: contractConfig.abi,
       functionName: 'processDailyDream',
       account: '0x0000000000000000000000000000000000000000' as `0x${string}`, // dummy account for estimation
-      args: [tokenId, dreamHash, contractImpact]
+      args: [BigInt(tokenId), `0x${dreamHash.replace('0x', '')}` as `0x${string}`, contractImpact]
     });
     
     debugLog('Gas estimation completed', { 

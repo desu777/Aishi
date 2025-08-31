@@ -333,8 +333,17 @@ export const saveMemoryCoreToStorage = async (
       address: contractConfig.address,
       abi: contractConfig.abi,
       functionName: 'getAgentMemory',
-      args: [tokenId]
-    });
+      args: [BigInt(tokenId)]
+    }) as {
+      memoryCoreHash: string;
+      currentDreamDailyHash: string;
+      currentConvDailyHash: string;
+      lastDreamMonthlyHash: string;
+      lastConvMonthlyHash: string;
+      lastConsolidation: bigint;
+      currentMonth: number;
+      currentYear: number;
+    };
     const currentYearlyHash = agentMemory.memoryCoreHash;
     const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -450,7 +459,7 @@ export const callUpdateMemoryCore = async (
       functionName: 'updateMemoryCore',
       chain: galileoTestnet,
       account,
-      args: [tokenId, memoryCoreHash]
+      args: [BigInt(tokenId), memoryCoreHash as `0x${string}`]
     });
 
     debugLog('UpdateMemoryCore transaction sent', { txHash });

@@ -126,51 +126,52 @@ export function useAgentStats(tokenId?: number) {
           address: contractConfig.address,
           abi: contractConfig.abi,
           functionName: 'getEvolutionStats',
-          args: [tokenId]
-        }),
+          args: [BigInt(tokenId)]
+        }) as Promise<readonly [bigint, bigint, bigint]>,
         publicClient.readContract({
           address: contractConfig.address,
           abi: contractConfig.abi,
           functionName: 'getUniqueFeatures',
-          args: [tokenId]
-        }),
+          args: [BigInt(tokenId)]
+        }) as any,
         publicClient.readContract({
           address: contractConfig.address,
           abi: contractConfig.abi,
           functionName: 'consolidationStreak',
-          args: [tokenId]
-        }),
+          args: [BigInt(tokenId)]
+        }) as any,
         publicClient.readContract({
           address: contractConfig.address,
           abi: contractConfig.abi,
           functionName: 'pendingRewards',
-          args: [tokenId]
-        }),
+          args: [BigInt(tokenId)]
+        }) as Promise<readonly [bigint, string, boolean]>,
         publicClient.readContract({
           address: contractConfig.address,
           abi: contractConfig.abi,
           functionName: 'responseStyles',
-          args: [tokenId]
-        })
+          args: [BigInt(tokenId)]
+        }) as Promise<string>
       ]);
 
       debugLog('Raw contract data loaded', {
         evolutionStatsRaw,
-        uniqueFeaturesCount: uniqueFeaturesRaw?.length || 0,
+        uniqueFeaturesCount: uniqueFeaturesRaw.length,
         consolidationStreakRaw,
         pendingRewardsRaw,
         responseStyleRaw
       });
 
       // Process evolution stats
+      const [totalEvolutions, evolutionRate, lastEvolution] = evolutionStatsRaw;
       const evolutionStats: EvolutionStats = {
-        totalEvolutions: Number(evolutionStatsRaw.totalEvolutions),
-        evolutionRate: Number(evolutionStatsRaw.evolutionRate),
-        lastEvolution: Number(evolutionStatsRaw.lastEvolution)
+        totalEvolutions: Number(totalEvolutions),
+        evolutionRate: Number(evolutionRate),
+        lastEvolution: Number(lastEvolution)
       };
 
       // Process unique features
-      const uniqueFeatures: UniqueFeature[] = uniqueFeaturesRaw.map((feature: any) => ({
+      const uniqueFeatures: UniqueFeature[] = (uniqueFeaturesRaw as any[]).map((feature: any) => ({
         name: feature.name,
         description: feature.description,
         intensity: Number(feature.intensity),
@@ -178,10 +179,11 @@ export function useAgentStats(tokenId?: number) {
       }));
 
       // Process pending rewards
+      const [intelligenceBonus, specialMilestone, yearlyReflection] = pendingRewardsRaw;
       const pendingRewards = {
-        intelligenceBonus: Number(pendingRewardsRaw.intelligenceBonus),
-        specialMilestone: pendingRewardsRaw.specialMilestone,
-        yearlyReflection: pendingRewardsRaw.yearlyReflection
+        intelligenceBonus: Number(intelligenceBonus),
+        specialMilestone: specialMilestone,
+        yearlyReflection: yearlyReflection
       };
 
       setStatsState(prev => ({
@@ -233,8 +235,8 @@ export function useAgentStats(tokenId?: number) {
             address: contractConfig.address,
             abi: contractConfig.abi,
             functionName: 'hasMilestone',
-            args: [tokenId, milestoneName]
-          });
+            args: [BigInt(tokenId), milestoneName]
+          }) as any;
           return {
             milestoneName,
             achieved: result.achieved,

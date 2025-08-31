@@ -56,9 +56,19 @@ export interface AIResponse {
     content: string;
     emotions: string[];
     symbols: string[];
+    themes?: string[];
     intensity: number;
     lucidity: number;
     dreamType: string;
+    archetypes?: string[];
+    recurring_from?: number[];
+    personality_impact?: {
+      dominant_trait?: string;
+      shift_direction?: string;
+      intensity?: number;
+    };
+    sleep_quality?: number;
+    recall_clarity?: number;
   };
   analysis: string;
   personalityImpact?: {
@@ -92,6 +102,7 @@ export interface DefaultAgentData {
     resilience: number;
     curiosity: number;
     dominantMood: string;
+    responseStyle?: string;
   };
 }
 

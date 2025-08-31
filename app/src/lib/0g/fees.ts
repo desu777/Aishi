@@ -31,7 +31,7 @@ export async function getViemProvider(): Promise<[PublicClient | null, Error | n
     const publicClient = createPublicClient({
       chain: galileoTestnet,
       transport: http(rpcUrl)
-    }) as PublicClient;
+    }) as any as PublicClient;
     return [publicClient, null];
   } catch (error) {
     console.error('Failed to create public client:', error);

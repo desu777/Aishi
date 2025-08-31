@@ -8,7 +8,26 @@ import { aishiAgentAbi } from '../../generated';
 import { getContractConfig } from './config/contractConfig';
 import { DreamContextBuilder, DreamContext } from './services/dreamContextBuilder';
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
+import { galileoTestnet } from '../../config/chains';
 import type { PublicClient, WalletClient } from 'viem';
+
+// PersonalityImpact type matching contract ABI structure
+interface PersonalityImpact {
+  creativityChange: number;    // int8 (-10 to +10)
+  analyticalChange: number;    // int8 (-10 to +10)  
+  empathyChange: number;       // int8 (-10 to +10)
+  intuitionChange: number;     // int8 (-10 to +10)
+  resilienceChange: number;    // int8 (-10 to +10)
+  curiosityChange: number;     // int8 (-10 to +10)
+  moodShift: string;          // string (cannot be empty)
+  evolutionWeight: number;     // uint8 (1-100)
+  newFeatures: Array<{
+    name: string;             // string (cannot be empty)
+    description: string;      // string (cannot be empty)
+    intensity: number;        // uint8 (1-100)
+    addedAt: bigint;         // uint256 (timestamp as bigint for contract)
+  }>;                        // max 2 features
+}
 
 interface DreamState {
   dreamText: string;
@@ -54,23 +73,9 @@ interface DreamStorageData {
   };
 }
 
-// NEW: STEP 6 - PersonalityImpact interface (from contract ABI)
-interface PersonalityImpact {
-  creativityChange: number;       // int8 (-128 to 127)
-  analyticalChange: number;       // int8 (-128 to 127)
-  empathyChange: number;          // int8 (-128 to 127)
-  intuitionChange: number;        // int8 (-128 to 127)
-  resilienceChange: number;       // int8 (-128 to 127)
-  curiosityChange: number;        // int8 (-128 to 127)
-  moodShift: string;             // REQUIRED - nie może być pusty
-  evolutionWeight: number;        // uint8 (1-100)
-  newFeatures: Array<{
-    name: string;                 // REQUIRED - nie może być pusty
-    description: string;          // REQUIRED - nie może być pusty
-    intensity: number;            // uint8 (1-100)
-    addedAt: number;             // timestamp
-  }>;                            // max 2 features
-}
+// NEW: STEP 6 - PersonalityImpact structure for contract ABI
+// Let wagmi/viem infer the type from ABI automatically
+// The structure must match the ABI's PersonalityImpact struct
 
 export function useAgentDream() {
   const [dreamState, setDreamState] = useState<DreamState>({
@@ -293,8 +298,17 @@ export function useAgentDream() {
         address: contractConfig.address,
         abi: contractConfig.abi,
         functionName: 'getAgentMemory',
-        args: [tokenId]
-      });
+        args: [BigInt(tokenId)]
+      }) as {
+        memoryCoreHash: string;
+        currentDreamDailyHash: string;
+        currentConvDailyHash: string;
+        lastDreamMonthlyHash: string;
+        lastConvMonthlyHash: string;
+        lastConsolidation: bigint;
+        currentMonth: number;
+        currentYear: number;
+      };
       const currentDreamHash = agentMemory.currentDreamDailyHash;
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -512,7 +526,7 @@ export function useAgentDream() {
     builtContext: DreamContext,
     parsedAIResponse: any,
     dreamCount: number
-  ): PersonalityImpact => {
+  ) => {
     const isEvolutionDream = dreamCount > 0 && dreamCount % 5 === 0;
     
     debugLog('Creating PersonalityImpact', {
@@ -540,7 +554,7 @@ export function useAgentDream() {
           name: feature.name,
           description: feature.description,
           intensity: feature.intensity || 50,
-          addedAt: Math.floor(Date.now() / 1000)
+          addedAt: BigInt(Math.floor(Date.now() / 1000))
         }))
       };
     } else {
@@ -632,7 +646,7 @@ export function useAgentDream() {
         functionName: 'processDailyDream',
         chain: galileoTestnet,
         account,
-        args: [tokenId, dreamHashBytes32, personalityImpact]
+        args: [BigInt(tokenId), dreamHashBytes32 as `0x${string}`, personalityImpact as any]
       });
 
       debugLog('processDailyDream transaction sent', { 

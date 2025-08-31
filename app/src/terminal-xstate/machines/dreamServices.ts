@@ -341,7 +341,7 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
         resilience: personalityData.resilience || 50,
         curiosity: personalityData.curiosity || 50,
         dominantMood: personalityData.dominantMood || 'neutral',
-        responseStyle: personalityData.responseStyle || 'balanced'
+        responseStyle: 'responseStyle' in personalityData ? personalityData.responseStyle : 'balanced'
       },
       // FIXED: uniqueFeatures at root level
       uniqueFeatures: Array.isArray(uniqueFeatures) ? uniqueFeatures : [],

@@ -110,13 +110,13 @@ export function useAgentMemoryCore(tokenId?: number) {
 
       const contractConfig = getContractConfig();
 
-      const pendingRewards = await publicClient.readContract({
+      const [intelligenceBonus, specialMilestone, yearlyReflection] = await publicClient.readContract({
         address: contractConfig.address,
         abi: contractConfig.abi,
         functionName: 'pendingRewards',
-        args: [operationalTokenId]
-      });
-      const hasYearlyReflection = pendingRewards.yearlyReflection;
+        args: [BigInt(operationalTokenId)]
+      }) as readonly [bigint, string, boolean];
+      const hasYearlyReflection = yearlyReflection;
 
       setMemoryCoreState(prev => ({
         ...prev,
@@ -128,9 +128,9 @@ export function useAgentMemoryCore(tokenId?: number) {
       debugLog('Yearly reflection check completed', {
         hasYearlyReflection,
         pendingRewards: {
-          intelligenceBonus: Number(pendingRewards.intelligenceBonus),
-          specialMilestone: pendingRewards.specialMilestone,
-          yearlyReflection: pendingRewards.yearlyReflection
+          intelligenceBonus: Number(intelligenceBonus),
+          specialMilestone: specialMilestone,
+          yearlyReflection: yearlyReflection
         }
       });
 
@@ -179,8 +179,17 @@ export function useAgentMemoryCore(tokenId?: number) {
         address: contractConfig.address,
         abi: contractConfig.abi,
         functionName: 'getAgentMemory',
-        args: [operationalTokenId]
-      });
+        args: [BigInt(operationalTokenId)]
+      }) as {
+        memoryCoreHash: string;
+        currentDreamDailyHash: string;
+        currentConvDailyHash: string;
+        lastDreamMonthlyHash: string;
+        lastConvMonthlyHash: string;
+        lastConsolidation: bigint;
+        currentMonth: number;
+        currentYear: number;
+      };
       
       debugLog('Agent memory retrieved', {
         lastDreamMonthlyHash: agentMemory.lastDreamMonthlyHash,

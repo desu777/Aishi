@@ -45,7 +45,7 @@ export const fileManagementService = fromPromise(async ({ input }: { input: {
       personality_impact: input.aiResponse.dreamData?.personality_impact,
       sleep_quality: input.aiResponse.dreamData?.sleep_quality,
       recall_clarity: input.aiResponse.dreamData?.recall_clarity,
-      dream_type: input.aiResponse.dreamData?.dream_type || 'neutral'
+      dream_type: input.aiResponse.dreamData?.dreamType || 'neutral'
     };
     
     const result = await manageDailyDreamsFile(

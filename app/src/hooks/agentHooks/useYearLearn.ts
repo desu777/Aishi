@@ -527,7 +527,7 @@ export function useYearLearn(tokenId?: number) {
       functionName: 'updateMemoryCore',
       chain: galileoTestnet,
       account,
-      args: [operationalTokenId, memoryCoreHash]
+      args: [BigInt(operationalTokenId), memoryCoreHash as `0x${string}`]
     });
 
     // Wait for transaction confirmation

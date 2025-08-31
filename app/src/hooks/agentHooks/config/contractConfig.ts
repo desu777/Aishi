@@ -7,7 +7,7 @@ import { aishiAgentAbi } from '../../../generated';
 
 export interface ContractConfig {
   address: `0x${string}`;
-  abi: readonly any[];
+  abi: typeof aishiAgentAbi;
   chainId: number;
   contractName: string;
   network: string;

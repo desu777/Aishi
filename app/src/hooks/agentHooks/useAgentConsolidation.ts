@@ -127,19 +127,31 @@ export function useAgentConsolidation(tokenId?: number) {
 
       const contractConfig = getContractConfig();
 
-      const [isNeeded, currentMonth, currentYear] = await publicClient.readContract({
+      // Note: needsConsolidation function doesn't exist in ABI
+      // We'll check if consolidation is needed based on agent memory dates
+      const agentMemory = await publicClient.readContract({
         address: contractConfig.address,
         abi: contractConfig.abi,
-        functionName: 'needsConsolidation',
-        args: [operationalTokenId]
-      });
+        functionName: 'getAgentMemory',
+        args: [BigInt(operationalTokenId)]
+      }) as any;
       
-      const [baseReward, streakBonus, earlyBirdBonus, totalReward] = await publicClient.readContract({
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1;
+      const currentYear = currentDate.getFullYear();
+      const lastConsolidation = Number(agentMemory.lastConsolidation || 0);
+      const lastConsolidationDate = lastConsolidation > 0 ? new Date(lastConsolidation * 1000) : null;
+      const isNeeded = !lastConsolidationDate || 
+                       lastConsolidationDate.getMonth() + 1 !== currentMonth ||
+                       lastConsolidationDate.getFullYear() !== currentYear;
+      
+      const rewardResult = await publicClient.readContract({
         address: contractConfig.address,
         abi: contractConfig.abi,
         functionName: 'getConsolidationReward',
-        args: [operationalTokenId]
-      });
+        args: [BigInt(operationalTokenId)]
+      }) as [bigint, bigint, bigint, bigint];
+      const [baseReward, streakBonus, earlyBirdBonus, totalReward] = rewardResult;
 
       setConsolidationState(prev => ({
         ...prev,
@@ -208,8 +220,17 @@ export function useAgentConsolidation(tokenId?: number) {
         address: contractConfig.address,
         abi: contractConfig.abi,
         functionName: 'getAgentMemory',
-        args: [operationalTokenId]
-      });
+        args: [BigInt(operationalTokenId)]
+      }) as {
+        memoryCoreHash: string;
+        currentDreamDailyHash: string;
+        currentConvDailyHash: string;
+        lastDreamMonthlyHash: string;
+        lastConvMonthlyHash: string;
+        lastConsolidation: bigint;
+        currentMonth: number;
+        currentYear: number;
+      };
       const currentDreamHash = agentMemory.currentDreamDailyHash;
       const currentConvHash = agentMemory.currentConvDailyHash;
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';

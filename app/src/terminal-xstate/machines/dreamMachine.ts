@@ -5,7 +5,7 @@
 
 import { setup, assign, sendParent } from 'xstate';
 import { defaultAgentData } from '../types/contextTypes';
-import { dreamActions, dreamGuards } from './dreamActions';
+import { dreamGuards } from './dreamActions';
 import { 
   fetchContextService, 
   buildPromptService, 
@@ -90,7 +90,9 @@ export type DreamEvent =
   | { type: 'xstate.error.actor.persistDream'; error: { message?: string } }
   | { type: 'xstate.error.actor.manageFile'; error: { message?: string } }
   | { type: 'xstate.error.actor.uploadToStorage'; error: { message?: string } }
-  | { type: 'xstate.error.actor.updateContract'; error: { message?: string } };
+  | { type: 'xstate.error.actor.updateContract'; error: { message?: string } }
+  // General error event (required by XState v5)
+  | { type: 'error'; error: { message?: string } };
 
 // Initial context
 const initialContext: DreamMachineContext = {
@@ -130,7 +132,212 @@ export const dreamMachine = setup({
     storageUpload: storageUploadService,
     contractUpdate: contractUpdateService
   },
-  actions: dreamActions,
+  actions: {
+    // Initialize dream session
+    initializeDream: assign({
+      tokenId: ({ event }) => event.type === 'START' && event.tokenId ? event.tokenId : defaultAgentData.tokenId,
+      agentName: ({ event }) => event.type === 'START' && event.agentName ? event.agentName : '',
+      statusMessage: 'Describe your dream...',
+      errorMessage: null,
+      modelId: ({ event }) => event.type === 'START' ? event.modelId : undefined,
+      walletAddress: ({ event }) => event.type === 'START' ? event.walletAddress : undefined
+    }),
+    
+    // Send dream instruction to parent
+    sendDreamInstruction: sendParent(() => ({
+      type: 'APPEND_LINES',
+      lines: [{
+        type: 'info',
+        content: '~ Now u can describe your dream! Add your sleep quality review 1-10 if u want agent to know that!',
+        timestamp: Date.now()
+      }]
+    })),
+    
+    // Store dream input
+    storeDreamInput: assign({
+      dreamInput: ({ event }) => {
+        if (event.type === 'SUBMIT_DREAM') {
+          return event.dreamText;
+        }
+        return '';
+      },
+      statusMessage: ({ context }) => `${context.agentName} is thinking . . .`
+    }),
+    
+    // Store context and update agent name
+    storeContext: assign({
+      dreamContext: ({ event }) => {
+        return (event as any).output;
+      },
+      agentName: ({ event }) => {
+        return ((event as any).output)?.agentProfile?.name || 'Agent';
+      },
+      statusMessage: 'Building dream analysis prompt...'
+    }),
+    
+    // Store prompt
+    storePrompt: assign({
+      dreamPrompt: ({ event }) => {
+        return (event as any).output;
+      },
+      statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} is thinking`
+    }),
+    
+    // Store AI response
+    storeAIResponse: assign({
+      aiResponse: ({ event }) => {
+        return (event as any).output;
+      },
+      statusMessage: 'Waiting for your response...',
+      awaitingConfirmation: true
+    }),
+    
+    // Store persistence result
+    storePersistenceResult: assign({
+      persistenceResult: ({ event }) => {
+        return (event as any).output.persistenceResult;
+      },
+      storageRootHash: ({ event }) => {
+        return (event as any).output.rootHash;
+      },
+      contractTxHash: ({ event }) => {
+        return (event as any).output.txHash;
+      },
+      statusMessage: ({ event }) => {
+        const output = (event as any).output;
+        return output.isEvolutionDream ? 
+          'Evolution dream persisted! Agent has evolved.' :
+          'Dream persisted successfully!';
+      }
+    }),
+    
+    // Mark as completed
+    markCompleted: assign({
+      statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} has learned from your dream!`,
+      awaitingConfirmation: false
+    }),
+    
+    // Store error
+    storeError: assign({
+      errorMessage: ({ event }) => {
+        if ('error' in event) {
+          return event.error instanceof Error ? event.error.message : String(event.error);
+        }
+        return 'An unknown error occurred';
+      },
+      statusMessage: 'Dream analysis failed'
+    }),
+    
+    // Reset confirmation
+    resetConfirmation: assign({
+      awaitingConfirmation: false,
+      statusMessage: 'Dream not saved.'
+    }),
+    
+    // Send lines to parent (terminal)
+    sendLinesToParent: sendParent(({ context }) => {
+      const lines: TerminalLine[] = [];
+      const timestamp = Date.now();
+      
+      if (context.aiResponse) {
+        // Display AI analysis with formatted agent name
+        lines.push({
+          type: 'info',
+          content: `~ ${context.agentName} : ${context.aiResponse.fullAnalysis}`,
+          timestamp
+        });
+        
+        // Ask for confirmation
+        lines.push({
+          type: 'system',
+          content: `Do u wanna train ${context.agentName} with your dream? Type y/n`,
+          timestamp: timestamp + 1
+        });
+      }
+      
+      return { type: 'APPEND_LINES', lines };
+    }),
+    
+    // Send status to parent
+    sendStatusToParent: sendParent(({ context }) => ({
+      type: 'UPDATE_STATUS', 
+      status: context.statusMessage 
+    })),
+    
+    // Send error to parent
+    sendErrorToParent: sendParent(({ context }) => {
+      const errorLine: TerminalLine = {
+        type: 'error',
+        content: context.errorMessage || 'Unknown error occurred',
+        timestamp: Date.now()
+      };
+      return { type: 'APPEND_LINES', lines: [errorLine] };
+    }),
+    
+    // Memory download error handling
+    storeMemoryError: assign({
+      memoryDownloadError: ({ event }) => {
+        if ('error' in event) {
+          return event.error instanceof Error ? event.error.message : String(event.error);
+        }
+        return 'Failed to access memory from 0G Storage';
+      },
+      statusMessage: 'Memory download failed'
+    }),
+    
+    displayMemoryErrorPrompt: sendParent(({ context }) => {
+      // Try multiple sources for agent name
+      const agentName = context.agentName || 
+                       context.dreamContext?.agentProfile?.name || 
+                       'Your agent';
+      
+      return {
+        type: 'APPEND_LINES',
+        lines: [{
+          type: 'warning',
+          content: `*${agentName}* can't access previous memory from 0G Storage.`,
+          timestamp: Date.now()
+        }, {
+          type: 'system',
+          content: `Do u wanna continue? Agent won't remember previous dreams. Type y/n`,
+          timestamp: Date.now() + 1
+        }]
+      };
+    }),
+    
+    clearMemoryHash: assign({
+      continueWithoutMemory: true,
+      memoryDownloadError: null
+    }),
+    
+    // Storage upload error handling
+    storeUploadError: assign({
+      storageUploadError: ({ event }) => {
+        if ('error' in event) {
+          return event.error instanceof Error ? event.error.message : String(event.error);
+        }
+        return 'Failed to upload to 0G Storage';
+      },
+      statusMessage: 'Storage upload failed'
+    }),
+    
+    displayUploadErrorPrompt: sendParent(({ context }) => ({
+      type: 'APPEND_LINES',
+      lines: [{
+        type: 'error',
+        content: `0G Network storage error: ${context.storageUploadError}`,
+        timestamp: Date.now()
+      }, {
+        type: 'system',
+        content: 'Do u wanna try uploading again? Type y/n',
+        timestamp: Date.now() + 1
+      }]
+    })),
+    
+    incrementRetryCount: assign({
+      retryCount: ({ context }) => context.retryCount + 1
+    })
+  },
   guards: dreamGuards
 }).createMachine({
   id: 'dream',
@@ -196,7 +403,7 @@ export const dreamMachine = setup({
             },
             onError: {
               target: '#dream.error',
-              actions: ['storeError', 'sendErrorToParent']
+              actions: ['storeError', 'sendErrorToParent'] as const
             }
           }
         },
@@ -216,13 +423,13 @@ export const dreamMachine = setup({
             },
             onError: {
               target: '#dream.error',
-              actions: ['storeError', 'sendErrorToParent']
+              actions: ['storeError', 'sendErrorToParent'] as const
             }
           }
         },
         
         displayingAnalysis: {
-          entry: 'sendLinesToParent',
+          entry: 'sendLinesToParent' as const,
           always: '#dream.awaitingSaveConfirmation'
         }
       }
@@ -248,7 +455,7 @@ export const dreamMachine = setup({
           entry: [
             assign({ statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} is learning` }),
             'sendStatusToParent'
-          ],
+          ] as const,
           invoke: {
             src: 'fileManagement',
             input: ({ context }) => {
@@ -271,7 +478,7 @@ export const dreamMachine = setup({
             },
             onError: {
               target: '#dream.error',
-              actions: ['storeError', 'sendErrorToParent']
+              actions: ['storeError', 'sendErrorToParent'] as const
             }
           }
         },
@@ -280,7 +487,7 @@ export const dreamMachine = setup({
           entry: [
             assign({ statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} is learning` }),
             'sendStatusToParent'
-          ],
+          ] as const,
           invoke: {
             src: 'storageUpload',
             input: ({ context }) => {
@@ -344,11 +551,11 @@ export const dreamMachine = setup({
                 }),
                 'markCompleted',
                 'sendStatusToParent'
-              ]
+              ] as const
             },
             onError: {
               target: '#dream.error',
-              actions: ['storeError', 'sendErrorToParent']
+              actions: ['storeError', 'sendErrorToParent'] as const
             }
           }
         }
@@ -356,7 +563,7 @@ export const dreamMachine = setup({
     },
     
     memoryDownloadFailed: {
-      entry: 'displayMemoryErrorPrompt',
+      entry: 'displayMemoryErrorPrompt' as const,
       on: {
         CONFIRM_SAVE: {
           target: 'processingDream.fetchingContext',
@@ -367,13 +574,13 @@ export const dreamMachine = setup({
           actions: [
             assign({ statusMessage: 'Dream cancelled.' }),
             'sendStatusToParent'
-          ]
+          ] as const
         }
       }
     },
     
     storageUploadFailed: {
-      entry: 'displayUploadErrorPrompt',
+      entry: 'displayUploadErrorPrompt' as const,
       on: {
         CONFIRM_SAVE: [
           {
@@ -386,7 +593,7 @@ export const dreamMachine = setup({
             actions: [
               assign({ statusMessage: 'Maximum retry attempts reached.' }),
               'sendStatusToParent'
-            ]
+            ] as const
           }
         ],
         CANCEL_SAVE: {
@@ -394,7 +601,7 @@ export const dreamMachine = setup({
           actions: [
             assign({ statusMessage: 'Dream saved locally but not uploaded to storage.' }),
             'sendStatusToParent'
-          ]
+          ] as const
         }
       }
     },

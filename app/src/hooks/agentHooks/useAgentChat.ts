@@ -425,7 +425,7 @@ export function useAgentChat(tokenId?: number) {
         address: contractConfig.address,
         abi: contractConfig.abi,
         functionName: 'getAgentMemory',
-        args: [tokenId]
+        args: [BigInt(tokenId)]
       });
       const currentConvHash = (agentMemory as any).currentConvDailyHash;
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -520,7 +520,7 @@ export function useAgentChat(tokenId?: number) {
         functionName: 'recordConversation',
         chain: galileoTestnet,
         account,
-        args: [tokenId, hashBytes32, contextType]
+        args: [BigInt(tokenId), hashBytes32 as `0x${string}`, contextType]
       });
 
       setChatState(prev => ({ 

@@ -609,7 +609,7 @@ export function useMonthLearn(tokenId?: number) {
             address: contractConfig.address,
             abi: contractConfig.abi,
             functionName: 'getAgentMemory',
-            args: [operationalTokenId]
+            args: [BigInt(operationalTokenId)]
           }) as any;
           debugLog('Memory state after consolidation', {
             currentDreamDailyHash: memoryAfterConsolidation.currentDreamDailyHash,
@@ -680,9 +680,9 @@ export function useMonthLearn(tokenId?: number) {
       chain: galileoTestnet,
       account,
       args: [
-        operationalTokenId,
-        dreamHash || '0x0000000000000000000000000000000000000000000000000000000000000000',
-        conversationHash || '0x0000000000000000000000000000000000000000000000000000000000000000',
+        BigInt(operationalTokenId),
+        (dreamHash || '0x0000000000000000000000000000000000000000000000000000000000000000') as `0x${string}`,
+        (conversationHash || '0x0000000000000000000000000000000000000000000000000000000000000000') as `0x${string}`,
         month,
         year
       ]
