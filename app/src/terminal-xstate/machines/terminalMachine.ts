@@ -656,17 +656,23 @@ export const terminalMachine = setup({
               selectedModel = modelState?.context?.selectedModel || selectedModel;
             }
             
-            // Get wallet address from agentRef
+            // Get wallet address, tokenId, and agentName from agentRef
             let walletAddress: string | undefined;
+            let tokenId: number | undefined;
+            let agentName: string | undefined;
             if (context.agentRef) {
               const agentState = context.agentRef.getSnapshot();
               walletAddress = agentState?.context?.walletAddress;
+              tokenId = agentState?.context?.tokenId || undefined;
+              agentName = agentState?.context?.agentName || undefined;
             }
             
             context.dreamRef.send({ 
               type: 'START',
               modelId: selectedModel,
-              walletAddress: walletAddress
+              walletAddress: walletAddress,
+              tokenId: tokenId,
+              agentName: agentName
             });
           }
         }

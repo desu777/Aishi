@@ -35,6 +35,16 @@ export interface DreamContext {
     monthlyConsolidations: any[];
     yearlyCore: any;
   };
+  memoryData?: {
+    memoryCoreHash: string;
+    currentDreamDailyHash: string;
+    currentConvDailyHash: string;
+    lastDreamMonthlyHash: string;
+    lastConvMonthlyHash: string;
+    lastConsolidation?: number;
+    currentMonth?: number;
+    currentYear?: number;
+  };
 }
 
 export interface AIResponse {

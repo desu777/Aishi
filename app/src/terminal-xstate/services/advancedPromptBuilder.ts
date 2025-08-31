@@ -33,7 +33,7 @@ export function buildAdvancedDreamPrompt(context: DreamContext): AdvancedDreamPr
   debugLog('Building advanced dream prompt with on-chain context', {
     agentName: context.agentProfile.name,
     dreamCount: context.agentProfile.dreamCount,
-    memoryDepth: context.memoryAccess.memoryDepth
+    memoryDepth: context.memoryAccess?.memoryDepth || 'shallow'
   });
 
   const nextDreamId = context.agentProfile.dreamCount + 1;
@@ -107,16 +107,26 @@ function buildCriticalDirectives(): string {
 }
 
 function buildAnalyticalFrameworkSection(context: DreamContext): string {
-  const p = context.personality;
-  const milestones = (context.agentProfile as any).achievedMilestones || []; // Assuming milestones are in agentProfile
+  // Defensive programming: ensure personality exists with fallback values
+  const p = context.personality || {
+    creativity: 50,
+    analytical: 50,
+    empathy: 50,
+    intuition: 50,
+    resilience: 50,
+    curiosity: 50,
+    dominantMood: 'neutral',
+    responseStyle: 'balanced'
+  };
+  const milestones = (context.agentProfile as any).achievedMilestones || [];
 
   const personalityTraits = [
-    `Creativity: ${p.creativity}`,
-    `Analytical: ${p.analytical}`,
-    `Empathy: ${p.empathy}`,
-    `Intuition: ${p.intuition}`,
-    `Resilience: ${p.resilience}`,
-    `Curiosity: ${p.curiosity}`
+    `Creativity: ${p.creativity ?? 50}`,
+    `Analytical: ${p.analytical ?? 50}`,
+    `Empathy: ${p.empathy ?? 50}`,
+    `Intuition: ${p.intuition ?? 50}`,
+    `Resilience: ${p.resilience ?? 50}`,
+    `Curiosity: ${p.curiosity ?? 50}`
   ].join(', ');
 
   const uniqueFeaturesText = context.uniqueFeatures && context.uniqueFeatures.length > 0
@@ -128,7 +138,7 @@ function buildAnalyticalFrameworkSection(context: DreamContext): string {
   return `This is who you are right now. Your response style is not fixed; it is **dynamically generated based on your on-chain traits.** Use these values to shape your tone, vocabulary, and analytical focus.
 
 *   **Intelligence Level:** ${context.agentProfile.intelligenceLevel}
-*   **Memory Depth:** ${context.memoryAccess.memoryDepth}
+*   **Memory Depth:** ${context.memoryAccess?.memoryDepth || 'shallow'}
 *   **Personality:** ${personalityTraits}
 *   **Dominant Mood:** ${p.dominantMood}
 *   **Achieved Milestones:** [${milestonesText}]
@@ -150,19 +160,26 @@ Your personality traits determine your core \`responseStyle\`. Your task is to *
 function buildHistoricalContextSection(context: DreamContext): string {
   let section = `This is your knowledge base, limited by your current \`Memory Depth\`. Absorb it. Let it guide your analysis. Do not reference dreams by number or date, but by their core themes, feelings, or symbols when establishing analytical connections.\n\n`;
 
+  // Defensive check for historicalData
+  const historicalData = context.historicalData || {
+    dailyDreams: [],
+    monthlyConsolidations: [],
+    yearlyCore: null
+  };
+
   // Add Yearly Core Memory if available
-  if (context.historicalData.yearlyCore) {
+  if (historicalData.yearlyCore) {
     section += '### Yearly Core Memory\n';
-    section += formatYearlyCoreMemory(context.historicalData.yearlyCore);
+    section += formatYearlyCoreMemory(historicalData.yearlyCore);
     section += '\n\n';
   } else {
     section += '### Yearly Core Memory\n[No yearly consolidation available yet]\n\n';
   }
 
   // Add Monthly Dream Consolidations if available
-  if (context.historicalData.monthlyConsolidations.length > 0) {
+  if (historicalData.monthlyConsolidations?.length > 0) {
     section += '### Monthly Dream Consolidations\n';
-    context.historicalData.monthlyConsolidations.forEach(monthly => {
+    historicalData.monthlyConsolidations.forEach(monthly => {
       section += formatMonthlyConsolidation(monthly);
       section += '\n';
     });
@@ -172,9 +189,9 @@ function buildHistoricalContextSection(context: DreamContext): string {
   }
 
   // Add Recent Daily Dreams if available
-  if (context.historicalData.dailyDreams.length > 0) {
+  if (historicalData.dailyDreams?.length > 0) {
     section += '### Recent Daily Dreams\n';
-    const recentDreams = context.historicalData.dailyDreams.slice(0, 10); // Limit context for performance
+    const recentDreams = historicalData.dailyDreams.slice(0, 10); // Limit context for performance
     recentDreams.forEach(dream => {
       section += formatDailyDream(dream);
       section += '\n';
