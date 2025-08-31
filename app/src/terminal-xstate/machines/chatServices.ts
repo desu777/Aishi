@@ -15,8 +15,8 @@ const debugLog = (message: string, data?: any) => {
 /**
  * Fetch full agent context for chat session
  */
-export async function fetchChatContext(agentId: number) {
-  debugLog('Fetching chat context', { agentId });
+export async function fetchChatContext(agentId: number, continueWithoutMemory: boolean = false) {
+  debugLog('Fetching chat context', { agentId, continueWithoutMemory });
 
   try {
     // Import necessary services
@@ -28,55 +28,68 @@ export async function fetchChatContext(agentId: number) {
       setTimeout(() => reject(new Error('Context loading timeout')), 15000);
     });
 
-    // Fetch agent data with timeout
+    // Fetch complete agent data with timeout
     const fetchDataPromise = async () => {
-      const agentData = await contractReader.getAgentData(agentId);
-      if (!agentData) {
+      const completeData = await contractReader.getCompleteAgentData(agentId);
+      if (!completeData) {
         throw new Error('Agent not found');
       }
 
-      debugLog('Agent data fetched', {
-        name: agentData.agentName,
-        intelligence: agentData.intelligenceLevel,
-        dreamCount: agentData.dreamCount,
-        conversationCount: agentData.conversationCount
+      debugLog('Complete agent data fetched', {
+        name: completeData.basic.agentName,
+        intelligence: completeData.basic.intelligenceLevel,
+        dreamCount: completeData.basic.dreamCount,
+        conversationCount: completeData.basic.conversationCount,
+        hasPersonality: !!completeData.personality,
+        hasMemory: !!completeData.memory,
+        featuresCount: completeData.features?.length || 0
       });
 
-      // Fetch personality traits
-      const personality = await contractReader.getPersonalityTraits(agentId);
-      debugLog('Personality traits fetched', personality);
-
-      // Fetch unique features
-      const uniqueFeatures = await contractReader.getUniqueFeatures(agentId);
-      debugLog('Unique features fetched', { count: uniqueFeatures.length });
-
-      // Fetch memory data
-      const agentMemory = await contractReader.getAgentMemory(agentId);
-      debugLog('Agent memory fetched', {
-        hasMemoryCore: !!agentMemory.memoryCoreHash,
-        hasDailyDreams: !!agentMemory.currentDreamDailyHash,
-        hasDailyConversations: !!agentMemory.currentConvDailyHash
-      });
-
-      return { agentData, personality, uniqueFeatures, agentMemory };
+      return completeData;
     };
 
     // Race between data fetch and timeout
-    const result = await Promise.race([
+    const completeData = await Promise.race([
       fetchDataPromise(),
       timeoutPromise
     ]) as any;
 
-    // Build agent context
+    // Build agent context from complete data with null checks
     const agentContext = {
-      agentData: result.agentData,
-      personality: result.personality,
-      uniqueFeatures: result.uniqueFeatures,
-      memory: result.agentMemory
+      agentData: completeData.basic || {
+        agentName: `Agent #${agentId}`,
+        intelligenceLevel: 1,
+        dreamCount: 0,
+        conversationCount: 0
+      },
+      personality: completeData.personality || {
+        creativity: 50,
+        analytical: 50,
+        empathy: 50,
+        intuition: 50,
+        resilience: 50,
+        curiosity: 50,
+        dominantMood: 'neutral'
+      },
+      uniqueFeatures: completeData.features || [],
+      memory: completeData.memory || {
+        memoryCoreHash: '',
+        currentDreamDailyHash: '',
+        currentConvDailyHash: '',
+        lastDreamMonthlyHash: '',
+        lastConvMonthlyHash: '',
+        lastConsolidation: 0n,
+        currentMonth: 0,
+        currentYear: 0
+      }
     };
 
     // Fetch historical data (dreams and conversations)
-    const historicalData = await fetchHistoricalData(result.agentMemory, agentId);
+    const historicalData = await fetchHistoricalData(
+      completeData.memory || agentContext.memory, 
+      agentId,
+      continueWithoutMemory
+    );
 
     return {
       agentContext,
@@ -87,10 +100,12 @@ export async function fetchChatContext(agentId: number) {
     
     if (String(error).includes('timeout')) {
       throw new Error('Loading is taking longer than usual. Please wait...');
-    } else if (String(error).includes('not found')) {
-      throw new Error('Agent not found. Please select a valid agent.');
+    } else if (String(error).includes('not found') || String(error).includes('Agent not found')) {
+      throw new Error(`Agent #${agentId} not found. Please select a valid agent.`);
+    } else if (String(error).includes('network')) {
+      throw new Error('Network error. Please check your connection and try again.');
     } else {
-      throw new Error('Failed to load agent context. Please try again.');
+      throw new Error(`Failed to load agent context: ${String(error).replace('Error: ', '')}`);
     }
   }
 }
@@ -98,8 +113,8 @@ export async function fetchChatContext(agentId: number) {
 /**
  * Fetch historical data from storage
  */
-async function fetchHistoricalData(agentMemory: any, agentId: number) {
-  debugLog('Fetching historical data', { agentId });
+async function fetchHistoricalData(agentMemory: any, agentId: number, continueWithoutMemory: boolean = false) {
+  debugLog('Fetching historical data', { agentId, hasMemory: !!agentMemory, continueWithoutMemory });
 
   const historicalData: any = {
     dailyDreams: [],
@@ -108,6 +123,14 @@ async function fetchHistoricalData(agentMemory: any, agentId: number) {
     monthlyConversations: [],
     yearlyCore: null
   };
+
+  // Return empty if no memory data or continuing without memory
+  if (!agentMemory || continueWithoutMemory) {
+    debugLog(continueWithoutMemory ? 
+      'Continuing without memory (user choice)' : 
+      'No memory data available, returning empty historical data');
+    return historicalData;
+  }
 
   try {
     const { downloadFromStorage } = await import('../services/xstateStorage');
@@ -122,6 +145,8 @@ async function fetchHistoricalData(agentMemory: any, agentId: number) {
         }
       } catch (error) {
         debugLog('Failed to load daily dreams', { error: String(error) });
+        // Re-throw to trigger memory error state
+        throw new Error(`Failed to load daily dreams: ${error}`);
       }
     }
 
@@ -135,6 +160,8 @@ async function fetchHistoricalData(agentMemory: any, agentId: number) {
         }
       } catch (error) {
         debugLog('Failed to load daily conversations', { error: String(error) });
+        // Re-throw to trigger memory error state
+        throw new Error(`Failed to load daily conversations: ${error}`);
       }
     }
 
@@ -148,6 +175,8 @@ async function fetchHistoricalData(agentMemory: any, agentId: number) {
         }
       } catch (error) {
         debugLog('Failed to load memory core', { error: String(error) });
+        // Re-throw to trigger memory error state
+        throw new Error(`Failed to load memory core: ${error}`);
       }
     }
 
@@ -167,12 +196,14 @@ export async function sendChatMessage(
   messages: ChatMessage[],
   agentContext: any,
   historicalData: any,
-  agentName: string
+  agentName: string,
+  modelId: string = 'auto'
 ) {
   debugLog('Sending chat message to AI', {
     messageLength: message.length,
     previousMessages: messages.length,
-    agentName
+    agentName,
+    modelId
   });
 
   try {
@@ -202,12 +233,13 @@ export async function sendChatMessage(
     // Send to AI with timeout
     const { sendToAI } = await import('../services/apiService');
     const aiResponse = await Promise.race([
-      sendToAI(prompt, 'gemini-2.0-flash-exp'),
+      sendToAI(prompt, modelId),
       timeoutPromise
     ]) as string;
 
     debugLog('AI response received', {
-      responseLength: aiResponse.length
+      responseLength: aiResponse?.length || 0,
+      fullResponse: aiResponse
     });
 
     return {
@@ -236,11 +268,13 @@ export async function sendChatMessage(
 export async function generateConversationSummary(
   transcript: string,
   messages: ChatMessage[],
-  agentId: number
+  agentId: number,
+  modelId: string = 'auto'
 ) {
   debugLog('Generating conversation summary', {
     transcriptLength: transcript.length,
-    messageCount: messages.length
+    messageCount: messages.length,
+    modelId
   });
 
   try {
@@ -254,7 +288,7 @@ export async function generateConversationSummary(
 
     // Send to AI for summary generation
     const { sendToAI } = await import('../services/apiService');
-    const aiResponse = await sendToAI(prompt, 'gemini-2.0-flash-exp');
+    const aiResponse = await sendToAI(prompt, modelId);
 
     // Parse JSON response
     let summary;

@@ -60,9 +60,9 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
       }
       // Check chat status
       if (chatStatus) {
-        if (chatStatus.includes('typing') || chatStatus.includes('thinking')) return 'thinking';
-        if (chatStatus.includes('saving')) return 'learning';
-        if (chatStatus.includes('processing')) return 'thinking';
+        if (chatStatus.includes('thinking')) return 'thinking';
+        if (chatStatus.includes('learning')) return 'learning';
+        if (chatStatus.includes('evolving')) return 'evolving';
       }
       return 'online';
     }

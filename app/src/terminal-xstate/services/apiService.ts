@@ -418,6 +418,59 @@ export async function sendDreamToAI(
 }
 
 /**
+ * Simple chat function that sends a prompt to AI and returns text response
+ * Used for chat conversations (not dream analysis)
+ */
+export async function sendToAI(
+  prompt: string,
+  modelId: string = 'gemini-2.0-flash-exp'
+): Promise<string> {
+  debugLog('=== Sending chat message to AI ===', {
+    promptLength: prompt.length,
+    modelId
+  });
+
+  try {
+    // Use the same backend infrastructure
+    const backendResponse = await routeToBackend({
+      prompt,
+      modelId,
+      walletAddress: undefined
+    });
+
+    debugLog('Backend response received for chat', {
+      hasData: !!backendResponse.data,
+      hasError: !!backendResponse.error,
+      model: backendResponse.metadata?.model || modelId
+    });
+
+    if (backendResponse.error) {
+      throw new Error(backendResponse.error);
+    }
+
+    // For Gemini models, response is in data field
+    const responseText = backendResponse.data || backendResponse.response || '';
+
+    if (!responseText) {
+      throw new Error('Empty response from AI');
+    }
+
+    debugLog('Chat response parsed successfully', {
+      responseLength: responseText.length,
+      fullResponse: responseText
+    });
+
+    return responseText;
+
+  } catch (error) {
+    debugLog('Chat AI request failed', { error: String(error) });
+    
+    // Return a fallback message instead of throwing
+    return `I apologize, but I'm having trouble connecting to the AI service right now (${String(error).replace('Error: ', '')}). Please try again in a moment.`;
+  }
+}
+
+/**
  * Helper to get selected model from terminal context
  */
 export function getSelectedModel(modelRef: any): string {

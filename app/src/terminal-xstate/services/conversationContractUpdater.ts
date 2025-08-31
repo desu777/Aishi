@@ -3,8 +3,8 @@
  * @description Updates smart contract with conversation records
  */
 
-import { galileoTestnet } from '../../../config/chains';
-import { getViemProvider, getViemSigner } from '../../../lib/0g/fees';
+import { galileoTestnet } from '../../config/chains';
+import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
 import type { PublicClient, WalletClient } from 'viem';
 
 // Debug logging

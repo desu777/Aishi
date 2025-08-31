@@ -23,6 +23,7 @@ export interface ChatMessage {
 export interface ChatContext {
   agentId: number | null;
   agentName: string;
+  modelId: string;
   sessionId: string | null;
   messages: ChatMessage[];
   currentTranscript: string;
@@ -41,10 +42,13 @@ export interface ChatContext {
   retryCount: number;
   maxRetries: number;
   lastError: string | null;
+  // Memory handling (like dream)
+  memoryDownloadError: string | null;
+  continueWithoutMemory: boolean;
 }
 
 export type ChatEvent =
-  | { type: 'START_CHAT'; agentId: number; agentName: string }
+  | { type: 'START_CHAT'; agentId: number; agentName: string; modelId: string }
   | { type: 'USER_MESSAGE'; message: string }
   | { type: 'AI_RESPONSE_SUCCESS'; response: string }
   | { type: 'AI_RESPONSE_ERROR'; error: string }
@@ -60,6 +64,7 @@ export type ChatEvent =
 const initialContext: ChatContext = {
   agentId: null,
   agentName: '',
+  modelId: 'auto',
   sessionId: null,
   messages: [],
   currentTranscript: '',
@@ -74,7 +79,9 @@ const initialContext: ChatContext = {
   contractTxHash: null,
   retryCount: 0,
   maxRetries: 3,
-  lastError: null
+  lastError: null,
+  memoryDownloadError: null,
+  continueWithoutMemory: false
 };
 
 // Chat machine definition
@@ -92,6 +99,7 @@ export const chatMachine = setup({
     initializeSession: assign({
       agentId: ({ event }) => (event as any).agentId,
       agentName: ({ event }) => (event as any).agentName,
+      modelId: ({ event }) => (event as any).modelId || 'auto',
       sessionId: () => `chat_${Date.now()}`,
       statusMessage: ({ event }) => `Starting chat with ${(event as any).agentName}...`,
       messages: () => [],
@@ -187,15 +195,18 @@ export const chatMachine = setup({
     }),
 
     // Send lines to parent (terminal)
-    sendLinesToParent: sendParent(({ context, event }) => {
+    sendLinesToParent: sendParent(({ context }) => {
       const lines: TerminalLine[] = [];
       const timestamp = Date.now();
 
-      if (event.type === 'AI_RESPONSE_SUCCESS') {
+      // Get the last message (should be AI response)
+      const lastMessage = context.messages[context.messages.length - 1];
+      
+      if (lastMessage && lastMessage.role === 'assistant') {
         // Display AI response
         lines.push({
           type: 'info',
-          content: `~ ${context.agentName}: ${(event as any).output.response}`,
+          content: `~ ${context.agentName}: ${lastMessage.content}`,
           timestamp
         });
       }
@@ -227,16 +238,50 @@ export const chatMachine = setup({
         timestamp: Date.now()
       }];
       return { type: 'APPEND_LINES', lines };
+    }),
+
+    // Memory error handling (like dream)
+    storeMemoryError: assign({
+      memoryDownloadError: ({ event }) => {
+        if ('error' in event) {
+          return event.error instanceof Error ? event.error.message : String(event.error);
+        }
+        return 'Failed to access memory from 0G Storage';
+      },
+      statusMessage: 'Memory download failed'
+    }),
+
+    displayMemoryErrorPrompt: sendParent(({ context }) => {
+      return {
+        type: 'APPEND_LINES',
+        lines: [{
+          type: 'warning',
+          content: `${context.agentName} can't access previous conversations from 0G Storage.`,
+          timestamp: Date.now()
+        }, {
+          type: 'system',
+          content: `Do you want to continue without historical context? Type y/n`,
+          timestamp: Date.now() + 1
+        }]
+      };
+    }),
+
+    clearMemoryError: assign({
+      continueWithoutMemory: true,
+      memoryDownloadError: null
     })
   },
   actors: {
     // Load full agent context
-    loadContext: fromPromise(async ({ input }: { input: { agentId: number } }) => {
-      debugLog('Loading full agent context', { agentId: input.agentId });
+    loadContext: fromPromise(async ({ input }: { input: { agentId: number; continueWithoutMemory?: boolean } }) => {
+      debugLog('Loading full agent context', { 
+        agentId: input.agentId,
+        continueWithoutMemory: input.continueWithoutMemory || false
+      });
       
       // Dynamic import to avoid circular dependencies
       const { fetchChatContext } = await import('./chatServices');
-      const contextData = await fetchChatContext(input.agentId);
+      const contextData = await fetchChatContext(input.agentId, input.continueWithoutMemory);
       
       debugLog('Context loaded successfully', {
         hasAgentData: !!contextData.agentContext,
@@ -247,10 +292,20 @@ export const chatMachine = setup({
     }),
 
     // Process user message with AI
-    processMessage: fromPromise(async ({ input }: { input: any }) => {
+    processMessage: fromPromise(async ({ input }: { 
+      input: {
+        message: string;
+        messages: ChatMessage[];
+        agentContext: any;
+        historicalData: any;
+        agentName: string;
+        modelId: string;
+      }
+    }) => {
       debugLog('Processing user message', {
         messageLength: input.message?.length,
-        isFirstMessage: input.messages.length === 1
+        isFirstMessage: input.messages.length === 1,
+        modelId: input.modelId
       });
 
       // Dynamic import to avoid circular dependencies
@@ -260,7 +315,8 @@ export const chatMachine = setup({
         input.messages,
         input.agentContext,
         input.historicalData,
-        input.agentName
+        input.agentName,
+        input.modelId
       );
 
       debugLog('AI response received', {
@@ -271,10 +327,18 @@ export const chatMachine = setup({
     }),
 
     // Generate conversation summary
-    generateSummary: fromPromise(async ({ input }: { input: any }) => {
+    generateSummary: fromPromise(async ({ input }: { 
+      input: {
+        currentTranscript: string;
+        messages: ChatMessage[];
+        agentId: number;
+        modelId: string;
+      }
+    }) => {
       debugLog('Generating conversation summary', {
         messageCount: input.messages.length,
-        transcriptLength: input.currentTranscript.length
+        transcriptLength: input.currentTranscript.length,
+        modelId: input.modelId
       });
 
       // Dynamic import to avoid circular dependencies
@@ -282,7 +346,8 @@ export const chatMachine = setup({
       const summary = await generateConversationSummary(
         input.currentTranscript,
         input.messages,
-        input.agentId
+        input.agentId,
+        input.modelId
       );
 
       debugLog('Summary generated', {
@@ -293,7 +358,14 @@ export const chatMachine = setup({
     }),
 
     // Persist conversation
-    persistConversation: fromPromise(async ({ input }: { input: any }) => {
+    persistConversation: fromPromise(async ({ input }: { 
+      input: {
+        agentId: number;
+        agentName: string;
+        conversationSummary: any;
+        currentTranscript: string;
+      }
+    }) => {
       debugLog('Persisting conversation', {
         agentId: input.agentId,
         hasSummary: !!input.conversationSummary
@@ -332,6 +404,17 @@ export const chatMachine = setup({
     },
     hasExceededRetries: ({ context }) => {
       return context.retryCount >= context.maxRetries;
+    },
+    // Check if memory download error occurred (like dream)
+    isMemoryDownloadError: ({ event }: { event: any }) => {
+      if ('error' in event && event.error) {
+        const errorMsg = event.error instanceof Error ? event.error.message : String(event.error);
+        return errorMsg.includes('File not found') || 
+               errorMsg.includes('code 101') ||
+               errorMsg.includes('Download failed') ||
+               errorMsg.includes('Failed to load');
+      }
+      return false;
     }
   }
 }).createMachine({
@@ -352,15 +435,25 @@ export const chatMachine = setup({
       entry: 'clearError',
       invoke: {
         src: 'loadContext',
-        input: ({ context }) => ({ agentId: context.agentId }),
+        input: ({ context }) => ({ 
+          agentId: context.agentId,
+          continueWithoutMemory: context.continueWithoutMemory
+        }),
         onDone: {
           target: 'awaitingFirstMessage',
           actions: ['storeContext', 'sendStatusToParent']
         },
-        onError: {
-          target: 'contextLoadFailed',
-          actions: ['setError', 'sendStatusToParent']
-        }
+        onError: [
+          {
+            target: 'memoryDownloadFailed',
+            guard: 'isMemoryDownloadError',
+            actions: ['storeMemoryError']
+          },
+          {
+            target: 'contextLoadFailed',
+            actions: ['setError', 'sendStatusToParent']
+          }
+        ]
       }
     },
 
@@ -370,35 +463,29 @@ export const chatMachine = setup({
         lines: [{
           type: 'error',
           content: context.retryCount < context.maxRetries 
-            ? `Failed to load agent context: ${context.error}. Retrying...`
+            ? `Failed to load agent context: ${context.error}. Retrying in 2 seconds...`
             : `Failed to load agent context after ${context.maxRetries} attempts: ${context.error}`,
           timestamp: Date.now()
         }]
       })),
-      always: [
-        {
-          target: 'loadingContext',
-          guard: 'canRetry',
-          actions: ['incrementRetry', 'sendStatusToParent']
-        },
-        {
-          target: 'completed',
-          actions: sendParent(() => ({
-            type: 'APPEND_LINES',
-            lines: [{
-              type: 'error',
-              content: 'Unable to start chat session. Please try again later.',
-              timestamp: Date.now()
-            }]
-          }))
-        }
-      ],
+      // Removed 'always' transition to prevent synchronous infinite loop
       after: {
         2000: [
           {
             target: 'loadingContext',
             guard: 'canRetry',
-            actions: ['incrementRetry']
+            actions: ['incrementRetry', 'sendStatusToParent']
+          },
+          {
+            target: 'completed',
+            actions: sendParent(() => ({
+              type: 'APPEND_LINES',
+              lines: [{
+                type: 'error',
+                content: 'Unable to start chat session. Please try again later.',
+                timestamp: Date.now()
+              }]
+            }))
           }
         ]
       },
@@ -431,6 +518,12 @@ export const chatMachine = setup({
     },
 
     processingMessage: {
+      entry: [
+        assign({ 
+          statusMessage: ({ context }) => `${context.agentName} is thinking...` 
+        }),
+        'sendStatusToParent'
+      ],
       invoke: {
         src: 'processMessage',
         input: ({ context, event }) => ({
@@ -438,7 +531,8 @@ export const chatMachine = setup({
           messages: context.messages,
           agentContext: context.agentContext,
           historicalData: context.historicalData,
-          agentName: context.agentName
+          agentName: context.agentName,
+          modelId: context.modelId
         }),
         onDone: {
           target: 'displayingResponse',
@@ -473,24 +567,18 @@ export const chatMachine = setup({
         lines: [{
           type: 'error',
           content: context.retryCount < context.maxRetries
-            ? `Message processing failed: ${context.error}. Retrying...`
+            ? `Message processing failed: ${context.error}. Retrying in 2 seconds...`
             : `Message failed after ${context.maxRetries} attempts. Type to try again or END SESSION to exit.`,
           timestamp: Date.now()
         }]
       })),
-      always: [
-        {
-          target: 'processingMessage',
-          guard: 'canRetry',
-          actions: ['incrementRetry', 'sendStatusToParent']
-        }
-      ],
+      // Removed 'always' transition to prevent synchronous infinite loop
       after: {
         2000: [
           {
             target: 'processingMessage',
             guard: 'canRetry',
-            actions: ['incrementRetry']
+            actions: ['incrementRetry', 'sendStatusToParent']
           }
         ]
       },
@@ -528,13 +616,19 @@ export const chatMachine = setup({
     },
 
     summarizingConversation: {
-      entry: assign({ statusMessage: 'Generating conversation summary...' }),
+      entry: [
+        assign({ 
+          statusMessage: ({ context }) => `${context.agentName} is learning...` 
+        }),
+        'sendStatusToParent'
+      ],
       invoke: {
         src: 'generateSummary',
         input: ({ context }) => ({
           currentTranscript: context.currentTranscript,
           messages: context.messages,
-          agentId: context.agentId
+          agentId: context.agentId,
+          modelId: context.modelId
         }),
         onDone: {
           target: 'savingConversation',
@@ -548,6 +642,12 @@ export const chatMachine = setup({
     },
 
     savingConversation: {
+      entry: [
+        assign({ 
+          statusMessage: ({ context }) => `${context.agentName} is evolving...` 
+        }),
+        'sendStatusToParent'
+      ],
       invoke: {
         src: 'persistConversation',
         input: ({ context }) => ({
@@ -577,6 +677,25 @@ export const chatMachine = setup({
         }]
       })),
       on: {
+        EXIT: 'completed'
+      }
+    },
+
+    memoryDownloadFailed: {
+      entry: 'displayMemoryErrorPrompt',
+      on: {
+        'INPUT.SUBMIT': [
+          {
+            guard: 'isYesInput',
+            target: 'loadingContext',
+            actions: 'clearMemoryError'
+          },
+          {
+            guard: 'isNoInput',
+            target: 'completed',
+            actions: assign({ statusMessage: 'Chat cancelled.' })
+          }
+        ],
         EXIT: 'completed'
       }
     },

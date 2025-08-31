@@ -29,7 +29,12 @@ export class ConversationFileManager {
       // Get agent memory to check for existing file
       const { ContractReaderService } = await import('./contractReader');
       const contractReader = new ContractReaderService();
-      const agentMemory = await contractReader.getAgentMemory(agentId);
+      const agentMemory = await contractReader.getMemoryData(agentId);
+
+      if (!agentMemory) {
+        debugLog('No memory data found, creating new file');
+        return await this.createNewFile(agentName, newConversation);
+      }
 
       debugLog('Agent memory fetched', {
         hasExistingConversations: !!agentMemory.currentConvDailyHash && 

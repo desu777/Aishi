@@ -244,3 +244,39 @@ export const storageServiceCreator = {
     return service.downloadJson(rootHash);
   }
 };
+
+/**
+ * Standalone helper functions for simpler imports
+ * Used by chat and conversation services
+ */
+export async function uploadToStorage(data: any, fileName: string): Promise<UploadResult> {
+  const service = new XStateStorageService();
+  
+  // If data is string (JSON), parse it first to validate
+  const jsonData = typeof data === 'string' ? JSON.parse(data) : data;
+  
+  debugLog('uploadToStorage called', {
+    fileName,
+    dataType: typeof data,
+    isString: typeof data === 'string'
+  });
+  
+  return service.uploadJson(jsonData, fileName);
+}
+
+export async function downloadFromStorage(rootHash: string): Promise<string> {
+  const service = new XStateStorageService();
+  
+  debugLog('downloadFromStorage called', {
+    rootHash: rootHash.substring(0, 10) + '...'
+  });
+  
+  const result = await service.downloadJson(rootHash);
+  
+  if (!result) {
+    throw new Error(`Download failed for rootHash: ${rootHash}`);
+  }
+  
+  // Return as string for compatibility with existing code
+  return typeof result === 'string' ? result : JSON.stringify(result);
+}

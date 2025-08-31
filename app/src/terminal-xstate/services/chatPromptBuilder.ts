@@ -114,6 +114,19 @@ ${userMessage}
 
 **Your Response:**`;
 
+  // Log full prompt when debug mode is enabled
+  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+    debugLog('=== FULL CHAT PROMPT (Initial Message) ===', {
+      promptLength: systemPrompt.length,
+      agentName,
+      intelligenceLevel: agentData.intelligenceLevel,
+      dreamCount: agentData.dreamCount,
+      conversationCount: agentData.conversationCount,
+      hasHistoricalData: !!historicalData,
+      fullPrompt: systemPrompt
+    });
+  }
+
   return systemPrompt;
 }
 
@@ -152,6 +165,16 @@ function buildFollowUpPrompt(
 ${userMessage}
 
 **Your Response (continue naturally, maintaining conversation flow and your personality):**`;
+
+  // Log full prompt when debug mode is enabled
+  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+    debugLog('=== FULL CHAT PROMPT (Follow-up Message) ===', {
+      promptLength: prompt.length,
+      agentName,
+      messageCount: messages.length,
+      fullPrompt: prompt
+    });
+  }
 
   return prompt;
 }

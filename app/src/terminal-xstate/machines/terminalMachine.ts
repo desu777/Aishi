@@ -562,9 +562,10 @@ export const terminalMachine = setup({
     
     spawnChatMachine: assign({
       chatRef: ({ spawn, context }) => {
-        // Get selected agent ID and name
-        const agentId = context.agentRef?.getSnapshot()?.context?.selectedAgent?.id || 1;
-        const agentName = context.agentRef?.getSnapshot()?.context?.selectedAgent?.agentName || 'Agent';
+        // Get agent data from agentRef (same as dreamWorkflow)
+        const agentState = context.agentRef?.getSnapshot();
+        const agentId = agentState?.context?.tokenId || 1;
+        const agentName = agentState?.context?.agentName || 'Agent';
         
         return spawn('chatActor', { 
           id: 'chat',
@@ -664,12 +665,37 @@ export const terminalMachine = setup({
           actions: 'spawnDreamMachine'
         },
         {
-          // Check if chat command was entered
+          // Check if chat command was entered AND agent is selected
           target: 'chatWorkflow',
           guard: ({ context }) => {
-            return context.lastParsedCommand === 'chat';
+            // Check if chat command was entered
+            if (context.lastParsedCommand !== 'chat') return false;
+            
+            // Check if agent is selected (same as dreamWorkflow)
+            const agentState = context.agentRef?.getSnapshot();
+            return !!agentState?.context?.tokenId;
           },
           actions: 'spawnChatMachine'
+        },
+        {
+          // Handle chat command when no agent is selected
+          target: 'idle',
+          guard: ({ context }) => {
+            if (context.lastParsedCommand !== 'chat') return false;
+            const agentState = context.agentRef?.getSnapshot();
+            return !agentState?.context?.tokenId;
+          },
+          actions: assign({
+            lines: ({ context }) => {
+              const timestamp = Date.now();
+              return [...context.lines, {
+                type: 'error',
+                content: 'No agent selected. Use "info" or "stats" command to select an agent first.',
+                timestamp
+              }];
+            },
+            lastParsedCommand: null
+          })
         },
         {
           // Otherwise return to idle
@@ -786,16 +812,21 @@ export const terminalMachine = setup({
         // Start the chat machine
         ({ context }) => {
           if (context.chatRef) {
-            // Get selected agent data
-            const agentData = context.agentRef?.getSnapshot()?.context?.selectedAgent;
-            const agentId = agentData?.id || 1;
-            const agentName = agentData?.agentName || 'Agent';
+            // Get agent data from agentRef (same as dreamWorkflow)
+            const agentState = context.agentRef?.getSnapshot();
+            const agentId = agentState?.context?.tokenId || 1;
+            const agentName = agentState?.context?.agentName || 'Agent';
             
-            // Send START_CHAT event
+            // Get selected model from modelRef (same as dreamWorkflow)
+            const modelState = context.modelRef?.getSnapshot();
+            const selectedModel = modelState?.context?.selectedModel || 'auto';
+            
+            // Send START_CHAT event with modelId
             context.chatRef.send({ 
               type: 'START_CHAT',
               agentId,
-              agentName
+              agentName,
+              modelId: selectedModel
             });
           }
         }
