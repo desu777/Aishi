@@ -11,6 +11,8 @@ interface TerminalStatusLineProps {
   intelligenceLevel?: number;
   isMobile?: boolean;
   isTablet?: boolean;
+  isChatActive?: boolean;
+  chatStatus?: string | null;
 }
 
 const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
@@ -18,13 +20,16 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
   agentName,
   intelligenceLevel = 0,
   isMobile = false,
-  isTablet = false
+  isTablet = false,
+  isChatActive = false,
+  chatStatus = null
 }) => {
   const [dots, setDots] = useState('');
   
   // Animate dots for active processing states
   useEffect(() => {
-    if (status === 'thinking' || status === 'learning' || status === 'evolving') {
+    if (status === 'thinking' || status === 'learning' || status === 'evolving' || 
+        (isChatActive && chatStatus && chatStatus.includes('typing'))) {
       const interval = setInterval(() => {
         setDots(prev => {
           if (prev === '.') return '..';
@@ -36,7 +41,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
     } else {
       setDots('');
     }
-  }, [status]);
+  }, [status, isChatActive, chatStatus]);
   const getStatusText = () => {
     switch (status) {
       case 'online': return 'connected';
@@ -77,7 +82,45 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
       letterSpacing: '0.5px',
       fontWeight: '400',
     }}>
-      {(status === 'thinking' || status === 'learning' || status === 'evolving') && agentName ? (
+      {/* Special display for active chat session */}
+      {isChatActive && agentName ? (
+        <>
+          <span style={{ color: '#9CA3AF' }}>status: </span>
+          <span style={{ 
+            color: '#10B981',
+            fontWeight: '500',
+          }}>
+            chat active
+          </span>
+          <span style={{ color: '#9CA3AF' }}> with </span>
+          <span style={{ 
+            color: '#FFFFFF',
+            fontWeight: '500',
+          }}>
+            {agentName}
+          </span>
+          {chatStatus && chatStatus.includes('typing') && (
+            <>
+              <span style={{ color: '#9CA3AF' }}> | </span>
+              <span style={{ 
+                color: '#A855F7',
+                fontWeight: '500',
+              }}>
+                typing
+              </span>
+              <span style={{ 
+                color: '#A855F7',
+                fontWeight: '500',
+                minWidth: '18px',
+                display: 'inline-block',
+                textAlign: 'left'
+              }}>
+                {dots}
+              </span>
+            </>
+          )}
+        </>
+      ) : (status === 'thinking' || status === 'learning' || status === 'evolving') && agentName ? (
         // Special display for active processing states
         <>
           <span style={{ color: '#9CA3AF' }}>status: </span>

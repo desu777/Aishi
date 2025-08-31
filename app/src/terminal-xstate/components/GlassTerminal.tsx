@@ -33,7 +33,7 @@ const colors = {
 };
 
 export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, selectedModel }) => {
-  const { context, send, state, brokerRef, modelRef, agentRef, isDreamActive, dreamStatus } = useTerminal();
+  const { context, send, state, brokerRef, modelRef, agentRef, isDreamActive, dreamStatus, isChatActive, chatStatus } = useTerminal();
   const { agentName, isLoading: agentLoading } = useTerminalAgent();
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
@@ -58,12 +58,19 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
         if (dreamStatus.includes('learning')) return 'learning';
         if (dreamStatus.includes('evolving')) return 'evolving';
       }
+      // Check chat status
+      if (chatStatus) {
+        if (chatStatus.includes('typing') || chatStatus.includes('thinking')) return 'thinking';
+        if (chatStatus.includes('saving')) return 'learning';
+        if (chatStatus.includes('processing')) return 'thinking';
+      }
       return 'online';
     }
     if (agentStatus === 'no_agent') return 'no_agent';
     if (agentStatus === 'error') return 'error';
     if (state.matches('processing')) return 'thinking';
     if (state.matches('dreamWorkflow')) return 'thinking';
+    if (state.matches('chatWorkflow')) return 'thinking';
     if (agentLoading) return 'connecting';
     return 'uninitialized';
   };
@@ -256,6 +263,8 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             intelligenceLevel={intelligenceLevel}
             isMobile={isMobile}
             isTablet={isTablet}
+            isChatActive={isChatActive}
+            chatStatus={chatStatus}
           />
 
           {/* Minimal Output - Terminal Lines Only */}
@@ -276,16 +285,24 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             onHistoryDown={handleHistoryDown}
             onClear={handleClear}
             disabled={state.matches('processing')}
+            isChatActive={isChatActive}
+            onEndSession={() => send({ type: 'END_SESSION' })}
             placeholder={
-              isDreamActive && dreamStatus && dreamStatus.includes('thinking')
-                ? dreamStatus
+              isChatActive && chatStatus && chatStatus.includes('typing')
+                ? 'Agent is typing...'
+                : isChatActive && chatStatus === 'Save conversation? (y/n)'
+                  ? 'Type y or n'
+                : isChatActive
+                  ? 'Type your message...'
+                : isDreamActive && dreamStatus && dreamStatus.includes('thinking')
+                  ? dreamStatus
                 : isDreamActive && dreamStatus === 'Type y/n to confirm'
                   ? 'Type y or n'
                 : isDreamActive 
                   ? 'Describe your dream here'
                   : 'Enter command'
             }
-            promptSymbol={isDreamActive ? '~' : '>'}
+            promptSymbol={isChatActive ? '~' : isDreamActive ? '~' : '>'}
           />
         </div>
       </div>

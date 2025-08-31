@@ -445,6 +445,17 @@ export const aiAnalysisService = fromPromise(async ({ input }: { input: {
     const nextDreamId = input.dreamCount + 1;
     const isEvolutionDream = nextDreamId % 5 === 0;
     
+    // Special logging for evolution dreams
+    if (isEvolutionDream) {
+      debugLog('🌟 ========================================');
+      debugLog('🌟 EVOLUTION DREAM DETECTED!');
+      debugLog('🌟 ========================================');
+      debugLog('🌟 Dream #' + nextDreamId + ' will evolve personality!');
+      debugLog('🌟 Current dream count: ' + input.dreamCount);
+      debugLog('🌟 Agent will gain new traits and features!');
+      debugLog('🌟 ========================================');
+    }
+    
     debugLog('[API] Calling real AI backend', { 
       modelId: input.modelId,
       promptLength: input.prompt.length,
@@ -466,6 +477,28 @@ export const aiAnalysisService = fromPromise(async ({ input }: { input: {
       hasDreamData: !!aiResponse.dreamData,
       personalityImpact: aiResponse.personalityImpact
     });
+    
+    // Log personality evolution details if present
+    if (aiResponse.personalityImpact) {
+      debugLog('🧬 ========================================');
+      debugLog('🧬 PERSONALITY EVOLUTION DATA RECEIVED!');
+      debugLog('🧬 ========================================');
+      debugLog('🧬 Creativity change: ' + (aiResponse.personalityImpact.creativityChange > 0 ? '+' : '') + aiResponse.personalityImpact.creativityChange);
+      debugLog('🧬 Analytical change: ' + (aiResponse.personalityImpact.analyticalChange > 0 ? '+' : '') + aiResponse.personalityImpact.analyticalChange);
+      debugLog('🧬 Empathy change: ' + (aiResponse.personalityImpact.empathyChange > 0 ? '+' : '') + aiResponse.personalityImpact.empathyChange);
+      debugLog('🧬 Intuition change: ' + (aiResponse.personalityImpact.intuitionChange > 0 ? '+' : '') + aiResponse.personalityImpact.intuitionChange);
+      debugLog('🧬 Resilience change: ' + (aiResponse.personalityImpact.resilienceChange > 0 ? '+' : '') + aiResponse.personalityImpact.resilienceChange);
+      debugLog('🧬 Curiosity change: ' + (aiResponse.personalityImpact.curiosityChange > 0 ? '+' : '') + aiResponse.personalityImpact.curiosityChange);
+      debugLog('🧬 Mood shift: ' + aiResponse.personalityImpact.moodShift);
+      debugLog('🧬 Evolution weight: ' + aiResponse.personalityImpact.evolutionWeight);
+      if (aiResponse.personalityImpact.newFeatures && aiResponse.personalityImpact.newFeatures.length > 0) {
+        debugLog('🧬 New features gained: ' + aiResponse.personalityImpact.newFeatures.length);
+        aiResponse.personalityImpact.newFeatures.forEach(feature => {
+          debugLog('🧬   - ' + feature.name + ' (Intensity: ' + feature.intensity + '%)');
+        });
+      }
+      debugLog('🧬 ========================================');
+    }
     
     return aiResponse;
   } catch (error) {

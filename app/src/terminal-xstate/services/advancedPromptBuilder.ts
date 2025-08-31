@@ -41,6 +41,20 @@ export function buildAdvancedDreamPrompt(context: DreamContext): AdvancedDreamPr
   const currentTimestamp = Math.floor(Date.now() / 1000);
   const currentDate = new Date().toISOString().split('T')[0];
 
+  // Log evolution dream detection at prompt building stage
+  if (isEvolutionDream) {
+    debugLog('🎨 ========================================');
+    debugLog('🎨 BUILDING EVOLUTION DREAM PROMPT!');
+    debugLog('🎨 ========================================');
+    debugLog('🎨 Agent: ' + context.agentProfile.name);
+    debugLog('🎨 Dream #' + nextDreamId + ' (Evolution milestone!)');
+    debugLog('🎨 Current intelligence level: ' + context.agentProfile.intelligenceLevel);
+    debugLog('🎨 Memory depth: ' + (context.memoryAccess?.memoryDepth || 'shallow'));
+    debugLog('🎨 Months accessible: ' + (context.memoryAccess?.monthsAccessible || 1));
+    debugLog('🎨 AI will be instructed to generate personality impact');
+    debugLog('🎨 ========================================');
+  }
+
   // Build prompt sections based on the new, professional structure
   const coreDirective = buildCoreDirectiveSection();
   const ethicalGuidelines = buildEthicalGuidelinesSection();

@@ -36,10 +36,14 @@ export interface TerminalContext {
   modelRef: any; // ActorRef from XState
   agentRef: any; // ActorRef from XState for agent synchronization
   dreamRef: any; // ActorRef from XState for dream workflow
+  chatRef: any; // ActorRef from XState for chat workflow
   selectedModel: string | null;
   // Dream workflow state
   isDreamActive: boolean;
   dreamStatus: string | null;
+  // Chat workflow state
+  isChatActive: boolean;
+  chatStatus: string | null;
   // Last parsed command for state transitions
   lastParsedCommand: string | null;
 }
@@ -57,4 +61,6 @@ export type TerminalEvent =
   | { type: 'SYNC_AGENT'; walletAddress: string; provider: any }
   | { type: 'APPEND_LINES'; lines: TerminalLine[] }
   | { type: 'UPDATE_STATUS'; status: string }
-  | { type: 'DREAM.COMPLETE' };
+  | { type: 'DREAM.COMPLETE' }
+  | { type: 'CHAT_COMPLETED' }
+  | { type: 'END_SESSION' };

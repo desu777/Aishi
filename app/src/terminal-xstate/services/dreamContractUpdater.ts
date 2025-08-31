@@ -59,6 +59,18 @@ export async function updateDreamContract(
     hasPersonalityImpact: !!personalityImpact
   });
 
+  // Special logging for evolution dreams
+  if (isEvolutionDream) {
+    debugLog('🎯 ========================================');
+    debugLog('🎯 PROCESSING EVOLUTION DREAM CONTRACT UPDATE!');
+    debugLog('🎯 ========================================');
+    debugLog('🎯 Token ID: ' + tokenId);
+    debugLog('🎯 Dream Count: ' + dreamCount + ' -> Next: ' + (dreamCount + 1));
+    debugLog('🎯 This is dream #' + (dreamCount + 1) + ' (Evolution milestone!)');
+    debugLog('🎯 Personality will be permanently evolved on-chain!');
+    debugLog('🎯 ========================================');
+  }
+
   try {
     // Validate inputs
     const validationResult = validateContractInputs(tokenId, dreamHash, personalityImpact);
@@ -112,6 +124,18 @@ export async function updateDreamContract(
       totalTime,
       isEvolutionDream
     });
+
+    if (isEvolutionDream) {
+      debugLog('✨ ========================================');
+      debugLog('✨ EVOLUTION DREAM SUCCESSFULLY PROCESSED!');
+      debugLog('✨ ========================================');
+      debugLog('✨ Transaction hash: ' + txResult.txHash?.substring(0, 10) + '...');
+      debugLog('✨ Block number: ' + txResult.blockNumber);
+      debugLog('✨ Gas used: ' + txResult.gasUsed);
+      debugLog('✨ Total processing time: ' + totalTime + 'ms');
+      debugLog('✨ AGENT PERSONALITY HAS EVOLVED ON-CHAIN!');
+      debugLog('✨ ========================================');
+    }
 
     return {
       success: true,
@@ -227,9 +251,24 @@ function preparePersonalityImpact(
 
   if (isEvolutionDream && personalityImpact) {
     debugLog('Preparing evolution dream personality impact');
+    debugLog('🔧 ========================================');
+    debugLog('🔧 PREPARING PERSONALITY EVOLUTION DATA');
+    debugLog('🔧 ========================================');
     
     // Clamp values to contract ranges and validate
     const clampedImpact = clampToContractRanges(personalityImpact);
+    
+    debugLog('🔧 Raw trait changes:');
+    debugLog('🔧   Creativity: ' + personalityImpact.creativityChange + ' -> ' + clampedImpact.creativityChange);
+    debugLog('🔧   Analytical: ' + personalityImpact.analyticalChange + ' -> ' + clampedImpact.analyticalChange);
+    debugLog('🔧   Empathy: ' + personalityImpact.empathyChange + ' -> ' + clampedImpact.empathyChange);
+    debugLog('🔧   Intuition: ' + personalityImpact.intuitionChange + ' -> ' + clampedImpact.intuitionChange);
+    debugLog('🔧   Resilience: ' + personalityImpact.resilienceChange + ' -> ' + clampedImpact.resilienceChange);
+    debugLog('🔧   Curiosity: ' + personalityImpact.curiosityChange + ' -> ' + clampedImpact.curiosityChange);
+    debugLog('🔧 Mood shift: ' + clampedImpact.moodShift);
+    debugLog('🔧 Evolution weight: ' + clampedImpact.evolutionWeight + ' (1-100 scale)');
+    debugLog('🔧 New features to add: ' + clampedImpact.newFeatures.length);
+    debugLog('🔧 ========================================');
     
     // Add timestamps to new features
     const featuresWithTimestamp = clampedImpact.newFeatures.map(feature => ({

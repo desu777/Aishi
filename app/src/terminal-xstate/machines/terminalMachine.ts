@@ -4,6 +4,7 @@ import { brokerMachine } from './brokerMachine';
 import { modelMachine } from './modelMachine';
 import { agentMachine } from './agentMachine';
 import { dreamMachine } from './dreamMachine';
+import { chatMachine } from './chatMachine';
 import { 
   parseCommand, 
   validateCommandArgs, 
@@ -25,9 +26,12 @@ const initialContext: TerminalContext = {
   modelRef: null,
   agentRef: null,
   dreamRef: null,
+  chatRef: null,
   selectedModel: null,
   isDreamActive: false,
+  isChatActive: false,
   dreamStatus: null,
+  chatStatus: null,
   lastParsedCommand: null
 };
 
@@ -41,7 +45,8 @@ export const terminalMachine = setup({
     brokerActor: brokerMachine,
     modelActor: modelMachine,
     agentActor: agentMachine,
-    dreamActor: dreamMachine
+    dreamActor: dreamMachine,
+    chatActor: chatMachine
   },
   actions: {
     updateInput: assign({
@@ -92,6 +97,13 @@ export const terminalMachine = setup({
         if (parsed.command === 'dream') {
           // Dream command will be handled by spawning dream machine
           // No additional message needed here as dream machine will handle it
+          return newLines;
+        }
+        
+        // Handle chat command specially
+        if (parsed.command === 'chat') {
+          // Chat command will be handled by spawning chat machine
+          // No additional message needed here as chat machine will handle it
           return newLines;
         }
         
@@ -548,6 +560,22 @@ export const terminalMachine = setup({
       lastParsedCommand: null // Clear after use
     }),
     
+    spawnChatMachine: assign({
+      chatRef: ({ spawn, context }) => {
+        // Get selected agent ID and name
+        const agentId = context.agentRef?.getSnapshot()?.context?.selectedAgent?.id || 1;
+        const agentName = context.agentRef?.getSnapshot()?.context?.selectedAgent?.agentName || 'Agent';
+        
+        return spawn('chatActor', { 
+          id: 'chat',
+          input: { agentId, agentName }
+        });
+      },
+      isChatActive: true,
+      chatStatus: 'Initializing chat session...',
+      lastParsedCommand: null // Clear after use
+    }),
+    
     appendLines: assign({
       lines: ({ context, event }) => {
         if (event.type === 'APPEND_LINES') {
@@ -634,6 +662,14 @@ export const terminalMachine = setup({
             return context.lastParsedCommand === 'dream';
           },
           actions: 'spawnDreamMachine'
+        },
+        {
+          // Check if chat command was entered
+          target: 'chatWorkflow',
+          guard: ({ context }) => {
+            return context.lastParsedCommand === 'chat';
+          },
+          actions: 'spawnChatMachine'
         },
         {
           // Otherwise return to idle
@@ -733,6 +769,101 @@ export const terminalMachine = setup({
         'DREAM.COMPLETE': {
           target: 'idle',
           actions: 'completeDream'
+        },
+        'HISTORY.UP': {
+          actions: 'navigateHistoryUp'
+        },
+        'HISTORY.DOWN': {
+          actions: 'navigateHistoryDown'
+        }
+      }
+    },
+    
+    chatWorkflow: {
+      entry: [
+        // Clear the input
+        assign({ currentInput: '' }),
+        // Start the chat machine
+        ({ context }) => {
+          if (context.chatRef) {
+            // Get selected agent data
+            const agentData = context.agentRef?.getSnapshot()?.context?.selectedAgent;
+            const agentId = agentData?.id || 1;
+            const agentName = agentData?.agentName || 'Agent';
+            
+            // Send START_CHAT event
+            context.chatRef.send({ 
+              type: 'START_CHAT',
+              agentId,
+              agentName
+            });
+          }
+        }
+      ],
+      on: {
+        'INPUT.SUBMIT': {
+          actions: [
+            // Add line to terminal
+            assign({
+              lines: ({ context }) => {
+                const timestamp = Date.now();
+                const input = context.currentInput.trim();
+                
+                // Format message based on context
+                let formattedContent = '';
+                if (context.chatRef?.getSnapshot()?.context?.awaitingConfirmation) {
+                  // For y/n responses during save confirmation
+                  formattedContent = `> ${context.currentInput}`;
+                } else {
+                  // For regular chat messages
+                  formattedContent = `~ you: ${context.currentInput}`;
+                }
+                
+                return [...context.lines, {
+                  type: 'input',
+                  content: formattedContent,
+                  timestamp
+                }];
+              }
+            }),
+            // Send to chat machine
+            ({ context }) => {
+              if (context.chatRef) {
+                context.chatRef.send({ 
+                  type: 'INPUT.SUBMIT', 
+                  value: context.currentInput 
+                });
+              }
+            },
+            // Clear input
+            assign({ currentInput: '' })
+          ]
+        },
+        'INPUT.CHANGE': {
+          actions: 'updateInput'
+        },
+        'APPEND_LINES': {
+          actions: 'appendLines'
+        },
+        'UPDATE_STATUS': {
+          actions: assign({
+            chatStatus: ({ event }) => (event as any).status
+          })
+        },
+        'END_SESSION': {
+          actions: ({ context }) => {
+            if (context.chatRef) {
+              context.chatRef.send({ type: 'END_SESSION' });
+            }
+          }
+        },
+        'CHAT_COMPLETED': {
+          target: 'idle',
+          actions: assign({
+            isChatActive: false,
+            chatRef: null,
+            chatStatus: null
+          })
         },
         'HISTORY.UP': {
           actions: 'navigateHistoryUp'

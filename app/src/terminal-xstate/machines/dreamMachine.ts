@@ -205,9 +205,17 @@ export const dreamMachine = setup({
       },
       statusMessage: ({ event }) => {
         const output = (event as any).output;
-        return output.isEvolutionDream ? 
-          'Evolution dream persisted! Agent has evolved.' :
-          'Dream persisted successfully!';
+        if (output.isEvolutionDream) {
+          debugLog('🌈 ========================================');
+          debugLog('🌈 EVOLUTION DREAM WORKFLOW COMPLETED!');
+          debugLog('🌈 ========================================');
+          debugLog('🌈 Your agent has permanently evolved!');
+          debugLog('🌈 New personality traits are now on-chain');
+          debugLog('🌈 Check agent stats to see the changes');
+          debugLog('🌈 ========================================');
+          return 'Evolution dream persisted! Agent has evolved.';
+        }
+        return 'Dream persisted successfully!';
       }
     }),
     
@@ -240,6 +248,20 @@ export const dreamMachine = setup({
       const timestamp = Date.now();
       
       if (context.aiResponse) {
+        // Check if this is an evolution dream
+        const dreamCount = context.dreamContext?.agentProfile?.dreamCount || 0;
+        const nextDreamId = dreamCount + 1;
+        const isEvolutionDream = nextDreamId % 5 === 0;
+        
+        // Add evolution dream notification
+        if (isEvolutionDream && context.aiResponse.personalityImpact) {
+          lines.push({
+            type: 'success',
+            content: `🌟 EVOLUTION DREAM DETECTED! Dream #${nextDreamId} will evolve your agent's personality! 🌟`,
+            timestamp: timestamp - 1
+          });
+        }
+        
         // Display AI analysis with formatted agent name
         lines.push({
           type: 'info',
@@ -247,12 +269,20 @@ export const dreamMachine = setup({
           timestamp
         });
         
-        // Ask for confirmation
-        lines.push({
-          type: 'system',
-          content: `Do u wanna train ${context.agentName} with your dream? Type y/n`,
-          timestamp: timestamp + 1
-        });
+        // Ask for confirmation with evolution notice
+        if (isEvolutionDream && context.aiResponse.personalityImpact) {
+          lines.push({
+            type: 'system',
+            content: `Do u wanna evolve ${context.agentName} with this evolution dream? Type y/n`,
+            timestamp: timestamp + 1
+          });
+        } else {
+          lines.push({
+            type: 'system',
+            content: `Do u wanna train ${context.agentName} with your dream? Type y/n`,
+            timestamp: timestamp + 1
+          });
+        }
       }
       
       return { type: 'APPEND_LINES', lines };
