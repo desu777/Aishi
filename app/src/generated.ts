@@ -1296,7 +1296,7 @@ export const aishiAgentAbi = [
  *
  */
 export const aishiAgentAddress = {
-  16601: '0x5Bc063f0eeFa5D90831FD2b4AF33D1529c993bFe',
+  16601: '0x6Ea891A7223459aCC46030aae203DCC218a388C6',
 } as const
 
 /**
@@ -1358,7 +1358,7 @@ export const aishiVerifierAbi = [
  *
  */
 export const aishiVerifierAddress = {
-  16601: '0x1e030B74fDeE8E4770414Fd42ffe65247DE87d95',
+  16601: '0x978a566B8817f14fEAaA783177E41e2d6dCA000C',
 } as const
 
 /**

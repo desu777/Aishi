@@ -34,8 +34,8 @@ export const evolutionDreamActions = {
       // Add evolution dream notification
       if (isEvolutionDream && context.aiResponse.personalityImpact) {
         lines.push({
-          type: 'success',
-          content: `🌟 EVOLUTION DREAM DETECTED! Dream #${nextDreamId} will evolve your agent's personality! 🌟`,
+          type: 'system',
+          content: `[EVOLUTION DETECTED] Dream #${nextDreamId} - Personality evolution sequence initiated`,
           timestamp: timestamp - 1
         });
       }
@@ -82,13 +82,13 @@ export const evolutionDreamActions = {
     statusMessage: ({ event }: any) => {
       const output = event.output;
       if (output.isEvolutionDream) {
-        debugLog('🌈 ========================================');
-        debugLog('🌈 EVOLUTION DREAM WORKFLOW COMPLETED!');
-        debugLog('🌈 ========================================');
-        debugLog('🌈 Your agent has permanently evolved!');
-        debugLog('🌈 New personality traits are now on-chain');
-        debugLog('🌈 Check agent stats to see the changes');
-        debugLog('🌈 ========================================');
+        debugLog('========================================');
+        debugLog('[EVOLUTION COMPLETE] Dream workflow finalized');
+        debugLog('========================================');
+        debugLog('Agent personality permanently evolved');
+        debugLog('New traits committed to blockchain');
+        debugLog('View agent stats to observe evolution changes');
+        debugLog('========================================');
         return 'Evolution dream persisted! Agent has evolved.';
       }
       return 'Dream persisted successfully!';

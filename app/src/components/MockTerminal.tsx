@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import Image from 'next/image';
 
 interface MockTerminalProps {
   width?: string;
@@ -29,136 +30,115 @@ export const MockTerminal: React.FC<MockTerminalProps> = ({
 }) => {
   const { theme } = useTheme();
 
-  const mockLines = [
-    { type: 'input', content: '$ aishi --version', delay: 0 },
-    { type: 'success', content: 'Aishi v2.0 - Your inner AI (愛) companion', delay: 100 },
-    { type: 'system', content: 'Built on 0G Network • Decentralized AI Infrastructure', delay: 200 },
-    { type: 'empty', content: '', delay: 300 },
-    { type: 'input', content: '$ dream-analyze --last', delay: 400 },
-    { type: 'processing', content: '◉ Processing dream essence...', delay: 500 },
-    { type: 'info', content: '✓ Personality traits evolving: +2 creativity, +1 empathy', delay: 600 },
-    { type: 'empty', content: '', delay: 700 },
-    { type: 'input', content: '$ chat --start --model shizuku', delay: 800 },
-    { type: 'processing', content: '◉ Initializing Live2D companion...', delay: 900 },
-    { type: 'success', content: '✓ Shizuku is ready to chat!', delay: 1000 },
-    { type: 'empty', content: '', delay: 1100 },
-    { type: 'input', content: '$ memory-status', delay: 1200 },
-    { type: 'info', content: 'Daily memories: 42 | Monthly consolidations: 3', delay: 1300 },
-    { type: 'info', content: 'Next consolidation: 2 days remaining', delay: 1400 },
-    { type: 'empty', content: '', delay: 1500 },
-    { type: 'input', content: '$ agent-info', delay: 1600 },
-    { type: 'system', content: 'Agent #1337 • Intelligence: Level 7 • Dreams: 156', delay: 1700 },
-    { type: 'success', content: 'Aishi is revolutionizing AI companionship_', delay: 1800 }
-  ];
-
-  const getLineColor = (type: string) => {
-    switch(type) {
-      case 'input': return colors.pearl;
-      case 'success': return colors.success;
-      case 'info': return colors.accent;
-      case 'processing': return colors.accent;
-      case 'system': return colors.silver;
-      case 'error': return colors.error;
-      default: return colors.pearl;
-    }
-  };
-
   return (
     <div style={{
       width,
       height,
-      background: colors.glassBg,
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      border: `1px solid ${colors.borderSubtle}`,
-      borderRadius: '20px',
-      padding: '2rem',
-      fontFamily: 'Inter, -apple-system, "SF Pro Display", system-ui, sans-serif',
-      fontSize: '14px',
-      fontWeight: 300,
-      lineHeight: 1.8,
-      letterSpacing: '0.02em',
-      overflow: 'hidden',
       position: 'relative',
-      boxShadow: `
-        0 20px 60px rgba(0, 0, 0, 0.3),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.02)
-      `,
-      display: 'flex',
-      flexDirection: 'column'
+      overflow: 'hidden'
     }}>
-
-      {/* Mock terminal lines - similar to MinimalOutput */}
-      <div style={{ 
-        flex: 1,
-        overflowY: 'auto',
-        color: colors.pearl
+      {/* 0G Logo - underneath the blur */}
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '60%',
+        maxWidth: '300px',
+        opacity: 0.3,
+        zIndex: 0,
+        animation: 'pulse 4s ease-in-out infinite'
       }}>
-        {mockLines.map((line, index) => (
-          <div
-            key={index}
-            style={{
-              color: getLineColor(line.type),
-              marginBottom: line.type === 'empty' ? '0.5rem' : '0.5rem',
-              opacity: 0,
-              animation: `fadeInLine 0.3s ease forwards`,
-              animationDelay: `${line.delay}ms`
-            }}
-          >
-            {line.type === 'input' && line.content.startsWith('$ ') ? (
-              <>
-                <span style={{ opacity: 0.5 }}>$ </span>
-                <span style={{ fontWeight: 400 }}>{line.content.substring(2)}</span>
-              </>
-            ) : (
-              line.content
-            )}
-            {/* Add blinking cursor to last line */}
-            {index === mockLines.length - 1 && (
-              <span style={{
-                animation: 'blink 1s infinite',
-                marginLeft: '2px',
-                opacity: 0.8
-              }}>
-                |
-              </span>
-            )}
-          </div>
-        ))}
+        <Image 
+          src="/og.png" 
+          alt="0G Network"
+          width={300}
+          height={300}
+          style={{
+            width: '100%',
+            height: 'auto',
+            filter: 'brightness(1.2)'
+          }}
+        />
       </div>
 
-      {/* Bottom command bar area (mock) */}
+      {/* Glass terminal overlay */}
       <div style={{
-        borderTop: `1px solid ${colors.borderSubtle}`,
-        paddingTop: '1.5rem',
-        marginTop: '1rem'
+        width: '100%',
+        height: '100%',
+        background: colors.glassBg,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: `1px solid ${colors.borderSubtle}`,
+        borderRadius: '20px',
+        padding: '2rem',
+        position: 'relative',
+        boxShadow: `
+          0 20px 60px rgba(0, 0, 0, 0.3),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.02)
+        `,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1
       }}>
+        {/* Minimal terminal indicator */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '1rem'
+          gap: '0.5rem',
+          marginBottom: '2rem'
         }}>
-          <span style={{ color: colors.silver, fontSize: '14px', opacity: 0.5 }}>{'>'}</span>
+          <span style={{ 
+            color: colors.accent, 
+            fontSize: '18px',
+            fontWeight: 300,
+            letterSpacing: '0.1em',
+            opacity: 0.8
+          }}>
+            AISHI TERMINAL
+          </span>
+        </div>
+
+        {/* Command prompt */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          padding: '1rem 2rem',
+          background: 'rgba(139, 92, 246, 0.05)',
+          borderRadius: '12px',
+          border: `1px solid ${colors.borderSubtle}`
+        }}>
+          <span style={{ color: colors.accent, fontSize: '14px', opacity: 0.7 }}>{'>'}</span>
           <span style={{ 
             color: colors.silver, 
             fontSize: '14px', 
             opacity: 0.5,
             fontStyle: 'italic'
           }}>
-            Enter command...
+            Initializing...
+          </span>
+          <span style={{
+            animation: 'blink 1s infinite',
+            color: colors.accent,
+            opacity: 0.8
+          }}>
+            |
           </span>
         </div>
       </div>
 
       <style jsx>{`
-        @keyframes fadeInLine {
-          from {
-            opacity: 0;
-            transform: translateY(5px);
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 0.3;
+            transform: translate(-50%, -50%) scale(1);
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+          50% {
+            opacity: 0.5;
+            transform: translate(-50%, -50%) scale(1.05);
           }
         }
         

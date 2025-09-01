@@ -223,26 +223,11 @@ export const dreamActions = {
   })
 };
 
+/**
+ * Dream-specific guards
+ * Note: Common guards like canRetry, hasValidRootHash, isMemoryDownloadError are now in shared modules
+ */
 export const dreamGuards = {
-  // Check if memory download error occurred
-  isMemoryDownloadError: ({ event }: { event: any }) => {
-    if ('error' in event && event.error) {
-      const errorMsg = event.error instanceof Error ? event.error.message : String(event.error);
-      return errorMsg.includes('File not found') || 
-             errorMsg.includes('code 101') ||
-             errorMsg.includes('Download failed');
-    }
-    return false;
-  },
-  
-  // Check if we have a valid root hash for contract update
-  hasValidRootHash: ({ context }: { context: DreamMachineContext }) => {
-    const hash = context.storageRootHash;
-    return !!hash && hash !== '0x0' && hash.length === 66;
-  },
-  
-  // Check if we can retry
-  canRetry: ({ context }: { context: DreamMachineContext }) => {
-    return context.retryCount < context.maxRetries;
-  }
+  // Keep this empty for now - all guards moved to shared modules
+  // Add any dream-specific guards here in the future
 };

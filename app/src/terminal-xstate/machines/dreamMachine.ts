@@ -7,6 +7,8 @@ import { setup, assign, sendParent } from 'xstate';
 import { defaultAgentData } from '../types/contextTypes';
 import { memoryGuards } from './shared/memory.guards';
 import { memoryActions } from './shared/memory.actions';
+import { storageActions } from './shared/storage.actions';
+import { storageGuards } from './shared/storage.guards';
 import { contextualTerminalActions } from './shared/terminal.actions';
 import { evolutionDreamActions } from './dream.evolution.actions';
 import { 
@@ -233,47 +235,25 @@ export const dreamMachine = setup({
     displayMemoryErrorPrompt: memoryActions.displayMemoryErrorPrompt,
     clearMemoryHash: memoryActions.clearMemoryError,
     
-    // Storage upload error handling
-    storeUploadError: assign({
-      storageUploadError: ({ event }) => {
-        if ('error' in event) {
-          return event.error instanceof Error ? event.error.message : String(event.error);
-        }
-        return 'Failed to upload to 0G Storage';
-      },
-      statusMessage: 'Storage upload failed'
-    }),
-    
-    displayUploadErrorPrompt: sendParent(({ context }) => ({
-      type: 'APPEND_LINES',
-      lines: [{
-        type: 'error',
-        content: `0G Network storage error: ${context.storageUploadError}`,
-        timestamp: Date.now()
-      }, {
-        type: 'system',
-        content: 'Do u wanna try uploading again? Type y/n',
-        timestamp: Date.now() + 1
-      }]
-    })),
-    
-    incrementRetryCount: assign({
-      retryCount: ({ context }) => context.retryCount + 1
-    })
+    // Import shared storage actions
+    storeUploadError: storageActions.storeUploadError,
+    displayUploadErrorPrompt: storageActions.displayUploadErrorPrompt,
+    incrementRetryCount: storageActions.incrementRetryCount,
+    storeDreamFileData: storageActions.storeDreamFileData,
+    storeStorageResult: storageActions.storeStorageResult
   },
   guards: {
     // Import shared memory guards
     isMemoryDownloadError: memoryGuards.isMemoryDownloadError,
     
-    // Dream-specific guards
-    hasValidRootHash: ({ context }) => {
-      const hash = context.storageRootHash;
-      return !!hash && hash !== '0x0' && hash.length === 66;
-    },
-    
-    canRetry: ({ context }) => {
-      return context.retryCount < context.maxRetries;
-    }
+    // Import shared storage guards
+    hasValidRootHash: storageGuards.hasValidRootHash,
+    canRetry: storageGuards.canRetry,
+    hasExceededMaxRetries: storageGuards.hasExceededMaxRetries,
+    shouldRetry: storageGuards.shouldRetry,
+    shouldAbortAfterMaxRetries: storageGuards.shouldAbortAfterMaxRetries,
+    isYesInput: storageGuards.isYesInput,
+    isNoInput: storageGuards.isNoInput
   }
 }).createMachine({
   id: 'dream',
@@ -521,23 +501,23 @@ export const dreamMachine = setup({
         CONFIRM_SAVE: [
           {
             target: 'savingDream.storageUpload',
-            guard: 'canRetry',
+            guard: 'shouldRetry',
             actions: 'incrementRetryCount'
           },
           {
             target: 'completed',
-            actions: [
-              assign({ statusMessage: 'Maximum retry attempts reached.' }),
-              'sendStatusToParent'
-            ] as const
+            guard: 'shouldAbortAfterMaxRetries',
+            actions: storageActions.setMaxRetriesExceededStatus as any
+          },
+          {
+            target: 'completed',
+            guard: 'isNoInput',
+            actions: storageActions.setUploadCancelledStatus as any
           }
         ],
         CANCEL_SAVE: {
           target: 'completed',
-          actions: [
-            assign({ statusMessage: 'Dream saved locally but not uploaded to storage.' }),
-            'sendStatusToParent'
-          ] as const
+          actions: storageActions.setUploadCancelledStatus as any
         }
       }
     },

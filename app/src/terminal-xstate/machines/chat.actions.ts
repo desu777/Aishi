@@ -97,9 +97,9 @@ export const chatActions = {
    * Store persistence result
    */
   storePersistenceResult: assign({
-    storageRootHash: ({ event }: any) => event.output.rootHash,
     contractTxHash: ({ event }: any) => event.output.txHash,
-    statusMessage: 'Conversation saved successfully!'
+    statusMessage: 'Conversation saved successfully!',
+    retryCount: 0 // Reset retry count on success
   }),
 
   /**
@@ -257,37 +257,9 @@ export const chatActions = {
 
 /**
  * Chat-specific guards
+ * Note: Common guards like isYesInput, isNoInput, canRetry are now in shared/storage.guards.ts
  */
 export const chatGuards = {
-  /**
-   * Check if input is yes
-   */
-  isYesInput: ({ event }: any) => {
-    if (event.type !== 'INPUT.SUBMIT') return false;
-    const value = event.value?.toLowerCase().trim();
-    return value === 'y' || value === 'yes';
-  },
-
-  /**
-   * Check if input is no
-   */
-  isNoInput: ({ event }: any) => {
-    if (event.type !== 'INPUT.SUBMIT') return false;
-    const value = event.value?.toLowerCase().trim();
-    return value === 'n' || value === 'no';
-  },
-
-  /**
-   * Check if can retry
-   */
-  canRetry: ({ context }: { context: ChatContext }) => {
-    return context.retryCount < context.maxRetries;
-  },
-
-  /**
-   * Check if exceeded retries
-   */
-  hasExceededRetries: ({ context }: { context: ChatContext }) => {
-    return context.retryCount >= context.maxRetries;
-  }
+  // Keep this empty for now - all guards moved to shared modules
+  // Add any chat-specific guards here in the future
 };

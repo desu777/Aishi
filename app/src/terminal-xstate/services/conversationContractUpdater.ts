@@ -63,11 +63,20 @@ export async function updateConversationContract(
     const contractConfig = getContractConfig();
 
     // Get providers
-    const publicClient = getViemProvider() as PublicClient;
-    const walletClient = await getViemSigner() as WalletClient;
+    const [publicClient, publicErr] = await getViemProvider();
+    if (!publicClient || publicErr) {
+      throw new Error(`PublicClient error: ${publicErr?.message || 'No public client available'}`);
+    }
 
-    if (!walletClient.account) {
-      throw new Error('No wallet connected');
+    const [walletClient, walletErr] = await getViemSigner();
+    if (!walletClient || walletErr) {
+      throw new Error(`WalletClient error: ${walletErr?.message || 'No wallet client available'}`);
+    }
+
+    // Get account from walletClient
+    const [account] = await walletClient.getAddresses();
+    if (!account) {
+      throw new Error('No account available');
     }
 
     // Map conversation type to contract enum
@@ -76,7 +85,7 @@ export async function updateConversationContract(
     debugLog('Preparing contract call', {
       contractAddress: contractConfig.address,
       contextType,
-      account: walletClient.account.address
+      account: account
     });
 
     // Simulate the transaction first
@@ -85,14 +94,18 @@ export async function updateConversationContract(
       abi: contractConfig.abi,
       functionName: 'recordConversation',
       args: [tokenId, conversationHash as `0x${string}`, contextType],
-      account: walletClient.account,
+      account: account,
       chain: galileoTestnet
     });
 
     debugLog('Contract simulation successful');
 
-    // Execute the transaction
-    const txHash = await walletClient.writeContract(request);
+    // Execute the transaction with explicit chain and account
+    const txHash = await walletClient.writeContract({
+      ...request,
+      chain: galileoTestnet,
+      account: account
+    });
 
     debugLog('Transaction submitted', { txHash });
 

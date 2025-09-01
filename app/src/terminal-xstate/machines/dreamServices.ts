@@ -447,13 +447,13 @@ export const aiAnalysisService = fromPromise(async ({ input }: { input: {
     
     // Special logging for evolution dreams
     if (isEvolutionDream) {
-      debugLog('🌟 ========================================');
-      debugLog('🌟 EVOLUTION DREAM DETECTED!');
-      debugLog('🌟 ========================================');
-      debugLog('🌟 Dream #' + nextDreamId + ' will evolve personality!');
-      debugLog('🌟 Current dream count: ' + input.dreamCount);
-      debugLog('🌟 Agent will gain new traits and features!');
-      debugLog('🌟 ========================================');
+      debugLog('========================================');
+      debugLog('[EVOLUTION DREAM] Sequence activated');
+      debugLog('========================================');
+      debugLog('Dream #' + nextDreamId + ' - Personality evolution triggered');
+      debugLog('Current dream count: ' + input.dreamCount);
+      debugLog('Agent trait evolution in progress');
+      debugLog('========================================');
     }
     
     debugLog('[API] Calling real AI backend', { 

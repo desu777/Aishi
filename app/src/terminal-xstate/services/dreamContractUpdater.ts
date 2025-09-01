@@ -201,15 +201,31 @@ async function executeContractTransaction(
   });
 
   const contractConfig = getContractConfig();
+  
+  // Get public client for simulation
+  const [publicClient, publicErr] = await getViemProvider();
+  if (!publicClient || publicErr) {
+    throw new Error(`PublicClient error: ${publicErr?.message || 'No public client available'}`);
+  }
 
-  // Call processDailyDream function
-  const txHash = await walletClient.writeContract({
+  // Simulate the transaction first
+  debugLog('Simulating transaction...');
+  const { request } = await publicClient.simulateContract({
     address: contractConfig.address,
     abi: contractConfig.abi,
     functionName: 'processDailyDream',
-    chain: galileoTestnet,
+    args: [BigInt(tokenId), `0x${dreamHash.replace('0x', '')}` as `0x${string}`, personalityImpact],
     account,
-    args: [BigInt(tokenId), `0x${dreamHash.replace('0x', '')}` as `0x${string}`, personalityImpact]
+    chain: galileoTestnet
+  });
+  
+  debugLog('Simulation successful, executing transaction...');
+  
+  // Execute the transaction with explicit chain and account
+  const txHash = await walletClient.writeContract({
+    ...request,
+    chain: galileoTestnet,
+    account: account
   });
 
   debugLog('Transaction sent, waiting for confirmation', { 
@@ -217,11 +233,6 @@ async function executeContractTransaction(
   });
 
   // Wait for confirmation
-  const [publicClient] = await getViemProvider();
-  if (!publicClient) {
-    throw new Error('PublicClient not available for transaction receipt');
-  }
-
   const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
   const confirmationTime = Date.now() - transactionStartTime;
 

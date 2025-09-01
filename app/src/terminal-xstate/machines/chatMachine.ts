@@ -7,6 +7,8 @@ import { setup, assign, sendParent, fromPromise } from 'xstate';
 import { TerminalLine } from './types';
 import { memoryGuards } from './shared/memory.guards';
 import { memoryActions } from './shared/memory.actions';
+import { storageActions } from './shared/storage.actions';
+import { storageGuards } from './shared/storage.guards';
 import { contextualTerminalActions } from './shared/terminal.actions';
 import { chatActions, chatGuards } from './chat.actions';
 
@@ -40,6 +42,7 @@ export interface ChatContext {
   historicalData: any | null;
   // Persistence
   conversationSummary: any | null;
+  preparedFileData: any | null; // Store prepared file for retry
   storageRootHash: string | null;
   contractTxHash: string | null;
   // Error handling
@@ -79,6 +82,7 @@ const initialContext: ChatContext = {
   agentContext: null,
   historicalData: null,
   conversationSummary: null,
+  preparedFileData: null,
   storageRootHash: null,
   contractTxHash: null,
   retryCount: 0,
@@ -106,6 +110,13 @@ export const chatMachine = setup({
     storeMemoryError: memoryActions.storeMemoryError,
     displayMemoryErrorPrompt: memoryActions.displayMemoryErrorPrompt,
     clearMemoryError: memoryActions.clearMemoryError,
+    
+    // Import shared storage actions
+    storeUploadError: storageActions.storeUploadError,
+    displayUploadErrorPrompt: storageActions.displayUploadErrorPrompt,
+    incrementRetry: storageActions.incrementRetryCount,
+    storeFilePreparation: storageActions.storeFilePreparation,
+    storeStorageResult: storageActions.storeStorageResult,
     
     // Import shared terminal actions
     sendStatusToParent: contextualTerminalActions.sendStatusFromContext
@@ -196,35 +207,103 @@ export const chatMachine = setup({
       return summary;
     }),
 
-    // Persist conversation
-    persistConversation: fromPromise(async ({ input }: { 
+    // Prepare conversation file
+    prepareConversationFile: fromPromise(async ({ input }: { 
       input: {
         agentId: number;
         agentName: string;
         conversationSummary: any;
-        currentTranscript: string;
       }
     }) => {
-      debugLog('Persisting conversation', {
+      debugLog('Preparing conversation file', {
         agentId: input.agentId,
         hasSummary: !!input.conversationSummary
       });
 
       // Dynamic import to avoid circular dependencies
-      const { persistChatConversation } = await import('./chatServices');
-      const result = await persistChatConversation(
+      const { ConversationFileManager } = await import('../services/conversationFileManager');
+      const fileManager = new ConversationFileManager();
+      
+      const fileResult = await fileManager.manageConversationFile(
         input.agentId,
         input.agentName,
-        input.conversationSummary,
-        input.currentTranscript
+        input.conversationSummary
       );
 
-      debugLog('Conversation persisted', {
-        rootHash: result.rootHash,
-        txHash: result.txHash
+      debugLog('Conversation file prepared', {
+        fileName: fileResult.fileName,
+        isNewFile: fileResult.isNewFile,
+        totalConversations: fileResult.totalConversations
       });
 
-      return result;
+      return {
+        summary: input.conversationSummary,
+        fileData: fileResult
+      };
+    }),
+
+    // Upload conversation to storage
+    uploadToStorage: fromPromise(async ({ input }: { 
+      input: {
+        fileData: any;
+      }
+    }) => {
+      debugLog('Uploading conversation to storage', {
+        fileName: input.fileData.fileName,
+        contentLength: input.fileData.fileContent?.length
+      });
+
+      // Dynamic import to avoid circular dependencies
+      const { uploadToStorage } = await import('../services/xstateStorage');
+      const uploadResult = await uploadToStorage(
+        input.fileData.fileContent,
+        input.fileData.fileName
+      );
+
+      debugLog('Upload result', {
+        success: uploadResult.success,
+        rootHash: uploadResult.rootHash
+      });
+
+      // Check if upload was successful
+      if (!uploadResult.success || !uploadResult.rootHash) {
+        throw new Error(`Upload failed: ${uploadResult.error || 'No root hash returned'}`);
+      }
+
+      return {
+        rootHash: uploadResult.rootHash
+      };
+    }),
+
+    // Update contract with conversation hash
+    updateContract: fromPromise(async ({ input }: { 
+      input: {
+        agentId: number;
+        rootHash: string;
+        conversationType: string;
+      }
+    }) => {
+      debugLog('Updating contract with conversation', {
+        agentId: input.agentId,
+        rootHash: input.rootHash,
+        conversationType: input.conversationType
+      });
+
+      // Dynamic import to avoid circular dependencies
+      const { updateConversationContract } = await import('../services/conversationContractUpdater');
+      const contractResult = await updateConversationContract(
+        input.agentId,
+        input.rootHash,
+        input.conversationType
+      );
+
+      debugLog('Contract updated', {
+        txHash: contractResult.txHash
+      });
+
+      return {
+        txHash: contractResult.txHash
+      };
     })
   },
   guards: {
@@ -232,7 +311,15 @@ export const chatMachine = setup({
     ...chatGuards,
     
     // Import shared memory guards
-    isMemoryDownloadError: memoryGuards.isMemoryDownloadError
+    isMemoryDownloadError: memoryGuards.isMemoryDownloadError,
+    
+    // Import shared storage guards
+    canRetry: storageGuards.canRetry,
+    hasExceededMaxRetries: storageGuards.hasExceededMaxRetries,
+    shouldRetry: storageGuards.shouldRetry,
+    shouldAbortAfterMaxRetries: storageGuards.shouldAbortAfterMaxRetries,
+    isYesInput: storageGuards.isYesInput,
+    isNoInput: storageGuards.isNoInput
   }
 }).createMachine({
   id: 'chatMachine',
@@ -427,27 +514,79 @@ export const chatMachine = setup({
     },
 
     savingConversation: {
-      entry: [
-        assign({ 
-          statusMessage: ({ context }) => `${context.agentName} is evolving...` 
-        }),
-        'sendStatusToParent'
-      ],
-      invoke: {
-        src: 'persistConversation',
-        input: ({ context }) => ({
-          agentId: context.agentId,
-          agentName: context.agentName,
-          conversationSummary: context.conversationSummary,
-          currentTranscript: context.currentTranscript
-        }),
-        onDone: {
-          target: 'completed',
-          actions: ['storePersistenceResult', 'sendCompletionToParent']
+      initial: 'preparingFile',
+      states: {
+        preparingFile: {
+          entry: [
+            assign({ 
+              statusMessage: ({ context }) => `${context.agentName} is learning...` 
+            }),
+            'sendStatusToParent'
+          ],
+          invoke: {
+            src: 'prepareConversationFile',
+            input: ({ context }) => ({
+              agentId: context.agentId,
+              agentName: context.agentName,
+              conversationSummary: context.conversationSummary
+            }),
+            onDone: {
+              target: 'uploadingToStorage',
+              actions: ['storeFilePreparation']
+            },
+            onError: {
+              target: '#chatMachine.saveFailed',
+              actions: ['setError', 'sendStatusToParent']
+            }
+          }
         },
-        onError: {
-          target: 'saveFailed',
-          actions: ['setError', 'sendStatusToParent']
+        
+        uploadingToStorage: {
+          entry: [
+            assign({ 
+              statusMessage: ({ context }) => `${context.agentName} is learning...` 
+            }),
+            'sendStatusToParent'
+          ],
+          invoke: {
+            src: 'uploadToStorage',
+            input: ({ context }) => ({
+              fileData: context.preparedFileData
+            }),
+            onDone: {
+              target: 'updatingContract',
+              actions: ['storeStorageResult']
+            },
+            onError: {
+              target: '#chatMachine.storageUploadFailed',
+              actions: ['storeUploadError']
+            }
+          }
+        },
+        
+        updatingContract: {
+          entry: [
+            assign({ 
+              statusMessage: ({ context }) => `${context.agentName} is evolving...` 
+            }),
+            'sendStatusToParent'
+          ],
+          invoke: {
+            src: 'updateContract',
+            input: ({ context }) => ({
+              agentId: context.agentId,
+              rootHash: context.storageRootHash,
+              conversationType: context.conversationSummary?.type || 'general_chat'
+            }),
+            onDone: {
+              target: '#chatMachine.completed',
+              actions: ['storePersistenceResult', 'sendCompletionToParent']
+            },
+            onError: {
+              target: '#chatMachine.saveFailed',
+              actions: ['setError', 'sendStatusToParent']
+            }
+          }
         }
       }
     },
@@ -455,6 +594,30 @@ export const chatMachine = setup({
     saveFailed: {
       entry: 'sendSaveError',
       on: {
+        EXIT: 'completed'
+      }
+    },
+
+    storageUploadFailed: {
+      entry: 'displayUploadErrorPrompt',
+      on: {
+        'INPUT.SUBMIT': [
+          {
+            guard: 'shouldRetry',
+            target: 'savingConversation.uploadingToStorage',
+            actions: ['incrementRetry']
+          },
+          {
+            guard: 'shouldAbortAfterMaxRetries',
+            target: 'completed',
+            actions: storageActions.setMaxRetriesExceededStatus
+          },
+          {
+            guard: 'isNoInput',
+            target: 'completed',
+            actions: storageActions.setUploadCancelledStatus
+          }
+        ],
         EXIT: 'completed'
       }
     },
