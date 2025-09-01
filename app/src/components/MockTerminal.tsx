@@ -43,8 +43,9 @@ export const MockTerminal: React.FC<MockTerminalProps> = ({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: '60%',
-        maxWidth: '300px',
+        width: '90%',
+        maxWidth: '600px',
+        minWidth: '200px',
         opacity: 0.3,
         zIndex: 0,
         animation: 'pulse 4s ease-in-out infinite'
@@ -52,8 +53,8 @@ export const MockTerminal: React.FC<MockTerminalProps> = ({
         <Image 
           src="/og.png" 
           alt="0G Network"
-          width={300}
-          height={300}
+          width={600}
+          height={600}
           style={{
             width: '100%',
             height: 'auto',
