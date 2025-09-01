@@ -6,6 +6,7 @@ import { PremiumCommandBar } from './PremiumCommandBar';
 import { TerminalSystemHeader } from './TerminalSystemHeader';
 import AIOrb from './AIOrb';
 import TerminalStatusLine from './TerminalStatusLine';
+import { MemoryDownloadHandler } from './MemoryDownloadHandler';
 import { useTerminal } from '../hooks/useTerminal';
 import { useTerminalAgent } from '../hooks/useTerminalAgent';
 import { zIndex } from '../../styles/zIndex';
@@ -304,6 +305,9 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             }
             promptSymbol={isChatActive ? '~' : isDreamActive ? '~' : '>'}
           />
+          
+          {/* Memory Download Handler - handles download clicks */}
+          <MemoryDownloadHandler send={send} />
         </div>
       </div>
     </>

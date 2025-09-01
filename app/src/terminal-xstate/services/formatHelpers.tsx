@@ -526,3 +526,172 @@ export function formatStatsOutput(agentData: CompleteAgentData | null): Terminal
 
   return lines;
 }
+
+/**
+ * Formats memory data for terminal display with download functionality
+ */
+export function formatMemoryOutput(agentData: CompleteAgentData | null): TerminalLine[] {
+  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+    console.log('[formatMemoryOutput] Called with data:', !!agentData);
+    if (agentData?.memory) {
+      console.log('[formatMemoryOutput] Memory data:', agentData.memory);
+    }
+  }
+  
+  const timestamp = Date.now();
+  
+  if (!agentData) {
+    return [{
+      type: 'error',
+      content: 'No agent found. Please mint an agent first.',
+      timestamp
+    }];
+  }
+
+  const lines: TerminalLine[] = [];
+  
+  // Header
+  const headerContent = (
+    <>
+      <span style={{ 
+        color: colors.accent, 
+        fontWeight: '600',
+        fontSize: '16px'
+      }}>
+        Agent Memory Storage
+      </span>
+    </>
+  );
+  
+  lines.push({
+    type: 'info',
+    content: headerContent,
+    timestamp: timestamp + 1
+  });
+
+  // Empty line
+  lines.push({
+    type: 'info',
+    content: '',
+    timestamp: timestamp + 2
+  });
+
+  // Helper function to format hash display
+  const formatHash = (hash: string): string => {
+    if (!hash || hash === '0x0' || hash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+      return 'empty';
+    }
+    // Show first 6 and last 4 characters
+    return `${hash.slice(0, 8)}...${hash.slice(-4)}`;
+  };
+
+  // Helper function to check if hash is non-zero
+  const isNonZeroHash = (hash: string): boolean => {
+    return hash && hash !== '0x0' && hash !== '0x0000000000000000000000000000000000000000000000000000000000000000';
+  };
+
+  // Memory types mapping
+  const memoryTypes = [
+    {
+      name: 'Daily Dreams',
+      hash: agentData.memory.currentDreamDailyHash,
+      type: 'daily_dreams'
+    },
+    {
+      name: 'Daily Conversations',
+      hash: agentData.memory.currentConvDailyHash,
+      type: 'daily_chats'
+    },
+    {
+      name: 'Monthly Dreams',
+      hash: agentData.memory.lastDreamMonthlyHash,
+      type: 'monthly_dreams'
+    },
+    {
+      name: 'Monthly Conversations',
+      hash: agentData.memory.lastConvMonthlyHash,
+      type: 'monthly_chats'
+    },
+    {
+      name: 'Memory Core (Soul)',
+      hash: agentData.memory.memoryCoreHash,
+      type: 'memory_core'
+    }
+  ];
+
+  // Display each memory type
+  memoryTypes.forEach((memory, index) => {
+    const hasData = isNonZeroHash(memory.hash);
+    const hashDisplay = formatHash(memory.hash);
+    
+    const memoryContent = (
+      <>
+        <span style={{ 
+          color: colors.primary, 
+          fontWeight: '500',
+          minWidth: '200px',
+          display: 'inline-block'
+        }}>
+          {memory.name}
+        </span>
+        <span style={{ 
+          color: hasData ? colors.accent : colors.secondary,
+          fontFamily: 'monospace',
+          fontSize: '14px'
+        }}>
+          {hashDisplay}
+        </span>
+        {hasData && (
+          <span
+            style={{
+              color: colors.accent,
+              fontWeight: '600',
+              marginLeft: '12px',
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+            data-roothash={memory.hash}
+            data-memorytype={memory.type}
+            className="memory-download-trigger"
+          >
+            [Download]
+          </span>
+        )}
+      </>
+    );
+    
+    lines.push({
+      type: 'info',
+      content: memoryContent,
+      timestamp: timestamp + 3 + index
+    });
+  });
+
+  // Empty line
+  lines.push({
+    type: 'info',
+    content: '',
+    timestamp: timestamp + 9
+  });
+
+  // Instructions
+  const instructionsContent = (
+    <>
+      <span style={{ 
+        color: colors.secondary, 
+        fontStyle: 'italic',
+        fontSize: '13px'
+      }}>
+        Click [Download] to retrieve stored memory files from 0G Network
+      </span>
+    </>
+  );
+  
+  lines.push({
+    type: 'info',
+    content: instructionsContent,
+    timestamp: timestamp + 10
+  });
+
+  return lines;
+}

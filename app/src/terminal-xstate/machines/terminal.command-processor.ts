@@ -53,12 +53,8 @@ export const processCommand = (context: TerminalContext): TerminalLine[] | null 
       return null;
       
     case 'memory':
-      // Coming soon
-      return [{
-        type: 'info',
-        content: `Command 'memory' - coming soon...`,
-        timestamp
-      }];
+      // Handled by async actor
+      return null;
       
     default:
       // Unimplemented command

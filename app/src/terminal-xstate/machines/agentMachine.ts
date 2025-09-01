@@ -244,7 +244,7 @@ export const agentMachine = setup({
           if (event.output.hasAgent) {
             return `connected ~ ${event.output.agentName}`;
           } else {
-            return `no agent detected ~ type 'mint' to create your first agent`;
+            return `no agent detected ~ go 'mint' section to create your first agent`;
           }
         }
         return '';

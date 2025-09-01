@@ -195,6 +195,10 @@ export const terminalMachine = setup({
             {
               target: 'stats',
               guard: ({ context }) => context.lastParsedCommand === 'stats'
+            },
+            {
+              target: 'memory',
+              guard: ({ context }) => context.lastParsedCommand === 'memory'
             }
           ]
         },
@@ -266,6 +270,36 @@ export const terminalMachine = setup({
           },
           invoke: {
             src: 'statsExecutor',
+            input: ({ context }) => {
+              const { tokenId, agentName } = getAgentData(context);
+              return { tokenId: tokenId!, agentName };
+            },
+            onDone: {
+              target: '#terminal.idle',
+              actions: [
+                assign({ lastParsedCommand: null }),
+                ({ self }) => self.send({ type: 'UPDATE_STATUS', status: null }),
+                'displayCommandResult'
+              ]
+            },
+            onError: {
+              target: '#terminal.idle',
+              actions: [
+                assign({ lastParsedCommand: null }),
+                ({ self }) => self.send({ type: 'UPDATE_STATUS', status: null }),
+                'displayCommandError'
+              ]
+            }
+          }
+        },
+        
+        memory: {
+          entry: ({ context, self }) => {
+            const { agentName } = getAgentData(context);
+            self.send({ type: 'UPDATE_STATUS', status: `${agentName} is accessing memory...` });
+          },
+          invoke: {
+            src: 'memoryExecutor',
             input: ({ context }) => {
               const { tokenId, agentName } = getAgentData(context);
               return { tokenId: tokenId!, agentName };

@@ -88,10 +88,10 @@ export const terminalGuards = {
   },
 
   /**
-   * Command that needs agent (personality, unique-features, stats)
+   * Command that needs agent (personality, unique-features, stats, memory)
    */
   isAgentRequiredCommand: ({ context }: { context: TerminalContext }) => {
-    const agentCommands = ['personality', 'unique-features', 'stats'];
+    const agentCommands = ['personality', 'unique-features', 'stats', 'memory'];
     return agentCommands.includes(context.lastParsedCommand || '');
   },
 

@@ -155,6 +155,51 @@ export const commandExecutors = {
   }),
 
   /**
+   * Execute memory command
+   */
+  memoryExecutor: fromPromise(async ({ input }: { 
+    input: { 
+      tokenId: number; 
+      agentName: string;
+    } 
+  }) => {
+    debugLog('Processing memory command', input);
+    
+    try {
+      // Import formatter dynamically
+      const { formatMemoryOutput } = await import('../services/formatHelpers');
+      
+      // Fetch agent data
+      const contractReader = new ContractReaderService();
+      const agentData = await contractReader.getCompleteAgentData(input.tokenId);
+      
+      debugLog('Agent memory data fetched', {
+        hasData: !!agentData,
+        memory: agentData?.memory
+      });
+      
+      // Format and return lines
+      const formattedLines = formatMemoryOutput(agentData);
+      
+      debugLog('Formatted memory lines', {
+        count: formattedLines.length
+      });
+      
+      return {
+        success: true,
+        lines: formattedLines
+      };
+    } catch (error) {
+      debugLog('Error fetching memory', error);
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }),
+
+  /**
    * Execute help command
    */
   helpExecutor: fromPromise(async ({ input }: { 

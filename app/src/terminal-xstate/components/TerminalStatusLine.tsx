@@ -152,7 +152,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
             fontStyle: 'italic',
             fontSize: isMobile ? '10px' : isTablet ? '11px' : '12px',
           }}>
-            type 'mint' to create agent
+            go 'mint' section to create agent
           </span>
         </>
       )}
