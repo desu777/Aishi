@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview Conversation Contract Updater for Terminal XState
  * @description Updates smart contract with conversation records

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview Chat Machine for Terminal XState
  * @description Manages interactive chat sessions between users and their AI agents

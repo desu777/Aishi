@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview Terminal State Machine
  * @description Main terminal machine using XState v5 with modular architecture

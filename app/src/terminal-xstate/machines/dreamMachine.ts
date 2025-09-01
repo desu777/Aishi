@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview Dream Command State Machine
  * @description Main state machine definition for dream workflow

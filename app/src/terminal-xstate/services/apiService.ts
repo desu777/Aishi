@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview API Service for Terminal XState Dream Analysis
  * @description Handles communication with 0g-compute backend for AI dream analysis

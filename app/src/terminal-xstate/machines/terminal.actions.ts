@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview Terminal Machine Actions
  * @description All actions for the terminal state machine

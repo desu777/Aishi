@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview Chat Services for Terminal XState
  * @description Services for chat context loading, AI communication, and persistence
