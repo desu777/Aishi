@@ -4,13 +4,13 @@
  */
 
 import { parseEther } from 'viem';
-import { aishiAgentAbi } from '../../../generated';
+import { aishiAgentAbi, aishiAgentAddress } from '../../../generated';
 
 /**
  * @returns Contract configuration with type-safe ABI for minting operations
  */
 export const getContractConfig = () => ({
-  address: process.env.NEXT_PUBLIC_AISHI_AGENT_ADDRESS as `0x${string}` || '0x5Bc063f0eeFa5D90831FD2b4AF33D1529c993bFe',
+  address: aishiAgentAddress[16601],
   abi: aishiAgentAbi,
   chainId: 16601,
   contractName: 'AishiAgent',
