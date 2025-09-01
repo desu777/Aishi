@@ -206,7 +206,7 @@ export const chatMachine = setup({
         // Display AI response
         lines.push({
           type: 'info',
-          content: `~ ${context.agentName}: ${lastMessage.content}`,
+          content: `~ ${context.agentName} : ${lastMessage.content}`,
           timestamp
         });
       }
@@ -257,7 +257,7 @@ export const chatMachine = setup({
         type: 'APPEND_LINES',
         lines: [{
           type: 'warning',
-          content: `*${agentName}* can't access previous memory from 0G Storage.`,
+          content: `${agentName} can't access previous memory from 0G Storage. Check nodes status.`,
           timestamp: Date.now()
         }, {
           type: 'system',

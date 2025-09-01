@@ -325,7 +325,7 @@ export const dreamMachine = setup({
         type: 'APPEND_LINES',
         lines: [{
           type: 'warning',
-          content: `*${agentName}* can't access previous memory from 0G Storage.`,
+          content: `${agentName} can't access previous memory from 0G Storage. Check nodes status.`,
           timestamp: Date.now()
         }, {
           type: 'system',
