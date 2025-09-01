@@ -1,0 +1,97 @@
+/**
+ * @fileoverview Dream Evolution Actions
+ * @description Actions specific to evolution dreams (every 5th dream)
+ */
+
+import { assign, sendParent } from 'xstate';
+import type { TerminalLine } from './types';
+import type { DreamMachineContext } from './dreamMachine';
+
+// Debug logging
+const debugLog = (message: string, data?: any) => {
+  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
+    console.log(`[DreamMachine] ${message}`, data || '');
+  }
+};
+
+/**
+ * Actions related to evolution dream detection and handling
+ */
+export const evolutionDreamActions = {
+  /**
+   * Send lines to parent with evolution dream awareness
+   */
+  sendDreamAnalysisWithEvolution: sendParent(({ context }: { context: DreamMachineContext }) => {
+    const lines: TerminalLine[] = [];
+    const timestamp = Date.now();
+    
+    if (context.aiResponse) {
+      // Check if this is an evolution dream
+      const dreamCount = context.dreamContext?.agentProfile?.dreamCount || 0;
+      const nextDreamId = dreamCount + 1;
+      const isEvolutionDream = nextDreamId % 5 === 0;
+      
+      // Add evolution dream notification
+      if (isEvolutionDream && context.aiResponse.personalityImpact) {
+        lines.push({
+          type: 'success',
+          content: `🌟 EVOLUTION DREAM DETECTED! Dream #${nextDreamId} will evolve your agent's personality! 🌟`,
+          timestamp: timestamp - 1
+        });
+      }
+      
+      // Display AI analysis with formatted agent name
+      lines.push({
+        type: 'info',
+        content: `~ ${context.agentName} : ${context.aiResponse.fullAnalysis}`,
+        timestamp
+      });
+      
+      // Ask for confirmation with evolution notice
+      if (isEvolutionDream && context.aiResponse.personalityImpact) {
+        lines.push({
+          type: 'system',
+          content: `Do u wanna evolve ${context.agentName} with this evolution dream? Type y/n`,
+          timestamp: timestamp + 1
+        });
+      } else {
+        lines.push({
+          type: 'system',
+          content: `Do u wanna train ${context.agentName} with your dream? Type y/n`,
+          timestamp: timestamp + 1
+        });
+      }
+    }
+    
+    return { type: 'APPEND_LINES', lines };
+  }),
+
+  /**
+   * Store persistence result with evolution awareness
+   */
+  storePersistenceWithEvolution: assign({
+    persistenceResult: ({ event }: any) => {
+      return event.output.persistenceResult;
+    },
+    storageRootHash: ({ event }: any) => {
+      return event.output.rootHash;
+    },
+    contractTxHash: ({ event }: any) => {
+      return event.output.txHash;
+    },
+    statusMessage: ({ event }: any) => {
+      const output = event.output;
+      if (output.isEvolutionDream) {
+        debugLog('🌈 ========================================');
+        debugLog('🌈 EVOLUTION DREAM WORKFLOW COMPLETED!');
+        debugLog('🌈 ========================================');
+        debugLog('🌈 Your agent has permanently evolved!');
+        debugLog('🌈 New personality traits are now on-chain');
+        debugLog('🌈 Check agent stats to see the changes');
+        debugLog('🌈 ========================================');
+        return 'Evolution dream persisted! Agent has evolved.';
+      }
+      return 'Dream persisted successfully!';
+    }
+  })
+};

@@ -5,6 +5,10 @@
 
 import { setup, assign, sendParent, fromPromise } from 'xstate';
 import { TerminalLine } from './types';
+import { memoryGuards } from './shared/memory.guards';
+import { memoryActions } from './shared/memory.actions';
+import { contextualTerminalActions } from './shared/terminal.actions';
+import { chatActions, chatGuards } from './chat.actions';
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {
@@ -95,182 +99,16 @@ export const chatMachine = setup({
     };
   },
   actions: {
-    // Initialize chat session
-    initializeSession: assign({
-      agentId: ({ event }) => (event as any).agentId,
-      agentName: ({ event }) => (event as any).agentName,
-      modelId: ({ event }) => (event as any).modelId || 'auto',
-      sessionId: () => `chat_${Date.now()}`,
-      statusMessage: ({ event }) => `Starting chat with ${(event as any).agentName}...`,
-      messages: () => [],
-      currentTranscript: () => ''
-    }),
-
-    // Store context data
-    storeContext: assign({
-      agentContext: ({ event }) => (event as any).output.agentContext,
-      historicalData: ({ event }) => (event as any).output.historicalData,
-      isInitialized: true,
-      statusMessage: ({ context }) => `Chat ready with ${context.agentName}`
-    }),
-
-    // Add user message
-    addUserMessage: assign({
-      messages: ({ context, event }) => {
-        const userMessage: ChatMessage = {
-          role: 'user',
-          content: (event as any).message || (event as any).value,
-          timestamp: Date.now()
-        };
-        return [...context.messages, userMessage];
-      },
-      currentTranscript: ({ context, event }) => {
-        const message = (event as any).message || (event as any).value;
-        return context.currentTranscript + 
-               `User: ${message}\n`;
-      },
-      statusMessage: ({ context }) => `${context.agentName} is thinking...`
-    }),
-
-    // Add AI response
-    addAIResponse: assign({
-      messages: ({ context, event }) => {
-        const aiMessage: ChatMessage = {
-          role: 'assistant',
-          content: (event as any).output.response,
-          timestamp: Date.now()
-        };
-        return [...context.messages, aiMessage];
-      },
-      currentTranscript: ({ context, event }) => {
-        return context.currentTranscript + 
-               `${context.agentName}: ${(event as any).output.response}\n`;
-      },
-      statusMessage: 'Type your message...'
-    }),
-
-    // Set awaiting save confirmation
-    setAwaitingConfirmation: assign({
-      awaitingConfirmation: true,
-      statusMessage: 'Save this conversation to memory?'
-    }),
-
-    // Store conversation summary
-    storeConversationSummary: assign({
-      conversationSummary: ({ event }) => (event as any).output.summary,
-      statusMessage: 'Saving conversation...'
-    }),
-
-    // Store persistence result
-    storePersistenceResult: assign({
-      storageRootHash: ({ event }) => (event as any).output.rootHash,
-      contractTxHash: ({ event }) => (event as any).output.txHash,
-      statusMessage: 'Conversation saved successfully!'
-    }),
-
-    // Set error
-    setError: assign({
-      error: ({ event }) => (event as any).error || 'An error occurred',
-      lastError: ({ event }) => (event as any).error || 'Unknown error',
-      statusMessage: ({ event }) => `Error: ${(event as any).error || 'Unknown error'}`
-    }),
-
-    // Clear error
-    clearError: assign({
-      error: null,
-      lastError: null,
-      retryCount: 0
-    }),
+    // Import actions from chat.actions.ts
+    ...chatActions,
     
-    // Increment retry count
-    incrementRetry: assign({
-      retryCount: ({ context }) => context.retryCount + 1,
-      statusMessage: ({ context }) => `Retrying... (Attempt ${context.retryCount + 1}/${context.maxRetries})`
-    }),
+    // Import shared memory actions
+    storeMemoryError: memoryActions.storeMemoryError,
+    displayMemoryErrorPrompt: memoryActions.displayMemoryErrorPrompt,
+    clearMemoryError: memoryActions.clearMemoryError,
     
-    // Reset retry count
-    resetRetry: assign({
-      retryCount: 0,
-      lastError: null
-    }),
-
-    // Send lines to parent (terminal)
-    sendLinesToParent: sendParent(({ context }) => {
-      const lines: TerminalLine[] = [];
-      const timestamp = Date.now();
-
-      // Get the last message (should be AI response)
-      const lastMessage = context.messages[context.messages.length - 1];
-      
-      if (lastMessage && lastMessage.role === 'assistant') {
-        // Display AI response
-        lines.push({
-          type: 'info',
-          content: `~ ${context.agentName} : ${lastMessage.content}`,
-          timestamp
-        });
-      }
-
-      return { type: 'APPEND_LINES', lines };
-    }),
-
-    // Send save confirmation prompt
-    sendSavePrompt: sendParent(() => {
-      const lines: TerminalLine[] = [{
-        type: 'system',
-        content: 'Do you want to save this conversation to agent memory? (y/n)',
-        timestamp: Date.now()
-      }];
-      return { type: 'APPEND_LINES', lines };
-    }),
-
-    // Send status to parent
-    sendStatusToParent: sendParent(({ context }) => ({
-      type: 'UPDATE_STATUS',
-      status: context.statusMessage
-    })),
-
-    // Send completion to parent
-    sendCompletionToParent: sendParent(({ context }) => {
-      const lines: TerminalLine[] = [{
-        type: 'success',
-        content: context.statusMessage,
-        timestamp: Date.now()
-      }];
-      return { type: 'APPEND_LINES', lines };
-    }),
-
-    // Memory error handling (like dream)
-    storeMemoryError: assign({
-      memoryDownloadError: ({ event }) => {
-        if ('error' in event) {
-          return event.error instanceof Error ? event.error.message : String(event.error);
-        }
-        return 'Failed to access memory from 0G Storage';
-      },
-      statusMessage: 'Memory download failed'
-    }),
-
-    displayMemoryErrorPrompt: sendParent(({ context }) => {
-      const agentName = context.agentName || `Agent #${context.agentId}`;
-      return {
-        type: 'APPEND_LINES',
-        lines: [{
-          type: 'warning',
-          content: `${agentName} can't access previous memory from 0G Storage. Check nodes status.`,
-          timestamp: Date.now()
-        }, {
-          type: 'system',
-          content: `Do u wanna continue? Agent won't remember previous conversations and dreams. Type y/n`,
-          timestamp: Date.now() + 1
-        }]
-      };
-    }),
-
-    clearMemoryError: assign({
-      continueWithoutMemory: true,
-      memoryDownloadError: null
-    })
+    // Import shared terminal actions
+    sendStatusToParent: contextualTerminalActions.sendStatusFromContext
   },
   actors: {
     // Load full agent context
@@ -390,37 +228,11 @@ export const chatMachine = setup({
     })
   },
   guards: {
-    isYesInput: ({ event }) => {
-      if (event.type !== 'INPUT.SUBMIT') return false;
-      const value = (event as any).value?.toLowerCase().trim();
-      return value === 'y' || value === 'yes';
-    },
-    isNoInput: ({ event }) => {
-      if (event.type !== 'INPUT.SUBMIT') return false;
-      const value = (event as any).value?.toLowerCase().trim();
-      return value === 'n' || value === 'no';
-    },
-    canRetry: ({ context }) => {
-      return context.retryCount < context.maxRetries;
-    },
-    hasExceededRetries: ({ context }) => {
-      return context.retryCount >= context.maxRetries;
-    },
-    // Check if memory download error occurred (like dream)
-    isMemoryDownloadError: ({ event }: { event: any }) => {
-      if ('error' in event && event.error) {
-        const errorMsg = event.error instanceof Error ? event.error.message : String(event.error);
-        // Enhanced checks for various memory error patterns
-        return errorMsg.includes('File not found') || 
-               errorMsg.includes('code 101') ||
-               errorMsg.includes('Download failed') ||
-               errorMsg.includes('Failed to load') ||
-               errorMsg.includes('does not exist in storage') ||
-               errorMsg.includes('0G Storage') ||
-               errorMsg.includes('root hash');
-      }
-      return false;
-    }
+    // Import guards from chat.actions.ts
+    ...chatGuards,
+    
+    // Import shared memory guards
+    isMemoryDownloadError: memoryGuards.isMemoryDownloadError
   }
 }).createMachine({
   id: 'chatMachine',
@@ -463,16 +275,7 @@ export const chatMachine = setup({
     },
 
     contextLoadFailed: {
-      entry: sendParent(({ context }) => ({
-        type: 'APPEND_LINES',
-        lines: [{
-          type: 'error',
-          content: context.retryCount < context.maxRetries 
-            ? `Failed to load agent context: ${context.error}. Retrying in 2 seconds...`
-            : `Failed to load agent context after ${context.maxRetries} attempts: ${context.error}`,
-          timestamp: Date.now()
-        }]
-      })),
+      entry: 'sendContextLoadError',
       // Removed 'always' transition to prevent synchronous infinite loop
       after: {
         2000: [
@@ -483,14 +286,7 @@ export const chatMachine = setup({
           },
           {
             target: 'completed',
-            actions: sendParent(() => ({
-              type: 'APPEND_LINES',
-              lines: [{
-                type: 'error',
-                content: 'Unable to start chat session. Please try again later.',
-                timestamp: Date.now()
-              }]
-            }))
+            actions: 'sendUnableToStart'
           }
         ]
       },
@@ -504,14 +300,7 @@ export const chatMachine = setup({
     },
 
     awaitingFirstMessage: {
-      entry: sendParent(({ context }) => ({
-        type: 'APPEND_LINES',
-        lines: [{
-          type: 'system',
-          content: `Chat session started with ${context.agentName}. Type your message:`,
-          timestamp: Date.now()
-        }]
-      })),
+      entry: 'sendChatStartedMessage',
       on: {
         'INPUT.SUBMIT': {
           target: 'processingMessage',
@@ -567,16 +356,7 @@ export const chatMachine = setup({
     },
 
     messageFailed: {
-      entry: sendParent(({ context }) => ({
-        type: 'APPEND_LINES',
-        lines: [{
-          type: 'error',
-          content: context.retryCount < context.maxRetries
-            ? `Message processing failed: ${context.error}. Retrying in 2 seconds...`
-            : `Message failed after ${context.maxRetries} attempts. Type to try again or END SESSION to exit.`,
-          timestamp: Date.now()
-        }]
-      })),
+      entry: 'sendMessageError',
       // Removed 'always' transition to prevent synchronous infinite loop
       after: {
         2000: [
@@ -673,14 +453,7 @@ export const chatMachine = setup({
     },
 
     saveFailed: {
-      entry: sendParent(({ context }) => ({
-        type: 'APPEND_LINES',
-        lines: [{
-          type: 'error',
-          content: `Failed to save conversation: ${context.error}`,
-          timestamp: Date.now()
-        }]
-      })),
+      entry: 'sendSaveError',
       on: {
         EXIT: 'completed'
       }
@@ -698,7 +471,7 @@ export const chatMachine = setup({
           {
             guard: 'isNoInput',
             target: 'completed',
-            actions: assign({ statusMessage: 'Chat cancelled.' })
+            actions: 'setCancelledStatus'
           }
         ],
         EXIT: 'completed'

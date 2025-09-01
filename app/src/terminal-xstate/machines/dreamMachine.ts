@@ -5,7 +5,10 @@
 
 import { setup, assign, sendParent } from 'xstate';
 import { defaultAgentData } from '../types/contextTypes';
-import { dreamGuards } from './dreamActions';
+import { memoryGuards } from './shared/memory.guards';
+import { memoryActions } from './shared/memory.actions';
+import { contextualTerminalActions } from './shared/terminal.actions';
+import { evolutionDreamActions } from './dream.evolution.actions';
 import { 
   fetchContextService, 
   buildPromptService, 
@@ -192,32 +195,8 @@ export const dreamMachine = setup({
       awaitingConfirmation: true
     }),
     
-    // Store persistence result
-    storePersistenceResult: assign({
-      persistenceResult: ({ event }) => {
-        return (event as any).output.persistenceResult;
-      },
-      storageRootHash: ({ event }) => {
-        return (event as any).output.rootHash;
-      },
-      contractTxHash: ({ event }) => {
-        return (event as any).output.txHash;
-      },
-      statusMessage: ({ event }) => {
-        const output = (event as any).output;
-        if (output.isEvolutionDream) {
-          debugLog('🌈 ========================================');
-          debugLog('🌈 EVOLUTION DREAM WORKFLOW COMPLETED!');
-          debugLog('🌈 ========================================');
-          debugLog('🌈 Your agent has permanently evolved!');
-          debugLog('🌈 New personality traits are now on-chain');
-          debugLog('🌈 Check agent stats to see the changes');
-          debugLog('🌈 ========================================');
-          return 'Evolution dream persisted! Agent has evolved.';
-        }
-        return 'Dream persisted successfully!';
-      }
-    }),
+    // Store persistence result with evolution awareness
+    storePersistenceResult: evolutionDreamActions.storePersistenceWithEvolution,
     
     // Mark as completed
     markCompleted: assign({
@@ -242,103 +221,17 @@ export const dreamMachine = setup({
       statusMessage: 'Dream not saved.'
     }),
     
-    // Send lines to parent (terminal)
-    sendLinesToParent: sendParent(({ context }) => {
-      const lines: TerminalLine[] = [];
-      const timestamp = Date.now();
-      
-      if (context.aiResponse) {
-        // Check if this is an evolution dream
-        const dreamCount = context.dreamContext?.agentProfile?.dreamCount || 0;
-        const nextDreamId = dreamCount + 1;
-        const isEvolutionDream = nextDreamId % 5 === 0;
-        
-        // Add evolution dream notification
-        if (isEvolutionDream && context.aiResponse.personalityImpact) {
-          lines.push({
-            type: 'success',
-            content: `🌟 EVOLUTION DREAM DETECTED! Dream #${nextDreamId} will evolve your agent's personality! 🌟`,
-            timestamp: timestamp - 1
-          });
-        }
-        
-        // Display AI analysis with formatted agent name
-        lines.push({
-          type: 'info',
-          content: `~ ${context.agentName} : ${context.aiResponse.fullAnalysis}`,
-          timestamp
-        });
-        
-        // Ask for confirmation with evolution notice
-        if (isEvolutionDream && context.aiResponse.personalityImpact) {
-          lines.push({
-            type: 'system',
-            content: `Do u wanna evolve ${context.agentName} with this evolution dream? Type y/n`,
-            timestamp: timestamp + 1
-          });
-        } else {
-          lines.push({
-            type: 'system',
-            content: `Do u wanna train ${context.agentName} with your dream? Type y/n`,
-            timestamp: timestamp + 1
-          });
-        }
-      }
-      
-      return { type: 'APPEND_LINES', lines };
-    }),
+    // Send lines to parent with evolution awareness
+    sendLinesToParent: evolutionDreamActions.sendDreamAnalysisWithEvolution,
     
-    // Send status to parent
-    sendStatusToParent: sendParent(({ context }) => ({
-      type: 'UPDATE_STATUS', 
-      status: context.statusMessage 
-    })),
+    // Import shared terminal actions
+    sendStatusToParent: contextualTerminalActions.sendStatusFromContext,
+    sendErrorToParent: contextualTerminalActions.sendErrorFromContext,
     
-    // Send error to parent
-    sendErrorToParent: sendParent(({ context }) => {
-      const errorLine: TerminalLine = {
-        type: 'error',
-        content: context.errorMessage || 'Unknown error occurred',
-        timestamp: Date.now()
-      };
-      return { type: 'APPEND_LINES', lines: [errorLine] };
-    }),
-    
-    // Memory download error handling
-    storeMemoryError: assign({
-      memoryDownloadError: ({ event }) => {
-        if ('error' in event) {
-          return event.error instanceof Error ? event.error.message : String(event.error);
-        }
-        return 'Failed to access memory from 0G Storage';
-      },
-      statusMessage: 'Memory download failed'
-    }),
-    
-    displayMemoryErrorPrompt: sendParent(({ context }) => {
-      // Try multiple sources for agent name
-      const agentName = context.agentName || 
-                       context.dreamContext?.agentProfile?.name || 
-                       'Your agent';
-      
-      return {
-        type: 'APPEND_LINES',
-        lines: [{
-          type: 'warning',
-          content: `${agentName} can't access previous memory from 0G Storage. Check nodes status.`,
-          timestamp: Date.now()
-        }, {
-          type: 'system',
-          content: `Do u wanna continue? Agent won't remember previous dreams. Type y/n`,
-          timestamp: Date.now() + 1
-        }]
-      };
-    }),
-    
-    clearMemoryHash: assign({
-      continueWithoutMemory: true,
-      memoryDownloadError: null
-    }),
+    // Import shared memory actions
+    storeMemoryError: memoryActions.storeMemoryError,
+    displayMemoryErrorPrompt: memoryActions.displayMemoryErrorPrompt,
+    clearMemoryHash: memoryActions.clearMemoryError,
     
     // Storage upload error handling
     storeUploadError: assign({
@@ -368,7 +261,20 @@ export const dreamMachine = setup({
       retryCount: ({ context }) => context.retryCount + 1
     })
   },
-  guards: dreamGuards
+  guards: {
+    // Import shared memory guards
+    isMemoryDownloadError: memoryGuards.isMemoryDownloadError,
+    
+    // Dream-specific guards
+    hasValidRootHash: ({ context }) => {
+      const hash = context.storageRootHash;
+      return !!hash && hash !== '0x0' && hash.length === 66;
+    },
+    
+    canRetry: ({ context }) => {
+      return context.retryCount < context.maxRetries;
+    }
+  }
 }).createMachine({
   id: 'dream',
   initial: 'idle',
