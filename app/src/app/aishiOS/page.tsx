@@ -174,15 +174,19 @@ export default function AishiOSPage() {
           {/* Open Terminal Button Overlay */}
           <div style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '90%',
+            maxWidth: '1000px',
+            height: '85%',
+            maxHeight: '700px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            backdropFilter: 'blur(2px)'
+            backdropFilter: 'blur(2px)',
+            borderRadius: '24px'
           }}>
             <button
               onClick={toggleTerminal}

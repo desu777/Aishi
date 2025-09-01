@@ -56,8 +56,7 @@ export const COMMAND_TOOLTIPS: Record<string, string> = {
   chat: `Converse with your agent
 • Every 10 chats: +1 intelligence
 • Builds conversation context
-• Shapes agent's worldview
-Coming soon...`,
+• Shapes agent's worldview`,
   
   personality: `View personality traits
 • Six core traits [0-100]
@@ -86,8 +85,7 @@ Coming soon...`,
 • Daily: Individual experiences
 • Monthly: AI-consolidated summaries
 • Yearly: Deep reflection & core
-• Consolidation rewards for streaks
-Coming soon...`
+• Consolidation rewards for streaks`
 };
 
 // Command aliases for user convenience
@@ -314,8 +312,8 @@ export function getInteractiveHelp(): string[] {
     `  personality      View agent personality traits       ⓘ`,
     `  unique-features  Display agent unique abilities      ⓘ`,
     `  stats            Show agent statistics and progress  ⓘ`,
-    `  chat             Have a conversation (coming soon)   ⓘ`,
-    `  memory           View memory (coming soon)            ⓘ`,
+    `  chat             Have a conversation with your agent  ⓘ`,
+    `  memory           View and manage agent memory         ⓘ`,
     `  clear            Clear terminal screen               ⓘ`,
     '',
     `[Click ⓘ for details or type 'help <command>']`,
