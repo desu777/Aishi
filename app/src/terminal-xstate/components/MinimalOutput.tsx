@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TerminalLine } from '../machines/types';
 import { CollapsibleText } from './CollapsibleText';
+import { parseMarkdownToReact, containsMarkdown } from '../services/markdownParser';
 
 interface MinimalOutputProps {
   lines: TerminalLine[];
@@ -77,13 +78,18 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
       const agentName = match[1];
       const afterAgent = content.substring((match.index || 0) + match[0].length);
       
+      // Check if the message content (afterAgent) contains Markdown
+      const formattedContent = containsMarkdown(afterAgent) 
+        ? parseMarkdownToReact(afterAgent) 
+        : afterAgent;
+      
       return (
         <>
           {beforeAgent}
           <span style={{ color: colors.silver, opacity: 0.7 }}>~ </span>
           <span style={{ color: '#8B5CF6', fontWeight: 500 }}>{agentName}</span>
           <span style={{ color: colors.silver, opacity: 0.7 }}> : </span>
-          {afterAgent}
+          {formattedContent}
         </>
       );
     }
@@ -279,7 +285,15 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
         );
       }
       
-      return formatTextWithAgentName(content);
+      // For all other text, check if it contains Markdown
+      const processedContent = formatTextWithAgentName(content);
+      
+      // If formatTextWithAgentName didn't find agent pattern, check for Markdown
+      if (processedContent === content && containsMarkdown(content)) {
+        return parseMarkdownToReact(content);
+      }
+      
+      return processedContent;
     }
     return line.content;
   };
