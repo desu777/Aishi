@@ -217,7 +217,7 @@ contract AishiAgent is
             intelligenceLevel:       1,
             dreamCount:              0,
             conversationCount:       0,
-            personalityInitialized:  true,  // ✅ Inicjalizujemy od razu
+            personalityInitialized:  true,  
             totalEvolutions:         0,
             lastEvolutionDate:       block.timestamp,
             achievedMilestones:      new string[](0)

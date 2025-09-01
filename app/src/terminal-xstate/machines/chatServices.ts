@@ -98,14 +98,24 @@ export async function fetchChatContext(agentId: number, continueWithoutMemory: b
   } catch (error) {
     debugLog('Error fetching chat context', { error: String(error) });
     
-    if (String(error).includes('timeout')) {
+    // Check for memory/storage errors first (preserve original error for guard)
+    const errorStr = String(error);
+    if (errorStr.includes('File not found') || 
+        errorStr.includes('Download failed') || 
+        errorStr.includes('Failed to load daily') ||
+        errorStr.includes('Failed to load memory')) {
+      // Re-throw memory errors without modification so guard can catch them
+      throw error;
+    }
+    
+    if (errorStr.includes('timeout')) {
       throw new Error('Loading is taking longer than usual. Please wait...');
-    } else if (String(error).includes('not found') || String(error).includes('Agent not found')) {
+    } else if (errorStr.includes('not found') || errorStr.includes('Agent not found')) {
       throw new Error(`Agent #${agentId} not found. Please select a valid agent.`);
-    } else if (String(error).includes('network')) {
+    } else if (errorStr.includes('network')) {
       throw new Error('Network error. Please check your connection and try again.');
     } else {
-      throw new Error(`Failed to load agent context: ${String(error).replace('Error: ', '')}`);
+      throw new Error(`Failed to load agent context: ${errorStr.replace('Error: ', '')}`);
     }
   }
 }
@@ -182,7 +192,8 @@ async function fetchHistoricalData(agentMemory: any, agentId: number, continueWi
 
   } catch (error) {
     debugLog('Error loading historical data', { error: String(error) });
-    // Continue without historical data
+    // Re-throw error to trigger memory error state in machine
+    throw error;
   }
 
   return historicalData;
@@ -401,8 +412,14 @@ export async function persistChatConversation(
     );
 
     debugLog('Conversation uploaded to storage', {
-      rootHash: uploadResult.rootHash
+      rootHash: uploadResult.rootHash,
+      success: uploadResult.success
     });
+
+    // Check if upload was successful
+    if (!uploadResult.success || !uploadResult.rootHash) {
+      throw new Error(`Failed to upload conversation: ${uploadResult.error || 'No root hash returned'}`);
+    }
 
     // Update contract
     const { updateConversationContract } = await import('../services/conversationContractUpdater');

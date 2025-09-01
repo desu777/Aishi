@@ -252,15 +252,16 @@ export const chatMachine = setup({
     }),
 
     displayMemoryErrorPrompt: sendParent(({ context }) => {
+      const agentName = context.agentName || `Agent #${context.agentId}`;
       return {
         type: 'APPEND_LINES',
         lines: [{
           type: 'warning',
-          content: `${context.agentName} can't access previous conversations from 0G Storage.`,
+          content: `*${agentName}* can't access previous memory from 0G Storage.`,
           timestamp: Date.now()
         }, {
           type: 'system',
-          content: `Do you want to continue without historical context? Type y/n`,
+          content: `Do u wanna continue? Agent won't remember previous conversations and dreams. Type y/n`,
           timestamp: Date.now() + 1
         }]
       };
@@ -409,10 +410,14 @@ export const chatMachine = setup({
     isMemoryDownloadError: ({ event }: { event: any }) => {
       if ('error' in event && event.error) {
         const errorMsg = event.error instanceof Error ? event.error.message : String(event.error);
+        // Enhanced checks for various memory error patterns
         return errorMsg.includes('File not found') || 
                errorMsg.includes('code 101') ||
                errorMsg.includes('Download failed') ||
-               errorMsg.includes('Failed to load');
+               errorMsg.includes('Failed to load') ||
+               errorMsg.includes('does not exist in storage') ||
+               errorMsg.includes('0G Storage') ||
+               errorMsg.includes('root hash');
       }
       return false;
     }

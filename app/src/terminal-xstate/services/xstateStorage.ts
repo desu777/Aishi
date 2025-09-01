@@ -273,10 +273,13 @@ export async function downloadFromStorage(rootHash: string): Promise<string> {
   
   const result = await service.downloadJson(rootHash);
   
-  if (!result) {
-    throw new Error(`Download failed for rootHash: ${rootHash}`);
+  // Fixed: Check result.success instead of just !result
+  if (!result.success || !result.data) {
+    const errorMsg = result.error || `Download failed for rootHash: ${rootHash}`;
+    debugLog('Download failed', { error: errorMsg, rootHash });
+    throw new Error(errorMsg);
   }
   
   // Return as string for compatibility with existing code
-  return typeof result === 'string' ? result : JSON.stringify(result);
+  return typeof result.data === 'string' ? result.data : JSON.stringify(result.data);
 }

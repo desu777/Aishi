@@ -53,7 +53,7 @@ export async function updateConversationContract(
 ) {
   debugLog('Updating conversation contract', {
     tokenId,
-    conversationHash: conversationHash.substring(0, 10) + '...',
+    conversationHash: conversationHash ? conversationHash.substring(0, 10) + '...' : 'undefined',
     conversationType
   });
 
