@@ -175,6 +175,36 @@ async function fetchHistoricalData(agentMemory: any, agentId: number, continueWi
       }
     }
 
+    // Download monthly dream consolidations if available
+    if (agentMemory.lastDreamMonthlyHash && agentMemory.lastDreamMonthlyHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+      try {
+        const monthlyDreamsData = await downloadFromStorage(agentMemory.lastDreamMonthlyHash);
+        if (monthlyDreamsData) {
+          const parsed = JSON.parse(monthlyDreamsData);
+          historicalData.monthlyDreams = Array.isArray(parsed) ? parsed : [parsed];
+          debugLog('Monthly dream consolidations loaded', { count: historicalData.monthlyDreams.length });
+        }
+      } catch (error) {
+        debugLog('Failed to load monthly dream consolidations', { error: String(error) });
+        // Don't throw - monthly data is optional for chat
+      }
+    }
+
+    // Download monthly conversation consolidations if available
+    if (agentMemory.lastConvMonthlyHash && agentMemory.lastConvMonthlyHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+      try {
+        const monthlyConvsData = await downloadFromStorage(agentMemory.lastConvMonthlyHash);
+        if (monthlyConvsData) {
+          const parsed = JSON.parse(monthlyConvsData);
+          historicalData.monthlyConversations = Array.isArray(parsed) ? parsed : [parsed];
+          debugLog('Monthly conversation consolidations loaded', { count: historicalData.monthlyConversations.length });
+        }
+      } catch (error) {
+        debugLog('Failed to load monthly conversation consolidations', { error: String(error) });
+        // Don't throw - monthly data is optional for chat
+      }
+    }
+
     // Download memory core if available
     if (agentMemory.memoryCoreHash && agentMemory.memoryCoreHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
       try {
