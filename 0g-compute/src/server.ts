@@ -66,7 +66,13 @@ expressApplication.get('/', (request, response) => {
       'consolidation-stop': 'POST /api/consolidation/stop',
       'transactions': 'GET /api/transactions/:walletAddress',
       'gemini': 'POST /api/gemini',
-      'gemini-status': 'GET /api/gemini/status'
+      'gemini-status': 'GET /api/gemini/status',
+      'voice-intent': 'POST /api/voice/intent',
+      'voice-transcribe': 'POST /api/voice/transcribe',
+      'voice-synthesize': 'POST /api/voice/synthesize',
+      'voice-interact': 'POST /api/voice/interact',
+      'voice-voices': 'GET /api/voice/voices',
+      'voice-status': 'GET /api/voice/status'
     }
   });
 });

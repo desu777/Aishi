@@ -15,9 +15,10 @@ const debugLog = (message: string, data?: any) => {
 export interface VoiceIntent {
   command: 'personality' | 'stats' | 'unique-features' | 'dream' | 'chat' | 'memory' | 'help' | 'clear' | 'status' | 'unknown';
   confidence: number;
+  detectedLanguage: string;      // "Polish", "English", "Japanese", etc. (full name)
+  languageCode: string;         // "pl", "en", "ja", etc. (ISO 639-1)
   parameters: {
     content?: string;
-    language: 'en' | 'pl' | 'other';
     needsMoreInfo: boolean;
   };
   suggestedResponse: string;
@@ -85,19 +86,21 @@ You are Aishi's voice interface assistant. Your job is to analyze what the user 
 - System health and uptime information
 - Current model selection and availability
 
-## LANGUAGE DETECTION RULES:
-- CRITICAL: Detect the user's input language (English, Polish, or other)
-- Respond in the EXACT SAME LANGUAGE as the user's input
-- Default to English if language cannot be determined with confidence
-- Maintain consistent language throughout the entire response
+## UNIVERSAL LANGUAGE DETECTION:
+- CRITICAL: Auto-detect user's input language (Gemini supports 24+ languages natively)
+- Respond in the EXACT SAME LANGUAGE as user input (NO language restrictions)
+- Support seamless language mixing and switching within conversations
+- Return both full language name and ISO 639-1 code for any detected language
+- NO hardcoded language limitations - support ALL languages automatically
 
 ## OUTPUT FORMAT (JSON only, no other text):
 {
   "command": "personality|stats|unique-features|dream|chat|memory|help|clear|status|unknown",
   "confidence": 0.0-1.0,
+  "detectedLanguage": "full language name (e.g., Polish, English, Japanese, Hindi, German, French)",
+  "languageCode": "ISO 639-1 code (e.g., pl, en, ja, hi, de, fr)",
   "parameters": {
     "content": "extracted content if needed for dream/chat",
-    "language": "en|pl|other",
     "needsMoreInfo": true/false
   },
   "suggestedResponse": "What Aishi should say in detected language",
@@ -112,7 +115,9 @@ Response:
 {
   "command": "dream",
   "confidence": 0.95,
-  "parameters": {"language": "pl", "needsMoreInfo": false},
+  "detectedLanguage": "Polish",
+  "languageCode": "pl",
+  "parameters": {"needsMoreInfo": false},
   "suggestedResponse": "Chętnie posłucham o twoim śnie. Opowiedz mi szczegółowo co się wydarzyło - każdy detal może być ważny.",
   "followUpAction": "start_workflow"
 }
@@ -123,7 +128,9 @@ Response:
 {
   "command": "personality",
   "confidence": 0.9,
-  "parameters": {"language": "en", "needsMoreInfo": false},
+  "detectedLanguage": "English",
+  "languageCode": "en",
+  "parameters": {"needsMoreInfo": false},
   "suggestedResponse": "Let me show you your current personality profile with all six traits, progress bars, and your dominant mood.",
   "followUpAction": "execute_command"
 }
@@ -134,7 +141,9 @@ Response:
 {
   "command": "stats",
   "confidence": 0.9,
-  "parameters": {"language": "pl", "needsMoreInfo": false},
+  "detectedLanguage": "Polish",
+  "languageCode": "pl",
+  "parameters": {"needsMoreInfo": false},
   "suggestedResponse": "Sprawdzę twoje obecne statystyki - poziom inteligencji, liczbę snów, rozmowy i osiągnięcia.",
   "followUpAction": "execute_command"
 }
@@ -145,7 +154,9 @@ Response:
 {
   "command": "help",
   "confidence": 0.85,
-  "parameters": {"language": "en", "needsMoreInfo": false},
+  "detectedLanguage": "English",
+  "languageCode": "en",
+  "parameters": {"needsMoreInfo": false},
   "suggestedResponse": "I can help you with several things: analyze your dreams to evolve personality, have conversations that build our relationship, check your traits and statistics, manage your memory system, and show unique features. What would you like to explore?",
   "followUpAction": "execute_command"
 }
@@ -156,7 +167,9 @@ Response:
 {
   "command": "chat",
   "confidence": 0.9,
-  "parameters": {"language": "en", "needsMoreInfo": false},
+  "detectedLanguage": "English",
+  "languageCode": "en",
+  "parameters": {"needsMoreInfo": false},
   "suggestedResponse": "I'd love to chat with you. What's on your mind today?",
   "followUpAction": "start_workflow"
 }
@@ -167,7 +180,9 @@ Response:
 {
   "command": "unique-features",
   "confidence": 0.9,
-  "parameters": {"language": "pl", "needsMoreInfo": false},
+  "detectedLanguage": "Polish",
+  "languageCode": "pl",
+  "parameters": {"needsMoreInfo": false},
   "suggestedResponse": "Sprawdzę twoje unikalne cechy, które rozwinęły się przez ewolucję snów.",
   "followUpAction": "execute_command"
 }
@@ -178,18 +193,48 @@ Response:
 {
   "command": "memory",
   "confidence": 0.9,
-  "parameters": {"language": "en", "needsMoreInfo": false},
+  "detectedLanguage": "English",
+  "languageCode": "en",
+  "parameters": {"needsMoreInfo": false},
   "suggestedResponse": "I'll show you your hierarchical memory system with daily, monthly, and yearly files.",
   "followUpAction": "execute_command"
 }
 
-**Example 8 - Unclear Intent:**
+**Example 8 - Universal Language Support (Japanese):**
+User: "私の夢について話したいです"
+Response:
+{
+  "command": "dream",
+  "confidence": 0.95,
+  "detectedLanguage": "Japanese",
+  "languageCode": "ja",
+  "parameters": {"needsMoreInfo": false},
+  "suggestedResponse": "夢について聞かせてください。詳しく教えてくださいね。",
+  "followUpAction": "start_workflow"
+}
+
+**Example 9 - Universal Language Support (German):**
+User: "Zeig mir meine Persönlichkeitsmerkmale"
+Response:
+{
+  "command": "personality",
+  "confidence": 0.9,
+  "detectedLanguage": "German",
+  "languageCode": "de",
+  "parameters": {"needsMoreInfo": false},
+  "suggestedResponse": "Ich zeige Ihnen Ihr aktuelles Persönlichkeitsprofil mit allen sechs Eigenschaften.",
+  "followUpAction": "execute_command"
+}
+
+**Example 10 - Unclear Intent:**
 User: "I don't know what I want to do"
 Response:
 {
   "command": "help",
   "confidence": 0.6,
-  "parameters": {"language": "en", "needsMoreInfo": true},
+  "detectedLanguage": "English",
+  "languageCode": "en",
+  "parameters": {"needsMoreInfo": true},
   "suggestedResponse": "That's okay! I can help you explore several things. Would you like to check your personality traits, review your stats, share a dream, or just have a conversation?",
   "followUpAction": "request_more_info"
 }
@@ -272,7 +317,8 @@ Analyze this input and respond with JSON only:`;
         debugLog('Intent parsed successfully', {
           command: intent.command,
           confidence: intent.confidence,
-          language: intent.parameters.language,
+          detectedLanguage: intent.detectedLanguage,
+          languageCode: intent.languageCode,
           followUpAction: intent.followUpAction
         });
 
@@ -286,8 +332,9 @@ Analyze this input and respond with JSON only:`;
         intent = {
           command: 'unknown',
           confidence: 0.1,
+          detectedLanguage: 'English',
+          languageCode: 'en',
           parameters: {
-            language: 'en',
             needsMoreInfo: true
           },
           suggestedResponse: "I didn't quite understand that. Could you try rephrasing your request?",
@@ -304,6 +351,14 @@ Analyze this input and respond with JSON only:`;
       // Ensure confidence is within valid range
       intent.confidence = Math.max(0, Math.min(1, intent.confidence || 0));
 
+      // Ensure language fields exist
+      if (!intent.detectedLanguage) {
+        intent.detectedLanguage = 'English';
+      }
+      if (!intent.languageCode) {
+        intent.languageCode = 'en';
+      }
+
       return intent;
 
     } catch (error) {
@@ -313,8 +368,9 @@ Analyze this input and respond with JSON only:`;
       return {
         command: 'unknown',
         confidence: 0.1,
+        detectedLanguage: 'English',
+        languageCode: 'en',
         parameters: {
-          language: 'en',
           needsMoreInfo: true
         },
         suggestedResponse: `I'm having trouble understanding your request. Please try again or say "help" to see what I can do.`,

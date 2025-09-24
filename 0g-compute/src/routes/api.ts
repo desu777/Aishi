@@ -7,6 +7,9 @@ import consolidationChecker from '../services/consolidationChecker';
 import DatabaseService from '../database/database';
 import geminiService, { GeminiService } from '../services/geminiService';
 import voiceIntentService from '../services/voiceIntentService';
+import speechToTextService from '../services/speechToTextService';
+import textToSpeechService from '../services/textToSpeechService';
+import voiceService from '../services/voiceService';
 import {
   aiQueryLimiter,
   brokerCreationLimiter,
@@ -737,7 +740,7 @@ router.post('/voice/intent', aiQueryLimiter, async (req, res) => {
     const intent = await voiceIntentService.analyzeIntent(transcript);
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🧠 API: Intent recognized - Command: ${intent.command}, Confidence: ${intent.confidence}, Language: ${intent.parameters.language}`);
+      console.log(`🧠 API: Intent recognized - Command: ${intent.command}, Confidence: ${intent.confidence}, Language: ${intent.detectedLanguage} (${intent.languageCode})`);
     }
 
     handleSuccess(res, {
@@ -745,7 +748,8 @@ router.post('/voice/intent', aiQueryLimiter, async (req, res) => {
       transcript,
       analysisMetadata: {
         confidence: intent.confidence,
-        detectedLanguage: intent.parameters.language,
+        detectedLanguage: intent.detectedLanguage,
+        languageCode: intent.languageCode,
         suggestedAction: intent.followUpAction
       }
     }, 'Voice intent analyzed successfully');
@@ -776,6 +780,177 @@ router.get('/voice/status', (req, res) => {
     handleSuccess(res, status, 'Voice service status retrieved successfully');
   } catch (error: any) {
     handleError(res, error, 'Failed to retrieve voice service status');
+  }
+});
+
+/**
+ * POST /api/voice/transcribe
+ * Convert audio to text using Gemini Live API with automatic language detection
+ * PROTECTED: Limited to 20 queries per minute per IP
+ */
+router.post('/voice/transcribe', aiQueryLimiter, async (req, res) => {
+  try {
+    const { audioBuffer, inputFormat } = req.body;
+
+    if (!audioBuffer || !inputFormat) {
+      return res.status(400).json({
+        success: false,
+        error: 'audioBuffer and inputFormat are required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (!speechToTextService.isFormatSupported(inputFormat)) {
+      return res.status(400).json({
+        success: false,
+        error: `Unsupported audio format: ${inputFormat}. Supported: ${speechToTextService.getSupportedFormats().join(', ')}`,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🎤 API: STT request - Format: ${inputFormat}, Size: ${audioBuffer.length}`);
+    }
+
+    const sttResult = await speechToTextService.transcribeAudio({
+      audioBuffer: Buffer.from(audioBuffer, 'base64'),
+      inputFormat
+    });
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🎤 API: STT completed - Language: ${sttResult.detectedLanguage}, Confidence: ${sttResult.confidence}`);
+    }
+
+    handleSuccess(res, sttResult, 'Audio transcribed successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to transcribe audio');
+  }
+});
+
+/**
+ * POST /api/voice/synthesize
+ * Convert text to speech using Gemini Live API with voice selection
+ * PROTECTED: Limited to 20 queries per minute per IP
+ */
+router.post('/voice/synthesize', aiQueryLimiter, async (req, res) => {
+  try {
+    const { text, voiceId, detectedLanguage, languageCode, emotionalTone, speed } = req.body;
+
+    if (!text) {
+      return res.status(400).json({
+        success: false,
+        error: 'text is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const selectedVoice = voiceId || 'aria';
+    const availableVoices = textToSpeechService.getAvailableVoices().map(v => v.id);
+
+    if (!availableVoices.includes(selectedVoice)) {
+      return res.status(400).json({
+        success: false,
+        error: `Unsupported voice: ${selectedVoice}. Available: ${availableVoices.join(', ')}`,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🎵 API: TTS request - Voice: ${selectedVoice}, Text length: ${text.length}, Language: ${detectedLanguage || 'auto'}`);
+    }
+
+    const ttsResult = await textToSpeechService.synthesizeSpeech({
+      text,
+      voiceId: selectedVoice,
+      detectedLanguage,
+      languageCode,
+      emotionalTone,
+      speed
+    });
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🎵 API: TTS completed - Voice: ${ttsResult.voiceUsed}, Audio size: ${ttsResult.audioBuffer.length}`);
+    }
+
+    // Return audio as base64 encoded string
+    const audioBase64 = ttsResult.audioBuffer.toString('base64');
+
+    handleSuccess(res, {
+      audioData: audioBase64,
+      format: ttsResult.format,
+      duration: ttsResult.duration,
+      voiceUsed: ttsResult.voiceUsed,
+      detectedLanguage: ttsResult.detectedLanguage,
+      processingTime: ttsResult.processingTime
+    }, 'Text synthesized to speech successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to synthesize speech');
+  }
+});
+
+/**
+ * POST /api/voice/interact
+ * Complete voice interaction pipeline: Audio → Intent → Command → Response Audio
+ * PROTECTED: Limited to 10 queries per minute per IP (more intensive operation)
+ */
+router.post('/voice/interact', strictLimiter, async (req, res) => {
+  try {
+    const { audioBuffer, inputFormat, selectedVoice, walletAddress } = req.body;
+
+    if (!audioBuffer || !inputFormat) {
+      return res.status(400).json({
+        success: false,
+        error: 'audioBuffer and inputFormat are required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🎙️ API: Complete voice interaction - Format: ${inputFormat}, Voice: ${selectedVoice || 'aria'}`);
+    }
+
+    const voiceResult = await voiceService.processVoiceInteraction({
+      audioBuffer: Buffer.from(audioBuffer, 'base64'),
+      inputFormat,
+      selectedVoice: selectedVoice || 'aria',
+      userWalletAddress: walletAddress
+    });
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🎙️ API: Voice interaction completed - Command: ${voiceResult.intent.command}, Language: ${voiceResult.detectedLanguage}, Total time: ${voiceResult.totalProcessingTime}ms`);
+    }
+
+    // Return response with audio as base64
+    const responseAudioBase64 = voiceResult.responseAudio.toString('base64');
+
+    handleSuccess(res, {
+      ...voiceResult,
+      responseAudio: responseAudioBase64 // Convert Buffer to base64 for JSON transport
+    }, 'Voice interaction completed successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to process voice interaction');
+  }
+});
+
+/**
+ * GET /api/voice/voices
+ * Get available voice profiles for TTS
+ */
+router.get('/voice/voices', (req, res) => {
+  try {
+    const voices = textToSpeechService.getAvailableVoices();
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🎵 API: Voice profiles requested - Available: ${voices.length}`);
+    }
+
+    handleSuccess(res, {
+      voices,
+      count: voices.length,
+      supportedLanguages: '24+ languages with automatic detection'
+    }, 'Voice profiles retrieved successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to retrieve voice profiles');
   }
 });
 
