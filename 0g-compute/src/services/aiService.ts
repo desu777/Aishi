@@ -50,15 +50,17 @@ export class AIService {
   private discoveredServices: Map<string, DiscoveredService> = new Map();
   private lastDiscoveryTime: number = 0;
   private modelToProviderCache: Map<string, string> = new Map();
+  private failedProviders: Map<string, { modelName: string; lastAttempt: number; attempts: number }> = new Map();
+  private recoveryIntervalId: NodeJS.Timeout | null = null;
 
   async initialize(): Promise<void> {
     try {
       console.log(`🎯 Default Model Configuration: ${DEFAULT_MODEL}`);
-      
+
       await masterWallet.initialize();
-      
+
       await this.discoverAndCacheServices();
-      
+
       if (process.env.TEST_ENV === 'true') {
         console.log('🤖 AI Service initialized successfully');
         console.log(`📋 Discovered ${this.discoveredServices.size} models from 0G Network`);
@@ -66,6 +68,31 @@ export class AIService {
     } catch (error: any) {
       console.error('❌ Failed to initialize AI Service:', error.message);
       throw error;
+    }
+  }
+
+  /**
+   * Initialize AI service with timeout for parallel startup
+   */
+  async initializeWithTimeout(timeoutMs: number = 10000): Promise<void> {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`AI Service initialization timeout after ${timeoutMs}ms`)), timeoutMs);
+    });
+
+    try {
+      await Promise.race([
+        this.initialize(),
+        timeoutPromise
+      ]);
+    } catch (error: any) {
+      if (error.message.includes('timeout')) {
+        console.warn('⚠️ AI Service initialization timeout - 0G Network may be unavailable');
+        // Initialize minimal state for fallback mode
+        await masterWallet.initialize();
+        console.log('✅ Master Wallet ready (Gemini fallback mode)');
+      } else {
+        throw error;
+      }
     }
   }
 
@@ -131,19 +158,27 @@ export class AIService {
   }
 
   /**
-   * Acknowledge provider signer for a model
+   * Acknowledge provider signer for a model with timeout
    * @private
    */
   private async acknowledgeProvider(providerAddress: string, modelName: string): Promise<void> {
     if (this.acknowledgedProviders.has(providerAddress)) {
       return;
     }
-    
+
     try {
       const masterBroker = masterWallet.getBroker();
-      await masterBroker.inference.acknowledgeProviderSigner(providerAddress);
+
+      // Add 5-second timeout per provider
+      const acknowledgePromise = masterBroker.inference.acknowledgeProviderSigner(providerAddress);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Provider acknowledgment timeout')), 5000);
+      });
+
+      await Promise.race([acknowledgePromise, timeoutPromise]);
+
       this.acknowledgedProviders.add(providerAddress);
-      
+
       if (process.env.TEST_ENV === 'true') {
         console.log(`✅ Acknowledged provider for ${modelName}: ${providerAddress}`);
       }
@@ -153,8 +188,12 @@ export class AIService {
         if (process.env.TEST_ENV === 'true') {
           console.log(`✅ Provider already acknowledged: ${modelName}`);
         }
+      } else if (error.message.includes('timeout')) {
+        console.warn(`⚠️ Provider acknowledgment timeout for ${modelName} - skipping`);
+        this.addToFailedProviders(providerAddress, modelName);
       } else {
-        console.error(`⚠️  Failed to acknowledge provider ${modelName}:`, error.message);
+        console.warn(`⚠️ Failed to acknowledge provider ${modelName}: ${error.message} - skipping`);
+        this.addToFailedProviders(providerAddress, modelName);
       }
     }
   }
@@ -424,17 +463,21 @@ export class AIService {
   async getServiceStatus(): Promise<{
     totalServices: number;
     acknowledgedProviders: number;
+    failedProviders: number;
     masterWalletBalance: number;
     isReady: boolean;
+    isRecoveryActive: boolean;
   }> {
     try {
       const walletInfo = await masterWallet.getWalletInfo();
-      
+
       return {
         totalServices: this.availableServices.length,
         acknowledgedProviders: this.acknowledgedProviders.size,
+        failedProviders: this.failedProviders.size,
         masterWalletBalance: walletInfo.ledgerBalance,
-        isReady: this.availableServices.length > 0 && this.acknowledgedProviders.size > 0
+        isReady: this.availableServices.length > 0 && this.acknowledgedProviders.size > 0,
+        isRecoveryActive: !!this.recoveryIntervalId
       };
     } catch (error: any) {
       console.error('❌ Failed to get service status:', error.message);
@@ -442,9 +485,118 @@ export class AIService {
     }
   }
 
+  /**
+   * Add failed provider to recovery list
+   * @private
+   */
+  private addToFailedProviders(providerAddress: string, modelName: string): void {
+    const existing = this.failedProviders.get(providerAddress);
+    this.failedProviders.set(providerAddress, {
+      modelName,
+      lastAttempt: Date.now(),
+      attempts: (existing?.attempts || 0) + 1
+    });
+
+    // Start recovery mechanism if not already running
+    if (!this.recoveryIntervalId) {
+      this.startProviderRecovery();
+    }
+  }
+
+  /**
+   * Start background provider recovery mechanism
+   * @private
+   */
+  private startProviderRecovery(): void {
+    if (this.recoveryIntervalId) {
+      return; // Already running
+    }
+
+    console.log('🔄 Starting background provider recovery (5min intervals)');
+
+    this.recoveryIntervalId = setInterval(async () => {
+      await this.retryFailedProviders();
+    }, 5 * 60 * 1000); // Every 5 minutes
+  }
+
+  /**
+   * Retry failed providers in background
+   */
+  async retryFailedProviders(): Promise<void> {
+    if (this.failedProviders.size === 0) {
+      return;
+    }
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🔄 Retrying ${this.failedProviders.size} failed providers...`);
+    }
+
+    const currentTime = Date.now();
+    const retryDelay = 5 * 60 * 1000; // 5 minutes
+
+    for (const [providerAddress, info] of this.failedProviders.entries()) {
+      // Skip if attempted recently
+      if (currentTime - info.lastAttempt < retryDelay) {
+        continue;
+      }
+
+      // Skip if too many attempts (max 3)
+      if (info.attempts >= 3) {
+        if (process.env.TEST_ENV === 'true') {
+          console.log(`⚠️ Giving up on provider ${info.modelName} after 3 attempts`);
+        }
+        this.failedProviders.delete(providerAddress);
+        continue;
+      }
+
+      try {
+        const masterBroker = masterWallet.getBroker();
+        await Promise.race([
+          masterBroker.inference.acknowledgeProviderSigner(providerAddress),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 3000)
+          )
+        ]);
+
+        // Success - move to acknowledged
+        this.acknowledgedProviders.add(providerAddress);
+        this.failedProviders.delete(providerAddress);
+
+        if (process.env.TEST_ENV === 'true') {
+          console.log(`✅ Recovered provider ${info.modelName}: ${providerAddress}`);
+        }
+      } catch (error) {
+        // Update attempt info
+        this.failedProviders.set(providerAddress, {
+          ...info,
+          lastAttempt: currentTime,
+          attempts: info.attempts + 1
+        });
+
+        if (process.env.TEST_ENV === 'true') {
+          console.log(`⚠️ Provider ${info.modelName} still unavailable (attempt ${info.attempts + 1}/3)`);
+        }
+      }
+    }
+
+    // Stop recovery if no more failed providers
+    if (this.failedProviders.size === 0 && this.recoveryIntervalId) {
+      clearInterval(this.recoveryIntervalId);
+      this.recoveryIntervalId = null;
+      console.log('✅ All providers recovered - stopping background recovery');
+    }
+  }
+
   async cleanup(): Promise<void> {
+    // Stop recovery mechanism
+    if (this.recoveryIntervalId) {
+      clearInterval(this.recoveryIntervalId);
+      this.recoveryIntervalId = null;
+    }
+
     this.availableServices = [];
     this.acknowledgedProviders.clear();
+    this.failedProviders.clear();
     await masterWallet.cleanup();
   }
 

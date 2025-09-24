@@ -96,15 +96,31 @@ expressApplication.use((errorObject: any, request: express.Request, response: ex
  * @returns {Promise<void>}
  */
 async function initializeAllBackendServices() {
-  console.log('🚀 Initializing Dreamscape 0G Compute Backend...');
-  
+  console.log('🚀 Initializing Dreamscape 0G Compute Backend (Parallel Mode)...');
+
   try {
-    /* Initialize AI service first as it sets up master wallet */
-    console.log('🤖 Initializing AI Service...');
-    await aiService.initialize();
-    
-    console.log('🌟 Initializing Gemini AI Service...');
-    await geminiService.initialize();
+    console.log('🌟 Starting Gemini AI Service (Priority 1)...');
+    console.log('🤖 Starting 0G Network Services (Background)...');
+
+    // Parallel initialization - Gemini has priority, 0G in background
+    const [geminiResult, aiResult] = await Promise.allSettled([
+      geminiService.initialize(),           // ✅ Always fast (~2s)
+      aiService.initializeWithTimeout(10000) // ⚠️ May timeout, that's OK
+    ]);
+
+    // Check results
+    if (geminiResult.status === 'fulfilled') {
+      console.log('✅ Gemini AI Service ready');
+    } else {
+      console.error('❌ Gemini initialization failed:', geminiResult.reason?.message);
+      throw new Error('Critical service (Gemini) failed to initialize');
+    }
+
+    if (aiResult.status === 'fulfilled') {
+      console.log('✅ 0G Network Services ready');
+    } else {
+      console.warn('⚠️ 0G Network Services unavailable (using Gemini only):', aiResult.reason?.message);
+    }
     
     console.log('👁️  Starting transaction monitor...');
     await masterWallet.startTransactionMonitor(async (senderAddress, transactionAmount, transactionHash) => {

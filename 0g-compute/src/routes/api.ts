@@ -6,12 +6,13 @@ import queryManager from '../services/queryManager';
 import consolidationChecker from '../services/consolidationChecker';
 import DatabaseService from '../database/database';
 import geminiService, { GeminiService } from '../services/geminiService';
-import { 
-  aiQueryLimiter, 
-  brokerCreationLimiter, 
-  costEstimationLimiter, 
+import voiceIntentService from '../services/voiceIntentService';
+import {
+  aiQueryLimiter,
+  brokerCreationLimiter,
+  costEstimationLimiter,
   fundingLimiter,
-  strictLimiter 
+  strictLimiter
 } from '../middleware/rateLimiter';
 
 const router = express.Router();
@@ -690,6 +691,91 @@ router.get('/gemini/status', (req, res) => {
     handleSuccess(res, status, 'Gemini service status retrieved successfully');
   } catch (error: any) {
     handleError(res, error, 'Failed to retrieve Gemini service status');
+  }
+});
+
+/**
+ * POST /api/voice/intent
+ * Analyze user speech transcript to determine intent and command
+ * PROTECTED: Limited to 20 queries per minute per IP
+ */
+router.post('/voice/intent', aiQueryLimiter, async (req, res) => {
+  try {
+    const { transcript } = req.body;
+
+    if (!transcript) {
+      return res.status(400).json({
+        success: false,
+        error: 'transcript is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (typeof transcript !== 'string' || transcript.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'transcript must be a non-empty string',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Check if voice intent service is ready
+    const serviceStatus = voiceIntentService.getStatus();
+    if (!serviceStatus.isReady) {
+      return res.status(503).json({
+        success: false,
+        error: 'Voice intent service is not ready',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🎤 API: Voice intent analysis for transcript: "${transcript.substring(0, 50)}..."`);
+    }
+
+    // Analyze intent using Gemini
+    const intent = await voiceIntentService.analyzeIntent(transcript);
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log(`🧠 API: Intent recognized - Command: ${intent.command}, Confidence: ${intent.confidence}, Language: ${intent.parameters.language}`);
+    }
+
+    handleSuccess(res, {
+      intent,
+      transcript,
+      analysisMetadata: {
+        confidence: intent.confidence,
+        detectedLanguage: intent.parameters.language,
+        suggestedAction: intent.followUpAction
+      }
+    }, 'Voice intent analyzed successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to analyze voice intent');
+  }
+});
+
+/**
+ * GET /api/voice/status
+ * Check voice services status
+ */
+router.get('/voice/status', (req, res) => {
+  try {
+    const voiceStatus = voiceIntentService.getStatus();
+    const geminiStatus = geminiService.getStatus();
+
+    const status = {
+      voiceIntent: voiceStatus,
+      gemini: geminiStatus,
+      overall: voiceStatus.isReady && geminiStatus.isReady
+    };
+
+    if (process.env.TEST_ENV === 'true') {
+      console.log('🎤 API: Voice service status retrieved');
+    }
+
+    handleSuccess(res, status, 'Voice service status retrieved successfully');
+  } catch (error: any) {
+    handleError(res, error, 'Failed to retrieve voice service status');
   }
 });
 
