@@ -6,7 +6,6 @@ import queryManager from '../services/queryManager';
 import consolidationChecker from '../services/consolidationChecker';
 import DatabaseService from '../database/database';
 import geminiService, { GeminiService } from '../services/geminiService';
-import voiceIntentService from '../services/voiceIntentService';
 import speechToTextService from '../services/speechToTextService';
 import textToSpeechService from '../services/textToSpeechService';
 import voiceService from '../services/voiceService';
@@ -697,66 +696,6 @@ router.get('/gemini/status', (req, res) => {
   }
 });
 
-/**
- * POST /api/voice/intent
- * Analyze user speech transcript to determine intent and command
- * PROTECTED: Limited to 20 queries per minute per IP
- */
-router.post('/voice/intent', aiQueryLimiter, async (req, res) => {
-  try {
-    const { transcript } = req.body;
-
-    if (!transcript) {
-      return res.status(400).json({
-        success: false,
-        error: 'transcript is required',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    if (typeof transcript !== 'string' || transcript.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'transcript must be a non-empty string',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    // Check if voice intent service is ready
-    const serviceStatus = voiceIntentService.getStatus();
-    if (!serviceStatus.isReady) {
-      return res.status(503).json({
-        success: false,
-        error: 'Voice intent service is not ready',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    if (process.env.TEST_ENV === 'true') {
-      console.log(`🎤 API: Voice intent analysis for transcript: "${transcript.substring(0, 50)}..."`);
-    }
-
-    // Analyze intent using Gemini
-    const intent = await voiceIntentService.analyzeIntent(transcript);
-
-    if (process.env.TEST_ENV === 'true') {
-      console.log(`🧠 API: Intent recognized - Command: ${intent.command}, Confidence: ${intent.confidence}, Language: ${intent.detectedLanguage} (${intent.languageCode})`);
-    }
-
-    handleSuccess(res, {
-      intent,
-      transcript,
-      analysisMetadata: {
-        confidence: intent.confidence,
-        detectedLanguage: intent.detectedLanguage,
-        languageCode: intent.languageCode,
-        suggestedAction: intent.followUpAction
-      }
-    }, 'Voice intent analyzed successfully');
-  } catch (error: any) {
-    handleError(res, error, 'Failed to analyze voice intent');
-  }
-});
 
 /**
  * GET /api/voice/status
@@ -764,13 +703,15 @@ router.post('/voice/intent', aiQueryLimiter, async (req, res) => {
  */
 router.get('/voice/status', (req, res) => {
   try {
-    const voiceStatus = voiceIntentService.getStatus();
+    const sttStatus = speechToTextService.getStatus();
+    const ttsStatus = textToSpeechService.getStatus();
     const geminiStatus = geminiService.getStatus();
 
     const status = {
-      voiceIntent: voiceStatus,
+      speechToText: sttStatus,
+      textToSpeech: ttsStatus,
       gemini: geminiStatus,
-      overall: voiceStatus.isReady && geminiStatus.isReady
+      overall: sttStatus.isReady && ttsStatus.isReady && geminiStatus.isReady
     };
 
     if (process.env.TEST_ENV === 'true') {
@@ -890,12 +831,12 @@ router.post('/voice/synthesize', aiQueryLimiter, async (req, res) => {
 
 /**
  * POST /api/voice/interact
- * Complete voice interaction pipeline: Audio → Intent → Command → Response Audio
- * PROTECTED: Limited to 10 queries per minute per IP (more intensive operation)
+ * Simple voice pipeline: Audio → Text (for processing elsewhere)
+ * PROTECTED: Limited to 10 queries per minute per IP
  */
 router.post('/voice/interact', strictLimiter, async (req, res) => {
   try {
-    const { audioBuffer, inputFormat, selectedVoice, walletAddress } = req.body;
+    const { audioBuffer, inputFormat, voiceId } = req.body;
 
     if (!audioBuffer || !inputFormat) {
       return res.status(400).json({
@@ -906,29 +847,23 @@ router.post('/voice/interact', strictLimiter, async (req, res) => {
     }
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎙️ API: Complete voice interaction - Format: ${inputFormat}, Voice: ${selectedVoice || 'aria'}`);
+      console.log(`🎙️ API: Voice to text conversion - Format: ${inputFormat}`);
     }
 
-    const voiceResult = await voiceService.processVoiceInteraction({
+    // Simple STT conversion
+    const sttResult = await voiceService.convertSpeechToText({
       audioBuffer: Buffer.from(audioBuffer, 'base64'),
       inputFormat,
-      selectedVoice: selectedVoice || 'aria',
-      userWalletAddress: walletAddress
+      voiceId: voiceId || 'aria'
     });
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎙️ API: Voice interaction completed - Command: ${voiceResult.intent.command}, Language: ${voiceResult.detectedLanguage}, Total time: ${voiceResult.totalProcessingTime}ms`);
+      console.log(`🎙️ API: Voice converted - Language: ${sttResult.detectedLanguage}, Time: ${sttResult.totalProcessingTime}ms`);
     }
 
-    // Return response with audio as base64
-    const responseAudioBase64 = voiceResult.responseAudio.toString('base64');
-
-    handleSuccess(res, {
-      ...voiceResult,
-      responseAudio: responseAudioBase64 // Convert Buffer to base64 for JSON transport
-    }, 'Voice interaction completed successfully');
+    handleSuccess(res, sttResult, 'Voice converted to text successfully');
   } catch (error: any) {
-    handleError(res, error, 'Failed to process voice interaction');
+    handleError(res, error, 'Failed to process voice input');
   }
 });
 
