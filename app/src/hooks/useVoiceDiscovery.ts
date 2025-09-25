@@ -139,6 +139,13 @@ export const useVoiceDiscovery = () => {
 
   // Test a voice by synthesizing sample text
   const testVoice = useCallback(async (voiceId: string) => {
+    const debugLog = (msg: string, data?: any) => {
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log(`[VoiceTest] ${msg}`, data || '');
+      }
+    };
+
+    debugLog('Starting voice test', { voiceId });
     setIsTesting(true);
     setError(null);
 
@@ -151,6 +158,8 @@ export const useVoiceDiscovery = () => {
       const sampleText = voice.sampleText || `Hello! This is a test of the ${voice.name} voice.`;
 
       // Request TTS synthesis
+      debugLog('Sending TTS request', { sampleText, voiceId, url: `${BACKEND_URL}/voice/synthesize` });
+
       const response = await fetch(`${BACKEND_URL}/voice/synthesize`, {
         method: 'POST',
         headers: {
@@ -165,29 +174,90 @@ export const useVoiceDiscovery = () => {
         }),
       });
 
+      debugLog('TTS response received', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText
+      });
+
       if (!response.ok) {
         throw new Error(`Failed to synthesize voice: ${response.statusText}`);
       }
 
       const data = await response.json();
 
+      debugLog('TTS response data', {
+        hasAudioData: !!data.audioData,
+        audioDataLength: data.audioData?.length,
+        format: data.format,
+        duration: data.duration,
+        voiceUsed: data.voiceUsed
+      });
+
       if (data.audioData) {
+        // Check WAV header (first few bytes)
+        const headerBytes = data.audioData.substring(0, 8);
+        debugLog('Audio header (base64)', { headerBytes });
+
         // Create audio element and play
-        const audio = new Audio(`data:audio/wav;base64,${data.audioData}`);
+        const dataUri = `data:audio/wav;base64,${data.audioData}`;
+        debugLog('Creating audio element', { dataUriLength: dataUri.length });
+
+        const audio = new Audio(dataUri);
         audio.volume = 0.8;
 
+        // Add debug event listeners
+        audio.addEventListener('loadstart', () => debugLog('Audio event: loadstart'));
+        audio.addEventListener('loadeddata', () => debugLog('Audio event: loadeddata'));
+        audio.addEventListener('canplay', () => debugLog('Audio event: canplay'));
+        audio.addEventListener('play', () => debugLog('Audio event: play'));
+        audio.addEventListener('playing', () => debugLog('Audio event: playing'));
+        audio.addEventListener('error', (e) => {
+          debugLog('Audio event: error', {
+            error: e,
+            audioError: audio.error,
+            errorCode: audio.error?.code,
+            errorMessage: audio.error?.message
+          });
+        });
+
         // Play the audio
-        await audio.play();
+        debugLog('Attempting to play audio', {
+          readyState: audio.readyState,
+          networkState: audio.networkState,
+          duration: audio.duration
+        });
+
+        try {
+          const playPromise = audio.play();
+          debugLog('Play promise created');
+          await playPromise;
+          debugLog('Audio playback started successfully');
+        } catch (playError) {
+          debugLog('Play promise rejected', {
+            error: playError,
+            errorMessage: (playError as Error).message
+          });
+          throw playError;
+        }
 
         // Wait for playback to complete
         return new Promise((resolve) => {
           audio.addEventListener('ended', () => {
+            debugLog('Audio playback ended');
             resolve(true);
           });
-          audio.addEventListener('error', (e) => {
-            console.error('Audio playback error:', e);
+
+          // Error handler already added above, but add resolution
+          const errorHandler = (e: Event) => {
+            debugLog('Audio playback error in promise', { event: e });
             resolve(false);
-          });
+          };
+
+          // If error wasn't already added
+          if (!audio.onerror) {
+            audio.addEventListener('error', errorHandler);
+          }
         });
       }
     } catch (error) {
