@@ -1,9 +1,13 @@
 /**
- * @fileoverview Text-to-Speech Service using Gemini Live API
- * @description Converts text to natural speech with voice selection and automatic language support
+ * @fileoverview Text-to-Speech Service using Google Cloud Text-to-Speech API
+ * @description Converts text to natural speech with voice selection and Gemini Flash Lite language detection
  */
 
-import geminiService from './geminiService';
+import { TextToSpeechClient } from '@google-cloud/text-to-speech';
+import geminiAudioService from './geminiAudioService';
+
+// Initialize Google Cloud Text-to-Speech client (auto-uses GOOGLE_APPLICATION_CREDENTIALS)
+const ttsClient = new TextToSpeechClient();
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {
@@ -18,7 +22,7 @@ export interface TTSVoiceProfile {
   gender: 'male' | 'female' | 'neutral';
   description: string;
   emotionalRange: string[];
-  supportedLanguages: 'all'; // Gemini voices support all 24+ languages
+  supportedLanguages: 'all';
 }
 
 export interface TTSRequest {
@@ -40,7 +44,7 @@ export interface TTSResult {
   processingTime: number;
 }
 
-// Voice profiles with universal language support
+// Voice profiles with language-specific Google Cloud voice mapping
 const VOICE_PROFILES: TTSVoiceProfile[] = [
   {
     id: 'aria',
@@ -76,76 +80,196 @@ const VOICE_PROFILES: TTSVoiceProfile[] = [
   }
 ];
 
+// Language-specific voice mapping to Google Cloud Neural2 voices
+const VOICE_MAPPING: Record<string, Record<string, { name: string; languageCode: string; ssmlGender: string }>> = {
+  'en': {
+    'aria': { name: 'en-US-Neural2-F', languageCode: 'en-US', ssmlGender: 'FEMALE' },
+    'nova': { name: 'en-US-Neural2-H', languageCode: 'en-US', ssmlGender: 'FEMALE' },
+    'atlas': { name: 'en-US-Neural2-D', languageCode: 'en-US', ssmlGender: 'MALE' },
+    'echo': { name: 'en-US-Neural2-A', languageCode: 'en-US', ssmlGender: 'NEUTRAL' }
+  },
+  'pl': {
+    'aria': { name: 'pl-PL-Wavenet-A', languageCode: 'pl-PL', ssmlGender: 'FEMALE' },
+    'nova': { name: 'pl-PL-Wavenet-B', languageCode: 'pl-PL', ssmlGender: 'FEMALE' },
+    'atlas': { name: 'pl-PL-Wavenet-C', languageCode: 'pl-PL', ssmlGender: 'MALE' },
+    'echo': { name: 'pl-PL-Wavenet-D', languageCode: 'pl-PL', ssmlGender: 'MALE' }
+  },
+  'ja': {
+    'aria': { name: 'ja-JP-Neural2-B', languageCode: 'ja-JP', ssmlGender: 'FEMALE' },
+    'nova': { name: 'ja-JP-Neural2-C', languageCode: 'ja-JP', ssmlGender: 'FEMALE' },
+    'atlas': { name: 'ja-JP-Neural2-D', languageCode: 'ja-JP', ssmlGender: 'MALE' },
+    'echo': { name: 'ja-JP-Neural2-A', languageCode: 'ja-JP', ssmlGender: 'NEUTRAL' }
+  },
+  'de': {
+    'aria': { name: 'de-DE-Neural2-F', languageCode: 'de-DE', ssmlGender: 'FEMALE' },
+    'nova': { name: 'de-DE-Neural2-A', languageCode: 'de-DE', ssmlGender: 'FEMALE' },
+    'atlas': { name: 'de-DE-Neural2-D', languageCode: 'de-DE', ssmlGender: 'MALE' },
+    'echo': { name: 'de-DE-Neural2-B', languageCode: 'de-DE', ssmlGender: 'MALE' }
+  },
+  'fr': {
+    'aria': { name: 'fr-FR-Neural2-A', languageCode: 'fr-FR', ssmlGender: 'FEMALE' },
+    'nova': { name: 'fr-FR-Neural2-B', languageCode: 'fr-FR', ssmlGender: 'MALE' },
+    'atlas': { name: 'fr-FR-Neural2-C', languageCode: 'fr-FR', ssmlGender: 'FEMALE' },
+    'echo': { name: 'fr-FR-Neural2-D', languageCode: 'fr-FR', ssmlGender: 'MALE' }
+  },
+  'es': {
+    'aria': { name: 'es-ES-Neural2-A', languageCode: 'es-ES', ssmlGender: 'FEMALE' },
+    'nova': { name: 'es-ES-Neural2-B', languageCode: 'es-ES', ssmlGender: 'MALE' },
+    'atlas': { name: 'es-ES-Neural2-C', languageCode: 'es-ES', ssmlGender: 'FEMALE' },
+    'echo': { name: 'es-ES-Neural2-D', languageCode: 'es-ES', ssmlGender: 'FEMALE' }
+  }
+};
+
 export class TextToSpeechService {
   /**
-   * Convert text to speech using Gemini Live API with automatic language detection
+   * Convert text to speech using Google Cloud TTS API with Gemini language detection
    */
   async synthesizeSpeech(params: TTSRequest): Promise<TTSResult> {
     const startTime = Date.now();
 
-    debugLog('Starting text-to-speech synthesis', {
+    debugLog('Starting Google Cloud TTS synthesis with Gemini language detection', {
       textLength: params.text.length,
       voiceId: params.voiceId,
-      detectedLanguage: params.detectedLanguage,
-      emotionalTone: params.emotionalTone
+      providedLanguage: params.detectedLanguage || params.languageCode
     });
 
     try {
+      // Validate input
+      if (!params.text || params.text.trim().length === 0) {
+        throw new Error('Text input is required and cannot be empty');
+      }
+
+      if (params.text.length > 5000) {
+        debugLog('Text too long, truncating', { originalLength: params.text.length });
+        params.text = params.text.substring(0, 5000) + '...';
+      }
+
       // Validate voice profile
       const voiceProfile = this.getVoiceProfile(params.voiceId);
       if (!voiceProfile) {
         throw new Error(`Unsupported voice: ${params.voiceId}`);
       }
 
-      // Ensure Gemini service is ready
-      if (!geminiService.isReady()) {
-        throw new Error('Gemini service not ready for text-to-speech');
-      }
+      // Detect language using Gemini Flash Lite
+      const detectedLanguageCode = await this.detectLanguageWithGemini(params.text);
+      const languageCode = params.languageCode || detectedLanguageCode;
 
-      // Prepare TTS configuration
-      const ttsConfig = this.buildTTSConfig(params, voiceProfile);
-
-      debugLog('TTS configuration prepared', {
-        voice: voiceProfile.name,
-        gender: voiceProfile.gender,
-        emotionalTone: params.emotionalTone,
-        speed: params.speed || 1.0
+      debugLog('Language detection completed', {
+        detectedLanguageCode,
+        usedLanguageCode: languageCode
       });
 
-      // Call Gemini Live API for TTS
-      const audioResult = await this.callGeminiLiveTTS(params.text, ttsConfig);
+      // Get Google Cloud voice configuration for detected language
+      const voiceConfig = this.getVoiceConfig(params.voiceId, languageCode);
 
+      debugLog('Voice configuration selected', {
+        voiceId: params.voiceId,
+        languageCode,
+        googleVoiceName: voiceConfig.name,
+        googleLanguageCode: voiceConfig.languageCode
+      });
+
+      // Build Google Cloud TTS request
+      const request = {
+        input: { text: params.text },
+        voice: {
+          languageCode: voiceConfig.languageCode,
+          name: voiceConfig.name,
+          ssmlGender: voiceConfig.ssmlGender as any
+        },
+        audioConfig: {
+          audioEncoding: 'MP3' as any,
+          sampleRateHertz: 24000,
+          speakingRate: this.normalizeSpeed(params.speed || 1.0),
+          pitch: this.normalizePitch(params.pitch || 1.0),
+          volumeGainDb: 0.0,
+          effectsProfileId: ['telephony-class-application']
+        }
+      };
+
+      debugLog('Sending request to Google Cloud TTS', {
+        languageCode: request.voice.languageCode,
+        voiceName: request.voice.name
+      });
+
+      // Call Google Cloud Text-to-Speech API
+      const [response] = await ttsClient.synthesizeSpeech(request);
+
+      if (!response.audioContent) {
+        throw new Error('No audio content received from Google Cloud TTS');
+      }
+
+      const audioBuffer = Buffer.from(response.audioContent as Uint8Array);
       const processingTime = Date.now() - startTime;
+      const estimatedDuration = this.estimateAudioDuration(params.text, request.audioConfig.speakingRate);
 
-      debugLog('TTS synthesis completed', {
-        audioSize: audioResult.audioBuffer.length,
-        duration: audioResult.duration,
-        processingTime
+      debugLog('TTS synthesis completed successfully', {
+        audioSize: audioBuffer.length,
+        estimatedDuration,
+        processingTime,
+        languageCode
       });
 
       return {
-        audioBuffer: audioResult.audioBuffer,
-        format: audioResult.format,
-        duration: audioResult.duration,
+        audioBuffer,
+        format: 'mp3',
+        duration: estimatedDuration,
         voiceUsed: voiceProfile.name,
-        detectedLanguage: audioResult.detectedLanguage,
+        detectedLanguage: this.getLanguageName(languageCode),
         processingTime
       };
 
     } catch (error) {
-      debugLog('TTS synthesis failed', { error: String(error) });
+      debugLog('Google Cloud TTS synthesis failed', { error: String(error) });
 
-      // Return empty audio buffer on error
       const emptyBuffer = Buffer.alloc(0);
       return {
         audioBuffer: emptyBuffer,
-        format: 'wav',
+        format: 'mp3',
         duration: 0,
         voiceUsed: params.voiceId,
-        detectedLanguage: params.detectedLanguage || 'English',
+        detectedLanguage: 'English',
         processingTime: Date.now() - startTime
       };
     }
+  }
+
+  /**
+   * Detect language using Gemini Audio Service
+   * @private
+   */
+  private async detectLanguageWithGemini(text: string): Promise<string> {
+    try {
+      const result = await geminiAudioService.detectLanguageFromText(text);
+      debugLog('Language detected by Gemini', { language: result.language, code: result.code });
+      return result.code;
+    } catch (error) {
+      debugLog('Language detection failed, defaulting to English', { error: String(error) });
+      return 'en';
+    }
+  }
+
+  /**
+   * Get voice configuration for language and voice ID
+   * @private
+   */
+  private getVoiceConfig(voiceId: string, languageCode: string) {
+    // Try to get language-specific mapping
+    const languageMapping = VOICE_MAPPING[languageCode];
+
+    if (!languageMapping) {
+      debugLog('Language not in mapping, falling back to English', { languageCode });
+      return VOICE_MAPPING['en'][voiceId] || VOICE_MAPPING['en']['aria'];
+    }
+
+    // Get voice for this language
+    const voiceConfig = languageMapping[voiceId];
+    if (!voiceConfig) {
+      debugLog('Voice not available for language, using default', { voiceId, languageCode });
+      return Object.values(languageMapping)[0];
+    }
+
+    return voiceConfig;
   }
 
   /**
@@ -156,81 +280,49 @@ export class TextToSpeechService {
     return VOICE_PROFILES.find(profile => profile.id === voiceId);
   }
 
+
   /**
-   * Build TTS configuration for Gemini Live API
+   * Get readable language name from code
    * @private
    */
-  private buildTTSConfig(params: TTSRequest, voiceProfile: TTSVoiceProfile): any {
-    return {
-      voice: {
-        id: voiceProfile.id,
-        name: voiceProfile.name,
-        gender: voiceProfile.gender,
-        emotionalTone: params.emotionalTone || 'neutral'
-      },
-      audio: {
-        speed: Math.max(0.5, Math.min(2.0, params.speed || 1.0)),
-        pitch: Math.max(0.5, Math.min(2.0, params.pitch || 1.0))
-      },
-      language: {
-        autoDetect: true,
-        fallback: params.languageCode || 'en'
-      }
+  private getLanguageName(languageCode: string): string {
+    const languageNames: Record<string, string> = {
+      'en': 'English',
+      'pl': 'Polish',
+      'ja': 'Japanese',
+      'de': 'German',
+      'fr': 'French',
+      'es': 'Spanish'
     };
+
+    return languageNames[languageCode] || 'English';
   }
 
   /**
-   * Call Gemini Live API for text-to-speech synthesis
+   * Normalize speaking speed to Google Cloud TTS range
    * @private
    */
-  private async callGeminiLiveTTS(text: string, config: any): Promise<{
-    audioBuffer: Buffer;
-    format: string;
-    duration: number;
-    detectedLanguage: string;
-  }> {
-    // TODO: Implement actual Gemini Live API TTS call
-    // For now, this is a placeholder that simulates the API call
-
-    debugLog('Calling Gemini Live API for TTS', {
-      textLength: text.length,
-      voice: config.voice.name,
-      emotionalTone: config.voice.emotionalTone
-    });
-
-    // Simulate processing time based on text length
-    const estimatedDuration = Math.max(500, text.length * 50); // ~50ms per character
-    await new Promise(resolve => setTimeout(resolve, Math.min(estimatedDuration, 3000)));
-
-    // Return mock audio buffer - will be replaced with actual Gemini Live API call
-    const mockAudioSize = Math.max(1024, text.length * 100); // Simulate audio data
-    const mockAudioBuffer = Buffer.alloc(mockAudioSize);
-
-    // Simulate language detection from text
-    const detectedLanguage = this.detectLanguageFromText(text);
-
-    return {
-      audioBuffer: mockAudioBuffer,
-      format: 'wav', // Gemini Live API output format
-      duration: estimatedDuration / 1000, // Convert to seconds
-      detectedLanguage
-    };
+  private normalizeSpeed(speed: number): number {
+    return Math.max(0.25, Math.min(4.0, speed)); // Google Cloud TTS range
   }
 
   /**
-   * Simple language detection based on text patterns (fallback)
+   * Normalize pitch to Google Cloud TTS range
    * @private
    */
-  private detectLanguageFromText(text: string): string {
-    // Simple pattern-based detection - Gemini Live API will do this automatically
-    if (/[ąćęłńóśźż]/i.test(text)) return 'Polish';
-    if (/[ひらがなカタカナ一-龯]/i.test(text)) return 'Japanese';
-    if (/[äöüß]/i.test(text)) return 'German';
-    if (/[àáâãäåçèéêëìíîïñòóôõöùúûüý]/i.test(text)) return 'French';
-    if (/[а-яё]/i.test(text)) return 'Russian';
-    if (/[一-龯]/i.test(text)) return 'Chinese';
+  private normalizePitch(pitch: number): number {
+    return Math.max(-20.0, Math.min(20.0, pitch)); // Google Cloud TTS range in semitones
+  }
 
-    return 'English'; // Default fallback
+  /**
+   * Estimate audio duration based on text length and speaking rate
+   * @private
+   */
+  private estimateAudioDuration(text: string, speakingRate: number): number {
+    // Average speaking rate: ~150 words per minute at normal speed
+    const wordsPerMinute = 150 * speakingRate;
+    const wordCount = text.split(/\s+/).length;
+    return Math.max(1, (wordCount / wordsPerMinute) * 60); // Duration in seconds
   }
 
   /**
@@ -270,8 +362,8 @@ export class TextToSpeechService {
     supportedLanguages: string;
   } {
     return {
-      isReady: geminiService.isReady(),
-      geminiReady: geminiService.isReady(),
+      isReady: geminiAudioService.getStatus().isReady,
+      geminiReady: geminiAudioService.getStatus().geminiReady,
       availableVoices: VOICE_PROFILES.length,
       supportedLanguages: '24+ languages (automatic detection)'
     };

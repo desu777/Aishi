@@ -184,7 +184,16 @@ export const useVoiceDiscovery = () => {
         throw new Error(`Failed to synthesize voice: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const responseData = await response.json();
+
+      // Handle API response structure { success: true, data: { audioData, format, ... } }
+      const data = responseData.data || responseData;
+
+      debugLog('TTS response structure', {
+        hasSuccess: 'success' in responseData,
+        hasData: 'data' in responseData,
+        topLevelKeys: Object.keys(responseData)
+      });
 
       debugLog('TTS response data', {
         hasAudioData: !!data.audioData,

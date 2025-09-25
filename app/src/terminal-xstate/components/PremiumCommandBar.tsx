@@ -63,8 +63,13 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
     return suggestCommands(value);
   }, [value]);
 
-  // Show microphone button only for dream and chat commands
-  const showMicrophone = isVoiceEnabled && (isDreamActive || isChatActive);
+  // Show microphone button for dream/chat commands (when typing or active)
+  const showMicrophone = isVoiceEnabled && (
+    isDreamActive ||
+    isChatActive ||
+    value.trim().toLowerCase() === 'dream' ||
+    value.trim().toLowerCase() === 'chat'
+  );
 
   // Handle voice recording completion
   const handleVoiceRecordingComplete = useCallback((audioBase64: string, audioBlob: Blob) => {
