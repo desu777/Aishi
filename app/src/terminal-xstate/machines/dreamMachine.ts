@@ -60,6 +60,9 @@ export interface DreamMachineContext {
   // AI configuration
   modelId?: string;
   walletAddress?: string;
+
+  // Voice tracking
+  wasVoiceInput: boolean;
   
   // Error handling and retry state
   retryCount: number;
@@ -71,7 +74,7 @@ export interface DreamMachineContext {
 
 // Dream machine events
 export type DreamEvent =
-  | { type: 'START'; modelId?: string; walletAddress?: string; tokenId?: number; agentName?: string }
+  | { type: 'START'; modelId?: string; walletAddress?: string; tokenId?: number; agentName?: string; wasVoiceInput?: boolean }
   | { type: 'SUBMIT_DREAM'; dreamText: string }
   | { type: 'CONFIRM_SAVE' }
   | { type: 'CANCEL_SAVE' }
@@ -116,6 +119,7 @@ const initialContext: DreamMachineContext = {
   awaitingConfirmation: false,
   modelId: undefined,
   walletAddress: undefined,
+  wasVoiceInput: false,
   retryCount: 0,
   maxRetries: 3,
   memoryDownloadError: null,
@@ -146,7 +150,8 @@ export const dreamMachine = setup({
       statusMessage: 'Describe your dream...',
       errorMessage: null,
       modelId: ({ event }) => event.type === 'START' ? event.modelId : undefined,
-      walletAddress: ({ event }) => event.type === 'START' ? event.walletAddress : undefined
+      walletAddress: ({ event }) => event.type === 'START' ? event.walletAddress : undefined,
+      wasVoiceInput: ({ event }) => event.type === 'START' ? event.wasVoiceInput || false : false
     }),
     
     // Send dream instruction to parent

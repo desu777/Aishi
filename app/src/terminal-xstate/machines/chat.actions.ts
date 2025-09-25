@@ -25,7 +25,8 @@ export const chatActions = {
     sessionId: () => `chat_${Date.now()}`,
     statusMessage: ({ event }: any) => `Starting chat with ${event.agentName}...`,
     messages: () => [],
-    currentTranscript: () => ''
+    currentTranscript: () => '',
+    wasVoiceInput: ({ event }: any) => event.wasVoiceInput || false
   }),
 
   /**
@@ -140,24 +141,49 @@ export const chatActions = {
   /**
    * Send lines to parent (terminal)
    */
-  sendLinesToParent: sendParent(({ context }: { context: ChatContext }) => {
-    const lines: TerminalLine[] = [];
-    const timestamp = Date.now();
+  sendLinesToParent: [
+    sendParent(({ context }: { context: ChatContext }) => {
+      const lines: TerminalLine[] = [];
+      const timestamp = Date.now();
 
-    // Get the last message (should be AI response)
-    const lastMessage = context.messages[context.messages.length - 1];
-    
-    if (lastMessage && lastMessage.role === 'assistant') {
-      // Display AI response
-      lines.push({
-        type: 'info',
-        content: `~ ${context.agentName} : ${lastMessage.content}`,
-        timestamp
-      });
-    }
+      // Get the last message (should be AI response)
+      const lastMessage = context.messages[context.messages.length - 1];
 
-    return { type: 'APPEND_LINES', lines };
-  }),
+      if (lastMessage && lastMessage.role === 'assistant') {
+        // Display AI response - check if voice or text
+        if (context.wasVoiceInput) {
+          // For voice input, prepare for voice output
+          lines.push({
+            type: 'info',
+            content: `~ ${context.agentName} : [Processing voice response...]`,
+            timestamp
+          });
+        } else {
+          // For text input, display regular text
+          lines.push({
+            type: 'info',
+            content: `~ ${context.agentName} : ${lastMessage.content}`,
+            timestamp
+          });
+        }
+      }
+
+      return { type: 'APPEND_LINES', lines };
+    }),
+    // Send TTS request if voice input
+    sendParent(({ context }: { context: ChatContext }) => {
+      const lastMessage = context.messages[context.messages.length - 1];
+      if (context.wasVoiceInput && lastMessage && lastMessage.role === 'assistant') {
+        return {
+          type: 'VOICE.SYNTHESIZE_RESPONSE',
+          text: lastMessage.content,
+          agentName: context.agentName
+        };
+      }
+      // Return a no-op event if not voice
+      return { type: 'NOOP' };
+    })
+  ],
 
   /**
    * Send save confirmation prompt

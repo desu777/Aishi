@@ -55,6 +55,9 @@ export function useTerminal() {
     modelRef: state.context.modelRef,
     agentRef: state.context.agentRef,
     dreamRef: state.context.dreamRef,
-    chatRef: state.context.chatRef
+    chatRef: state.context.chatRef,
+    voiceRef: state.context.voiceRef,
+    isVoiceEnabled: state.context.isVoiceEnabled,
+    isRecording: state.context.isRecording
   };
 }

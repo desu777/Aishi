@@ -160,12 +160,13 @@ export const workflowActions = {
       const { selectedModel } = getModelData(context);
       const { walletAddress, tokenId, agentName } = getAgentData(context);
       
-      context.dreamRef.send({ 
+      context.dreamRef.send({
         type: 'START',
         modelId: selectedModel,
         walletAddress,
         tokenId,
-        agentName
+        agentName,
+        wasVoiceInput: context.wasVoiceInput
       });
     }
   },
@@ -178,11 +179,12 @@ export const workflowActions = {
       const { tokenId, agentName } = getAgentData(context);
       const { selectedModel } = getModelData(context);
       
-      context.chatRef.send({ 
+      context.chatRef.send({
         type: 'START_CHAT',
         agentId: tokenId || 1,
         agentName,
-        modelId: selectedModel
+        modelId: selectedModel,
+        wasVoiceInput: context.wasVoiceInput
       });
     }
   },

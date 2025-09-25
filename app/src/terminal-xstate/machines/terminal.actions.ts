@@ -24,7 +24,8 @@ export const terminalActions = {
   }),
 
   clearInput: assign({
-    currentInput: ''
+    currentInput: '',
+    wasVoiceInput: false // Reset voice input flag
   }),
 
   /**
@@ -171,7 +172,8 @@ export const terminalActions = {
   spawnActors: assign({
     brokerRef: ({ spawn }: any) => spawn('brokerActor', { id: 'broker' }),
     modelRef: ({ spawn }: any) => spawn('modelActor', { id: 'model' }),
-    agentRef: ({ spawn }: any) => spawn('agentActor', { id: 'agent' })
+    agentRef: ({ spawn }: any) => spawn('agentActor', { id: 'agent' }),
+    voiceRef: ({ spawn }: any) => spawn('voiceActor', { id: 'voice' })
   }),
 
   spawnDreamMachine: assign({
@@ -302,11 +304,21 @@ export const terminalActions = {
       const timestamp = Date.now();
       const input = context.currentInput.trim().toLowerCase();
       const isConfirmation = input === 'y' || input === 'yes' || input === 'n' || input === 'no';
-      
-      const formattedContent = isConfirmation 
+
+      // If voice input and not confirmation, show as voice message
+      if (context.wasVoiceInput && !isConfirmation) {
+        return [...context.lines, {
+          type: 'voice-input',
+          content: context.currentInput,
+          transcript: context.currentInput,
+          timestamp
+        }];
+      }
+
+      const formattedContent = isConfirmation
         ? `> ${context.currentInput}`
         : `~ you : ${context.currentInput}`;
-      
+
       return [...context.lines, {
         type: 'input',
         content: formattedContent,
@@ -322,19 +334,154 @@ export const terminalActions = {
     lines: ({ context }: { context: TerminalContext }) => {
       const timestamp = Date.now();
       const input = context.currentInput.trim();
-      
+      const isConfirmation = context.chatRef?.getSnapshot()?.context?.awaitingConfirmation;
+
+      // If voice input and not confirmation, show as voice message
+      if (context.wasVoiceInput && !isConfirmation) {
+        return [...context.lines, {
+          type: 'voice-input',
+          content: context.currentInput,
+          transcript: context.currentInput,
+          timestamp
+        }];
+      }
+
       let formattedContent = '';
-      if (context.chatRef?.getSnapshot()?.context?.awaitingConfirmation) {
+      if (isConfirmation) {
         formattedContent = `> ${context.currentInput}`;
       } else {
         formattedContent = `~ you: ${context.currentInput}`;
       }
-      
+
       return [...context.lines, {
         type: 'input',
         content: formattedContent,
         timestamp
       }];
     }
-  })
+  }),
+
+  /**
+   * Voice control actions
+   */
+  toggleVoice: assign({
+    isVoiceEnabled: ({ context }: { context: TerminalContext }) => !context.isVoiceEnabled
+  }),
+
+  updateSelectedVoice: assign({
+    selectedVoice: ({ event }: any) => {
+      if (event.type === 'VOICE.SELECT_VOICE') {
+        return event.voiceId;
+      }
+      return null;
+    }
+  }),
+
+  setRecording: assign({
+    isRecording: true,
+    voiceStatus: 'Recording...'
+  }),
+
+  stopRecording: assign({
+    isRecording: false,
+    voiceStatus: 'Processing...'
+  }),
+
+  updateVoiceStatus: assign({
+    voiceStatus: ({ event }: any) => {
+      if (event.type === 'VOICE.ERROR') {
+        return `Error: ${event.message}`;
+      }
+      return null;
+    }
+  }),
+
+  handleVoiceTranscript: assign({
+    currentInput: ({ event }: any) => {
+      if (event.type === 'VOICE.TRANSCRIBED') {
+        return event.transcript;
+      }
+      return '';
+    },
+    voiceStatus: null,
+    wasVoiceInput: true // Mark that this input came from voice
+  }),
+
+  sendToVoice: ({ context, event }: any) => {
+    if (context.voiceRef && event.type === 'VOICE.SPEAK') {
+      context.voiceRef.send({
+        type: 'SYNTHESIZE',
+        text: event.text,
+        emotionalTone: event.emotionalTone
+      });
+    }
+  },
+
+  startVoiceRecording: ({ context }: any) => {
+    if (context.voiceRef) {
+      context.voiceRef.send({ type: 'START_RECORDING' });
+    }
+  },
+
+  stopVoiceRecording: ({ context }: any) => {
+    if (context.voiceRef) {
+      context.voiceRef.send({ type: 'STOP_RECORDING' });
+    }
+  },
+
+  /**
+   * Voice message display actions
+   */
+  displayVoiceInput: assign({
+    lines: ({ context, event }: any) => {
+      const timestamp = Date.now();
+      const line: TerminalLine = {
+        type: 'voice-input',
+        content: event.transcript || 'Voice message',
+        transcript: event.transcript,
+        duration: event.duration,
+        timestamp
+      };
+      return [...context.lines, line];
+    }
+  }),
+
+  displayVoiceOutput: assign({
+    lines: ({ context, event }: any) => {
+      const timestamp = Date.now();
+      const line: TerminalLine = {
+        type: 'voice-output',
+        content: event.text || event.content || 'Voice response',
+        audioData: event.audioData,
+        voiceId: event.voiceId || context.selectedVoice,
+        timestamp
+      };
+      return [...context.lines, line];
+    }
+  }),
+
+  synthesizeVoiceResponse: ({ context }: any) => {
+    // This action will be called from dream/chat machines
+    // to trigger TTS for AI responses
+    if (context.voiceRef && context.isVoiceEnabled) {
+      const lastLine = context.lines[context.lines.length - 1];
+      if (lastLine && lastLine.type === 'output') {
+        context.voiceRef.send({
+          type: 'SYNTHESIZE',
+          text: lastLine.content,
+          emotionalTone: 'neutral'
+        });
+      }
+    }
+  },
+
+  forwardToVoice: ({ context, event }: any) => {
+    if (context.voiceRef && event.type === 'VOICE.SYNTHESIZE_RESPONSE') {
+      context.voiceRef.send({
+        type: 'SYNTHESIZE',
+        text: event.text,
+        emotionalTone: 'neutral'
+      });
+    }
+  }
 };

@@ -53,10 +53,12 @@ export interface ChatContext {
   // Memory handling (like dream)
   memoryDownloadError: string | null;
   continueWithoutMemory: boolean;
+  // Voice tracking
+  wasVoiceInput: boolean;
 }
 
 export type ChatEvent =
-  | { type: 'START_CHAT'; agentId: number; agentName: string; modelId: string }
+  | { type: 'START_CHAT'; agentId: number; agentName: string; modelId: string; wasVoiceInput?: boolean }
   | { type: 'USER_MESSAGE'; message: string }
   | { type: 'AI_RESPONSE_SUCCESS'; response: string }
   | { type: 'AI_RESPONSE_ERROR'; error: string }
@@ -90,7 +92,8 @@ const initialContext: ChatContext = {
   maxRetries: 3,
   lastError: null,
   memoryDownloadError: null,
-  continueWithoutMemory: false
+  continueWithoutMemory: false,
+  wasVoiceInput: false
 };
 
 // Chat machine definition

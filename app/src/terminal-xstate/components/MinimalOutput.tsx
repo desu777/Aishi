@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { TerminalLine } from '../machines/types';
 import { CollapsibleText } from './CollapsibleText';
 import { parseMarkdownToReact, containsMarkdown } from '../services/markdownParser';
+import { VoiceMessage } from '../../terminal-xstate/voice/VoiceMessage';
 
 interface MinimalOutputProps {
   lines: TerminalLine[];
@@ -241,11 +242,40 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
   };
   
   const formatContent = (line: TerminalLine) => {
+    // Handle voice messages
+    if (line.type === 'voice-input' || line.type === 'voice-output') {
+      // Convert base64 audio to Blob if needed
+      let audioBlob: Blob | undefined;
+      if (line.audioData) {
+        try {
+          const byteCharacters = atob(line.audioData);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          audioBlob = new Blob([byteArray], { type: 'audio/webm' });
+        } catch (error) {
+          console.error('Failed to convert audio data to blob:', error);
+        }
+      }
+
+      return (
+        <VoiceMessage
+          audioBlob={audioBlob || line.audioBlob}
+          duration={line.duration || 0}
+          isUserMessage={line.type === 'voice-input'}
+          sender={line.type === 'voice-input' ? 'You' : agentName || 'Agent'}
+          status="sent"
+        />
+      );
+    }
+
     // Handle interactive help lines
     if (line.type === 'help-interactive' && line.hasTooltip) {
       return <InteractiveHelpLine line={line} />;
     }
-    
+
     // Clean, minimal formatting
     if (typeof line.content === 'string') {
       let content = line.content;

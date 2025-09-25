@@ -11,6 +11,7 @@ import { modelMachine } from './modelMachine';
 import { agentMachine } from './agentMachine';
 import { dreamMachine } from './dreamMachine';
 import { chatMachine } from './chatMachine';
+import { voiceMachine } from './voiceMachine';
 import { commandExecutors } from './terminal.command-executors';
 import { terminalActions } from './terminal.actions';
 import { terminalGuards } from './terminal.guards';
@@ -33,7 +34,13 @@ const initialContext: TerminalContext = {
   agentRef: null,
   dreamRef: null,
   chatRef: null,
+  voiceRef: null,
   selectedModel: null,
+  selectedVoice: null,
+  isVoiceEnabled: false,
+  voiceStatus: null,
+  isRecording: false,
+  wasVoiceInput: false,
   isDreamActive: false,
   isChatActive: false,
   dreamStatus: null,
@@ -54,6 +61,7 @@ export const terminalMachine = setup({
     agentActor: agentMachine,
     dreamActor: dreamMachine,
     chatActor: chatMachine,
+    voiceActor: voiceMachine,
     // Command executors
     ...commandExecutors
   },
@@ -117,7 +125,31 @@ export const terminalMachine = setup({
         },
         'UPDATE_STATUS': {
           actions: 'updateDreamStatus'
-        }
+        },
+        // Voice events
+        'VOICE.TOGGLE': {
+          actions: 'toggleVoice'
+        },
+        'VOICE.START_RECORDING': {
+          actions: ['setRecording', 'startVoiceRecording']
+        },
+        'VOICE.STOP_RECORDING': {
+          actions: ['stopRecording', 'stopVoiceRecording']
+        },
+        'VOICE.TRANSCRIBED': {
+          actions: 'handleVoiceTranscript',
+          target: 'processing'
+        },
+        'VOICE.SELECT_VOICE': {
+          actions: 'updateSelectedVoice'
+        },
+        'VOICE.ERROR': {
+          actions: 'updateVoiceStatus'
+        },
+        'VOICE.SYNTHESIZE_RESPONSE': {
+          actions: 'forwardToVoice'
+        },
+        'NOOP': {}
       }
     },
     
@@ -382,7 +414,29 @@ export const terminalMachine = setup({
         },
         'HISTORY.DOWN': {
           actions: 'navigateHistoryDown'
-        }
+        },
+        // Voice events in dream workflow
+        'VOICE.START_RECORDING': {
+          actions: ['setRecording', 'startVoiceRecording']
+        },
+        'VOICE.STOP_RECORDING': {
+          actions: ['stopRecording', 'stopVoiceRecording']
+        },
+        'VOICE.TRANSCRIBED': {
+          actions: [
+            'handleVoiceTranscript',
+            'addDreamUserInput',
+            'sendDreamInput',
+            'clearInput'
+          ]
+        },
+        'VOICE.ERROR': {
+          actions: 'updateVoiceStatus'
+        },
+        'VOICE.SYNTHESIZE_RESPONSE': {
+          actions: 'forwardToVoice'
+        },
+        'NOOP': {}
       }
     },
     
@@ -424,6 +478,24 @@ export const terminalMachine = setup({
         },
         'HISTORY.DOWN': {
           actions: 'navigateHistoryDown'
+        },
+        // Voice events in chat workflow
+        'VOICE.START_RECORDING': {
+          actions: ['setRecording', 'startVoiceRecording']
+        },
+        'VOICE.STOP_RECORDING': {
+          actions: ['stopRecording', 'stopVoiceRecording']
+        },
+        'VOICE.TRANSCRIBED': {
+          actions: [
+            'handleVoiceTranscript',
+            'addChatUserInput',
+            'sendChatInput',
+            'clearInput'
+          ]
+        },
+        'VOICE.ERROR': {
+          actions: 'updateVoiceStatus'
         }
       }
     }

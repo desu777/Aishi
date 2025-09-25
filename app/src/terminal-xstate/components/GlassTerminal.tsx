@@ -18,6 +18,7 @@ interface GlassTerminalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedModel?: string;
+  selectedVoice?: string;
 }
 
 // Premium color palette
@@ -33,8 +34,8 @@ const colors = {
   borderSubtle: 'rgba(255, 255, 255, 0.05)'
 };
 
-export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, selectedModel }) => {
-  const { context, send, state, brokerRef, modelRef, agentRef, isDreamActive, dreamStatus, isChatActive, chatStatus } = useTerminal();
+export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, selectedModel, selectedVoice }) => {
+  const { context, send, state, brokerRef, modelRef, agentRef, voiceRef, isDreamActive, dreamStatus, isChatActive, chatStatus, isVoiceEnabled } = useTerminal();
   const { agentName, isLoading: agentLoading } = useTerminalAgent();
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
@@ -114,6 +115,14 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     send({ type: 'CLEAR' });
   }, [send]);
 
+  // Handle voice input
+  const handleVoiceInput = useCallback((audioBase64: string, audioBlob: Blob) => {
+    if (voiceRef) {
+      // Send audio to STT through voice machine
+      voiceRef.send({ type: 'TRANSCRIBE', audioBase64 });
+    }
+  }, [voiceRef]);
+
   // Initialize broker and agent when wallet is connected
   useEffect(() => {
     if (isConnected && address) {
@@ -158,6 +167,13 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
       modelRef.send({ type: 'SELECT_MODEL', modelId: selectedModel });
     }
   }, [selectedModel, modelRef]);
+
+  // Update voice in terminal when selectedVoice changes
+  useEffect(() => {
+    if (selectedVoice && voiceRef) {
+      voiceRef.send({ type: 'SELECT_VOICE', voiceId: selectedVoice });
+    }
+  }, [selectedVoice, voiceRef]);
 
   // Handle escape key to close
   useEffect(() => {
@@ -287,7 +303,10 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             onClear={handleClear}
             disabled={state.matches('processing')}
             isChatActive={isChatActive}
+            isDreamActive={isDreamActive}
             onEndSession={() => send({ type: 'END_SESSION' })}
+            onVoiceInput={handleVoiceInput}
+            isVoiceEnabled={true}
             placeholder={
               isChatActive && chatStatus && chatStatus.includes('typing')
                 ? 'Agent is typing...'

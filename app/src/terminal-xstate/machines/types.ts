@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 
 // Terminal line types matching the old terminal
-export type LineType = 
+export type LineType =
   | 'input'
   | 'output'
   | 'error'
@@ -12,7 +12,9 @@ export type LineType =
   | 'help-command'
   | 'help-interactive'
   | 'help-header'
-  | 'info-labeled';
+  | 'info-labeled'
+  | 'voice-input'
+  | 'voice-output';
 
 export interface TerminalLine {
   type: LineType;
@@ -22,6 +24,12 @@ export interface TerminalLine {
   command?: string;
   hasTooltip?: boolean;
   tooltip?: string;
+  // Voice message data
+  audioData?: string; // Base64 encoded audio
+  audioBlob?: Blob;
+  duration?: number;
+  transcript?: string;
+  voiceId?: string;
 }
 
 // Context for the terminal machine
@@ -37,7 +45,14 @@ export interface TerminalContext {
   agentRef: any; // ActorRef from XState for agent synchronization
   dreamRef: any; // ActorRef from XState for dream workflow
   chatRef: any; // ActorRef from XState for chat workflow
+  voiceRef: any; // ActorRef from XState for voice control
   selectedModel: string | null;
+  // Voice state
+  selectedVoice: 'aria' | 'nova' | 'atlas' | 'echo' | null;
+  isVoiceEnabled: boolean;
+  voiceStatus: string | null;
+  isRecording: boolean;
+  wasVoiceInput: boolean; // Track if current input came from voice
   // Dream workflow state
   isDreamActive: boolean;
   dreamStatus: string | null;
@@ -63,4 +78,12 @@ export type TerminalEvent =
   | { type: 'UPDATE_STATUS'; status: string }
   | { type: 'DREAM.COMPLETE' }
   | { type: 'CHAT_COMPLETED' }
-  | { type: 'END_SESSION' };
+  | { type: 'END_SESSION' }
+  // Voice events
+  | { type: 'VOICE.TOGGLE' }
+  | { type: 'VOICE.START_RECORDING' }
+  | { type: 'VOICE.STOP_RECORDING' }
+  | { type: 'VOICE.TRANSCRIBED'; transcript: string; language?: string }
+  | { type: 'VOICE.SELECT_VOICE'; voiceId: 'aria' | 'nova' | 'atlas' | 'echo' }
+  | { type: 'VOICE.SPEAK'; text: string; emotionalTone?: string }
+  | { type: 'VOICE.ERROR'; message: string };

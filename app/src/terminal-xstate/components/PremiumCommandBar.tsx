@@ -1,5 +1,7 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { parseCommand, suggestCommands, AVAILABLE_COMMANDS, CommandType } from '../services/commandParser';
+import MicrophoneButton from './MicrophoneButton';
+import VoiceInputMessage from './VoiceInputMessage';
 
 interface PremiumCommandBarProps {
   value: string;
@@ -12,7 +14,10 @@ interface PremiumCommandBarProps {
   placeholder?: string;
   promptSymbol?: string;
   isChatActive?: boolean;
+  isDreamActive?: boolean;
   onEndSession?: () => void;
+  onVoiceInput?: (audioBase64: string, audioBlob: Blob) => void;
+  isVoiceEnabled?: boolean;
 }
 
 const colors = {
@@ -34,11 +39,16 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   placeholder = 'Enter command',
   promptSymbol = '>',
   isChatActive = false,
-  onEndSession
+  isDreamActive = false,
+  onEndSession,
+  onVoiceInput,
+  isVoiceEnabled = false
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
+  const [voiceInputBlob, setVoiceInputBlob] = useState<Blob | null>(null);
+  const [voiceInputBase64, setVoiceInputBase64] = useState<string | null>(null);
   
   // Check if current command is valid
   const isValidCommand = useMemo(() => {
@@ -52,6 +62,33 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
     if (!value.trim() || value.includes(' ')) return [];
     return suggestCommands(value);
   }, [value]);
+
+  // Show microphone button only for dream and chat commands
+  const showMicrophone = isVoiceEnabled && (isDreamActive || isChatActive);
+
+  // Handle voice recording completion
+  const handleVoiceRecordingComplete = useCallback((audioBase64: string, audioBlob: Blob) => {
+    setVoiceInputBlob(audioBlob);
+    setVoiceInputBase64(audioBase64);
+    // Clear text input when voice is recorded
+    onChange('');
+  }, [onChange]);
+
+  // Handle voice input deletion
+  const handleDeleteVoiceInput = useCallback(() => {
+    setVoiceInputBlob(null);
+    setVoiceInputBase64(null);
+  }, []);
+
+  // Submit voice input
+  const submitVoiceInput = useCallback(() => {
+    if (voiceInputBase64 && voiceInputBlob && onVoiceInput) {
+      onVoiceInput(voiceInputBase64, voiceInputBlob);
+      // Clear voice input after submission
+      setVoiceInputBlob(null);
+      setVoiceInputBase64(null);
+    }
+  }, [voiceInputBase64, voiceInputBlob, onVoiceInput]);
 
   // Auto-focus on mount
   useEffect(() => {
@@ -97,7 +134,10 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
     switch (e.key) {
       case 'Enter':
         e.preventDefault();
-        if (value.toLowerCase() === 'clear') {
+        if (voiceInputBlob) {
+          // Submit voice input
+          submitVoiceInput();
+        } else if (value.toLowerCase() === 'clear') {
           onClear();
           onChange('');
         } else {
@@ -233,20 +273,40 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
       
       <div style={commandInputStyle}>
         <span style={commandPromptStyle}>{promptSymbol}</span>
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          placeholder={disabled ? 'Processing...' : placeholder}
-          style={commandFieldStyle}
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-        />
+
+        {/* Show VoiceInputMessage or text input */}
+        {voiceInputBlob ? (
+          <VoiceInputMessage
+            audioBlob={voiceInputBlob}
+            audioBase64={voiceInputBase64}
+            onDelete={handleDeleteVoiceInput}
+          />
+        ) : (
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            placeholder={disabled ? 'Processing...' : placeholder}
+            style={commandFieldStyle}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+          />
+        )}
+
+        {/* Microphone button for voice input */}
+        {showMicrophone && !voiceInputBlob && (
+          <MicrophoneButton
+            onRecordingComplete={handleVoiceRecordingComplete}
+            isDisabled={disabled}
+            maxDuration={300}
+          />
+        )}
+
         {/* End Session button for active chat */}
         {isChatActive && onEndSession && (
           <button

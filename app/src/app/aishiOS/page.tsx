@@ -9,6 +9,8 @@ import { TerminalModal } from './components/TerminalModal';
 import SplitText from '../../components/ui/SplitText';
 import ModelSelector from '../../components/ModelSelector';
 import useModelDiscovery from '../../hooks/useModelDiscovery';
+import VoiceSelector from '../../components/VoiceSelector';
+import useVoiceDiscovery from '../../hooks/useVoiceDiscovery';
 
 export default function AishiOSPage() {
   const { theme, debugLog } = useTheme();
@@ -17,13 +19,23 @@ export default function AishiOSPage() {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   
   // Model discovery hook
-  const { 
-    models, 
-    selectedModel, 
-    setSelectedModel, 
-    isLoading: modelsLoading 
+  const {
+    models,
+    selectedModel,
+    setSelectedModel,
+    isLoading: modelsLoading
   } = useModelDiscovery();
-  
+
+  // Voice discovery hook
+  const {
+    voices,
+    selectedVoice,
+    setSelectedVoice,
+    testVoice,
+    isLoading: voicesLoading,
+    isTesting
+  } = useVoiceDiscovery();
+
   // Debug log na start
   debugLog('AishiOS page loaded');
 
@@ -130,7 +142,7 @@ export default function AishiOSPage() {
             />
           </div>
 
-          {/* Model Selector */}
+          {/* Model & Voice Selectors */}
           <div style={{
             display: 'flex',
             gap: '12px',
@@ -143,6 +155,14 @@ export default function AishiOSPage() {
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
               isLoading={modelsLoading}
+            />
+            <VoiceSelector
+              voices={voices}
+              selectedVoice={selectedVoice}
+              onVoiceChange={setSelectedVoice}
+              onTestVoice={testVoice}
+              isLoading={voicesLoading}
+              isTesting={isTesting}
             />
           </div>
         </div>
@@ -221,13 +241,14 @@ export default function AishiOSPage() {
         </div>
 
         {/* Terminal Modal */}
-        <TerminalModal 
+        <TerminalModal
           isTerminalOpen={isTerminalOpen}
           setIsTerminalOpen={setIsTerminalOpen}
           darkMode={darkMode}
           isMobile={isMobile}
           theme={theme}
           selectedModel={selectedModel}
+          selectedVoice={selectedVoice}
         />
       </div>
 

@@ -12,6 +12,7 @@ interface TerminalProps {
   isOpen?: boolean;
   onClose?: () => void;
   selectedModel?: string;
+  selectedVoice?: string;
 }
 
 export const Terminal: React.FC<TerminalProps> = ({
@@ -22,7 +23,8 @@ export const Terminal: React.FC<TerminalProps> = ({
   className = '',
   isOpen: externalIsOpen,
   onClose: externalOnClose,
-  selectedModel
+  selectedModel,
+  selectedVoice
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(true);
   
@@ -37,10 +39,11 @@ export const Terminal: React.FC<TerminalProps> = ({
   };
 
   return (
-    <GlassTerminal 
+    <GlassTerminal
       isOpen={isOpen}
       onClose={handleClose}
       selectedModel={selectedModel}
+      selectedVoice={selectedVoice}
     />
   );
 };
