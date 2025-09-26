@@ -115,19 +115,31 @@ class ContractCompiler {
       const contractFiles = fs.readdirSync(this.contractsDir)
         .filter(f => f.endsWith('.sol'));
 
-      if (contractFiles.length === 0) {
+      // Also check libraries directory
+      const librariesDir = path.join(this.contractsDir, 'libraries');
+      const libraryFiles = [];
+      if (fs.existsSync(librariesDir)) {
+        fs.readdirSync(librariesDir)
+          .filter(f => f.endsWith('.sol'))
+          .forEach(f => libraryFiles.push(`libraries/${f}`));
+      }
+
+      const allFiles = [...contractFiles, ...libraryFiles];
+
+      if (allFiles.length === 0) {
         throw new Error('No Solidity contracts found');
       }
 
-      console.log(`\nFound ${contractFiles.length} contract(s):`);
-      contractFiles.forEach(file => {
+      console.log(`\nFound ${contractFiles.length} contract(s) and ${libraryFiles.length} library(ies):`);
+      allFiles.forEach(file => {
         const filePath = path.join(this.contractsDir, file);
         const stats = fs.statSync(filePath);
         const size = (stats.size / 1024).toFixed(2);
-        console.log(`  - ${file} (${size} KB)`);
+        const type = file.includes('libraries/') ? '[Library]' : '[Contract]';
+        console.log(`  ${type.padEnd(11)} ${file} (${size} KB)`);
       });
 
-      return contractFiles;
+      return allFiles;
     } catch (error) {
       log.error(`Failed to analyze contracts: ${error.message}`);
       throw error;
@@ -216,32 +228,44 @@ class ContractCompiler {
 
     const contracts = [];
 
-    // Read contract artifacts
-    const contractDirs = fs.readdirSync(artifactsDir)
-      .filter(d => fs.statSync(path.join(artifactsDir, d)).isDirectory());
+    // Helper function to process artifacts from a directory
+    const processArtifactsDir = (dirPath, isLibrary = false) => {
+      if (!fs.existsSync(dirPath)) return;
 
-    for (const contractDir of contractDirs) {
-      const contractFiles = fs.readdirSync(path.join(artifactsDir, contractDir))
-        .filter(f => f.endsWith('.json') && !f.includes('.dbg.json'));
+      const dirs = fs.readdirSync(dirPath)
+        .filter(d => fs.statSync(path.join(dirPath, d)).isDirectory());
 
-      for (const file of contractFiles) {
-        const artifactPath = path.join(artifactsDir, contractDir, file);
-        const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+      for (const dir of dirs) {
+        const files = fs.readdirSync(path.join(dirPath, dir))
+          .filter(f => f.endsWith('.json') && !f.includes('.dbg.json'));
 
-        if (artifact.bytecode && artifact.bytecode !== '0x') {
-          const bytecodeSize = (artifact.bytecode.length - 2) / 2; // Remove 0x and divide by 2
-          const deployedSize = artifact.deployedBytecode ?
-            (artifact.deployedBytecode.length - 2) / 2 : 0;
+        for (const file of files) {
+          const artifactPath = path.join(dirPath, dir, file);
+          const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
 
-          contracts.push({
-            name: artifact.contractName,
-            bytecodeSize,
-            deployedSize,
-            hasConstructor: artifact.bytecode !== artifact.deployedBytecode
-          });
+          if (artifact.bytecode && artifact.bytecode !== '0x') {
+            const bytecodeSize = (artifact.bytecode.length - 2) / 2;
+            const deployedSize = artifact.deployedBytecode ?
+              (artifact.deployedBytecode.length - 2) / 2 : 0;
+
+            contracts.push({
+              name: artifact.contractName,
+              bytecodeSize,
+              deployedSize,
+              hasConstructor: artifact.bytecode !== artifact.deployedBytecode,
+              isLibrary
+            });
+          }
         }
       }
-    }
+    };
+
+    // Process main contracts
+    processArtifactsDir(artifactsDir, false);
+
+    // Process libraries
+    const librariesDir = path.join(artifactsDir, 'libraries');
+    processArtifactsDir(librariesDir, true);
 
     if (contracts.length > 0) {
       console.log('\n' + colors.cyan + 'Contract Sizes:' + colors.reset);
@@ -258,8 +282,9 @@ class ContractCompiler {
           contract.deployedSize > maxSize * 0.9 ? colors.yellow :
             colors.green;
 
+        const type = contract.isLibrary ? '[Lib]' : '';
         console.log(
-          contract.name.padEnd(25) +
+          (contract.name + ' ' + type).padEnd(25) +
           `${contract.bytecodeSize}B`.padEnd(15) +
           `${contract.deployedSize}B`.padEnd(15) +
           statusColor + `${deployedPercent}%` + colors.reset
@@ -280,11 +305,22 @@ class ContractCompiler {
     log.step(5, 'Generating compilation report...');
 
     const reportPath = path.join(this.projectRoot, 'compilation-report.json');
+
+    // Separate contracts and libraries
+    const mainContracts = contracts ? contracts.filter(c => !c.isLibrary) : [];
+    const libraries = contracts ? contracts.filter(c => c.isLibrary) : [];
+
     const report = {
       timestamp: new Date().toISOString(),
       network: NETWORK_CONFIGS[network].name,
       optimizer: NETWORK_CONFIGS[network].optimizer,
-      contracts: contracts || [],
+      contracts: mainContracts,
+      libraries: libraries,
+      summary: {
+        totalContracts: mainContracts.length,
+        totalLibraries: libraries.length,
+        mainContractSize: mainContracts.find(c => c.name === 'AishiAgent')?.deployedSize || 0
+      },
       compiler: {
         version: '0.8.20',
         settings: {

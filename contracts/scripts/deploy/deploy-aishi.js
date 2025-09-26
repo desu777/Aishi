@@ -133,10 +133,51 @@ async function main() {
     gasUsed: (await verifier.deploymentTransaction().wait()).gasUsed.toString()
   });
 
-  // Deploy Agent
-  log.step(2, "Deploying AishiAgent...");
+  // Deploy Libraries
+  log.step(2, "Deploying Libraries...");
 
-  const AishiAgent = await ethers.getContractFactory("AishiAgent");
+  const AishiAgentCore = await ethers.getContractFactory("AishiAgentCore");
+  const coreLib = await AishiAgentCore.deploy();
+  await coreLib.waitForDeployment();
+  const coreAddress = await coreLib.getAddress();
+  log.success(`AishiAgentCore library deployed to: ${coreAddress}`);
+
+  const AishiAgentPersonality = await ethers.getContractFactory("AishiAgentPersonality");
+  const personalityLib = await AishiAgentPersonality.deploy();
+  await personalityLib.waitForDeployment();
+  const personalityAddress = await personalityLib.getAddress();
+  log.success(`AishiAgentPersonality library deployed to: ${personalityAddress}`);
+
+  const AishiAgentMemory = await ethers.getContractFactory("AishiAgentMemory");
+  const memoryLib = await AishiAgentMemory.deploy();
+  await memoryLib.waitForDeployment();
+  const memoryAddress = await memoryLib.getAddress();
+  log.success(`AishiAgentMemory library deployed to: ${memoryAddress}`);
+
+  // Save library addresses
+  saveDeploymentAddress("AishiAgentCore", coreAddress, network, {
+    contractType: "library",
+    gasUsed: (await coreLib.deploymentTransaction().wait()).gasUsed.toString()
+  });
+  saveDeploymentAddress("AishiAgentPersonality", personalityAddress, network, {
+    contractType: "library",
+    gasUsed: (await personalityLib.deploymentTransaction().wait()).gasUsed.toString()
+  });
+  saveDeploymentAddress("AishiAgentMemory", memoryAddress, network, {
+    contractType: "library",
+    gasUsed: (await memoryLib.deploymentTransaction().wait()).gasUsed.toString()
+  });
+
+  // Deploy Agent with linked libraries
+  log.step(3, "Deploying AishiAgent with linked libraries...");
+
+  const AishiAgent = await ethers.getContractFactory("AishiAgent", {
+    libraries: {
+      AishiAgentCore: coreAddress,
+      AishiAgentPersonality: personalityAddress,
+      AishiAgentMemory: memoryAddress
+    }
+  });
   const aishiAgent = await AishiAgent.deploy(verifierAddress, treasuryAddress);
   await aishiAgent.waitForDeployment();
 
@@ -144,7 +185,7 @@ async function main() {
   log.success(`AishiAgent deployed to: ${agentAddress}`);
 
   // Get contract info
-  log.step(3, "Reading contract information...");
+  log.step(4, "Reading contract information...");
 
   try {
     const [name, symbol, totalAgents, maxAgents, mintingFee] = await Promise.all([
@@ -169,19 +210,29 @@ async function main() {
       mintingFee: ethers.formatEther(mintingFee),
       treasury: treasuryAddress,
       verifier: verifierAddress,
-      gasUsed: (await aishiAgent.deploymentTransaction().wait()).gasUsed.toString()
+      gasUsed: (await aishiAgent.deploymentTransaction().wait()).gasUsed.toString(),
+      libraries: {
+        AishiAgentCore: coreAddress,
+        AishiAgentPersonality: personalityAddress,
+        AishiAgentMemory: memoryAddress
+      }
     });
 
   } catch (error) {
     log.warning(`Could not retrieve full contract info: ${error.message}`);
     saveDeploymentAddress("AishiAgent", agentAddress, network, {
       treasury: treasuryAddress,
-      verifier: verifierAddress
+      verifier: verifierAddress,
+      libraries: {
+        AishiAgentCore: coreAddress,
+        AishiAgentPersonality: personalityAddress,
+        AishiAgentMemory: memoryAddress
+      }
     });
   }
 
   // Export ABIs
-  log.step(4, "Exporting ABIs...");
+  log.step(5, "Exporting ABIs...");
 
   await exportABIToFrontend("AishiVerifier", verifierAddress, network);
   await exportABIToFrontend("AishiAgent", agentAddress, network);
@@ -195,6 +246,10 @@ async function main() {
   console.log(`  AishiVerifier: ${verifierAddress}`);
   console.log(`  AishiAgent: ${agentAddress}`);
   console.log(`  Treasury: ${treasuryAddress}`);
+  console.log("\nDeployed Libraries:");
+  console.log(`  AishiAgentCore: ${coreAddress}`);
+  console.log(`  AishiAgentPersonality: ${personalityAddress}`);
+  console.log(`  AishiAgentMemory: ${memoryAddress}`);
 
   console.log("\nNext Steps:");
   console.log("  1. Verify contracts on block explorer");

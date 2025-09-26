@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-26T15:38:18.276Z",
+  "timestamp": "2025-09-26T17:00:29.637Z",
   "network": "Mainnet",
   "optimizer": {
     "enabled": true,
@@ -8,17 +8,54 @@
   "contracts": [
     {
       "name": "AishiAgent",
-      "bytecodeSize": 25236,
-      "deployedSize": 24233,
-      "hasConstructor": true
+      "bytecodeSize": 12914,
+      "deployedSize": 11932,
+      "hasConstructor": true,
+      "isLibrary": false
     },
     {
       "name": "AishiVerifier",
       "bytecodeSize": 1572,
       "deployedSize": 1544,
-      "hasConstructor": true
+      "hasConstructor": true,
+      "isLibrary": false
     }
   ],
+  "libraries": [
+    {
+      "name": "AishiAgentCore",
+      "bytecodeSize": 7084,
+      "deployedSize": 7050,
+      "hasConstructor": true,
+      "isLibrary": true
+    },
+    {
+      "name": "AishiAgentMemory",
+      "bytecodeSize": 7294,
+      "deployedSize": 7260,
+      "hasConstructor": true,
+      "isLibrary": true
+    },
+    {
+      "name": "AishiAgentPersonality",
+      "bytecodeSize": 9309,
+      "deployedSize": 9275,
+      "hasConstructor": true,
+      "isLibrary": true
+    },
+    {
+      "name": "AishiAgentStorage",
+      "bytecodeSize": 87,
+      "deployedSize": 58,
+      "hasConstructor": true,
+      "isLibrary": true
+    }
+  ],
+  "summary": {
+    "totalContracts": 2,
+    "totalLibraries": 4,
+    "mainContractSize": 11932
+  },
   "compiler": {
     "version": "0.8.20",
     "settings": {
