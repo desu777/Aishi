@@ -4,13 +4,23 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "compile": "hardhat compile",
+    "contracts": "node scripts/contracts-manager.js",
+    "contracts:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run contracts",
+    "compile": "node scripts/modules/compiler.js",
     "compile:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run compile",
-    "deploy": "hardhat run scripts/deploy/deploy-aishi.js --network galileo",
+    "deploy": "node scripts/modules/deployer.js",
     "deploy:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run deploy",
-    "deploy:local": "hardhat run scripts/deploy/deploy-aishi.js --network hardhat",
-    "test:complete": "hardhat run scripts/test-complete-suite.js",
-    "test:complete:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run test:complete"
+    "clean": "node scripts/modules/cleaner.js",
+    "clean:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run clean",
+    "abi": "node scripts/modules/abi-generator.js",
+    "abi:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run abi",
+    "build": "npm run compile && npm run abi",
+    "build:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run build",
+    "rebuild": "npm run clean && npm run build",
+    "rebuild:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run rebuild",
+    "test": "hardhat test",
+    "test:wsl": "ENV_FILE_PATH=/mnt/c/Users/kubas/Desktop/env/contracts/.env npm run test",
+    "coverage": "hardhat coverage"
   },
   "dependencies": {
     "@quant-finance/solidity-datetime": "^2.2.0",

@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-09-26T15:38:18.276Z",
+  "network": "Mainnet",
+  "optimizer": {
+    "enabled": true,
+    "runs": 1
+  },
+  "contracts": [
+    {
+      "name": "AishiAgent",
+      "bytecodeSize": 25236,
+      "deployedSize": 24233,
+      "hasConstructor": true
+    },
+    {
+      "name": "AishiVerifier",
+      "bytecodeSize": 1572,
+      "deployedSize": 1544,
+      "hasConstructor": true
+    }
+  ],
+  "compiler": {
+    "version": "0.8.20",
+    "settings": {
+      "viaIR": true
+    }
+  }
+}

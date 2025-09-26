@@ -1,8 +1,16 @@
+#!/usr/bin/env node
+
+/**
+ * @fileoverview Aishi Contract Deployment Script
+ * @description Deploy AishiVerifier and AishiAgent contracts
+ * @version 2.0.0
+ */
+
 const { ethers } = require("hardhat");
 const fs = require("fs");
 const path = require("path");
 
-// Color codes for better console output
+// Color codes
 const colors = {
   reset: "\x1b[0m",
   bright: "\x1b[1m",
@@ -13,321 +21,193 @@ const colors = {
   cyan: "\x1b[36m"
 };
 
-// Debug logging helper
-const debugLog = (message, data = null) => {
-  if (process.env.AISHI_DEBUG === 'true') {
-    console.log(`[🤖 AISHI] ${message}`, data || '');
-  }
-};
-
-// Pretty print helper
+// Logging
 const log = {
-  info: (msg) => console.log(`${colors.blue}ℹ${colors.reset}  ${msg}`),
-  success: (msg) => console.log(`${colors.green}✅${colors.reset} ${msg}`),
-  warning: (msg) => console.log(`${colors.yellow}⚠️${colors.reset}  ${msg}`),
-  error: (msg) => console.log(`${colors.red}❌${colors.reset} ${msg}`),
-  step: (num, msg) => console.log(`\n${colors.cyan}[Step ${num}]${colors.reset} ${msg}`),
-  highlight: (msg) => console.log(`${colors.bright}${msg}${colors.reset}`)
+  info: (msg) => console.log(`${colors.blue}[INFO]${colors.reset} ${msg}`),
+  success: (msg) => console.log(`${colors.green}[SUCCESS]${colors.reset} ${msg}`),
+  warning: (msg) => console.log(`${colors.yellow}[WARNING]${colors.reset} ${msg}`),
+  error: (msg) => console.log(`${colors.red}[ERROR]${colors.reset} ${msg}`),
+  step: (num, msg) => console.log(`\n${colors.cyan}[Step ${num}]${colors.reset} ${msg}`)
 };
 
-// Save deployment addresses to JSON file
-const saveDeploymentAddress = (contractName, address, network, extraData = {}) => {
+/**
+ * Save deployment addresses
+ */
+function saveDeploymentAddress(contractName, address, network, extraData = {}) {
   const deploymentsFile = path.join(__dirname, "../..", "deployment-addresses.json");
-  
+
   let deployments = {};
-  
-  // Read existing deployments
+
   if (fs.existsSync(deploymentsFile)) {
     try {
-      const content = fs.readFileSync(deploymentsFile, 'utf8');
-      deployments = JSON.parse(content);
-      debugLog('Loaded existing deployment addresses', { count: Object.keys(deployments).length });
+      deployments = JSON.parse(fs.readFileSync(deploymentsFile, 'utf8'));
     } catch (error) {
-      debugLog('Failed to read existing deployments, creating new file', error.message);
+      log.warning('Creating new deployment file');
     }
   }
-  
-  // Ensure network structure exists
+
   if (!deployments[network]) {
     deployments[network] = {};
   }
-  
-  // Update with new address and extra data
+
   deployments[network][contractName] = {
     address: address,
     deployedAt: new Date().toISOString(),
     ...extraData
   };
-  deployments[network].lastUpdate = new Date().toISOString();
-  
-  // Save back to file
-  try {
-    fs.writeFileSync(deploymentsFile, JSON.stringify(deployments, null, 2));
-    debugLog(`Saved ${contractName} address: ${address}`);
-  } catch (error) {
-    log.error(`Failed to save deployment addresses: ${error.message}`);
-  }
-};
 
-// Export ABI to frontend
-const exportABIToFrontend = async (contractName, contractAddress, network) => {
+  deployments[network].lastUpdate = new Date().toISOString();
+
+  fs.writeFileSync(deploymentsFile, JSON.stringify(deployments, null, 2));
+}
+
+/**
+ * Export ABI to frontend
+ */
+async function exportABIToFrontend(contractName, contractAddress, network) {
   try {
-    // Get the contract artifact
     const artifact = await hre.artifacts.readArtifact(contractName);
-    
-    // Define frontend ABI path
+
     const frontendPath = path.join(__dirname, "../../../app/src/abi");
     const abiFile = path.join(frontendPath, `${contractName}ABI.json`);
-    
-    // Create directory if it doesn't exist
+
     if (!fs.existsSync(frontendPath)) {
       fs.mkdirSync(frontendPath, { recursive: true });
-      log.info(`Created frontend contracts directory: ${frontendPath}`);
     }
-    
-    // Prepare ABI data with contract info
+
+    const chainId = network === "galileo" ? 16601 :
+                    network === "0g-mainnet" ? 16661 : 31337;
+
     const abiData = {
       contractName: contractName,
       address: contractAddress,
       network: network,
-      chainId: network === "galileo" ? 16601 : 31337,
+      chainId: chainId,
       abi: artifact.abi,
       deployedAt: new Date().toISOString()
     };
-    
-    // Write ABI file
+
     fs.writeFileSync(abiFile, JSON.stringify(abiData, null, 2));
     log.success(`ABI exported to: ${abiFile}`);
-    
+
     return true;
   } catch (error) {
     log.error(`Failed to export ABI: ${error.message}`);
     return false;
   }
-};
+}
 
-// Create comprehensive deployment summary
-const createDeploymentSummary = (verifierAddress, agentAddress, treasuryAddress, network) => {
-  const summaryFile = path.join(__dirname, "../..", "DEPLOYMENT_SUMMARY.md");
-  
-  const content = `# Aishi Agent Deployment Summary
-
-## Network: ${network}
-**Deployed at:** ${new Date().toISOString()}
-
-## Contract Addresses
-
-| Contract | Address |
-|----------|---------|
-| AishiVerifier | \`${verifierAddress}\` |
-| AishiAgent | \`${agentAddress}\` |
-| Treasury | \`${treasuryAddress}\` |
-
-## Configuration
-
-- **Max Agents:** 1,000 (testnet limit)
-- **Minting Fee:** 0.1 OG
-- **Chain ID:** ${network === "galileo" ? "16601" : "31337"}
-- **RPC URL:** ${network === "galileo" ? "https://evmrpc-testnet.0g.ai" : "http://localhost:8545"}
-
-## Environment Variables
-
-Add these to your \`.env\` file:
-
-\`\`\`bash
-AISHI_VERIFIER_ADDRESS=${verifierAddress}
-AISHI_AGENT_ADDRESS=${agentAddress}
-TREASURY_ADDRESS=${treasuryAddress}
-\`\`\`
-
-## Frontend Integration
-
-ABIs have been exported to:
-- \`app/src/abi/AishiVerifierABI.json\`
-- \`app/src/abi/AishiAgentABI.json\`
-
-## Next Steps
-
-1. Update frontend to use new contract addresses
-2. Run tests: \`npm run test:complete\`
-3. Verify contracts on block explorer (if applicable)
-
----
-*Generated by Aishi Deployment Script*
-`;
-
-  try {
-    fs.writeFileSync(summaryFile, content);
-    log.success(`Deployment summary saved to: ${summaryFile}`);
-  } catch (error) {
-    log.error(`Failed to create deployment summary: ${error.message}`);
-  }
-};
-
+/**
+ * Main deployment function
+ */
 async function main() {
   console.log("\n" + "=".repeat(60));
-  log.highlight("🚀 AISHI UNIFIED DEPLOYMENT SCRIPT");
+  console.log("    AISHI CONTRACT DEPLOYMENT");
   console.log("=".repeat(60));
-  
+
   const [deployer] = await ethers.getSigners();
   const network = hre.network.name;
-  
-  log.info(`Network: ${colors.bright}${network}${colors.reset}`);
-  log.info(`Deployer: ${colors.bright}${deployer.address}${colors.reset}`);
-  
-  // Get treasury address from environment
+
+  log.info(`Network: ${network}`);
+  log.info(`Deployer: ${deployer.address}`);
+
   const treasuryAddress = process.env.TREASURY_ADDRESS || deployer.address;
-  log.info(`Treasury: ${colors.bright}${treasuryAddress}${colors.reset}`);
-  
+  log.info(`Treasury: ${treasuryAddress}`);
+
   if (!process.env.TREASURY_ADDRESS) {
-    log.warning("TREASURY_ADDRESS not set in .env, using deployer address as treasury");
-  }
-  
-  debugLog('Starting Aishi deployment', { 
-    network: network, 
-    deployer: deployer.address,
-    treasury: treasuryAddress
-  });
-
-  // ====== COMPILATION ======
-  log.step(1, "Compiling contracts...");
-  try {
-    await hre.run("compile");
-    log.success("Contracts compiled successfully");
-  } catch (error) {
-    log.error(`Compilation failed: ${error.message}`);
-    process.exit(1);
+    log.warning("TREASURY_ADDRESS not set, using deployer address");
   }
 
-  // ====== DEPLOY VERIFIER ======
-  log.step(2, "Deploying AishiVerifier...");
-  
+  // Deploy Verifier
+  log.step(1, "Deploying AishiVerifier...");
+
   const AishiVerifier = await ethers.getContractFactory("AishiVerifier");
   const verifier = await AishiVerifier.deploy();
   await verifier.waitForDeployment();
-  
+
   const verifierAddress = await verifier.getAddress();
-  log.success(`AishiVerifier deployed to: ${colors.bright}${verifierAddress}${colors.reset}`);
-  
-  // Save verifier deployment
+  log.success(`AishiVerifier deployed to: ${verifierAddress}`);
+
   saveDeploymentAddress("AishiVerifier", verifierAddress, network, {
     contractType: "verifier",
     gasUsed: (await verifier.deploymentTransaction().wait()).gasUsed.toString()
   });
 
-  // ====== DEPLOY AGENT ======
-  log.step(3, "Deploying AishiAgent...");
-  
+  // Deploy Agent
+  log.step(2, "Deploying AishiAgent...");
+
   const AishiAgent = await ethers.getContractFactory("AishiAgent");
   const aishiAgent = await AishiAgent.deploy(verifierAddress, treasuryAddress);
   await aishiAgent.waitForDeployment();
-  
-  const agentAddress = await aishiAgent.getAddress();
-  log.success(`AishiAgent deployed to: ${colors.bright}${agentAddress}${colors.reset}`);
 
-  // ====== GET CONTRACT INFO ======
-  log.step(4, "Reading contract information...");
-  
+  const agentAddress = await aishiAgent.getAddress();
+  log.success(`AishiAgent deployed to: ${agentAddress}`);
+
+  // Get contract info
+  log.step(3, "Reading contract information...");
+
   try {
-    const [name, symbol, totalAgents, maxAgents, mintingFee, treasury, verifierContract] = await Promise.all([
+    const [name, symbol, totalAgents, maxAgents, mintingFee] = await Promise.all([
       aishiAgent.name(),
       aishiAgent.symbol(),
       aishiAgent.totalAgents(),
       aishiAgent.MAX_AGENTS(),
-      aishiAgent.MINTING_FEE(),
-      aishiAgent.treasury(),
-      aishiAgent.verifier()
+      aishiAgent.MINTING_FEE()
     ]);
-    
-    console.log("\n📊 Contract Information:");
-    console.log("  ├─ Name: " + name);
-    console.log("  ├─ Symbol: " + symbol);
-    console.log("  ├─ Total Agents: " + totalAgents + "/" + maxAgents);
-    console.log("  ├─ Minting Fee: " + ethers.formatEther(mintingFee) + " OG");
-    console.log("  ├─ Treasury: " + treasury);
-    console.log("  └─ Verifier: " + verifierContract);
-    
-    // Save AishiAgent deployment with full info
+
+    console.log("\nContract Information:");
+    console.log(`  Name: ${name}`);
+    console.log(`  Symbol: ${symbol}`);
+    console.log(`  Total Agents: ${totalAgents}/${maxAgents}`);
+    console.log(`  Minting Fee: ${ethers.formatEther(mintingFee)} 0G`);
+
     saveDeploymentAddress("AishiAgent", agentAddress, network, {
       name,
       symbol,
       totalAgents: totalAgents.toString(),
       maxAgents: maxAgents.toString(),
-      remainingSupply: (maxAgents - totalAgents).toString(),
-      mintingFeeEther: ethers.formatEther(mintingFee),
-      mintingFeeWei: mintingFee.toString(),
-      treasury,
-      verifier: verifierContract,
-      gasUsed: (await aishiAgent.deploymentTransaction().wait()).gasUsed.toString(),
-      isOptimized: true,
-      features: {
-        oneAgentPerWallet: true,
-        dailyDreamEvolution: true,
-        personalityTraits: true,
-        contextAwareConversations: true,
-        personalityMilestones: true,
-        hierarchicalMemory: true,
-        aiGeneratedFeatures: true
-      }
-    });
-    
-  } catch (error) {
-    log.warning(`Could not retrieve full contract info: ${error.message}`);
-    
-    // Save basic deployment info
-    saveDeploymentAddress("AishiAgent", agentAddress, network, {
+      mintingFee: ethers.formatEther(mintingFee),
       treasury: treasuryAddress,
       verifier: verifierAddress,
       gasUsed: (await aishiAgent.deploymentTransaction().wait()).gasUsed.toString()
     });
+
+  } catch (error) {
+    log.warning(`Could not retrieve full contract info: ${error.message}`);
+    saveDeploymentAddress("AishiAgent", agentAddress, network, {
+      treasury: treasuryAddress,
+      verifier: verifierAddress
+    });
   }
 
-  // ====== EXPORT ABIs ======
-  log.step(5, "Exporting ABIs to frontend...");
-  
+  // Export ABIs
+  log.step(4, "Exporting ABIs...");
+
   await exportABIToFrontend("AishiVerifier", verifierAddress, network);
   await exportABIToFrontend("AishiAgent", agentAddress, network);
 
-  // ====== CREATE SUMMARY ======
-  log.step(6, "Creating deployment summary...");
-  
-  createDeploymentSummary(verifierAddress, agentAddress, treasuryAddress, network);
-
-  // ====== FINAL SUMMARY ======
+  // Summary
   console.log("\n" + "=".repeat(60));
-  log.highlight("🎉 DEPLOYMENT COMPLETED SUCCESSFULLY!");
+  log.success("DEPLOYMENT COMPLETED SUCCESSFULLY");
   console.log("=".repeat(60));
-  
-  console.log("\n📝 Environment Variables (add to .env):");
-  console.log(`${colors.cyan}AISHI_VERIFIER_ADDRESS=${verifierAddress}${colors.reset}`);
-  console.log(`${colors.cyan}AISHI_AGENT_ADDRESS=${agentAddress}${colors.reset}`);
-  console.log(`${colors.cyan}TREASURY_ADDRESS=${treasuryAddress}${colors.reset}`);
-  
-  console.log("\n📂 Generated Files:");
-  console.log("  ├─ deployment-addresses.json");
-  console.log("  ├─ DEPLOYMENT_SUMMARY.md");
-  console.log("  ├─ app/src/abi/AishiVerifierABI.json");
-  console.log("  └─ app/src/abi/AishiAgentABI.json");
-  
-  console.log("\n🚀 Next Steps:");
-  console.log("  1. Update frontend configuration");
-  console.log("  2. Run tests: npm run test:complete");
-  console.log("  3. Commit changes: git add . && git commit -m 'Deploy Aishi contracts'");
-  
-  debugLog('Deployment completed successfully', {
-    verifierAddress,
-    agentAddress,
-    treasury: treasuryAddress,
-    network
-  });
+
+  console.log("\nDeployed Contracts:");
+  console.log(`  AishiVerifier: ${verifierAddress}`);
+  console.log(`  AishiAgent: ${agentAddress}`);
+  console.log(`  Treasury: ${treasuryAddress}`);
+
+  console.log("\nNext Steps:");
+  console.log("  1. Verify contracts on block explorer");
+  console.log("  2. Update frontend configuration");
+  console.log("  3. Run integration tests");
 }
 
-// Export function for hardhat-deploy
+// Export for hardhat-deploy
 module.exports = async function (hre) {
   try {
     await main();
   } catch (error) {
-    log.error(`DEPLOYMENT FAILED: ${error.message}`);
+    log.error(`Deployment failed: ${error.message}`);
     console.error(error);
     throw error;
   }

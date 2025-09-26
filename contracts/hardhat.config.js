@@ -16,7 +16,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1 // Maksymalna optymalizacja dla rozmiaru kontraktu
+        runs: 1 // Optimized for Mainnet
       },
       viaIR: true // Fixes "Stack too deep" errors
     }
@@ -45,6 +45,17 @@ module.exports = {
       saveDeployments: true,
       tags: ["testnet"]
     },
+    "0g-mainnet": {
+      url: process.env.MAINET_RPC_URL || "http://evmrpc.0g.ai",
+      accounts: [process.env.WALLET_PRIVATE_KEY || ""],
+      chainId: parseInt(process.env.MAINET_CHAIN_ID) || 16661,
+      live: true,
+      saveDeployments: true,
+      tags: ["mainnet"],
+      gasPrice: "auto", // Let the network determine gas price
+      timeout: 60000, // 60 second timeout for mainnet operations
+      confirmations: 2 // Wait for 2 block confirmations on mainnet
+    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
@@ -55,6 +66,7 @@ module.exports = {
       default: 0,
       hardhat: 0,
       galileo: 0,
+      "0g-mainnet": 0,
     },
   },
   external: {
@@ -66,6 +78,7 @@ module.exports = {
     deployments: {
       hardhat: ["deployments/hardhat"],
       galileo: ["deployments/galileo"],
+      "0g-mainnet": ["deployments/0g-mainnet"],
     },
   }
 }; 
