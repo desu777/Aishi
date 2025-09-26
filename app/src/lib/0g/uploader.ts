@@ -136,7 +136,7 @@ export async function createZgFileFromPath(filePath: string): Promise<[ZgFile | 
 /**
  * Complete upload flow for a file with viem adapter integration
  * @param file The file to upload
- * @param l1Rpc The L1 RPC URL  
+ * @param l1Rpc The L1 RPC URL
  * @param storageRpc The storage RPC URL
  * @param signer Optional ethers signer (deprecated, will be ignored)
  * @returns Upload result with root hash and transaction info
@@ -154,6 +154,13 @@ export async function uploadFileComplete(
   alreadyExists?: boolean;
 }> {
   try {
+    // Check if we should use local storage adapter
+    if (process.env.NEXT_PUBLIC_STORAGE_AS_DATABASE === 'true') {
+      console.log('[uploadFileComplete] Using AISHI Storage Adapter');
+      const { uploadFileAdapter } = await import('../storage/storageAdapter');
+      return await uploadFileAdapter(file, storageRpc, l1Rpc, signer);
+    }
+
     console.log('[uploadFileComplete] Starting complete upload flow');
     console.log('[uploadFileComplete] File:', file.name, 'Size:', file.size);
 

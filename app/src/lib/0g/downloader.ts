@@ -15,12 +15,19 @@ import { Indexer } from '@0glabs/0g-ts-sdk';
  * @returns A promise that resolves to the file data (ArrayBuffer) and any error
  */
 export async function downloadByRootHashAPI(
-  rootHash: string, 
+  rootHash: string,
   storageRpc: string
 ): Promise<[ArrayBuffer | null, Error | null]> {
   try {
+    // Check if we should use local storage adapter
+    if (process.env.NEXT_PUBLIC_STORAGE_AS_DATABASE === 'true') {
+      console.log('[downloadByRootHashAPI] Using AISHI Storage Adapter');
+      const { downloadFileAdapter } = await import('../storage/storageAdapter');
+      return await downloadFileAdapter(rootHash, storageRpc);
+    }
+
     console.log(`API Download by root hash: ${rootHash} from ${storageRpc}`);
-    
+
     if (!rootHash) {
       console.log('Root hash is empty or invalid');
       return [null, new Error('Root hash is required')];
