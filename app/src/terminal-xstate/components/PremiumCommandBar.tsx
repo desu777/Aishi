@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import { parseCommand, suggestCommands, AVAILABLE_COMMANDS, CommandType } from '../services/commandParser';
 import MicrophoneButton from './MicrophoneButton';
 import VoiceInputMessage from './VoiceInputMessage';
+import { Send } from 'lucide-react';
 
 interface PremiumCommandBarProps {
   value: string;
@@ -49,6 +50,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
   const [voiceInputBlob, setVoiceInputBlob] = useState<Blob | null>(null);
   const [voiceInputBase64, setVoiceInputBase64] = useState<string | null>(null);
+  const [voiceInputUrl, setVoiceInputUrl] = useState<string | null>(null);
   
   // Check if current command is valid
   const isValidCommand = useMemo(() => {
@@ -63,37 +65,78 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
     return suggestCommands(value);
   }, [value]);
 
-  // Show microphone button for dream/chat commands (when typing or active)
+  // Show microphone button only when dream/chat workflow is active
   const showMicrophone = isVoiceEnabled && (
     isDreamActive ||
-    isChatActive ||
-    value.trim().toLowerCase() === 'dream' ||
-    value.trim().toLowerCase() === 'chat'
+    isChatActive
   );
 
   // Handle voice recording completion
   const handleVoiceRecordingComplete = useCallback((audioBase64: string, audioBlob: Blob) => {
+    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+      console.log('[PremiumCommandBar] Voice recording completed', {
+        audioBlobSize: audioBlob.size,
+        base64Length: audioBase64.length,
+        isDreamActive,
+        isChatActive
+      });
+    }
+
+    // Store both blob and base64
     setVoiceInputBlob(audioBlob);
     setVoiceInputBase64(audioBase64);
+
+    // Create and store blob URL once
+    try {
+      const url = URL.createObjectURL(audioBlob);
+      setVoiceInputUrl(url);
+      console.log('[PremiumCommandBar] Created blob URL:', url);
+    } catch (error) {
+      console.error('[PremiumCommandBar] Failed to create blob URL:', error);
+    }
+
     // Clear text input when voice is recorded
     onChange('');
-  }, [onChange]);
+  }, [onChange, isDreamActive, isChatActive]);
 
   // Handle voice input deletion
   const handleDeleteVoiceInput = useCallback(() => {
+    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+      console.log('[PremiumCommandBar] Voice input deleted');
+    }
+
+    // Cleanup blob URL if exists
+    if (voiceInputUrl) {
+      URL.revokeObjectURL(voiceInputUrl);
+    }
+
     setVoiceInputBlob(null);
     setVoiceInputBase64(null);
-  }, []);
+    setVoiceInputUrl(null);
+  }, [voiceInputUrl]);
 
   // Submit voice input
   const submitVoiceInput = useCallback(() => {
     if (voiceInputBase64 && voiceInputBlob && onVoiceInput) {
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[PremiumCommandBar] Submitting voice input', {
+          blobSize: voiceInputBlob.size,
+          base64Length: voiceInputBase64.length
+        });
+      }
       onVoiceInput(voiceInputBase64, voiceInputBlob);
+
+      // Cleanup blob URL if exists
+      if (voiceInputUrl) {
+        URL.revokeObjectURL(voiceInputUrl);
+      }
+
       // Clear voice input after submission
       setVoiceInputBlob(null);
       setVoiceInputBase64(null);
+      setVoiceInputUrl(null);
     }
-  }, [voiceInputBase64, voiceInputBlob, onVoiceInput]);
+  }, [voiceInputBase64, voiceInputBlob, onVoiceInput, voiceInputUrl]);
 
   // Auto-focus on mount
   useEffect(() => {
@@ -106,6 +149,15 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
       inputRef.current?.focus();
     }
   }, [disabled]);
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (voiceInputUrl) {
+        URL.revokeObjectURL(voiceInputUrl);
+      }
+    };
+  }, [voiceInputUrl]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Handle suggestions navigation
@@ -281,11 +333,19 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
 
         {/* Show VoiceInputMessage or text input */}
         {voiceInputBlob ? (
-          <VoiceInputMessage
-            audioBlob={voiceInputBlob}
-            audioBase64={voiceInputBase64}
-            onDelete={handleDeleteVoiceInput}
-          />
+          <>
+            {process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' &&
+              console.log('[PremiumCommandBar] Rendering VoiceInputMessage', {
+                hasBlob: !!voiceInputBlob,
+                hasBase64: !!voiceInputBase64
+              })
+            }
+            <VoiceInputMessage
+              audioBlob={voiceInputBlob}
+              audioBase64={voiceInputBase64}
+              onDelete={handleDeleteVoiceInput}
+            />
+          </>
         ) : (
           <input
             ref={inputRef}
@@ -310,6 +370,48 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
             isDisabled={disabled}
             maxDuration={300}
           />
+        )}
+
+        {/* Submit button for dream/chat input */}
+        {(showMicrophone || voiceInputBlob) && (
+          <button
+            onClick={() => {
+              if (voiceInputBlob) {
+                submitVoiceInput();
+              } else {
+                onSubmit();
+              }
+            }}
+            disabled={disabled}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: colors.accent,
+              border: 'none',
+              color: '#1a1a1a',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+              marginLeft: '8px',
+              opacity: disabled ? 0.5 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.transform = 'scale(1.1)';
+                e.currentTarget.style.backgroundColor = colors.accent;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.backgroundColor = colors.accent;
+            }}
+            aria-label="Send message"
+          >
+            <Send size={16} />
+          </button>
         )}
 
         {/* End Session button for active chat */}

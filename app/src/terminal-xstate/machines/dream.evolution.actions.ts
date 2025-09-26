@@ -3,7 +3,7 @@
  * @description Actions specific to evolution dreams (every 5th dream)
  */
 
-import { assign, sendParent, sendTo } from 'xstate';
+import { assign, sendParent, sendTo, enqueueActions } from 'xstate';
 import type { TerminalLine } from './types';
 import type { DreamMachineContext } from './dreamMachine';
 
@@ -21,8 +21,15 @@ export const evolutionDreamActions = {
   /**
    * Send lines to parent with evolution dream awareness
    */
-  sendDreamAnalysisWithEvolution: [
-    sendParent(({ context }: { context: DreamMachineContext }) => {
+  sendDreamAnalysisWithEvolution: enqueueActions(({ context, enqueue }: any) => {
+    debugLog('[EVOLUTION] sendDreamAnalysisWithEvolution triggered', {
+      wasVoiceInput: context.wasVoiceInput,
+      hasAiResponse: !!context.aiResponse,
+      agentName: context.agentName
+    });
+
+    // First action: send lines to parent
+    enqueue(sendParent(() => {
       const lines: TerminalLine[] = [];
       const timestamp = Date.now();
 
@@ -75,20 +82,26 @@ export const evolutionDreamActions = {
       }
 
       return { type: 'APPEND_LINES', lines };
-    }),
-    // Send TTS request if voice input
-    sendParent(({ context }: { context: DreamMachineContext }) => {
-      if (context.wasVoiceInput && context.aiResponse) {
-        return {
-          type: 'VOICE.SYNTHESIZE_RESPONSE',
-          text: context.aiResponse.fullAnalysis,
-          agentName: context.agentName
-        };
-      }
-      // Return a no-op event if not voice
-      return { type: 'NOOP' };
-    })
-  ],
+    }));
+
+    // Second action: send TTS request if voice input
+    if (context.wasVoiceInput && context.aiResponse) {
+      debugLog('[EVOLUTION] Sending TTS request for voice response', {
+        textLength: context.aiResponse.fullAnalysis?.length,
+        agentName: context.agentName
+      });
+      enqueue(sendParent(() => ({
+        type: 'VOICE.SYNTHESIZE_RESPONSE',
+        text: context.aiResponse.fullAnalysis,
+        agentName: context.agentName
+      })));
+    } else {
+      debugLog('[EVOLUTION] No TTS request needed', {
+        wasVoiceInput: context.wasVoiceInput,
+        hasAiResponse: !!context.aiResponse
+      });
+    }
+  }),
 
   /**
    * Store persistence result with evolution awareness

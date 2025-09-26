@@ -117,11 +117,25 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
 
   // Handle voice input
   const handleVoiceInput = useCallback((audioBase64: string, audioBlob: Blob) => {
+    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+      console.log('[GlassTerminal] handleVoiceInput triggered', {
+        audioBase64Length: audioBase64.length,
+        audioBlobSize: audioBlob.size,
+        hasVoiceRef: !!voiceRef,
+        isDreamActive,
+        isChatActive
+      });
+    }
     if (voiceRef) {
+      // Mark that this will be voice input
+      send({ type: 'SET_VOICE_INPUT', value: true });
       // Send audio to STT through voice machine
       voiceRef.send({ type: 'TRANSCRIBE', audioBase64 });
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[GlassTerminal] Sent TRANSCRIBE to voice machine');
+      }
     }
-  }, [voiceRef]);
+  }, [voiceRef, send, isDreamActive, isChatActive]);
 
   // Initialize broker and agent when wallet is connected
   useEffect(() => {

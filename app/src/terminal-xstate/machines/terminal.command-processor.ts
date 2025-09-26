@@ -159,7 +159,14 @@ export const workflowActions = {
     if (context.dreamRef) {
       const { selectedModel } = getModelData(context);
       const { walletAddress, tokenId, agentName } = getAgentData(context);
-      
+
+      debugLog('[workflowActions] Starting dream workflow', {
+        tokenId,
+        agentName,
+        wasVoiceInput: context.wasVoiceInput,
+        selectedModel
+      });
+
       context.dreamRef.send({
         type: 'START',
         modelId: selectedModel,
@@ -178,7 +185,14 @@ export const workflowActions = {
     if (context.chatRef) {
       const { tokenId, agentName } = getAgentData(context);
       const { selectedModel } = getModelData(context);
-      
+
+      debugLog('[workflowActions] Starting chat workflow', {
+        tokenId,
+        agentName,
+        wasVoiceInput: context.wasVoiceInput,
+        selectedModel
+      });
+
       context.chatRef.send({
         type: 'START_CHAT',
         agentId: tokenId || 1,

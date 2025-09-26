@@ -132,6 +132,8 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
         audioBitsPerSecond: opts.audioBitsPerSecond
       });
 
+      console.log('[useAudioRecorder] MediaRecorder created with mimeType:', mimeType);
+
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -142,28 +144,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
         }
       };
 
-      // Handle recording stop
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(chunksRef.current, { type: mimeType });
-        const audioUrl = URL.createObjectURL(audioBlob);
-
-        setState(prev => ({
-          ...prev,
-          isRecording: false,
-          isPaused: false,
-          audioBlob,
-          audioUrl,
-          duration: Math.floor((Date.now() - startTimeRef.current) / 1000)
-        }));
-
-        opts.onRecordingStop?.(audioBlob);
-
-        // Clear duration interval
-        if (durationIntervalRef.current) {
-          clearInterval(durationIntervalRef.current);
-          durationIntervalRef.current = null;
-        }
-      };
+      // Note: onstop handler is set in stopRecording to handle promise resolution
 
       // Handle errors
       mediaRecorder.onerror = (event) => {
@@ -180,6 +161,13 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
       // Start recording
       mediaRecorder.start(100); // Collect data every 100ms
       startTimeRef.current = Date.now();
+
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[useAudioRecorder] Recording started', {
+          mimeType,
+          streamActive: stream.active
+        });
+      }
 
       // Update duration every second
       durationIntervalRef.current = setInterval(() => {
@@ -209,17 +197,77 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
   }, [state.audioUrl, requestPermission, getSupportedMimeType, opts]);
 
   // Stop recording
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && state.isRecording) {
-      mediaRecorderRef.current.stop();
-
-      // Stop all tracks
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
+  const stopRecording = useCallback((): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[useAudioRecorder] stopRecording called', {
+          hasMediaRecorder: !!mediaRecorderRef.current,
+          isRecording: state.isRecording,
+          chunksLength: chunksRef.current.length
+        });
       }
-    }
-  }, [state.isRecording]);
+
+      if (mediaRecorderRef.current && state.isRecording) {
+        // Override the onstop handler to resolve the promise
+        const originalOnStop = mediaRecorderRef.current.onstop;
+
+        mediaRecorderRef.current.onstop = (event) => {
+          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+            console.log('[useAudioRecorder] MediaRecorder stopped', {
+              chunksLength: chunksRef.current.length,
+              totalSize: chunksRef.current.reduce((acc, chunk) => acc + chunk.size, 0)
+            });
+          }
+
+          const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
+          const audioBlob = new Blob(chunksRef.current, {
+            type: mimeType
+          });
+
+          console.log('[useAudioRecorder] Created audio blob', {
+            blobType: mimeType,
+            blobSize: audioBlob.size
+          });
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          setState(prev => ({
+            ...prev,
+            isRecording: false,
+            isPaused: false,
+            audioBlob,
+            audioUrl,
+            duration: Math.floor((Date.now() - startTimeRef.current) / 1000)
+          }));
+
+          opts.onRecordingStop?.(audioBlob);
+
+          // Clear duration interval
+          if (durationIntervalRef.current) {
+            clearInterval(durationIntervalRef.current);
+            durationIntervalRef.current = null;
+          }
+
+          // Call original handler if it exists and is different
+          if (originalOnStop && originalOnStop !== mediaRecorderRef.current?.onstop) {
+            originalOnStop.call(mediaRecorderRef.current, event);
+          }
+
+          // Resolve with the blob
+          resolve(audioBlob);
+        };
+
+        mediaRecorderRef.current.stop();
+
+        // Stop all tracks
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+      } else {
+        resolve(null);
+      }
+    });
+  }, [state.isRecording, opts]);
 
   // Pause recording
   const pauseRecording = useCallback(() => {
@@ -253,8 +301,15 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
   }, [state.audioUrl]);
 
   // Convert blob to base64
-  const getBase64 = useCallback(async (): Promise<string | null> => {
-    if (!state.audioBlob) return null;
+  const getBase64 = useCallback(async (blob?: Blob): Promise<string | null> => {
+    const targetBlob = blob || state.audioBlob;
+
+    if (!targetBlob) {
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[useAudioRecorder] getBase64 called but no blob available');
+      }
+      return null;
+    }
 
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -262,9 +317,17 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
         const base64 = reader.result as string;
         // Remove data URL prefix
         const base64Data = base64.split(',')[1];
+
+        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+          console.log('[useAudioRecorder] Base64 conversion complete', {
+            blobSize: targetBlob.size,
+            base64Length: base64Data.length
+          });
+        }
+
         resolve(base64Data);
       };
-      reader.readAsDataURL(state.audioBlob);
+      reader.readAsDataURL(targetBlob);
     });
   }, [state.audioBlob]);
 

@@ -31,7 +31,7 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
   const {
     isRecording,
     isPaused,
-    recordingTime,
+    duration,
     startRecording,
     stopRecording,
     pauseRecording,
@@ -65,10 +65,17 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
         clearInterval(durationInterval.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecording, isPaused, maxDuration]);
 
   // Handle recording toggle
   const handleToggleRecording = useCallback(async () => {
+    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+      console.log('[MicrophoneButton] handleToggleRecording called', {
+        isRecording,
+        action: isRecording ? 'stopping' : 'starting'
+      });
+    }
     if (isRecording) {
       await handleStopRecording();
     } else {
@@ -78,15 +85,21 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
 
   const handleStartRecording = useCallback(async () => {
     try {
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[MicrophoneButton] Starting recording', { maxDuration });
+      }
       setRecordingDuration(0);
       await startRecording();
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      console.error('[MicrophoneButton] Failed to start recording:', error);
       alert('Failed to access microphone. Please check permissions.');
     }
-  }, [startRecording]);
+  }, [startRecording, maxDuration]);
 
   const handleStopRecording = useCallback(async () => {
+    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+      console.log('[MicrophoneButton] handleStopRecording called');
+    }
     try {
       setIsProcessing(true);
 
@@ -95,23 +108,38 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
 
       if (audioBlob) {
         // Get base64 encoding
-        const base64 = await getBase64();
+        const base64 = await getBase64(audioBlob);
 
         if (base64) {
+          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+            console.log('[MicrophoneButton] Recording stopped', {
+              audioBlobSize: audioBlob.size,
+              base64Length: base64.length,
+              recordingDuration: recordingDuration
+            });
+          }
           // Notify parent component
           onRecordingComplete(base64, audioBlob);
+        } else {
+          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+            console.log('[MicrophoneButton] Failed to convert audio to base64');
+          }
+        }
+      } else {
+        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+          console.log('[MicrophoneButton] No audio blob received from stopRecording');
         }
       }
 
-      // Clear recording
-      clearRecording();
+      // Don't clear recording here - let VoiceInputMessage use the blob
+      // clearRecording() should only be called when user deletes the voice message
       setRecordingDuration(0);
     } catch (error) {
       console.error('Failed to stop recording:', error);
     } finally {
       setIsProcessing(false);
     }
-  }, [stopRecording, getBase64, clearRecording, onRecordingComplete]);
+  }, [stopRecording, getBase64, clearRecording, onRecordingComplete, recordingDuration]);
 
   // Format duration display
   const formatDuration = (seconds: number) => {
@@ -142,9 +170,9 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
           width: '40px',
           height: '40px',
           borderRadius: '50%',
-          border: `2px solid ${isRecording ? '#EF4444' : theme.border}`,
-          backgroundColor: isRecording ? 'rgba(239, 68, 68, 0.1)' : theme.bg.secondary,
-          color: isRecording ? '#EF4444' : theme.text.primary,
+          border: `2px solid ${isRecording ? theme.accent.primary : theme.border}`,
+          backgroundColor: isRecording ? `${theme.accent.primary}20` : theme.bg.secondary,
+          color: isRecording ? theme.accent.primary : theme.text.primary,
           cursor: isDisabled || isProcessing ? 'not-allowed' : 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -173,7 +201,7 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
               cx="20"
               cy="20"
               r="18"
-              stroke="rgba(239, 68, 68, 0.2)"
+              stroke={`${theme.accent.primary}33`}
               strokeWidth="2"
               fill="none"
             />
@@ -181,7 +209,7 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
               cx="20"
               cy="20"
               r="18"
-              stroke="#EF4444"
+              stroke={theme.accent.primary}
               strokeWidth="2"
               fill="none"
               strokeDasharray={`${2 * Math.PI * 18}`}
@@ -197,7 +225,7 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
         {isProcessing ? (
           <Loader2 size={20} className="animate-spin" />
         ) : isRecording ? (
-          <Square size={16} style={{ fill: '#EF4444' }} />
+          <Square size={16} style={{ fill: theme.accent.primary }} />
         ) : (
           <Mic size={20} />
         )}
@@ -211,7 +239,7 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
               width: '100%',
               height: '100%',
               borderRadius: '50%',
-              border: '2px solid #EF4444',
+              border: `2px solid ${theme.accent.primary}`,
               animation: 'pulse 1.5s ease-out infinite',
               pointerEvents: 'none'
             }}
@@ -225,7 +253,7 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
           style={{
             fontSize: '12px',
             fontFamily: 'monospace',
-            color: '#EF4444',
+            color: theme.accent.primary,
             fontWeight: '600',
             minWidth: '40px'
           }}

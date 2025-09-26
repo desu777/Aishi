@@ -31,12 +31,24 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Create audio URL from blob
+  // Create audio URL from blob - prioritize base64 for stability
   const audioUrl = React.useMemo(() => {
-    if (audioBlob) {
-      return URL.createObjectURL(audioBlob);
-    } else if (audioBase64) {
+    // Prefer base64 as it's more stable than blob URLs
+    if (audioBase64) {
+      console.log('[VoiceInputMessage] Using base64 data URL');
       return `data:audio/webm;base64,${audioBase64}`;
+    } else if (audioBlob) {
+      try {
+        const url = URL.createObjectURL(audioBlob);
+        console.log('[VoiceInputMessage] Created blob URL', {
+          url,
+          blobSize: audioBlob.size,
+          blobType: audioBlob.type
+        });
+        return url;
+      } catch (error) {
+        console.error('[VoiceInputMessage] Failed to create blob URL', error);
+      }
     }
     return null;
   }, [audioBlob, audioBase64]);
@@ -53,10 +65,26 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
   // Initialize audio element
   useEffect(() => {
     if (audioUrl) {
+      console.log('[VoiceInputMessage] Initializing audio element with URL:', audioUrl);
       const audio = new Audio(audioUrl);
+
       audio.addEventListener('loadedmetadata', () => {
+        console.log('[VoiceInputMessage] Audio metadata loaded', {
+          duration: audio.duration,
+          readyState: audio.readyState
+        });
         setTotalDuration(audio.duration);
       });
+
+      audio.addEventListener('error', (e) => {
+        console.error('[VoiceInputMessage] Audio error', {
+          error: e,
+          audioUrl,
+          readyState: audio.readyState,
+          networkState: audio.networkState
+        });
+      });
+
       audio.addEventListener('ended', () => {
         setIsPlaying(false);
         setCurrentTime(0);
@@ -64,6 +92,7 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
           clearInterval(progressInterval.current);
         }
       });
+
       audioRef.current = audio;
     }
 
@@ -80,7 +109,10 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
 
   // Handle play/pause
   const handleTogglePlay = useCallback(() => {
-    if (!audioRef.current) return;
+    if (!audioRef.current) {
+      console.error('[VoiceInputMessage] No audio ref available');
+      return;
+    }
 
     if (isPlaying) {
       audioRef.current.pause();
@@ -89,15 +121,20 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
         clearInterval(progressInterval.current);
       }
     } else {
-      audioRef.current.play();
-      setIsPlaying(true);
+      audioRef.current.play().then(() => {
+        console.log('[VoiceInputMessage] Audio playback started');
+        setIsPlaying(true);
 
-      // Update progress
-      progressInterval.current = setInterval(() => {
-        if (audioRef.current) {
-          setCurrentTime(audioRef.current.currentTime);
-        }
-      }, 100);
+        // Update progress
+        progressInterval.current = setInterval(() => {
+          if (audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime);
+          }
+        }, 100);
+      }).catch((error) => {
+        console.error('[VoiceInputMessage] Failed to play audio', error);
+        setIsPlaying(false);
+      });
     }
   }, [isPlaying]);
 

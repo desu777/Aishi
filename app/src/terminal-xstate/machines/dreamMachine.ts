@@ -145,7 +145,17 @@ export const dreamMachine = setup({
   actions: {
     // Initialize dream session
     initializeDream: assign({
-      tokenId: ({ event }) => event.type === 'START' && event.tokenId ? event.tokenId : defaultAgentData.tokenId,
+      tokenId: ({ event }) => {
+        if (event.type === 'START') {
+          debugLog('[INIT] Dream session starting', {
+            tokenId: event.tokenId,
+            agentName: event.agentName,
+            wasVoiceInput: event.wasVoiceInput
+          });
+          return event.tokenId ? event.tokenId : defaultAgentData.tokenId;
+        }
+        return defaultAgentData.tokenId;
+      },
       agentName: ({ event }) => event.type === 'START' && event.agentName ? event.agentName : '',
       statusMessage: 'Describe your dream...',
       errorMessage: null,
@@ -166,8 +176,12 @@ export const dreamMachine = setup({
     
     // Store dream input
     storeDreamInput: assign({
-      dreamInput: ({ event }) => {
+      dreamInput: ({ event, context }) => {
         if (event.type === 'SUBMIT_DREAM') {
+          debugLog('[INPUT] Dream text submitted', {
+            textLength: event.dreamText.length,
+            contextWasVoiceInput: context.wasVoiceInput
+          });
           return event.dreamText;
         }
         return '';
