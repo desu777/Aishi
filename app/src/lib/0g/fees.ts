@@ -17,7 +17,7 @@ import {
   type Address,
   type Account
 } from 'viem';
-import { galileoTestnet } from '../../config/chains';
+import { getActiveChain } from '../../config/chains';
 import { getEthersProviderForZeroG, getEthersSignerForZeroG } from './adapter/viemAdapter';
 import { ethers } from 'ethers';
 
@@ -27,9 +27,10 @@ import { ethers } from 'ethers';
  */
 export async function getViemProvider(): Promise<[PublicClient | null, Error | null]> {
   try {
-    const rpcUrl = process.env.NEXT_PUBLIC_L1_RPC || 'https://evmrpc-testnet.0g.ai';
+    const activeChain = getActiveChain();
+    const rpcUrl = activeChain.rpcUrls.default.http[0];
     const publicClient = createPublicClient({
-      chain: galileoTestnet,
+      chain: activeChain,
       transport: http(rpcUrl)
     }) as any as PublicClient;
     return [publicClient, null];
@@ -49,8 +50,9 @@ export async function getViemSigner(): Promise<[WalletClient | null, Error | nul
       throw new Error('No wallet connection available');
     }
 
+    const activeChain = getActiveChain();
     const walletClient = createWalletClient({
-      chain: galileoTestnet,
+      chain: activeChain,
       transport: custom(window.ethereum)
     });
 
@@ -73,8 +75,9 @@ export async function getViemSigner(): Promise<[WalletClient | null, Error | nul
  */
 export async function getProvider(): Promise<[ethers.JsonRpcProvider | null, Error | null]> {
   try {
-    const rpcUrl = process.env.NEXT_PUBLIC_L1_RPC || 'https://evmrpc-testnet.0g.ai';
-    const provider = getEthersProviderForZeroG(rpcUrl, galileoTestnet.id);
+    const activeChain = getActiveChain();
+    const rpcUrl = activeChain.rpcUrls.default.http[0];
+    const provider = getEthersProviderForZeroG(rpcUrl, activeChain.id);
     return [provider, null];
   } catch (error) {
     console.error('Failed to get provider:', error);
@@ -88,7 +91,8 @@ export async function getProvider(): Promise<[ethers.JsonRpcProvider | null, Err
  */
 export async function getSigner(provider: ethers.JsonRpcProvider): Promise<[ethers.Signer | null, Error | null]> {
   try {
-    const signer = await getEthersSignerForZeroG(galileoTestnet.id);
+    const activeChain = getActiveChain();
+    const signer = await getEthersSignerForZeroG(activeChain.id);
     return [signer, null];
   } catch (error) {
     console.error('Failed to get signer:', error);

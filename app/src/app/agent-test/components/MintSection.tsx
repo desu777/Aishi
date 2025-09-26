@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { getActiveChain } from '../../../config/chains';
 import { Brain, Sparkles, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface MintSectionProps {
@@ -87,7 +88,7 @@ export default function MintSection({
         
         <div style={{ color: theme.text.secondary, fontSize: '14px' }}>
           <p><strong>Contract:</strong> {contractAddress}</p>
-          <p><strong>Network:</strong> 0G Galileo Testnet (Chain ID: 16601)</p>
+          <p><strong>Network:</strong> {getActiveChain().name} (Chain ID: {getActiveChain().id})</p>
           <p><strong>Function:</strong> mintAgent(proofs[], descriptions[], agentName, to)</p>
           <p><strong>Minting Fee:</strong> 0.1 OG per agent</p>
         </div>

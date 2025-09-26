@@ -18,13 +18,15 @@ export default defineConfig({
       abi: AishiAgentABI.abi as any,
       address: {
         16601: AishiAgentABI.address as `0x${string}`, // Galileo testnet
+        16661: AishiAgentABI.address as `0x${string}`, // 0G mainnet - same address
       },
     },
     {
-      name: 'AishiVerifier', 
+      name: 'AishiVerifier',
       abi: AishiVerifierABI.abi as any,
       address: {
         16601: AishiVerifierABI.address as `0x${string}`, // Galileo testnet
+        16661: AishiVerifierABI.address as `0x${string}`, // 0G mainnet - same address
       },
     },
   ],

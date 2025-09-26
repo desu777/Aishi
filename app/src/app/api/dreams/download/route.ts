@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { downloadByRootHashAPI } from '../../../../lib/0g/downloader';
 import { createPublicClient, http } from 'viem';
-import { galileoTestnet } from '../../../../config/chains';
+import { getActiveChain } from '../../../../config/chains';
 import { getContractConfig, STORAGE_CONFIG } from '../../config/contractConfig';
 
 export async function GET(request: NextRequest) {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     // Create public client to read from contract
     const publicClient = createPublicClient({
-      chain: galileoTestnet,
+      chain: getActiveChain(),
       transport: http(STORAGE_CONFIG.l1Rpc)
     });
 

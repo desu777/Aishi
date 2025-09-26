@@ -4,6 +4,7 @@
  */
 
 import { aishiAgentAbi, aishiAgentAddress } from '../../../generated';
+import { getActiveChain } from '../../../config/chains';
 
 export interface ContractConfig {
   address: `0x${string}`;
@@ -16,10 +17,13 @@ export interface ContractConfig {
 /**
  * @returns Contract configuration with type-safe ABI for agent hooks
  */
-export const getContractConfig = (): ContractConfig => ({
-  address: aishiAgentAddress[16601],
-  abi: aishiAgentAbi,
-  chainId: 16601,
-  contractName: 'AishiAgent',
-  network: 'galileo'
-} as const);
+export const getContractConfig = (): ContractConfig => {
+  const activeChain = getActiveChain();
+  return {
+    address: aishiAgentAddress[activeChain.id as 16601 | 16661],
+    abi: aishiAgentAbi,
+    chainId: activeChain.id,
+    contractName: 'AishiAgent',
+    network: activeChain.network
+  } as const;
+};

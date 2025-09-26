@@ -10,16 +10,16 @@ import {
 import { WagmiProvider } from 'wagmi';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { useTheme } from '../contexts/ThemeContext';
-import { galileoTestnet } from '../config/chains';
+import { getSupportedChains, getActiveChain } from '../config/chains';
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient();
 
-// Configure chains and providers for wagmi with only 0G Galileo Testnet
+// Configure chains and providers for wagmi with dynamic chain selection
 const config = getDefaultConfig({
   appName: 'Aishi – Your inner AI companion',
   projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '34121ad34d9bc22e1afc6f45f72b3fdd',
-  chains: [galileoTestnet],
+  chains: getSupportedChains(),
   ssr: false,
 });
 
@@ -126,12 +126,14 @@ const RainbowKitProviderWrapper = ({ children }: RainbowKitProviderWrapperProps)
   
   debugLog('RainbowKit theme configured with Aishi colors');
   
+  const activeChain = getActiveChain();
+
   return (
-    <RainbowKitProvider 
+    <RainbowKitProvider
       theme={customTheme}
       avatar={CustomAvatar}
       modalSize="wide"
-      initialChain={galileoTestnet.id}
+      initialChain={activeChain.id}
       showRecentTransactions={true}
     >
       {children}

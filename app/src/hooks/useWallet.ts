@@ -2,7 +2,7 @@
 
 import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain, useSendTransaction } from 'wagmi';
 import { useConnectModal, useAccountModal, useChainModal } from '@rainbow-me/rainbowkit';
-import { galileoTestnet } from '../config/chains';
+import { getActiveChain } from '../config/chains';
 import { useTheme } from '../contexts/ThemeContext';
 import type { Address } from 'viem';
 import { parseEther } from 'viem';
@@ -35,8 +35,11 @@ export const useWallet = (): WalletState & {
   // Shortened address for display
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
   
-  // Check if on correct network (0G Galileo)
-  const isCorrectNetwork = chainId === galileoTestnet.id;
+  // Get active chain based on configuration
+  const activeChain = getActiveChain();
+
+  // Check if on correct network
+  const isCorrectNetwork = chainId === activeChain.id;
   
   // Connect wallet function
   const connectWallet = async (): Promise<void> => {
@@ -54,9 +57,9 @@ export const useWallet = (): WalletState & {
   
   // Switch to 0G network
   const switchToOGNetwork = async (): Promise<void> => {
-    debugLog('Switching to 0G Galileo network');
+    debugLog(`Switching to ${activeChain.name} network`);
     try {
-      await switchChain({ chainId: galileoTestnet.id });
+      await switchChain({ chainId: activeChain.id });
     } catch (error) {
       debugLog('Failed to switch network', error);
       throw error;
@@ -77,7 +80,7 @@ export const useWallet = (): WalletState & {
       }
       
       if (!isCorrectNetwork) {
-        throw new Error('Wrong network. Please switch to 0G Galileo Testnet');
+        throw new Error(`Wrong network. Please switch to ${activeChain.name}`);
       }
       
       debugLog('Sending OG to Master Wallet', { 
@@ -89,7 +92,7 @@ export const useWallet = (): WalletState & {
       const txHash = await sendTransactionAsync({
         to: masterWalletAddress as Address,
         value: parseEther(amount),
-        chainId: galileoTestnet.id
+        chainId: activeChain.id
       });
       
       debugLog('Transaction sent successfully', { txHash });
@@ -127,16 +130,16 @@ export const useWallet = (): WalletState & {
   
   // Get network name from env or fallback
   const getNetworkName = (): string => {
-    if (chainId === galileoTestnet.id) {
-      return process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '0G';
+    if (chainId === activeChain.id) {
+      return activeChain.nativeCurrency.symbol || '0G';
     }
     return 'Unknown Network';
   };
   
   // Get network display name
   const getNetworkDisplayName = (): string => {
-    if (chainId === galileoTestnet.id) {
-      return process.env.NEXT_PUBLIC_CHAIN_NAME || '0G Galileo';
+    if (chainId === activeChain.id) {
+      return activeChain.name;
     }
     return 'Unknown Network';
   };
@@ -173,12 +176,12 @@ export const useWallet = (): WalletState & {
     // Utils
     debugLog,
     
-    // Chain config (from env)
+    // Chain config (dynamic)
     chainConfig: {
-      id: galileoTestnet.id,
-      name: galileoTestnet.name,
-      currency: galileoTestnet.nativeCurrency,
-      isTestnet: galileoTestnet.testnet
+      id: activeChain.id,
+      name: activeChain.name,
+      currency: activeChain.nativeCurrency,
+      isTestnet: activeChain.testnet ?? false
     }
   };
 }; 

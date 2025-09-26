@@ -4,7 +4,7 @@
  */
 
 import { createPublicClient, http, Address } from 'viem';
-import { galileoTestnet } from '../../config/chains';
+import { getActiveChain } from '../../config/chains';
 import { getContractConfig, ContractFunctions } from './contractService';
 import { aishiAgentAbi } from '../../generated';
 
@@ -126,7 +126,7 @@ export class ContractReaderService {
     
     // Use provided client or create new one
     this.publicClient = publicClient || createPublicClient({
-      chain: galileoTestnet,
+      chain: getActiveChain(),
       transport: http()
     });
     

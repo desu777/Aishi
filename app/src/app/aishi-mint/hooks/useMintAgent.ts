@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import toast from 'react-hot-toast';
-import { galileoTestnet } from '../../../config/chains';
+import { getActiveChain } from '../../../config/chains';
 import { getContractConfig, MINTING_FEE, MAX_NAME_LENGTH, MAX_AGENTS } from '../config/contractConfig';
 
 export function useMintAgent() {
@@ -124,7 +124,7 @@ export function useMintAgent() {
         ],
         value: MINTING_FEE,
         account: address,
-        chain: galileoTestnet,
+        chain: getActiveChain(),
       });
     } catch (error) {
       console.error('Mint error:', error);

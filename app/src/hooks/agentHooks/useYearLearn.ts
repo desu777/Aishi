@@ -7,7 +7,7 @@ import { useWallet } from '../useWallet';
 import { useAgentRead } from './useAgentRead';
 import { getContractConfig } from './config/contractConfig';
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
-import { galileoTestnet } from '../../config/chains';
+import { getActiveChain } from '../../config/chains';
 import {
   sendYearlyConsolidation,
   validateYearlyDataCompleteness,
@@ -525,7 +525,7 @@ export function useYearLearn(tokenId?: number) {
       address: contractConfig.address,
       abi: contractConfig.abi,
       functionName: 'updateMemoryCore',
-      chain: galileoTestnet,
+      chain: getActiveChain(),
       account,
       args: [BigInt(operationalTokenId), memoryCoreHash as `0x${string}`]
     });

@@ -4,7 +4,7 @@
  * @description Updates smart contract with conversation records
  */
 
-import { galileoTestnet } from '../../config/chains';
+import { getActiveChain } from '../../config/chains';
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
 import type { PublicClient, WalletClient } from 'viem';
 
@@ -96,7 +96,7 @@ export async function updateConversationContract(
       functionName: 'recordConversation',
       args: [tokenId, conversationHash as `0x${string}`, contextType],
       account: account,
-      chain: galileoTestnet
+      chain: getActiveChain()
     });
 
     debugLog('Contract simulation successful');
@@ -104,7 +104,7 @@ export async function updateConversationContract(
     // Execute the transaction with explicit chain and account
     const txHash = await walletClient.writeContract({
       ...request,
-      chain: galileoTestnet,
+      chain: getActiveChain(),
       account: account
     });
 

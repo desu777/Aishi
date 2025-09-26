@@ -3,7 +3,7 @@
 import { getViemProvider, getViemSigner } from '../../../lib/0g/fees';
 import { uploadFileComplete } from '../../../lib/0g/uploader';
 import { getContractConfig } from '../config/contractConfig';
-import { galileoTestnet } from '../../../config/chains';
+import { getActiveChain } from '../../../config/chains';
 import { getEthersSignerForZeroG } from '../../../lib/0g/adapter/viemAdapter';
 import type { PublicClient, WalletClient } from 'viem';
 import type { MonthlyDreamConsolidation, MonthlyConversationConsolidation } from './agentConsolidationService';
@@ -392,7 +392,8 @@ export const saveMemoryCoreToStorage = async (
     });
 
     // Get ethers signer for 0G SDK
-    const signer = await getEthersSignerForZeroG(galileoTestnet.id);
+    const activeChain = getActiveChain();
+    const signer = await getEthersSignerForZeroG(activeChain.id);
 
     // Upload file
     const uploadResult = await uploadFileComplete(
@@ -457,7 +458,7 @@ export const callUpdateMemoryCore = async (
       address: contractConfig.address,
       abi: contractConfig.abi,
       functionName: 'updateMemoryCore',
-      chain: galileoTestnet,
+      chain: getActiveChain(),
       account,
       args: [BigInt(tokenId), memoryCoreHash as `0x${string}`]
     });

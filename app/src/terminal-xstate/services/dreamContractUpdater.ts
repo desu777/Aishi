@@ -4,7 +4,7 @@
  */
 
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
-import { galileoTestnet } from '../../config/chains';
+import { getActiveChain } from '../../config/chains';
 import type { PublicClient, WalletClient } from 'viem';
 import { getContractConfig } from './contractService';
 import { EvolutionFields, clampToContractRanges } from './dreamDataValidator';
@@ -216,7 +216,7 @@ async function executeContractTransaction(
     functionName: 'processDailyDream',
     args: [BigInt(tokenId), `0x${dreamHash.replace('0x', '')}` as `0x${string}`, personalityImpact],
     account,
-    chain: galileoTestnet
+    chain: getActiveChain()
   });
   
   debugLog('Simulation successful, executing transaction...');
@@ -224,7 +224,7 @@ async function executeContractTransaction(
   // Execute the transaction with explicit chain and account
   const txHash = await walletClient.writeContract({
     ...request,
-    chain: galileoTestnet,
+    chain: getActiveChain(),
     account: account
   });
 

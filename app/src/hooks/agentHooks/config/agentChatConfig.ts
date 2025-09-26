@@ -3,6 +3,7 @@
  */
 
 import { getContractConfig } from './contractConfig';
+import { getActiveChain } from '../../../config/chains';
 import { StorageConfig, ComputeConfig } from '../types/agentChatTypes';
 
 // Contract configuration
@@ -21,5 +22,5 @@ export const COMPUTE_CONFIG: ComputeConfig = {
 
 // Network configuration
 export const NETWORK_CONFIG = {
-  chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '16601')
+  chainId: getActiveChain().id
 }; 

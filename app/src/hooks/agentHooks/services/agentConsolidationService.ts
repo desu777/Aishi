@@ -4,7 +4,7 @@ import { getViemProvider, getViemSigner } from '../../../lib/0g/fees';
 import { uploadFileComplete } from '../../../lib/0g/uploader';
 import { getContractConfig } from '../config/contractConfig';
 import { getEthersSignerForZeroG } from '../../../lib/0g/adapter/viemAdapter';
-import { galileoTestnet } from '../../../config/chains';
+import { getActiveChain } from '../../../config/chains';
 import type { PublicClient, WalletClient } from 'viem';
 
 // Schemat JSON dla konsolidacji miesięcznej snów (UNIFIED)
@@ -590,7 +590,8 @@ export const saveConsolidationToStorage = async (
     });
 
     // Get ethers signer for 0G SDK
-    const signer = await getEthersSignerForZeroG(galileoTestnet.id);
+    const activeChain = getActiveChain();
+    const signer = await getEthersSignerForZeroG(activeChain.id);
 
     // Upload both files
     const [dreamResult, convResult] = await Promise.all([
@@ -665,7 +666,7 @@ export const callConsolidateMonth = async (
       address: contractConfig.address,
       abi: contractConfig.abi,
       functionName: 'consolidateMonth',
-      chain: galileoTestnet,
+      chain: getActiveChain(),
       account,
       args: [BigInt(tokenId), dreamHash as `0x${string}`, convHash as `0x${string}`, month, year]
     });

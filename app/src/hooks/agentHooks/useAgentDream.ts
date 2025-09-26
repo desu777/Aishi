@@ -8,7 +8,7 @@ import { aishiAgentAbi } from '../../generated';
 import { getContractConfig } from './config/contractConfig';
 import { DreamContextBuilder, DreamContext } from './services/dreamContextBuilder';
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
-import { galileoTestnet } from '../../config/chains';
+import { getActiveChain } from '../../config/chains';
 import type { PublicClient, WalletClient } from 'viem';
 
 // PersonalityImpact type matching contract ABI structure
@@ -644,7 +644,7 @@ export function useAgentDream() {
         address: contractConfig.address,
         abi: contractConfig.abi,
         functionName: 'processDailyDream',
-        chain: galileoTestnet,
+        chain: getActiveChain(),
         account,
         args: [BigInt(tokenId), dreamHashBytes32 as `0x${string}`, personalityImpact as any]
       });

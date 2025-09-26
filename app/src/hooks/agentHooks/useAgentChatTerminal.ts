@@ -10,7 +10,7 @@ import { ConversationContextBuilder, ConversationContext, ChatMessage } from './
 import { ConversationUnifiedSchema } from './types/agentChatTypes';
 import { getContractConfig } from './config/contractConfig';
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
-import { galileoTestnet } from '../../config/chains';
+import { getActiveChain } from '../../config/chains';
 import type { PublicClient, WalletClient } from 'viem';
 
 interface TerminalChatSession {
@@ -491,7 +491,7 @@ export function useAgentChatTerminal(tokenId?: number) {
         address: contractConfig.address,
         abi: contractConfig.abi,
         functionName: 'recordConversation',
-        chain: galileoTestnet,
+        chain: getActiveChain(),
         account,
         args: [BigInt(tokenId), hashBytes32 as `0x${string}`, contextType]
       });

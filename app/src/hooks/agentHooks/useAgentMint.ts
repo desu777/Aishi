@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useWriteContract, useAccount, useChainId, useBalance, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther, decodeEventLog } from 'viem';
 import { useTheme } from '../../contexts/ThemeContext';
-import { galileoTestnet } from '../../config/chains';
+import { getActiveChain } from '../../config/chains';
 import { getContractConfig } from './config/contractConfig';
 
 // Error parsing utility for viem errors
@@ -125,8 +125,9 @@ export function useAgentMint() {
     isWaitingForReceipt: false
   });
 
-  // Check if on correct network (0G Galileo Testnet)
-  const isCorrectNetwork = chainId === parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '16601');
+  // Get active chain and check if on correct network
+  const activeChain = getActiveChain();
+  const isCorrectNetwork = chainId === activeChain.id;
 
   // Wait for transaction receipt
   const { data: receipt, isLoading: isReceiptLoading, error: receiptError } = useWaitForTransactionReceipt({
@@ -239,7 +240,7 @@ export function useAgentMint() {
     }
 
     if (!isCorrectNetwork) {
-      const error = 'Wrong network. Please switch to 0G Galileo Testnet';
+      const error = `Wrong network. Please switch to ${activeChain.name}`;
       setState(prev => ({ ...prev, error }));
       return { success: false, error };
     }
@@ -275,7 +276,7 @@ export function useAgentMint() {
         ...contractConfig,
         functionName: 'mintAgent',
         account: address,
-        chain: galileoTestnet,
+        chain: activeChain,
         value: parseEther('0.1'), // MINTING_FEE = 0.1 OG
         args: [
           [], // proofs: empty array for testing

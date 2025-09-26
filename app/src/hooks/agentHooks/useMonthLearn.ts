@@ -7,7 +7,7 @@ import { useWallet } from '../useWallet';
 import { useAgentRead } from './useAgentRead';
 import { getContractConfig } from './config/contractConfig';
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
-import { galileoTestnet } from '../../config/chains';
+import { getActiveChain } from '../../config/chains';
 import type { PublicClient, WalletClient } from 'viem';
 import {
   MonthLearnAPIResponse,
@@ -677,7 +677,7 @@ export function useMonthLearn(tokenId?: number) {
       address: contractConfig.address,
       abi: contractConfig.abi,
       functionName: 'consolidateMonth',
-      chain: galileoTestnet,
+      chain: getActiveChain(),
       account,
       args: [
         BigInt(operationalTokenId),

@@ -5,7 +5,7 @@
 
 import { fromPromise } from 'xstate';
 import { createPublicClient, http } from 'viem';
-import { galileoTestnet } from '../../config/chains';
+import { getActiveChain } from '../../config/chains';
 import { getContractConfig } from '../services/contractService';
 import { DreamContext, AIResponse, defaultAgentData } from '../types/contextTypes';
 import { convertBigIntToString } from '../utils/jsonSerializer';
@@ -84,14 +84,15 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
     
     // 1. Create viem public client
     const contractConfig = getContractConfig();
+    const activeChain = getActiveChain();
     const publicClient = createPublicClient({
-      chain: galileoTestnet,
+      chain: activeChain,
       transport: http()
     });
-    
+
     debugLog('Created viem PublicClient', {
-      chainId: galileoTestnet.id,
-      rpcUrl: galileoTestnet.rpcUrls.default.http[0],
+      chainId: activeChain.id,
+      rpcUrl: activeChain.rpcUrls.default.http[0],
       contractAddress: contractConfig.address
     });
     
