@@ -50,19 +50,24 @@ export const storageGuards = {
 
   /**
    * Check if we have a valid root hash for contract update
+   * Now checks the event output directly instead of context
    */
-  hasValidRootHash: ({ context }: { context: any }) => {
-    const hash = context.storageRootHash;
-    const isValid = !!hash && 
-                   hash !== '0x0' && 
+  hasValidRootHash: ({ event }: { event: any }) => {
+    // Get hash from event output (from storage upload service)
+    const hash = event?.output?.rootHash;
+
+    const isValid = !!hash &&
+                   hash !== '0x0' &&
                    hash !== '0x0000000000000000000000000000000000000000000000000000000000000000' &&
                    hash.length === 66;
-    
-    debugLog('Validating root hash', { 
+
+    debugLog('Validating root hash from event', {
       hash: hash ? `${hash.substring(0, 10)}...` : 'none',
-      isValid 
+      hashLength: hash?.length,
+      expectedLength: 66,
+      isValid
     });
-    
+
     return isValid;
   },
 

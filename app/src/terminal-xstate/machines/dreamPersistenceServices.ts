@@ -108,7 +108,7 @@ export const storageUploadService = fromPromise(async ({ input }: { input: {
       verified: result.verified,
       uploadTime: result.metadata?.uploadTime
     });
-    
+
     return {
       rootHash: result.rootHash,
       verified: result.verified
