@@ -325,7 +325,7 @@ export function useAgentMint() {
 
   // Get explorer URL for transaction
   const getTransactionUrl = (txHash: string) => {
-    const explorerUrl = process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL || 'https://chainscan-galileo.0g.ai';
+    const explorerUrl = activeChain.blockExplorers?.default?.url || 'https://chainscan-galileo.0g.ai';
     return `${explorerUrl}/tx/${txHash}`;
   };
 

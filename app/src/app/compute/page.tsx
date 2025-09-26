@@ -6,6 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
 import { useModelDiscovery } from '../../hooks/useModelDiscovery';
 import ModelSelector from '../../components/ModelSelector';
+import { getActiveChain } from '../../config/chains';
 import { Brain, DollarSign, Zap, CheckCircle, AlertCircle, Loader2, Send } from 'lucide-react';
 
 export default function ComputeTest() {
@@ -440,9 +441,9 @@ export default function ComputeTest() {
                     fontSize: '12px',
                     color: theme.text.secondary
                   }}>
-                    <strong>Last Transaction:</strong> 
-                    <a 
-                      href={`${process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL}/tx/${lastTxHash}`}
+                    <strong>Last Transaction:</strong>
+                    <a
+                      href={`${getActiveChain().blockExplorers?.default?.url}/tx/${lastTxHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
