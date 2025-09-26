@@ -10,8 +10,8 @@ import {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const aishiAgentAbi = [
   {
@@ -1111,17 +1111,17 @@ export const aishiAgentAbi = [
 ] as const
 
 /**
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const aishiAgentAddress = {
-  16601: '0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6',
-  16661: '0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6',
+  16601: '0x6Ea891A7223459aCC46030aae203DCC218a388C6',
+  16661: '0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c',
 } as const
 
 /**
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const aishiAgentConfig = {
   address: aishiAgentAddress,
@@ -1133,8 +1133,8 @@ export const aishiAgentConfig = {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x978a566B8817f14fEAaA783177E41e2d6dCA000C)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x65d1fcebC6d1bF4650f0260203f048e585A346D3)
  */
 export const aishiVerifierAbi = [
   {
@@ -1177,17 +1177,17 @@ export const aishiVerifierAbi = [
 ] as const
 
 /**
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x978a566B8817f14fEAaA783177E41e2d6dCA000C)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x65d1fcebC6d1bF4650f0260203f048e585A346D3)
  */
 export const aishiVerifierAddress = {
-  16601: '0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8',
-  16661: '0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8',
+  16601: '0x978a566B8817f14fEAaA783177E41e2d6dCA000C',
+  16661: '0x65d1fcebC6d1bF4650f0260203f048e585A346D3',
 } as const
 
 /**
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x978a566B8817f14fEAaA783177E41e2d6dCA000C)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x65d1fcebC6d1bF4650f0260203f048e585A346D3)
  */
 export const aishiVerifierConfig = {
   address: aishiVerifierAddress,
@@ -1201,8 +1201,8 @@ export const aishiVerifierConfig = {
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgent = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1212,8 +1212,8 @@ export const useReadAishiAgent = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"ADMIN_ROLE"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentAdminRole = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1224,8 +1224,8 @@ export const useReadAishiAgentAdminRole = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"DEFAULT_ADMIN_ROLE"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentDefaultAdminRole =
   /*#__PURE__*/ createUseReadContract({
@@ -1237,8 +1237,8 @@ export const useReadAishiAgentDefaultAdminRole =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"MAX_AGENTS"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentMaxAgents = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1249,8 +1249,8 @@ export const useReadAishiAgentMaxAgents = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"MINTING_FEE"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentMintingFee = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1261,8 +1261,8 @@ export const useReadAishiAgentMintingFee = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"PAUSER_ROLE"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentPauserRole = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1273,8 +1273,8 @@ export const useReadAishiAgentPauserRole = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"VERIFIER_ROLE"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentVerifierRole =
   /*#__PURE__*/ createUseReadContract({
@@ -1286,8 +1286,8 @@ export const useReadAishiAgentVerifierRole =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"agentMemories"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentAgentMemories =
   /*#__PURE__*/ createUseReadContract({
@@ -1299,8 +1299,8 @@ export const useReadAishiAgentAgentMemories =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"agentPersonalities"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentAgentPersonalities =
   /*#__PURE__*/ createUseReadContract({
@@ -1312,8 +1312,8 @@ export const useReadAishiAgentAgentPersonalities =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"agents"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentAgents = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1324,8 +1324,8 @@ export const useReadAishiAgentAgents = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"authorizedUsersOf"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentAuthorizedUsersOf =
   /*#__PURE__*/ createUseReadContract({
@@ -1337,8 +1337,8 @@ export const useReadAishiAgentAuthorizedUsersOf =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"balanceOf"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentBalanceOf = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1349,8 +1349,8 @@ export const useReadAishiAgentBalanceOf = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"canProcessDreamToday"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentCanProcessDreamToday =
   /*#__PURE__*/ createUseReadContract({
@@ -1362,8 +1362,8 @@ export const useReadAishiAgentCanProcessDreamToday =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"consolidationStreak"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentConsolidationStreak =
   /*#__PURE__*/ createUseReadContract({
@@ -1375,8 +1375,8 @@ export const useReadAishiAgentConsolidationStreak =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"getAgentMemory"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentGetAgentMemory =
   /*#__PURE__*/ createUseReadContract({
@@ -1388,8 +1388,8 @@ export const useReadAishiAgentGetAgentMemory =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"getConsolidationReward"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentGetConsolidationReward =
   /*#__PURE__*/ createUseReadContract({
@@ -1401,8 +1401,8 @@ export const useReadAishiAgentGetConsolidationReward =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"getEvolutionStats"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentGetEvolutionStats =
   /*#__PURE__*/ createUseReadContract({
@@ -1414,8 +1414,8 @@ export const useReadAishiAgentGetEvolutionStats =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"getMemoryAccess"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentGetMemoryAccess =
   /*#__PURE__*/ createUseReadContract({
@@ -1427,8 +1427,8 @@ export const useReadAishiAgentGetMemoryAccess =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"getPersonalityTraits"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentGetPersonalityTraits =
   /*#__PURE__*/ createUseReadContract({
@@ -1440,8 +1440,8 @@ export const useReadAishiAgentGetPersonalityTraits =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"getRoleAdmin"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentGetRoleAdmin =
   /*#__PURE__*/ createUseReadContract({
@@ -1453,8 +1453,8 @@ export const useReadAishiAgentGetRoleAdmin =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"getUniqueFeatures"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentGetUniqueFeatures =
   /*#__PURE__*/ createUseReadContract({
@@ -1466,8 +1466,8 @@ export const useReadAishiAgentGetUniqueFeatures =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"hasMilestone"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentHasMilestone =
   /*#__PURE__*/ createUseReadContract({
@@ -1479,8 +1479,8 @@ export const useReadAishiAgentHasMilestone =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"hasRole"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentHasRole = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1491,8 +1491,8 @@ export const useReadAishiAgentHasRole = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"milestones"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentMilestones = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1503,8 +1503,8 @@ export const useReadAishiAgentMilestones = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"name"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentName = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1515,8 +1515,8 @@ export const useReadAishiAgentName = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"nameExists"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentNameExists = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1527,8 +1527,8 @@ export const useReadAishiAgentNameExists = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"nextTokenId"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentNextTokenId = /*#__PURE__*/ createUseReadContract(
   {
@@ -1541,8 +1541,8 @@ export const useReadAishiAgentNextTokenId = /*#__PURE__*/ createUseReadContract(
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"ownerOf"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentOwnerOf = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1553,8 +1553,8 @@ export const useReadAishiAgentOwnerOf = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"ownerToTokenId"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentOwnerToTokenId =
   /*#__PURE__*/ createUseReadContract({
@@ -1566,8 +1566,8 @@ export const useReadAishiAgentOwnerToTokenId =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"paused"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentPaused = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1578,8 +1578,8 @@ export const useReadAishiAgentPaused = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"pendingRewards"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentPendingRewards =
   /*#__PURE__*/ createUseReadContract({
@@ -1591,8 +1591,8 @@ export const useReadAishiAgentPendingRewards =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"responseStyles"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentResponseStyles =
   /*#__PURE__*/ createUseReadContract({
@@ -1604,8 +1604,8 @@ export const useReadAishiAgentResponseStyles =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"supportsInterface"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentSupportsInterface =
   /*#__PURE__*/ createUseReadContract({
@@ -1617,8 +1617,8 @@ export const useReadAishiAgentSupportsInterface =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"symbol"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentSymbol = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1629,8 +1629,8 @@ export const useReadAishiAgentSymbol = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"totalAgents"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentTotalAgents = /*#__PURE__*/ createUseReadContract(
   {
@@ -1643,8 +1643,8 @@ export const useReadAishiAgentTotalAgents = /*#__PURE__*/ createUseReadContract(
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"totalFeesCollected"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentTotalFeesCollected =
   /*#__PURE__*/ createUseReadContract({
@@ -1656,8 +1656,8 @@ export const useReadAishiAgentTotalFeesCollected =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"totalSupply"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentTotalSupply = /*#__PURE__*/ createUseReadContract(
   {
@@ -1670,8 +1670,8 @@ export const useReadAishiAgentTotalSupply = /*#__PURE__*/ createUseReadContract(
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"treasury"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentTreasury = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1682,8 +1682,8 @@ export const useReadAishiAgentTreasury = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"verifier"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useReadAishiAgentVerifier = /*#__PURE__*/ createUseReadContract({
   abi: aishiAgentAbi,
@@ -1694,8 +1694,8 @@ export const useReadAishiAgentVerifier = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgent = /*#__PURE__*/ createUseWriteContract({
   abi: aishiAgentAbi,
@@ -1705,8 +1705,8 @@ export const useWriteAishiAgent = /*#__PURE__*/ createUseWriteContract({
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"authorizeUsage"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentAuthorizeUsage =
   /*#__PURE__*/ createUseWriteContract({
@@ -1718,8 +1718,8 @@ export const useWriteAishiAgentAuthorizeUsage =
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"consolidateMonth"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentConsolidateMonth =
   /*#__PURE__*/ createUseWriteContract({
@@ -1731,8 +1731,8 @@ export const useWriteAishiAgentConsolidateMonth =
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"emergencyAuthorizeUser"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentEmergencyAuthorizeUser =
   /*#__PURE__*/ createUseWriteContract({
@@ -1744,8 +1744,8 @@ export const useWriteAishiAgentEmergencyAuthorizeUser =
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"emergencyTransfer"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentEmergencyTransfer =
   /*#__PURE__*/ createUseWriteContract({
@@ -1757,8 +1757,8 @@ export const useWriteAishiAgentEmergencyTransfer =
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"grantRole"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentGrantRole = /*#__PURE__*/ createUseWriteContract(
   { abi: aishiAgentAbi, address: aishiAgentAddress, functionName: 'grantRole' },
@@ -1767,8 +1767,8 @@ export const useWriteAishiAgentGrantRole = /*#__PURE__*/ createUseWriteContract(
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"mintAgent"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentMintAgent = /*#__PURE__*/ createUseWriteContract(
   { abi: aishiAgentAbi, address: aishiAgentAddress, functionName: 'mintAgent' },
@@ -1777,8 +1777,8 @@ export const useWriteAishiAgentMintAgent = /*#__PURE__*/ createUseWriteContract(
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"pause"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentPause = /*#__PURE__*/ createUseWriteContract({
   abi: aishiAgentAbi,
@@ -1789,8 +1789,8 @@ export const useWriteAishiAgentPause = /*#__PURE__*/ createUseWriteContract({
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"processDailyDream"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentProcessDailyDream =
   /*#__PURE__*/ createUseWriteContract({
@@ -1802,8 +1802,8 @@ export const useWriteAishiAgentProcessDailyDream =
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"recordConversation"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentRecordConversation =
   /*#__PURE__*/ createUseWriteContract({
@@ -1815,8 +1815,8 @@ export const useWriteAishiAgentRecordConversation =
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"renounceRole"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentRenounceRole =
   /*#__PURE__*/ createUseWriteContract({
@@ -1828,8 +1828,8 @@ export const useWriteAishiAgentRenounceRole =
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"revokeRole"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentRevokeRole =
   /*#__PURE__*/ createUseWriteContract({
@@ -1841,8 +1841,8 @@ export const useWriteAishiAgentRevokeRole =
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"transfer"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentTransfer = /*#__PURE__*/ createUseWriteContract({
   abi: aishiAgentAbi,
@@ -1853,8 +1853,8 @@ export const useWriteAishiAgentTransfer = /*#__PURE__*/ createUseWriteContract({
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"unpause"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentUnpause = /*#__PURE__*/ createUseWriteContract({
   abi: aishiAgentAbi,
@@ -1865,8 +1865,8 @@ export const useWriteAishiAgentUnpause = /*#__PURE__*/ createUseWriteContract({
 /**
  * Wraps __{@link useWriteContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"updateMemoryCore"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWriteAishiAgentUpdateMemoryCore =
   /*#__PURE__*/ createUseWriteContract({
@@ -1878,8 +1878,8 @@ export const useWriteAishiAgentUpdateMemoryCore =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgent = /*#__PURE__*/ createUseSimulateContract({
   abi: aishiAgentAbi,
@@ -1889,8 +1889,8 @@ export const useSimulateAishiAgent = /*#__PURE__*/ createUseSimulateContract({
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"authorizeUsage"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentAuthorizeUsage =
   /*#__PURE__*/ createUseSimulateContract({
@@ -1902,8 +1902,8 @@ export const useSimulateAishiAgentAuthorizeUsage =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"consolidateMonth"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentConsolidateMonth =
   /*#__PURE__*/ createUseSimulateContract({
@@ -1915,8 +1915,8 @@ export const useSimulateAishiAgentConsolidateMonth =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"emergencyAuthorizeUser"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentEmergencyAuthorizeUser =
   /*#__PURE__*/ createUseSimulateContract({
@@ -1928,8 +1928,8 @@ export const useSimulateAishiAgentEmergencyAuthorizeUser =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"emergencyTransfer"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentEmergencyTransfer =
   /*#__PURE__*/ createUseSimulateContract({
@@ -1941,8 +1941,8 @@ export const useSimulateAishiAgentEmergencyTransfer =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"grantRole"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentGrantRole =
   /*#__PURE__*/ createUseSimulateContract({
@@ -1954,8 +1954,8 @@ export const useSimulateAishiAgentGrantRole =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"mintAgent"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentMintAgent =
   /*#__PURE__*/ createUseSimulateContract({
@@ -1967,8 +1967,8 @@ export const useSimulateAishiAgentMintAgent =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"pause"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentPause =
   /*#__PURE__*/ createUseSimulateContract({
@@ -1980,8 +1980,8 @@ export const useSimulateAishiAgentPause =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"processDailyDream"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentProcessDailyDream =
   /*#__PURE__*/ createUseSimulateContract({
@@ -1993,8 +1993,8 @@ export const useSimulateAishiAgentProcessDailyDream =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"recordConversation"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentRecordConversation =
   /*#__PURE__*/ createUseSimulateContract({
@@ -2006,8 +2006,8 @@ export const useSimulateAishiAgentRecordConversation =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"renounceRole"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentRenounceRole =
   /*#__PURE__*/ createUseSimulateContract({
@@ -2019,8 +2019,8 @@ export const useSimulateAishiAgentRenounceRole =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"revokeRole"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentRevokeRole =
   /*#__PURE__*/ createUseSimulateContract({
@@ -2032,8 +2032,8 @@ export const useSimulateAishiAgentRevokeRole =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"transfer"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentTransfer =
   /*#__PURE__*/ createUseSimulateContract({
@@ -2045,8 +2045,8 @@ export const useSimulateAishiAgentTransfer =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"unpause"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentUnpause =
   /*#__PURE__*/ createUseSimulateContract({
@@ -2058,8 +2058,8 @@ export const useSimulateAishiAgentUnpause =
 /**
  * Wraps __{@link useSimulateContract}__ with `abi` set to __{@link aishiAgentAbi}__ and `functionName` set to `"updateMemoryCore"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useSimulateAishiAgentUpdateMemoryCore =
   /*#__PURE__*/ createUseSimulateContract({
@@ -2071,8 +2071,8 @@ export const useSimulateAishiAgentUpdateMemoryCore =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2083,8 +2083,8 @@ export const useWatchAishiAgentEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"AgentConversation"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentAgentConversationEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2096,8 +2096,8 @@ export const useWatchAishiAgentAgentConversationEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"AuthorizedUsage"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentAuthorizedUsageEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2109,8 +2109,8 @@ export const useWatchAishiAgentAuthorizedUsageEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"Cloned"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentClonedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2122,8 +2122,8 @@ export const useWatchAishiAgentClonedEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"Minted"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentMintedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2135,8 +2135,8 @@ export const useWatchAishiAgentMintedEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"Paused"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentPausedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2148,8 +2148,8 @@ export const useWatchAishiAgentPausedEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"PersonalityEvolved"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentPersonalityEvolvedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2161,8 +2161,8 @@ export const useWatchAishiAgentPersonalityEvolvedEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"PersonalityMilestone"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentPersonalityMilestoneEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2174,8 +2174,8 @@ export const useWatchAishiAgentPersonalityMilestoneEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"PublishedSealedKey"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentPublishedSealedKeyEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2187,8 +2187,8 @@ export const useWatchAishiAgentPublishedSealedKeyEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"ResponseStyleEvolved"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentResponseStyleEvolvedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2200,8 +2200,8 @@ export const useWatchAishiAgentResponseStyleEvolvedEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"RoleAdminChanged"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentRoleAdminChangedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2213,8 +2213,8 @@ export const useWatchAishiAgentRoleAdminChangedEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"RoleGranted"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentRoleGrantedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2226,8 +2226,8 @@ export const useWatchAishiAgentRoleGrantedEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"RoleRevoked"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentRoleRevokedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2239,8 +2239,8 @@ export const useWatchAishiAgentRoleRevokedEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"Transferred"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentTransferredEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2252,8 +2252,8 @@ export const useWatchAishiAgentTransferredEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"UniqueFeaturesAdded"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentUniqueFeaturesAddedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2265,8 +2265,8 @@ export const useWatchAishiAgentUniqueFeaturesAddedEvent =
 /**
  * Wraps __{@link useWatchContractEvent}__ with `abi` set to __{@link aishiAgentAbi}__ and `eventName` set to `"Unpaused"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x6Ea891A7223459aCC46030aae203DCC218a388C6)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0xE191ACEF27Eb78309Ce98b7CBC105d60f23C396c)
  */
 export const useWatchAishiAgentUnpausedEvent =
   /*#__PURE__*/ createUseWatchContractEvent({
@@ -2278,8 +2278,8 @@ export const useWatchAishiAgentUnpausedEvent =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiVerifierAbi}__
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x978a566B8817f14fEAaA783177E41e2d6dCA000C)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x65d1fcebC6d1bF4650f0260203f048e585A346D3)
  */
 export const useReadAishiVerifier = /*#__PURE__*/ createUseReadContract({
   abi: aishiVerifierAbi,
@@ -2289,8 +2289,8 @@ export const useReadAishiVerifier = /*#__PURE__*/ createUseReadContract({
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiVerifierAbi}__ and `functionName` set to `"verifyPreimage"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x978a566B8817f14fEAaA783177E41e2d6dCA000C)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x65d1fcebC6d1bF4650f0260203f048e585A346D3)
  */
 export const useReadAishiVerifierVerifyPreimage =
   /*#__PURE__*/ createUseReadContract({
@@ -2302,8 +2302,8 @@ export const useReadAishiVerifierVerifyPreimage =
 /**
  * Wraps __{@link useReadContract}__ with `abi` set to __{@link aishiVerifierAbi}__ and `functionName` set to `"verifyTransferValidity"`
  *
- * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
- * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8)
+ * - [__View Contract on 0 G Galileo Testnet 0 G Block Chain Explorer__](https://chainscan-galileo.0g.ai/address/0x978a566B8817f14fEAaA783177E41e2d6dCA000C)
+ * - [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x65d1fcebC6d1bF4650f0260203f048e585A346D3)
  */
 export const useReadAishiVerifierVerifyTransferValidity =
   /*#__PURE__*/ createUseReadContract({
