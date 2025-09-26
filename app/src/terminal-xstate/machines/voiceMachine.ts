@@ -3,7 +3,7 @@
  * @description Manages voice recording, transcription (STT), and speech synthesis (TTS)
  */
 
-import { setup, assign, fromPromise, sendParent } from 'xstate';
+import { setup, assign, fromPromise, sendParent, enqueueActions } from 'xstate';
 
 interface VoiceContext {
   // Recording
@@ -25,6 +25,11 @@ interface VoiceContext {
   synthesizedAudio: string | null;
   isSpeaking: boolean;
 
+  // Dream context for TTS completion
+  isDreamResponse: boolean;
+  dreamAgentName: string | null;
+  isEvolutionDream: boolean;
+
   // Error handling
   errorMessage: string | null;
   isProcessing: boolean;
@@ -37,7 +42,7 @@ type VoiceEvent =
   | { type: 'RESUME_RECORDING' }
   | { type: 'CLEAR_RECORDING' }
   | { type: 'TRANSCRIBE'; audioBase64: string }
-  | { type: 'SYNTHESIZE'; text: string; emotionalTone?: string }
+  | { type: 'SYNTHESIZE'; text: string; emotionalTone?: string; isDreamResponse?: boolean; agentName?: string; isEvolutionDream?: boolean }
   | { type: 'SELECT_VOICE'; voiceId: 'aria' | 'nova' | 'atlas' | 'echo' }
   | { type: 'PLAY_AUDIO' }
   | { type: 'STOP_AUDIO' }
@@ -344,6 +349,28 @@ export const voiceMachine = setup({
       errorMessage: null
     }),
 
+    // Store dream context for synthesis
+    storeDreamContext: assign({
+      isDreamResponse: ({ event }) => {
+        if (event.type === 'SYNTHESIZE') {
+          return event.isDreamResponse || false;
+        }
+        return false;
+      },
+      dreamAgentName: ({ event }) => {
+        if (event.type === 'SYNTHESIZE') {
+          return event.agentName || null;
+        }
+        return null;
+      },
+      isEvolutionDream: ({ event }) => {
+        if (event.type === 'SYNTHESIZE') {
+          return event.isEvolutionDream || false;
+        }
+        return false;
+      }
+    }),
+
     // Send transcription result to parent (terminal machine)
     sendTranscriptToParent: sendParent(({ context }) => {
       if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
@@ -361,7 +388,7 @@ export const voiceMachine = setup({
     }),
 
     // Send synthesized audio as voice-output line to parent
-    sendVoiceOutputToParent: sendParent(({ context, event }) => {
+    sendVoiceOutputToParent: enqueueActions(({ context, event, enqueue }) => {
       if (event.type === 'xstate.done.actor.synthesize') {
         if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
           console.log('[voiceMachine] sendVoiceOutputToParent creating voice-output line:', {
@@ -370,10 +397,14 @@ export const voiceMachine = setup({
             audioDataLength: event.output?.audioData?.length || 0,
             duration: event.output?.duration,
             voiceUsed: event.output?.voiceUsed,
+            isDreamResponse: context.isDreamResponse,
+            dreamAgentName: context.dreamAgentName,
             fullOutput: event.output
           });
         }
-        return {
+
+        // First: Send the voice output line
+        enqueue(sendParent(() => ({
           type: 'APPEND_LINES',
           lines: [{
             type: 'voice-output',
@@ -384,9 +415,24 @@ export const voiceMachine = setup({
             voiceId: event.output?.voiceUsed || context.selectedVoice,
             timestamp: Date.now()
           }]
-        };
+        })));
+
+        // Second: Send confirmation question if this was a dream response
+        if (context.isDreamResponse && context.dreamAgentName) {
+          const confirmationText = context.isEvolutionDream
+            ? `Should ${context.dreamAgentName} evolve with this dream?`
+            : `Should ${context.dreamAgentName} grow with this dream?`;
+
+          enqueue(sendParent(() => ({
+            type: 'APPEND_LINES',
+            lines: [{
+              type: 'system',
+              content: confirmationText,
+              timestamp: Date.now() + 100 // Small delay after voice message
+            }]
+          })));
+        }
       }
-      return { type: 'NOOP' };
     })
   },
   guards: {
@@ -428,6 +474,11 @@ export const voiceMachine = setup({
     // Synthesis
     synthesizedAudio: null,
     isSpeaking: false,
+
+    // Dream context
+    isDreamResponse: false,
+    dreamAgentName: null,
+    isEvolutionDream: false,
 
     // State
     errorMessage: null,
@@ -471,7 +522,8 @@ export const voiceMachine = setup({
         },
         SYNTHESIZE: {
           target: 'synthesizing',
-          guard: 'hasTextToSynthesize'
+          guard: 'hasTextToSynthesize',
+          actions: 'storeDreamContext'
         },
         SELECT_VOICE: {
           target: 'savingVoice',

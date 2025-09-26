@@ -431,6 +431,17 @@ export const terminalActions = {
     wasVoiceInput: true // Mark that this input came from voice
   }),
 
+  setVoiceThinkingStatus: assign({
+    dreamStatus: ({ context }: { context: TerminalContext }) => {
+      if (context.wasVoiceInput && context.agentRef) {
+        const agentState = context.agentRef.getSnapshot();
+        const agentName = agentState?.context?.agentName || 'Agent';
+        return `${agentName} is thinking . . .`;
+      }
+      return null;
+    }
+  }),
+
   sendToVoice: ({ context, event }: any) => {
     if (context.voiceRef && event.type === 'VOICE.SPEAK') {
       context.voiceRef.send({
@@ -515,7 +526,10 @@ export const terminalActions = {
       context.voiceRef.send({
         type: 'SYNTHESIZE',
         text: event.text,
-        emotionalTone: 'neutral'
+        emotionalTone: 'neutral',
+        isDreamResponse: event.isDreamResponse || false,
+        agentName: event.agentName,
+        isEvolutionDream: event.isEvolutionDream || false
       });
     }
   },

@@ -384,8 +384,11 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
             }}
             disabled={disabled}
             style={{
-              width: '32px',
-              height: '32px',
+              width: '40px', // Match MicrophoneButton size
+              height: '40px', // Match MicrophoneButton size
+              minWidth: '40px', // Prevent squashing
+              minHeight: '40px', // Prevent squashing
+              flexShrink: 0, // Prevent compression in flex layout
               borderRadius: '50%',
               backgroundColor: colors.accent,
               border: 'none',
@@ -410,7 +413,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
             }}
             aria-label="Send message"
           >
-            <Send size={16} />
+            <Send size={20} />
           </button>
         )}
 

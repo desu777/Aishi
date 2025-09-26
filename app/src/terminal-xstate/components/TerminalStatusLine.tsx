@@ -80,29 +80,33 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
       color: '#E5E5E5',
       letterSpacing: '0.5px',
       fontWeight: '400',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Smooth transitions for status changes
     }}>
       {(status === 'thinking' || status === 'learning' || status === 'evolving') && agentName ? (
         // Special display for active processing states
         <>
           <span style={{ color: '#9CA3AF' }}>status: </span>
-          <span style={{ 
+          <span style={{
             color: '#FFFFFF',
             fontWeight: '500',
+            transition: 'color 0.3s ease, opacity 0.3s ease',
           }}>
             {agentName}
           </span>
-          <span style={{ 
+          <span style={{
             color: getStatusColor(),
             fontWeight: '500',
+            transition: 'color 0.3s ease, opacity 0.3s ease',
           }}>
             {' is ' + getStatusText()}
           </span>
-          <span style={{ 
+          <span style={{
             color: getStatusColor(),
             fontWeight: '500',
             minWidth: '18px',
             display: 'inline-block',
-            textAlign: 'left'
+            textAlign: 'left',
+            transition: 'color 0.3s ease, opacity 0.3s ease',
           }}>
             {dots}
           </span>
@@ -111,9 +115,10 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
         // Normal status display
         <>
           <span style={{ color: '#9CA3AF' }}>status: </span>
-          <span style={{ 
+          <span style={{
             color: getStatusColor(),
             fontWeight: '500',
+            transition: 'color 0.3s ease, opacity 0.3s ease',
           }}>
             {getStatusText()}
           </span>

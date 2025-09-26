@@ -48,16 +48,9 @@ export const evolutionDreamActions = {
           });
         }
 
-        // Display AI analysis - check if voice or text
-        if (context.wasVoiceInput) {
-          // For voice input, prepare for voice output (audio will be added after TTS)
-          lines.push({
-            type: 'info',
-            content: `~ ${context.agentName} : [Processing voice response...]`,
-            timestamp
-          });
-        } else {
-          // For text input, display regular text
+        // Display AI analysis - for text input only
+        // For voice input, skip text display and let TTS handle the response
+        if (!context.wasVoiceInput) {
           lines.push({
             type: 'info',
             content: `~ ${context.agentName} : ${context.aiResponse.fullAnalysis}`,
@@ -65,19 +58,22 @@ export const evolutionDreamActions = {
           });
         }
 
-        // Ask for confirmation with evolution notice
-        if (isEvolutionDream && context.aiResponse.personalityImpact) {
-          lines.push({
-            type: 'system',
-            content: `Do u wanna evolve ${context.agentName} with this evolution dream? Type y/n`,
-            timestamp: timestamp + 1
-          });
-        } else {
-          lines.push({
-            type: 'system',
-            content: `Do u wanna train ${context.agentName} with your dream? Type y/n`,
-            timestamp: timestamp + 1
-          });
+        // Ask for confirmation with evolution notice - only for text input
+        // For voice input, delay question until after TTS audio is delivered
+        if (!context.wasVoiceInput) {
+          if (isEvolutionDream && context.aiResponse.personalityImpact) {
+            lines.push({
+              type: 'system',
+              content: `Should ${context.agentName} evolve with this dream?`,
+              timestamp: timestamp + 1
+            });
+          } else {
+            lines.push({
+              type: 'system',
+              content: `Should ${context.agentName} grow with this dream?`,
+              timestamp: timestamp + 1
+            });
+          }
         }
       }
 
@@ -100,11 +96,20 @@ export const evolutionDreamActions = {
         textPreview: context.aiResponse.fullAnalysis.substring(0, 100),
         agentName: context.agentName
       });
-      enqueue(sendParent(() => ({
-        type: 'VOICE.SYNTHESIZE_RESPONSE',
-        text: context.aiResponse.fullAnalysis,
-        agentName: context.agentName
-      })));
+      enqueue(sendParent(() => {
+        // Recalculate inside closure for proper scope access
+        const dreamCount = context.dreamContext?.agentProfile?.dreamCount || 0;
+        const nextDreamId = dreamCount + 1;
+        const isEvolutionDreamInScope = nextDreamId % 5 === 0;
+
+        return {
+          type: 'VOICE.SYNTHESIZE_RESPONSE',
+          text: context.aiResponse.fullAnalysis,
+          agentName: context.agentName,
+          isDreamResponse: true,
+          isEvolutionDream: isEvolutionDreamInScope && !!context.aiResponse.personalityImpact
+        };
+      }));
     } else {
       debugLog('[EVOLUTION] ❌ NO TTS TRIGGERED - Conditions not met', {
         wasVoiceInput: context.wasVoiceInput,

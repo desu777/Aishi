@@ -170,9 +170,9 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
           width: '40px',
           height: '40px',
           borderRadius: '50%',
-          border: `2px solid ${isRecording ? theme.accent.primary : theme.border}`,
-          backgroundColor: isRecording ? `${theme.accent.primary}20` : theme.bg.secondary,
-          color: isRecording ? theme.accent.primary : theme.text.primary,
+          border: `2px solid ${theme.accent.primary}`,
+          backgroundColor: theme.accent.primary,
+          color: '#1a1a1a', // Dark icon on purple background (consistent with send button)
           cursor: isDisabled || isProcessing ? 'not-allowed' : 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -225,7 +225,7 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
         {isProcessing ? (
           <Loader2 size={20} className="animate-spin" />
         ) : isRecording ? (
-          <Square size={16} style={{ fill: theme.accent.primary }} />
+          <Square size={16} style={{ fill: '#1a1a1a' }} />
         ) : (
           <Mic size={20} />
         )}

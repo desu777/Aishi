@@ -152,8 +152,8 @@ export const VoiceMessage: React.FC<VoiceMessageProps> = ({
   const containerStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    padding: '12px 16px',
+    gap: '8px', // Tighter spacing between elements
+    padding: '10px 14px', // Reduced padding for cleaner layout
     backgroundColor: isUserMessage
       ? 'rgba(139, 92, 246, 0.1)'
       : 'rgba(255, 255, 255, 0.05)',
@@ -202,10 +202,12 @@ export const VoiceMessage: React.FC<VoiceMessageProps> = ({
     height: '100%',
     width: `${progress}%`,
     backgroundColor: isUserMessage
-      ? 'rgba(139, 92, 246, 0.2)'
-      : 'rgba(255, 255, 255, 0.1)',
+      ? 'rgba(139, 92, 246, 0.15)' // Reduced opacity for less blur
+      : 'rgba(255, 255, 255, 0.08)', // Reduced opacity for cleaner look
     transition: 'width 0.1s linear',
-    pointerEvents: 'none' as const
+    pointerEvents: 'none' as const,
+    borderRadius: '0', // Clean edges
+    backdropFilter: 'none' // Remove any blur effects
   };
 
   const waveformBarStyle = (index: number, height: number): React.CSSProperties => ({
@@ -225,8 +227,9 @@ export const VoiceMessage: React.FC<VoiceMessageProps> = ({
     fontSize: '12px',
     color: isUserMessage ? '#8B5CF6' : '#8A8A8A',
     fontFamily: 'monospace',
-    minWidth: '45px',
-    textAlign: 'right' as const
+    minWidth: '35px', // Reduced spacing for tighter layout
+    textAlign: 'right' as const,
+    paddingLeft: '4px' // Minimal padding for clean separation
   };
 
   const senderStyle: React.CSSProperties = {

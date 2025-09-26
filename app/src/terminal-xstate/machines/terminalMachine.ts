@@ -431,6 +431,7 @@ export const terminalMachine = setup({
         'VOICE.TRANSCRIBED': {
           actions: [
             'handleVoiceTranscript',
+            'setVoiceThinkingStatus', // Set thinking status immediately after voice transcription
             'addDreamUserInput',
             'sendDreamInput',
             'clearInput'
