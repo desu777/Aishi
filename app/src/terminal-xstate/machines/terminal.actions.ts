@@ -319,6 +319,7 @@ export const terminalActions = {
           type: 'voice-input',
           content: context.currentInput,
           transcript: context.currentInput,
+          audioFormat: 'audio/webm',
           timestamp
         }];
       }
@@ -357,6 +358,7 @@ export const terminalActions = {
           type: 'voice-input',
           content: context.currentInput,
           transcript: context.currentInput,
+          audioFormat: 'audio/webm',
           timestamp
         }];
       }
@@ -471,6 +473,7 @@ export const terminalActions = {
         transcript: event.transcript,
         audioBlob: event.audioBlob,
         audioData: event.audioBase64,
+        audioFormat: 'audio/webm', // Voice input uses webm format from browser recording
         duration: event.duration || 0,
         timestamp
       };

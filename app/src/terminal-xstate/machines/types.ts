@@ -27,6 +27,7 @@ export interface TerminalLine {
   // Voice message data
   audioData?: string; // Base64 encoded audio
   audioBlob?: Blob;
+  audioFormat?: string; // MIME type for audio (e.g., 'audio/mp3', 'audio/webm')
   duration?: number;
   transcript?: string;
   voiceId?: string;

@@ -263,7 +263,7 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
             byteNumbers[i] = byteCharacters.charCodeAt(i);
           }
           const byteArray = new Uint8Array(byteNumbers);
-          audioBlob = new Blob([byteArray], { type: 'audio/webm' });
+          audioBlob = new Blob([byteArray], { type: line.audioFormat || 'audio/mp3' });
         } catch (error) {
           console.error('Failed to convert audio data to blob:', error);
         }

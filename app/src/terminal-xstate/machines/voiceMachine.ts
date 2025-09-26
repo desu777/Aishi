@@ -95,15 +95,17 @@ const transcribeAudio = fromPromise(async ({ input }: { input: { audioBase64: st
       throw new Error(`Transcription failed: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const responseData = await response.json();
+    const sttResult = responseData.data; // Extract from wrapped API response
     if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
       console.log('[voiceMachine] Transcription response from backend:', {
-        hasTranscript: !!data.transcript,
-        transcript: data.transcript,
-        fullResponse: data
+        hasTranscript: !!sttResult.transcript,
+        transcript: sttResult.transcript,
+        fullResponse: responseData,
+        extractedData: sttResult
       });
     }
-    return data as TranscriptionResult;
+    return sttResult as TranscriptionResult;
   } catch (error) {
     console.error('Error transcribing audio:', error);
     throw error;
@@ -139,8 +141,20 @@ const synthesizeSpeech = fromPromise(async ({
       throw new Error(`Speech synthesis failed: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    return data as SynthesisResult;
+    const responseData = await response.json();
+    const ttsResult = responseData.data; // Extract from wrapped API response
+    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+      console.log('[voiceMachine] TTS response from backend:', {
+        hasAudioData: !!ttsResult.audioData,
+        audioDataLength: ttsResult.audioData?.length || 0,
+        duration: ttsResult.duration,
+        format: ttsResult.format,
+        voiceUsed: ttsResult.voiceUsed,
+        fullResponse: responseData,
+        extractedData: ttsResult
+      });
+    }
+    return ttsResult as SynthesisResult;
   } catch (error) {
     console.error('Error synthesizing speech:', error);
     throw error;
@@ -243,19 +257,26 @@ export const voiceMachine = setup({
     setTranscript: assign({
       transcript: ({ event }) => {
         if (event.type === 'xstate.done.actor.transcribe') {
-          return event.output.transcript;
+          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+            console.log('[voiceMachine] setTranscript from event.output:', {
+              hasOutput: !!event.output,
+              transcript: event.output?.transcript,
+              fullOutput: event.output
+            });
+          }
+          return event.output?.transcript || null;
         }
         return null;
       },
       detectedLanguage: ({ event }) => {
         if (event.type === 'xstate.done.actor.transcribe') {
-          return event.output.detectedLanguage;
+          return event.output?.detectedLanguage || null;
         }
         return null;
       },
       sttConfidence: ({ event }) => {
         if (event.type === 'xstate.done.actor.transcribe') {
-          return event.output.confidence;
+          return event.output?.confidence || null;
         }
         return null;
       }
@@ -324,23 +345,43 @@ export const voiceMachine = setup({
     }),
 
     // Send transcription result to parent (terminal machine)
-    sendTranscriptToParent: sendParent(({ context }) => ({
-      type: 'VOICE.TRANSCRIBED',
-      transcript: context.transcript,
-      language: context.detectedLanguage
-    })),
+    sendTranscriptToParent: sendParent(({ context }) => {
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[voiceMachine] sendTranscriptToParent sending to terminal:', {
+          transcript: context.transcript,
+          detectedLanguage: context.detectedLanguage,
+          hasTranscript: !!context.transcript
+        });
+      }
+      return {
+        type: 'VOICE.TRANSCRIBED',
+        transcript: context.transcript,
+        language: context.detectedLanguage
+      };
+    }),
 
     // Send synthesized audio as voice-output line to parent
     sendVoiceOutputToParent: sendParent(({ context, event }) => {
       if (event.type === 'xstate.done.actor.synthesize') {
+        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+          console.log('[voiceMachine] sendVoiceOutputToParent creating voice-output line:', {
+            hasOutput: !!event.output,
+            hasAudioData: !!event.output?.audioData,
+            audioDataLength: event.output?.audioData?.length || 0,
+            duration: event.output?.duration,
+            voiceUsed: event.output?.voiceUsed,
+            fullOutput: event.output
+          });
+        }
         return {
           type: 'APPEND_LINES',
           lines: [{
             type: 'voice-output',
             content: '', // Text is already shown
-            audioData: event.output.audioData,
-            duration: event.output.duration || 0,
-            voiceId: event.output.voiceUsed,
+            audioData: event.output?.audioData || null,
+            audioFormat: event.output?.format ? `audio/${event.output.format}` : 'audio/mp3',
+            duration: event.output?.duration || 0,
+            voiceId: event.output?.voiceUsed || context.selectedVoice,
             timestamp: Date.now()
           }]
         };

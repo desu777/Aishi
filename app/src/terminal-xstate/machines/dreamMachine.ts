@@ -75,7 +75,7 @@ export interface DreamMachineContext {
 // Dream machine events
 export type DreamEvent =
   | { type: 'START'; modelId?: string; walletAddress?: string; tokenId?: number; agentName?: string; wasVoiceInput?: boolean }
-  | { type: 'SUBMIT_DREAM'; dreamText: string }
+  | { type: 'SUBMIT_DREAM'; dreamText: string; wasVoiceInput?: boolean }
   | { type: 'CONFIRM_SAVE' }
   | { type: 'CANCEL_SAVE' }
   | { type: 'RETRY' }
