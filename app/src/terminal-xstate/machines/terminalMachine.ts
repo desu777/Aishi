@@ -422,6 +422,12 @@ export const terminalMachine = setup({
         'VOICE.STOP_RECORDING': {
           actions: ['stopRecording', 'stopVoiceRecording']
         },
+        'APPEND_VOICE_INPUT': {
+          actions: 'displayVoiceInput'
+        },
+        'SET_VOICE_INPUT': {
+          actions: 'setVoiceInput'
+        },
         'VOICE.TRANSCRIBED': {
           actions: [
             'handleVoiceTranscript',
@@ -485,6 +491,12 @@ export const terminalMachine = setup({
         },
         'VOICE.STOP_RECORDING': {
           actions: ['stopRecording', 'stopVoiceRecording']
+        },
+        'APPEND_VOICE_INPUT': {
+          actions: 'displayVoiceInput'
+        },
+        'SET_VOICE_INPUT': {
+          actions: 'setVoiceInput'
         },
         'VOICE.TRANSCRIBED': {
           actions: [

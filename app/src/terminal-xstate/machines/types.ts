@@ -86,4 +86,6 @@ export type TerminalEvent =
   | { type: 'VOICE.TRANSCRIBED'; transcript: string; language?: string }
   | { type: 'VOICE.SELECT_VOICE'; voiceId: 'aria' | 'nova' | 'atlas' | 'echo' }
   | { type: 'VOICE.SPEAK'; text: string; emotionalTone?: string }
-  | { type: 'VOICE.ERROR'; message: string };
+  | { type: 'VOICE.ERROR'; message: string }
+  | { type: 'APPEND_VOICE_INPUT'; audioBase64: string; audioBlob: Blob; duration: number; transcript?: string }
+  | { type: 'SET_VOICE_INPUT'; value: boolean };

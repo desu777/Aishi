@@ -207,16 +207,22 @@ export const workflowActions = {
    * Send dream input
    */
   sendDreamInput: ({ context }: { context: TerminalContext }) => {
-    const input = context.currentInput.trim().toLowerCase();
+    const input = (context.currentInput || '').trim().toLowerCase();
     if (context.dreamRef) {
+      // Log voice input status
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[sendDreamInput] Sending to dream with wasVoiceInput:', context.wasVoiceInput);
+      }
+
       if (input === 'y' || input === 'yes') {
         context.dreamRef.send({ type: 'CONFIRM_SAVE' });
       } else if (input === 'n' || input === 'no') {
         context.dreamRef.send({ type: 'CANCEL_SAVE' });
       } else {
-        context.dreamRef.send({ 
-          type: 'SUBMIT_DREAM', 
-          dreamText: context.currentInput 
+        context.dreamRef.send({
+          type: 'SUBMIT_DREAM',
+          dreamText: context.currentInput,
+          wasVoiceInput: context.wasVoiceInput // Pass voice flag to dream machine
         });
       }
     }

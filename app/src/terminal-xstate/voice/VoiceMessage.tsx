@@ -112,12 +112,34 @@ export const VoiceMessage: React.FC<VoiceMessageProps> = ({
   // Handle audio loaded metadata
   const handleLoadedMetadata = useCallback(() => {
     if (audioRef.current) {
-      setActualDuration(audioRef.current.duration);
+      const audioDuration = audioRef.current.duration;
+
+      // Handle Infinity duration (common with certain codecs)
+      if (!isFinite(audioDuration) || audioDuration === 0) {
+        // Use provided duration or estimate from blob size
+        if (audioBlob) {
+          const estimatedDuration = Math.max(1, Math.round(audioBlob.size / 10000));
+          console.log('[VoiceMessage] Using estimated duration', {
+            blobSize: audioBlob.size,
+            estimatedDuration
+          });
+          setActualDuration(estimatedDuration);
+        } else {
+          // Use provided duration or default
+          setActualDuration(duration || 3);
+        }
+      } else {
+        setActualDuration(audioDuration);
+      }
     }
-  }, []);
+  }, [audioBlob, duration]);
 
   // Format time display
   const formatTime = (time: number): string => {
+    // Handle Infinity or invalid duration
+    if (!isFinite(time) || isNaN(time) || time === 0) {
+      return '0:00';
+    }
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;

@@ -126,6 +126,15 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
         isChatActive
       });
     }
+
+    // First, display the voice message in terminal
+    send({
+      type: 'APPEND_VOICE_INPUT',
+      audioBase64,
+      audioBlob,
+      duration: Math.max(1, Math.round(audioBlob.size / 10000)) // Estimate duration
+    });
+
     if (voiceRef) {
       // Mark that this will be voice input
       send({ type: 'SET_VOICE_INPUT', value: true });

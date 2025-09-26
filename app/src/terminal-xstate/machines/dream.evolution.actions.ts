@@ -85,9 +85,19 @@ export const evolutionDreamActions = {
     }));
 
     // Second action: send TTS request if voice input
-    if (context.wasVoiceInput && context.aiResponse) {
-      debugLog('[EVOLUTION] Sending TTS request for voice response', {
-        textLength: context.aiResponse.fullAnalysis?.length,
+    debugLog('[TTS DECISION] Analyzing TTS trigger conditions', {
+      wasVoiceInput: context.wasVoiceInput,
+      hasAiResponse: !!context.aiResponse,
+      hasFullAnalysis: !!(context.aiResponse?.fullAnalysis),
+      fullAnalysisLength: context.aiResponse?.fullAnalysis?.length || 0,
+      agentName: context.agentName,
+      willTriggerTTS: context.wasVoiceInput && context.aiResponse?.fullAnalysis
+    });
+
+    if (context.wasVoiceInput && context.aiResponse?.fullAnalysis) {
+      debugLog('[EVOLUTION] ✅ TRIGGERING TTS - Voice input detected with AI response', {
+        textLength: context.aiResponse.fullAnalysis.length,
+        textPreview: context.aiResponse.fullAnalysis.substring(0, 100),
         agentName: context.agentName
       });
       enqueue(sendParent(() => ({
@@ -96,9 +106,13 @@ export const evolutionDreamActions = {
         agentName: context.agentName
       })));
     } else {
-      debugLog('[EVOLUTION] No TTS request needed', {
+      debugLog('[EVOLUTION] ❌ NO TTS TRIGGERED - Conditions not met', {
         wasVoiceInput: context.wasVoiceInput,
-        hasAiResponse: !!context.aiResponse
+        hasAiResponse: !!context.aiResponse,
+        hasFullAnalysis: !!(context.aiResponse?.fullAnalysis),
+        reason: !context.wasVoiceInput ? 'Not voice input' :
+                !context.aiResponse ? 'No AI response' :
+                !context.aiResponse.fullAnalysis ? 'No fullAnalysis in response' : 'Unknown'
       });
     }
   }),

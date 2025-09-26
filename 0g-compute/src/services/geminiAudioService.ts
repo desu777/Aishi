@@ -113,25 +113,33 @@ Return ONLY a JSON object with this exact structure, no markdown:
 
       // Call Gemini with native audio input
       // Using the fast profile for quick transcription
-      const response = await geminiService.generateContentWithProfile(
-        JSON.stringify({
-          contents: [
+      // IMPORTANT: Gemini expects array/object, not JSON string!
+      const contents = [
+        {
+          role: "user",
+          parts: [
             {
-              role: "user",
-              parts: [
-                {
-                  text: transcriptionPrompt
-                },
-                {
-                  inlineData: {
-                    mimeType: mimeType,
-                    data: audioBase64
-                  }
-                }
-              ]
+              text: transcriptionPrompt
+            },
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: audioBase64
+              }
             }
           ]
-        }),
+        }
+      ];
+
+      // Log what we're sending (first 200 chars)
+      debugLog('Sending contents to Gemini (not stringified)', {
+        contentsType: typeof contents,
+        isArray: Array.isArray(contents),
+        firstPart: contents[0]?.parts?.[0]?.text?.substring(0, 100)
+      });
+
+      const response = await geminiService.generateContentWithProfile(
+        contents,  // Pass as object/array, not JSON string
         'fast' // Use fast profile for transcription
       );
 

@@ -24,8 +24,8 @@ export const terminalActions = {
   }),
 
   clearInput: assign({
-    currentInput: '',
-    wasVoiceInput: false // Reset voice input flag
+    currentInput: ''
+    // Don't reset wasVoiceInput here - preserve it for dream workflow
   }),
 
   /**
@@ -236,7 +236,8 @@ export const terminalActions = {
   completeDream: assign({
     isDreamActive: false,
     dreamStatus: null,
-    dreamRef: null
+    dreamRef: null,
+    wasVoiceInput: false // Reset voice flag only after dream completes
   }),
 
   completeChat: assign({
@@ -302,11 +303,18 @@ export const terminalActions = {
   addDreamUserInput: assign({
     lines: ({ context }: { context: TerminalContext }) => {
       const timestamp = Date.now();
-      const input = context.currentInput.trim().toLowerCase();
+      const input = (context.currentInput || '').trim().toLowerCase();
       const isConfirmation = input === 'y' || input === 'yes' || input === 'n' || input === 'no';
 
       // If voice input and not confirmation, show as voice message
       if (context.wasVoiceInput && !isConfirmation) {
+        // Check if voice-input was already added by APPEND_VOICE_INPUT
+        const lastLine = context.lines[context.lines.length - 1];
+        if (lastLine && lastLine.type === 'voice-input') {
+          // Voice input already displayed, don't duplicate
+          return context.lines;
+        }
+        // This shouldn't happen anymore, but keep as fallback
         return [...context.lines, {
           type: 'voice-input',
           content: context.currentInput,
@@ -338,6 +346,13 @@ export const terminalActions = {
 
       // If voice input and not confirmation, show as voice message
       if (context.wasVoiceInput && !isConfirmation) {
+        // Check if voice-input was already added by APPEND_VOICE_INPUT
+        const lastLine = context.lines[context.lines.length - 1];
+        if (lastLine && lastLine.type === 'voice-input') {
+          // Voice input already displayed, don't duplicate
+          return context.lines;
+        }
+        // This shouldn't happen anymore, but keep as fallback
         return [...context.lines, {
           type: 'voice-input',
           content: context.currentInput,
@@ -398,8 +413,15 @@ export const terminalActions = {
 
   handleVoiceTranscript: assign({
     currentInput: ({ event }: any) => {
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[handleVoiceTranscript] Setting currentInput from event:', {
+          eventType: event.type,
+          transcript: event.transcript,
+          fullEvent: event
+        });
+      }
       if (event.type === 'VOICE.TRANSCRIBED') {
-        return event.transcript;
+        return event.transcript || '';  // Add fallback
       }
       return '';
     },
@@ -434,12 +456,22 @@ export const terminalActions = {
    */
   displayVoiceInput: assign({
     lines: ({ context, event }: any) => {
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[terminal.actions] displayVoiceInput triggered', {
+          eventType: event.type,
+          hasAudioBlob: !!event.audioBlob,
+          hasAudioBase64: !!event.audioBase64,
+          duration: event.duration
+        });
+      }
       const timestamp = Date.now();
       const line: TerminalLine = {
         type: 'voice-input',
         content: event.transcript || 'Voice message',
         transcript: event.transcript,
-        duration: event.duration,
+        audioBlob: event.audioBlob,
+        audioData: event.audioBase64,
+        duration: event.duration || 0,
         timestamp
       };
       return [...context.lines, line];
@@ -483,5 +515,14 @@ export const terminalActions = {
         emotionalTone: 'neutral'
       });
     }
-  }
+  },
+
+  setVoiceInput: assign({
+    wasVoiceInput: ({ event }: any) => {
+      if (event.type === 'SET_VOICE_INPUT') {
+        return event.value;
+      }
+      return false;
+    }
+  })
 };

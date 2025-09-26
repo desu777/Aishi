@@ -73,7 +73,23 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
           duration: audio.duration,
           readyState: audio.readyState
         });
-        setTotalDuration(audio.duration);
+        // Handle Infinity duration (common with live streams or certain codecs)
+        if (!isFinite(audio.duration) || audio.duration === 0) {
+          // Estimate duration from blob size if available (rough estimate: ~10KB per second for webm/opus)
+          if (audioBlob) {
+            const estimatedDuration = Math.max(1, Math.round(audioBlob.size / 10000));
+            console.log('[VoiceInputMessage] Using estimated duration', {
+              blobSize: audioBlob.size,
+              estimatedDuration
+            });
+            setTotalDuration(estimatedDuration);
+          } else {
+            // Default fallback duration
+            setTotalDuration(duration || 3);
+          }
+        } else {
+          setTotalDuration(audio.duration);
+        }
       });
 
       audio.addEventListener('error', (e) => {

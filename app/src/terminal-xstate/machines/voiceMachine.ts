@@ -74,6 +74,13 @@ interface SynthesisResult {
 const transcribeAudio = fromPromise(async ({ input }: { input: { audioBase64: string } }) => {
   const BACKEND_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
 
+  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+    console.log('[voiceMachine] transcribeAudio service called', {
+      backendUrl: BACKEND_URL,
+      audioBase64Length: input.audioBase64?.length || 0
+    });
+  }
+
   try {
     const response = await fetch(`${BACKEND_URL}/voice/transcribe`, {
       method: 'POST',
@@ -89,6 +96,13 @@ const transcribeAudio = fromPromise(async ({ input }: { input: { audioBase64: st
     }
 
     const data = await response.json();
+    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+      console.log('[voiceMachine] Transcription response from backend:', {
+        hasTranscript: !!data.transcript,
+        transcript: data.transcript,
+        fullResponse: data
+      });
+    }
     return data as TranscriptionResult;
   } catch (error) {
     console.error('Error transcribing audio:', error);
@@ -335,8 +349,16 @@ export const voiceMachine = setup({
     })
   },
   guards: {
-    hasAudioToTranscribe: ({ context }) => {
-      return context.audioBase64 !== null;
+    hasAudioToTranscribe: ({ context, event }) => {
+      // Check if audio is in event (from TRANSCRIBE) or in context (from recording)
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[voiceMachine] hasAudioToTranscribe guard', {
+          eventType: event.type,
+          hasEventAudio: event.type === 'TRANSCRIBE' && !!event.audioBase64,
+          hasContextAudio: context.audioBase64 !== null
+        });
+      }
+      return (event.type === 'TRANSCRIBE' && event.audioBase64) || context.audioBase64 !== null;
     },
 
     hasTextToSynthesize: ({ event }) => {
@@ -445,7 +467,18 @@ export const voiceMachine = setup({
     },
 
     transcribing: {
-      entry: 'setProcessing',
+      entry: ['setProcessing', ({ context, event }) => {
+        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+          console.log('[voiceMachine] Entering transcribing state', {
+            eventType: event.type,
+            hasEventAudio: event.type === 'TRANSCRIBE' && !!event.audioBase64,
+            hasContextAudio: !!context.audioBase64,
+            audioLength: event.type === 'TRANSCRIBE'
+              ? event.audioBase64?.length
+              : context.audioBase64?.length
+          });
+        }
+      }],
       invoke: {
         id: 'transcribe',
         src: 'transcribeAudio',

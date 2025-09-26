@@ -244,6 +244,15 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
   const formatContent = (line: TerminalLine) => {
     // Handle voice messages
     if (line.type === 'voice-input' || line.type === 'voice-output') {
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[MinimalOutput] Rendering voice message', {
+          type: line.type,
+          hasAudioBlob: !!line.audioBlob,
+          hasAudioData: !!line.audioData,
+          duration: line.duration,
+          transcript: line.transcript
+        });
+      }
       // Convert base64 audio to Blob if needed
       let audioBlob: Blob | undefined;
       if (line.audioData) {

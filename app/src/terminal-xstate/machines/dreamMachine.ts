@@ -180,11 +180,21 @@ export const dreamMachine = setup({
         if (event.type === 'SUBMIT_DREAM') {
           debugLog('[INPUT] Dream text submitted', {
             textLength: event.dreamText.length,
-            contextWasVoiceInput: context.wasVoiceInput
+            wasVoiceInput: event.wasVoiceInput // Log the incoming voice flag
           });
           return event.dreamText;
         }
         return '';
+      },
+      wasVoiceInput: ({ event }) => {
+        // Preserve wasVoiceInput from the SUBMIT_DREAM event
+        if (event.type === 'SUBMIT_DREAM') {
+          debugLog('[INPUT] Setting wasVoiceInput from event', {
+            wasVoiceInput: event.wasVoiceInput
+          });
+          return event.wasVoiceInput || false;
+        }
+        return false;
       },
       statusMessage: ({ context }) => `${context.agentName} is thinking . . .`
     }),

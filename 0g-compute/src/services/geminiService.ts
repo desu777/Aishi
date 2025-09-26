@@ -125,13 +125,13 @@ export class GeminiService {
 
   /**
    * Generate content using specified profile
-   * @param prompt - The prompt to send to Gemini
+   * @param prompt - The prompt to send to Gemini (string for text, array for multimedia)
    * @param profileId - Profile to use: 'thinking', 'fast', or 'auto'
    * @param options - Optional parameters (temperature, maxTokens)
    * @returns The response from Gemini with profile metadata
    */
   async generateContentWithProfile(
-    prompt: string,
+    prompt: string | any[], // Support both text and multimedia content
     profileId: string = 'auto',
     options?: GeminiGenerationOptions
   ): Promise<GeminiResponse> {
@@ -174,14 +174,19 @@ export class GeminiService {
 
       // Log request details in test mode
       if (process.env.TEST_ENV === 'true') {
+        const promptLength = typeof prompt === 'string'
+          ? prompt.length
+          : JSON.stringify(prompt).length;
+
         console.log(`🤖 Gemini Request:`, {
           model: this.modelName,
           profile: `${profileId} (${activeProfile.name})`,
-          promptLength: prompt.length,
+          promptLength,
+          promptType: typeof prompt === 'string' ? 'text' : 'multimedia',
           temperature,
           thinkingEnabled: activeProfile.thinking.enabled,
-          ...(activeProfile.thinking.enabled && { 
-            thinkingBudget: activeProfile.thinking.budget 
+          ...(activeProfile.thinking.enabled && {
+            thinkingBudget: activeProfile.thinking.budget
           })
         });
       }
