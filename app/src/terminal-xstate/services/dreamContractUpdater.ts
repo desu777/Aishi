@@ -8,6 +8,7 @@ import { getActiveChain } from '../../config/chains';
 import type { PublicClient, WalletClient } from 'viem';
 import { getContractConfig } from './contractService';
 import { EvolutionFields, clampToContractRanges } from './dreamDataValidator';
+import { formatErrorForTerminal } from '../utils/viemErrorParser';
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {
@@ -152,14 +153,15 @@ export async function updateDreamContract(
     };
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorMessage = formatErrorForTerminal(error);
     const totalTime = Date.now() - updateStartTime;
-    
-    debugLog('Contract update failed', { 
+
+    debugLog('Contract update failed', {
       error: errorMessage,
       totalTime,
       tokenId,
-      isEvolutionDream
+      isEvolutionDream,
+      originalError: error instanceof Error ? error.message : String(error)
     });
 
     return {

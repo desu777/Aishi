@@ -223,7 +223,8 @@ export const dreamMachine = setup({
       aiResponse: ({ event }) => {
         return (event as any).output;
       },
-      statusMessage: 'Waiting for your response...',
+      // Keep thinking status - will be reset later after display
+      statusMessage: ({ context }) => context.statusMessage,
       awaitingConfirmation: true
     }),
     
@@ -244,7 +245,8 @@ export const dreamMachine = setup({
         }
         return 'An unknown error occurred';
       },
-      statusMessage: 'Dream analysis failed'
+      statusMessage: null, // Clear status to allow new input
+      awaitingConfirmation: false // Reset confirmation state
     }),
     
     // Reset confirmation
@@ -382,6 +384,10 @@ export const dreamMachine = setup({
     },
     
     awaitingSaveConfirmation: {
+      entry: [
+        // Reset thinking status after AI response is displayed
+        sendParent({ type: 'UPDATE_STATUS', status: 'Waiting for your response...' })
+      ],
       on: {
         CONFIRM_SAVE: {
           target: 'savingDream',
@@ -561,9 +567,13 @@ export const dreamMachine = setup({
     },
     
     error: {
-      on: {
-        RETRY: '#dream.idle',
-        RESET: '#dream.idle'
+      // Automatically transition to completed after showing error
+      entry: sendParent(() => ({
+        type: 'UPDATE_STATUS',
+        status: null // Clear status for new input
+      })),
+      always: {
+        target: 'completed' // Immediately go to completed to exit workflow
       }
     }
   },

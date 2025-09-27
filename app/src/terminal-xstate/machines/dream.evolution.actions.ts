@@ -64,13 +64,13 @@ export const evolutionDreamActions = {
           if (isEvolutionDream && context.aiResponse.personalityImpact) {
             lines.push({
               type: 'system',
-              content: `Should ${context.agentName} evolve with this dream?`,
+              content: `Should ${context.agentName} evolve with this dream? (type 'y' or 'n')`,
               timestamp: timestamp + 1
             });
           } else {
             lines.push({
               type: 'system',
-              content: `Should ${context.agentName} grow with this dream?`,
+              content: `Should ${context.agentName} grow with this dream? (type 'y' or 'n')`,
               timestamp: timestamp + 1
             });
           }

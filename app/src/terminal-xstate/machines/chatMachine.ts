@@ -436,6 +436,11 @@ export const chatMachine = setup({
     },
 
     chatting: {
+      entry: [
+        // Reset thinking status after AI response is displayed
+        assign({ statusMessage: 'Type your message...' }),
+        'sendStatusToParent'
+      ],
       on: {
         'INPUT.SUBMIT': {
           target: 'processingMessage',
@@ -596,7 +601,14 @@ export const chatMachine = setup({
     },
 
     saveFailed: {
-      entry: 'sendSaveError',
+      entry: [
+        'sendSaveError',
+        assign({ statusMessage: null }) // Clear status for new input
+      ],
+      // Auto-transition to completed after showing error
+      after: {
+        2000: 'completed' // Give user time to see error then exit
+      },
       on: {
         EXIT: 'completed'
       }

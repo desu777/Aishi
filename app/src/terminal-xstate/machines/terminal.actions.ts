@@ -204,8 +204,12 @@ export const terminalActions = {
    * Status update actions
    */
   updateDreamStatus: assign({
-    dreamStatus: ({ event }: any) => {
+    dreamStatus: ({ context, event }: any) => {
       if (event.type === 'UPDATE_STATUS') {
+        // Don't allow null status during active workflow
+        if (event.status === null && context.isDreamActive) {
+          return context.dreamStatus; // Keep existing status
+        }
         return event.status;
       }
       return null;
@@ -213,8 +217,12 @@ export const terminalActions = {
   }),
 
   updateChatStatus: assign({
-    chatStatus: ({ event }: any) => {
+    chatStatus: ({ context, event }: any) => {
       if (event.type === 'UPDATE_STATUS') {
+        // Don't allow null status during active workflow
+        if (event.status === null && context.isChatActive) {
+          return context.chatStatus; // Keep existing status
+        }
         return event.status;
       }
       return null;
@@ -521,18 +529,24 @@ export const terminalActions = {
     }
   },
 
-  forwardToVoice: ({ context, event }: any) => {
-    if (context.voiceRef && event.type === 'VOICE.SYNTHESIZE_RESPONSE') {
-      context.voiceRef.send({
-        type: 'SYNTHESIZE',
-        text: event.text,
-        emotionalTone: 'neutral',
-        isDreamResponse: event.isDreamResponse || false,
-        agentName: event.agentName,
-        isEvolutionDream: event.isEvolutionDream || false
-      });
+  forwardToVoice: assign({
+    isSynthesizing: ({ context, event }: any) => {
+      if (context.voiceRef && event.type === 'VOICE.SYNTHESIZE_RESPONSE') {
+        // Send the synthesize command to voice machine
+        context.voiceRef.send({
+          type: 'SYNTHESIZE',
+          text: event.text,
+          emotionalTone: 'neutral',
+          isDreamResponse: event.isDreamResponse || false,
+          agentName: event.agentName,
+          isEvolutionDream: event.isEvolutionDream || false
+        });
+        // Mark that we're synthesizing
+        return true;
+      }
+      return context.isSynthesizing || false;
     }
-  },
+  }),
 
   setVoiceInput: assign({
     wasVoiceInput: ({ event }: any) => {
@@ -540,6 +554,35 @@ export const terminalActions = {
         return event.value;
       }
       return false;
+    }
+  }),
+
+  /**
+   * Clear TTS synthesis state when complete
+   */
+  clearTTSState: assign({
+    isSynthesizing: false,
+    dreamStatus: null // Clear dream status after TTS completes
+  }),
+
+  /**
+   * Reset thinking status after AI response is displayed
+   * Used by dream and chat workflows to properly manage status lifecycle
+   */
+  resetThinkingStatus: assign({
+    dreamStatus: ({ context }: { context: TerminalContext }) => {
+      // Only reset if in dream workflow
+      if (context.isDreamActive) {
+        return 'Waiting for your response...';
+      }
+      return context.dreamStatus;
+    },
+    chatStatus: ({ context }: { context: TerminalContext }) => {
+      // Only reset if in chat workflow
+      if (context.isChatActive) {
+        return 'Type your message...';
+      }
+      return context.chatStatus;
     }
   })
 };

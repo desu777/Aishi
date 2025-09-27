@@ -422,8 +422,8 @@ export const voiceMachine = setup({
         // Second: Send confirmation question if this was a dream response
         if (context.isDreamResponse && context.dreamAgentName) {
           const confirmationText = context.isEvolutionDream
-            ? `Should ${context.dreamAgentName} evolve with this dream?`
-            : `Should ${context.dreamAgentName} grow with this dream?`;
+            ? `Should ${context.dreamAgentName} evolve with this dream? (type 'y' or 'n')`
+            : `Should ${context.dreamAgentName} grow with this dream? (type 'y' or 'n')`;
 
           enqueue(sendParent(() => ({
             type: 'APPEND_LINES',
@@ -434,6 +434,11 @@ export const voiceMachine = setup({
             }]
           })));
         }
+
+        // Third: Notify parent that TTS is complete
+        enqueue(sendParent(() => ({
+          type: 'VOICE.TTS_COMPLETE'
+        })));
       }
     })
   },

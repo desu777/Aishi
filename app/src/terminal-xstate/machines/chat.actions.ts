@@ -72,10 +72,10 @@ export const chatActions = {
       return [...context.messages, aiMessage];
     },
     currentTranscript: ({ context, event }: any) => {
-      return context.currentTranscript + 
+      return context.currentTranscript +
              `${context.agentName}: ${event.output.response}\n`;
-    },
-    statusMessage: 'Type your message...'
+    }
+    // Removed statusMessage reset - will be handled after display
   }),
 
   /**
@@ -109,7 +109,8 @@ export const chatActions = {
   setError: assign({
     error: ({ event }: any) => event.error || 'An error occurred',
     lastError: ({ event }: any) => event.error || 'Unknown error',
-    statusMessage: ({ event }: any) => `Error: ${event.error || 'Unknown error'}`
+    statusMessage: null, // Clear status for new input
+    awaitingConfirmation: false // Reset any confirmation state
   }),
 
   /**

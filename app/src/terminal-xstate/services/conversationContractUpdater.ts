@@ -7,6 +7,7 @@
 import { getActiveChain } from '../../config/chains';
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
 import type { PublicClient, WalletClient } from 'viem';
+import { formatErrorForTerminal } from '../utils/viemErrorParser';
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {
@@ -135,17 +136,13 @@ export async function updateConversationContract(
     };
 
   } catch (error) {
-    debugLog('Error updating conversation contract', { error: String(error) });
-    
-    // Check if it's a specific error
-    if (String(error).includes('User rejected')) {
-      throw new Error('Transaction rejected by user');
-    } else if (String(error).includes('insufficient funds')) {
-      throw new Error('Insufficient funds for transaction');
-    } else if (String(error).includes('not the owner')) {
-      throw new Error('You are not the owner of this agent');
-    }
-    
-    throw error;
+    const errorMessage = formatErrorForTerminal(error);
+
+    debugLog('Error updating conversation contract', {
+      error: errorMessage,
+      originalError: error instanceof Error ? error.message : String(error)
+    });
+
+    throw new Error(errorMessage);
   }
 }

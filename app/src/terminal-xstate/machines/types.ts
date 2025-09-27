@@ -78,6 +78,8 @@ export interface TerminalContext {
   chatStatus: string | null;
   // Last parsed command for state transitions
   lastParsedCommand: string | null;
+  // TTS synthesis state
+  isSynthesizing: boolean;
 }
 
 // Events the terminal can receive
@@ -104,5 +106,6 @@ export type TerminalEvent =
   | { type: 'VOICE.SELECT_VOICE'; voiceId: GeminiVoiceId }
   | { type: 'VOICE.SPEAK'; text: string; emotionalTone?: string }
   | { type: 'VOICE.ERROR'; message: string }
+  | { type: 'VOICE.TTS_COMPLETE' }
   | { type: 'APPEND_VOICE_INPUT'; audioBase64: string; audioBlob: Blob; duration: number; transcript?: string }
   | { type: 'SET_VOICE_INPUT'; value: boolean };

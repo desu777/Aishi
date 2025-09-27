@@ -45,7 +45,8 @@ const initialContext: TerminalContext = {
   isChatActive: false,
   dreamStatus: null,
   chatStatus: null,
-  lastParsedCommand: null
+  lastParsedCommand: null,
+  isSynthesizing: false
 };
 
 // Terminal machine definition
@@ -149,6 +150,9 @@ export const terminalMachine = setup({
         'VOICE.SYNTHESIZE_RESPONSE': {
           actions: 'forwardToVoice'
         },
+        'VOICE.TTS_COMPLETE': {
+          actions: 'clearTTSState'
+        },
         'NOOP': {}
       }
     },
@@ -251,7 +255,6 @@ export const terminalMachine = setup({
               target: '#terminal.idle',
               actions: [
                 assign({ lastParsedCommand: null }),
-                ({ self }) => self.send({ type: 'UPDATE_STATUS', status: null }),
                 'displayCommandResult'
               ]
             },
@@ -259,7 +262,6 @@ export const terminalMachine = setup({
               target: '#terminal.idle',
               actions: [
                 assign({ lastParsedCommand: null }),
-                ({ self }) => self.send({ type: 'UPDATE_STATUS', status: null }),
                 'displayCommandError'
               ]
             }
@@ -281,7 +283,6 @@ export const terminalMachine = setup({
               target: '#terminal.idle',
               actions: [
                 assign({ lastParsedCommand: null }),
-                ({ self }) => self.send({ type: 'UPDATE_STATUS', status: null }),
                 'displayCommandResult'
               ]
             },
@@ -289,7 +290,6 @@ export const terminalMachine = setup({
               target: '#terminal.idle',
               actions: [
                 assign({ lastParsedCommand: null }),
-                ({ self }) => self.send({ type: 'UPDATE_STATUS', status: null }),
                 'displayCommandError'
               ]
             }
@@ -311,7 +311,6 @@ export const terminalMachine = setup({
               target: '#terminal.idle',
               actions: [
                 assign({ lastParsedCommand: null }),
-                ({ self }) => self.send({ type: 'UPDATE_STATUS', status: null }),
                 'displayCommandResult'
               ]
             },
@@ -319,7 +318,6 @@ export const terminalMachine = setup({
               target: '#terminal.idle',
               actions: [
                 assign({ lastParsedCommand: null }),
-                ({ self }) => self.send({ type: 'UPDATE_STATUS', status: null }),
                 'displayCommandError'
               ]
             }
@@ -341,7 +339,6 @@ export const terminalMachine = setup({
               target: '#terminal.idle',
               actions: [
                 assign({ lastParsedCommand: null }),
-                ({ self }) => self.send({ type: 'UPDATE_STATUS', status: null }),
                 'displayCommandResult'
               ]
             },
@@ -349,7 +346,6 @@ export const terminalMachine = setup({
               target: '#terminal.idle',
               actions: [
                 assign({ lastParsedCommand: null }),
-                ({ self }) => self.send({ type: 'UPDATE_STATUS', status: null }),
                 'displayCommandError'
               ]
             }
@@ -442,6 +438,9 @@ export const terminalMachine = setup({
         },
         'VOICE.SYNTHESIZE_RESPONSE': {
           actions: 'forwardToVoice'
+        },
+        'VOICE.TTS_COMPLETE': {
+          actions: 'clearTTSState'
         },
         'NOOP': {}
       }

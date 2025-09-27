@@ -55,7 +55,9 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     if (!isConnected) return 'uninitialized';
     if (agentStatus === 'syncing') return 'syncing';
     if (agentStatus === 'connected' && syncedAgentName) {
-      // Check if any processing with status message
+      // Priority 1: Check if TTS is synthesizing (voice workflow active)
+      if (context.isSynthesizing) return 'thinking';
+      // Priority 2: Check if any processing with status message
       if (dreamStatus) {
         if (dreamStatus.includes('thinking')) return 'thinking';
         if (dreamStatus.includes('learning')) return 'learning';
@@ -66,6 +68,23 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
         if (chatStatus.includes('thinking')) return 'thinking';
         if (chatStatus.includes('learning')) return 'learning';
         if (chatStatus.includes('evolving')) return 'evolving';
+      }
+      // Priority 3: Check if we're in active processing states (fallback)
+      if (state.matches('processing')) return 'thinking';
+      if (state.matches('executingCommand')) return 'thinking';
+      if (state.matches('dreamWorkflow')) {
+        // In dream workflow - check if we have active processing
+        if (!dreamStatus || dreamStatus === 'Waiting for your response...') {
+          return 'online'; // Only return online if explicitly waiting
+        }
+        return 'thinking'; // Default to thinking in dream workflow
+      }
+      if (state.matches('chatWorkflow')) {
+        // In chat workflow - check if we have active processing
+        if (!chatStatus || chatStatus === 'Type your message...') {
+          return 'online'; // Only return online if explicitly waiting
+        }
+        return 'thinking'; // Default to thinking in chat workflow
       }
       return 'online';
     }
