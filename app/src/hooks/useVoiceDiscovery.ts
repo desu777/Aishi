@@ -22,48 +22,82 @@ export interface VoiceProfile {
 }
 
 const DEFAULT_VOICES: VoiceProfile[] = [
+  // Gemini 2.5 Pro Preview TTS Voices - TOP RECOMMENDATIONS
   {
-    id: 'aria',
-    name: 'Aria',
-    description: 'Warm and empathetic voice',
-    personality: 'Nurturing, understanding, and emotionally intelligent',
+    id: 'aoede',
+    name: 'Aoede',
+    description: 'Breezy and natural voice',
+    personality: 'Friendly, conversational, and naturally engaging',
     gender: 'female',
-    style: 'Soft, melodic, with gentle inflections',
-    emotionalRange: ['warmth', 'empathy', 'comfort', 'encouragement'],
-    sampleText: 'Hello! I\'m Aria. I\'m here to listen and understand your dreams with warmth and empathy.',
+    style: 'Breezy, natural flow with warm undertones',
+    emotionalRange: ['natural', 'friendly', 'conversational', 'warm'],
+    sampleText: 'Hi! I\'m Aoede. Let\'s have a natural, friendly conversation about your dreams.',
     available: true
   },
   {
-    id: 'nova',
-    name: 'Nova',
-    description: 'Professional and clear voice',
-    personality: 'Confident, articulate, and engaging',
+    id: 'zephyr',
+    name: 'Zephyr',
+    description: 'Bright and cheerful voice',
+    personality: 'Uplifting, positive, and enthusiastic',
     gender: 'female',
-    style: 'Clear, professional, with dynamic energy',
-    emotionalRange: ['confidence', 'enthusiasm', 'clarity', 'professionalism'],
-    sampleText: 'Hi there! I\'m Nova. Let\'s explore your thoughts with clarity and confidence.',
+    style: 'Bright, cheerful with infectious energy',
+    emotionalRange: ['cheerful', 'bright', 'enthusiastic', 'uplifting'],
+    sampleText: 'Hello there! I\'m Zephyr, bringing brightness and cheer to our conversation!',
     available: true
   },
   {
-    id: 'atlas',
-    name: 'Atlas',
-    description: 'Deep and reassuring voice',
-    personality: 'Calm, wise, and grounding',
+    id: 'achernar',
+    name: 'Achernar',
+    description: 'Soft and gentle voice',
+    personality: 'Calming, peaceful, and soothing',
     gender: 'male',
-    style: 'Deep, resonant, with measured pace',
-    emotionalRange: ['calm', 'wisdom', 'stability', 'reassurance'],
-    sampleText: 'Greetings. I am Atlas. Together we\'ll find deeper meaning in your experiences.',
+    style: 'Soft, gentle with calming presence',
+    emotionalRange: ['gentle', 'soft', 'soothing', 'peaceful'],
+    sampleText: 'Welcome. I\'m Achernar. Let\'s explore your thoughts in a calm, gentle space.',
     available: true
   },
   {
-    id: 'echo',
-    name: 'Echo',
-    description: 'Adaptive and contextual voice',
-    personality: 'Versatile, intuitive, and responsive',
+    id: 'kore',
+    name: 'Kore',
+    description: 'Firm and confident voice',
+    personality: 'Professional, authoritative, and confident',
+    gender: 'female',
+    style: 'Firm, confident with clear articulation',
+    emotionalRange: ['confident', 'firm', 'authoritative', 'professional'],
+    sampleText: 'Good day. I\'m Kore. Let\'s approach your goals with confidence and clarity.',
+    available: true
+  },
+  {
+    id: 'charon',
+    name: 'Charon',
+    description: 'Informative and clear voice',
+    personality: 'Educational, articulate, and informative',
+    gender: 'male',
+    style: 'Clear, informative with excellent diction',
+    emotionalRange: ['clear', 'informative', 'articulate', 'educational'],
+    sampleText: 'Hello. I\'m Charon. I\'ll help you understand complex ideas with clarity.',
+    available: true
+  },
+  {
+    id: 'fenrir',
+    name: 'Fenrir',
+    description: 'Excitable and dynamic voice',
+    personality: 'Energetic, passionate, and engaging',
+    gender: 'male',
+    style: 'Dynamic, excitable with passionate delivery',
+    emotionalRange: ['dynamic', 'excitable', 'energetic', 'passionate'],
+    sampleText: 'Hey! I\'m Fenrir! Ready to dive into an exciting conversation? Let\'s go!',
+    available: true
+  },
+  {
+    id: 'puck',
+    name: 'Puck',
+    description: 'Upbeat and energetic voice',
+    personality: 'Versatile, balanced, and adaptable',
     gender: 'neutral',
-    style: 'Adaptive tone that matches conversation context',
-    emotionalRange: ['adaptability', 'intuition', 'balance', 'responsiveness'],
-    sampleText: 'Hello, I\'m Echo. I adapt to match the energy and tone of our conversation.',
+    style: 'Upbeat, energetic with versatile range',
+    emotionalRange: ['upbeat', 'energetic', 'versatile', 'balanced'],
+    sampleText: 'Hi, I\'m Puck! I bring energy and versatility to every conversation.',
     available: true
   }
 ];
@@ -74,14 +108,15 @@ export const useVoiceDiscovery = () => {
     // Load saved voice from localStorage or select random
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('aishi-selected-voice');
-      if (saved && ['aria', 'nova', 'atlas', 'echo'].includes(saved)) {
+      const newVoiceIds = ['aoede', 'zephyr', 'achernar', 'kore', 'charon', 'fenrir', 'puck'];
+      if (saved && newVoiceIds.includes(saved)) {
         return saved;
       }
-      // Random selection on first visit
-      const voiceIds = ['aria', 'nova', 'atlas', 'echo'];
-      return voiceIds[Math.floor(Math.random() * voiceIds.length)];
+      // Random selection on first visit from top recommendations
+      const topVoices = ['aoede', 'zephyr', 'achernar', 'puck'];
+      return topVoices[Math.floor(Math.random() * topVoices.length)];
     }
-    return 'aria';
+    return 'aoede';
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -107,7 +142,7 @@ export const useVoiceDiscovery = () => {
       const data = await response.json();
 
       if (data.voices && Array.isArray(data.voices)) {
-        // Map backend voices to our VoiceProfile format
+        // Map backend voices to our VoiceProfile format (Gemini 2.5 Pro Preview voices)
         const mappedVoices = data.voices.map((voiceId: string) => {
           const defaultVoice = DEFAULT_VOICES.find(v => v.id === voiceId);
           return defaultVoice || {

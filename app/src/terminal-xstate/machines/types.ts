@@ -1,5 +1,21 @@
 import { ReactNode } from 'react';
 
+// Gemini 2.5 Pro Preview TTS Voice IDs
+export type GeminiVoiceId =
+  | 'aoede'     // Breezy and natural (female)
+  | 'zephyr'    // Bright and cheerful (female)
+  | 'achernar'  // Soft and gentle (male)
+  | 'kore'      // Firm and confident (female)
+  | 'charon'    // Informative and clear (male)
+  | 'fenrir'    // Excitable and dynamic (male)
+  | 'puck'      // Upbeat and energetic (neutral)
+  | 'achird'    // Steady and reliable (male)
+  | 'algenib'   // Sophisticated and elegant (female)
+  | 'algieba'   // Warm and welcoming (female)
+  | 'alnilam'   // Strong and commanding (male)
+  | 'autonoe'   // Mysterious and intriguing (female)
+  | 'callirhoe'; // Melodic and harmonious (female)
+
 // Terminal line types matching the old terminal
 export type LineType =
   | 'input'
@@ -49,7 +65,7 @@ export interface TerminalContext {
   voiceRef: any; // ActorRef from XState for voice control
   selectedModel: string | null;
   // Voice state
-  selectedVoice: 'aria' | 'nova' | 'atlas' | 'echo' | null;
+  selectedVoice: GeminiVoiceId | null;
   isVoiceEnabled: boolean;
   voiceStatus: string | null;
   isRecording: boolean;
@@ -85,7 +101,7 @@ export type TerminalEvent =
   | { type: 'VOICE.START_RECORDING' }
   | { type: 'VOICE.STOP_RECORDING' }
   | { type: 'VOICE.TRANSCRIBED'; transcript: string; language?: string }
-  | { type: 'VOICE.SELECT_VOICE'; voiceId: 'aria' | 'nova' | 'atlas' | 'echo' }
+  | { type: 'VOICE.SELECT_VOICE'; voiceId: GeminiVoiceId }
   | { type: 'VOICE.SPEAK'; text: string; emotionalTone?: string }
   | { type: 'VOICE.ERROR'; message: string }
   | { type: 'APPEND_VOICE_INPUT'; audioBase64: string; audioBlob: Blob; duration: number; transcript?: string }

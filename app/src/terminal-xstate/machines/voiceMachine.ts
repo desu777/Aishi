@@ -4,6 +4,7 @@
  */
 
 import { setup, assign, fromPromise, sendParent, enqueueActions } from 'xstate';
+import { GeminiVoiceId } from './types';
 
 interface VoiceContext {
   // Recording
@@ -13,7 +14,7 @@ interface VoiceContext {
   isRecording: boolean;
 
   // Voice Model
-  selectedVoice: 'aria' | 'nova' | 'atlas' | 'echo';
+  selectedVoice: GeminiVoiceId;
   availableVoices: string[];
 
   // Transcription (STT)
@@ -43,7 +44,7 @@ type VoiceEvent =
   | { type: 'CLEAR_RECORDING' }
   | { type: 'TRANSCRIBE'; audioBase64: string }
   | { type: 'SYNTHESIZE'; text: string; emotionalTone?: string; isDreamResponse?: boolean; agentName?: string; isEvolutionDream?: boolean }
-  | { type: 'SELECT_VOICE'; voiceId: 'aria' | 'nova' | 'atlas' | 'echo' }
+  | { type: 'SELECT_VOICE'; voiceId: GeminiVoiceId }
   | { type: 'PLAY_AUDIO' }
   | { type: 'STOP_AUDIO' }
   | { type: 'REFRESH_VOICES' }
@@ -181,11 +182,11 @@ const loadVoices = fromPromise(async () => {
     }
 
     const data = await response.json();
-    return data.voices || ['aria', 'nova', 'atlas', 'echo'];
+    return data.voices || ['aoede', 'zephyr', 'achernar', 'kore', 'charon', 'fenrir', 'puck'];
   } catch (error) {
     console.error('Error loading voices:', error);
     // Return default voices if loading fails
-    return ['aria', 'nova', 'atlas', 'echo'];
+    return ['aoede', 'zephyr', 'achernar', 'kore', 'charon', 'fenrir', 'puck'];
   }
 });
 
@@ -204,15 +205,16 @@ const saveVoiceToStorage = fromPromise(async ({ input }: { input: { voiceId: str
 const loadVoiceFromStorage = fromPromise(async () => {
   try {
     const saved = localStorage.getItem('aishi-selected-voice');
-    if (saved && ['aria', 'nova', 'atlas', 'echo'].includes(saved)) {
+    const geminiVoices = ['aoede', 'zephyr', 'achernar', 'kore', 'charon', 'fenrir', 'puck'];
+    if (saved && geminiVoices.includes(saved)) {
       return saved;
     }
-    // Return random default voice
-    const voices = ['aria', 'nova', 'atlas', 'echo'];
-    return voices[Math.floor(Math.random() * voices.length)];
+    // Return random default voice from top recommendations
+    const topVoices = ['aoede', 'zephyr', 'achernar', 'puck'];
+    return topVoices[Math.floor(Math.random() * topVoices.length)];
   } catch (error) {
     console.error('Failed to load voice preference:', error);
-    return 'aria';
+    return 'aoede';
   }
 });
 
@@ -302,9 +304,9 @@ export const voiceMachine = setup({
           return event.voiceId;
         }
         if (event.type === 'xstate.done.actor.loadVoiceFromStorage') {
-          return event.output as 'aria' | 'nova' | 'atlas' | 'echo';
+          return event.output as GeminiVoiceId;
         }
-        return 'aria';
+        return 'aoede';
       }
     }),
 
@@ -313,7 +315,7 @@ export const voiceMachine = setup({
         if (event.type === 'xstate.done.actor.loadVoices') {
           return event.output;
         }
-        return ['aria', 'nova', 'atlas', 'echo'];
+        return ['aoede', 'zephyr', 'achernar', 'kore', 'charon', 'fenrir', 'puck'];
       }
     }),
 
@@ -463,8 +465,8 @@ export const voiceMachine = setup({
     isRecording: false,
 
     // Voice Model
-    selectedVoice: 'aria',
-    availableVoices: ['aria', 'nova', 'atlas', 'echo'],
+    selectedVoice: 'aoede',
+    availableVoices: ['aoede', 'zephyr', 'achernar', 'kore', 'charon', 'fenrir', 'puck'],
 
     // Transcription
     transcript: null,

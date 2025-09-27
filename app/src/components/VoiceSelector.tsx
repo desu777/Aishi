@@ -65,11 +65,27 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
 
   const getVoiceIcon = (voiceId: string) => {
     switch (voiceId) {
-      case 'aria': return <User size={16} />;
-      case 'nova': return <Mic size={16} />;
-      case 'atlas': return <Bot size={16} />;
-      case 'echo': return <Zap size={16} />;
-      default: return <Volume2 size={16} />;
+      // Female voices
+      case 'aoede':
+      case 'zephyr':
+      case 'kore':
+      case 'algenib':
+      case 'algieba':
+      case 'autonoe':
+      case 'callirhoe':
+        return <User size={16} />;
+      // Male voices
+      case 'achernar':
+      case 'charon':
+      case 'fenrir':
+      case 'achird':
+      case 'alnilam':
+        return <Bot size={16} />;
+      // Neutral voice
+      case 'puck':
+        return <Zap size={16} />;
+      default:
+        return <Volume2 size={16} />;
     }
   };
 

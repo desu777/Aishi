@@ -777,7 +777,17 @@ router.post('/voice/synthesize', aiQueryLimiter, async (req, res) => {
   try {
     const { text, voiceId, detectedLanguage, languageCode, emotionalTone, speed } = req.body;
 
+    console.log('[API /voice/synthesize] Request received:', {
+      voiceId,
+      textLength: text?.length,
+      detectedLanguage,
+      languageCode,
+      emotionalTone,
+      speed
+    });
+
     if (!text) {
+      console.log('[API /voice/synthesize] ERROR: No text provided');
       return res.status(400).json({
         success: false,
         error: 'text is required',
@@ -785,10 +795,17 @@ router.post('/voice/synthesize', aiQueryLimiter, async (req, res) => {
       });
     }
 
-    const selectedVoice = voiceId || 'aria';
+    const selectedVoice = voiceId || 'aoede'; // DEFAULT TO NEW VOICE!
     const availableVoices = textToSpeechService.getAvailableVoices().map(v => v.id);
 
+    console.log('[API /voice/synthesize] Voice validation:', {
+      selectedVoice,
+      availableVoices,
+      isValid: availableVoices.includes(selectedVoice)
+    });
+
     if (!availableVoices.includes(selectedVoice)) {
+      console.log('[API /voice/synthesize] ERROR: Unsupported voice');
       return res.status(400).json({
         success: false,
         error: `Unsupported voice: ${selectedVoice}. Available: ${availableVoices.join(', ')}`,
