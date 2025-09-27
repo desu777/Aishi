@@ -4,6 +4,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { FiCheck, FiX, FiLoader, FiShare2, FiArrowRight } from 'react-icons/fi';
 import AnimatedDots from '../../../components/ui/AnimatedDots';
 import { ShimmerButton } from '../../../components/ui/ShimmerButton';
+import { getActiveChain } from '../../../config/chains';
 
 interface TransactionStatusProps {
   showSuccess: boolean;
@@ -178,37 +179,43 @@ export default function TransactionStatus({
           </button>
         </div>
         
-        {txHash && (
-          <div style={{ marginTop: theme.spacing.xl }}>
-            <p style={{
-              fontSize: theme.typography.fontSizes.xs,
-              color: theme.text.secondary,
-              marginBottom: theme.spacing.xs,
-            }}>
-              Transaction completed:
-            </p>
-            <a
-              href={`${process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL}/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
+        {txHash && (() => {
+          const activeChain = getActiveChain();
+          const explorerUrl = activeChain.blockExplorers?.default?.url ||
+                             (activeChain.id === 16661 ? 'https://chainscan.0g.ai' : 'https://chainscan-galileo.0g.ai');
+
+          return (
+            <div style={{ marginTop: theme.spacing.xl }}>
+              <p style={{
                 fontSize: theme.typography.fontSizes.xs,
-                color: theme.accent.primary,
-                textDecoration: 'none',
-                cursor: 'pointer',
-                wordBreak: 'break-all',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = theme.text.primary;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = theme.accent.primary;
-              }}
-            >
-              {txHash.slice(0, 10)}...{txHash.slice(-8)}
-            </a>
-          </div>
-        )}
+                color: theme.text.secondary,
+                marginBottom: theme.spacing.xs,
+              }}>
+                Transaction completed:
+              </p>
+              <a
+                href={`${explorerUrl}/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: theme.typography.fontSizes.xs,
+                  color: theme.accent.primary,
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  wordBreak: 'break-all',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = theme.text.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = theme.accent.primary;
+                }}
+              >
+                {txHash.slice(0, 10)}...{txHash.slice(-8)}
+              </a>
+            </div>
+          );
+        })()}
             </div>
           </div>
         </div>
