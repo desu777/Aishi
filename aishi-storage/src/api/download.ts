@@ -67,13 +67,13 @@ export async function downloadHandler(req: Request, res: Response) {
     }
 
     // Send file buffer (0G Storage sends raw binary data)
-    res.send(fileBuffer);
+    return res.send(fileBuffer);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     debugLog('Download failed', { error: errorMessage });
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: errorMessage
     });
@@ -109,7 +109,7 @@ export async function metadataHandler(req: Request, res: Response) {
       fileName: metadata.fileName
     });
 
-    res.json({
+    return res.json({
       success: true,
       metadata
     });
@@ -118,7 +118,7 @@ export async function metadataHandler(req: Request, res: Response) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     debugLog('Metadata request failed', { error: errorMessage });
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: errorMessage
     });
@@ -151,9 +151,9 @@ export async function existsHandler(req: Request, res: Response) {
       res.setHeader('X-Root-Hash', rootHash);
     }
 
-    res.status(200).end();
+    return res.status(200).end();
 
   } catch (error) {
-    res.status(500).end();
+    return res.status(500).end();
   }
 }

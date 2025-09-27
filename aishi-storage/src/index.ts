@@ -35,13 +35,13 @@ const upload = multer({
 });
 
 // Debug logging middleware
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
   console.log(`[AISHI-Storage] ${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({
     status: 'healthy',
     service: 'aishi-storage',
@@ -55,7 +55,7 @@ app.post('/api/storage/upload', upload.single('file'), uploadHandler);
 app.get('/api/storage/file', downloadHandler);
 
 // List files endpoint (for debugging)
-app.get('/api/storage/list', async (req, res) => {
+app.get('/api/storage/list', async (_req, res) => {
   try {
     const files = await storageService.listFiles();
     res.json({
@@ -86,7 +86,7 @@ app.delete('/api/storage/file/:hash', async (req, res) => {
 });
 
 // Clear all files endpoint (for debugging - use with caution!)
-app.delete('/api/storage/clear', async (req, res) => {
+app.delete('/api/storage/clear', async (_req, res) => {
   try {
     const cleared = await storageService.clearAll();
     res.json({
@@ -102,7 +102,7 @@ app.delete('/api/storage/clear', async (req, res) => {
 });
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[AISHI-Storage] Error:', err);
   res.status(500).json({
     success: false,
@@ -111,7 +111,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // 404 handler
-app.use((req, res) => {
+app.use((_req, res) => {
   res.status(404).json({
     success: false,
     error: 'Endpoint not found'

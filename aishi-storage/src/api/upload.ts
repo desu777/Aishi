@@ -52,7 +52,7 @@ export async function uploadHandler(req: Request, res: Response) {
     });
 
     // Return 0G-compatible response
-    res.json({
+    return res.json({
       success: true,
       rootHash,
       alreadyExists,
@@ -69,7 +69,7 @@ export async function uploadHandler(req: Request, res: Response) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     debugLog('Upload failed', { error: errorMessage });
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: errorMessage
     });
@@ -128,7 +128,7 @@ export async function batchUploadHandler(req: Request, res: Response) {
       errors: errorCount
     });
 
-    res.json({
+    return res.json({
       success: errorCount === 0,
       results,
       summary: {
@@ -142,7 +142,7 @@ export async function batchUploadHandler(req: Request, res: Response) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     debugLog('Batch upload failed', { error: errorMessage });
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: errorMessage
     });
