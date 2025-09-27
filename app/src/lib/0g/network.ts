@@ -17,7 +17,9 @@ export interface NetworkConfig {
  */
 export function getNetworkConfig(networkType: NetworkType): NetworkConfig {
   const activeChain = getActiveChain();
-  const explorerBaseUrl = activeChain.blockExplorers?.default?.url || 'https://chainscan-galileo.0g.ai';
+  // Use proper fallback based on active chain ID
+  const fallbackUrl = activeChain.id === 16661 ? 'https://chainscan.0g.ai' : 'https://chainscan-galileo.0g.ai';
+  const explorerBaseUrl = activeChain.blockExplorers?.default?.url || fallbackUrl;
 
   const NETWORKS: Record<NetworkType, NetworkConfig> = {
     standard: {

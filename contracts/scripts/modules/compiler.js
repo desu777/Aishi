@@ -115,28 +115,18 @@ class ContractCompiler {
       const contractFiles = fs.readdirSync(this.contractsDir)
         .filter(f => f.endsWith('.sol'));
 
-      // Also check libraries directory
-      const librariesDir = path.join(this.contractsDir, 'libraries');
-      const libraryFiles = [];
-      if (fs.existsSync(librariesDir)) {
-        fs.readdirSync(librariesDir)
-          .filter(f => f.endsWith('.sol'))
-          .forEach(f => libraryFiles.push(`libraries/${f}`));
-      }
-
-      const allFiles = [...contractFiles, ...libraryFiles];
+      const allFiles = contractFiles;
 
       if (allFiles.length === 0) {
         throw new Error('No Solidity contracts found');
       }
 
-      console.log(`\nFound ${contractFiles.length} contract(s) and ${libraryFiles.length} library(ies):`);
+      console.log(`\nFound ${contractFiles.length} contract(s):`);
       allFiles.forEach(file => {
         const filePath = path.join(this.contractsDir, file);
         const stats = fs.statSync(filePath);
         const size = (stats.size / 1024).toFixed(2);
-        const type = file.includes('libraries/') ? '[Library]' : '[Contract]';
-        console.log(`  ${type.padEnd(11)} ${file} (${size} KB)`);
+        console.log(`  [Contract]  ${file} (${size} KB)`);
       });
 
       return allFiles;
@@ -263,10 +253,6 @@ class ContractCompiler {
     // Process main contracts
     processArtifactsDir(artifactsDir, false);
 
-    // Process libraries
-    const librariesDir = path.join(artifactsDir, 'libraries');
-    processArtifactsDir(librariesDir, true);
-
     if (contracts.length > 0) {
       console.log('\n' + colors.cyan + 'Contract Sizes:' + colors.reset);
       console.log('-'.repeat(60));
@@ -282,9 +268,8 @@ class ContractCompiler {
           contract.deployedSize > maxSize * 0.9 ? colors.yellow :
             colors.green;
 
-        const type = contract.isLibrary ? '[Lib]' : '';
         console.log(
-          (contract.name + ' ' + type).padEnd(25) +
+          contract.name.padEnd(25) +
           `${contract.bytecodeSize}B`.padEnd(15) +
           `${contract.deployedSize}B`.padEnd(15) +
           statusColor + `${deployedPercent}%` + colors.reset
@@ -306,19 +291,15 @@ class ContractCompiler {
 
     const reportPath = path.join(this.projectRoot, 'compilation-report.json');
 
-    // Separate contracts and libraries
-    const mainContracts = contracts ? contracts.filter(c => !c.isLibrary) : [];
-    const libraries = contracts ? contracts.filter(c => c.isLibrary) : [];
+    const mainContracts = contracts || [];
 
     const report = {
       timestamp: new Date().toISOString(),
       network: NETWORK_CONFIGS[network].name,
       optimizer: NETWORK_CONFIGS[network].optimizer,
       contracts: mainContracts,
-      libraries: libraries,
       summary: {
         totalContracts: mainContracts.length,
-        totalLibraries: libraries.length,
         mainContractSize: mainContracts.find(c => c.name === 'AishiAgent')?.deployedSize || 0
       },
       compiler: {

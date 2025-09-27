@@ -325,7 +325,9 @@ export function useAgentMint() {
 
   // Get explorer URL for transaction
   const getTransactionUrl = (txHash: string) => {
-    const explorerUrl = activeChain.blockExplorers?.default?.url || 'https://chainscan-galileo.0g.ai';
+    // Use proper fallback based on active chain ID
+    const fallbackUrl = activeChain.id === 16661 ? 'https://chainscan.0g.ai' : 'https://chainscan-galileo.0g.ai';
+    const explorerUrl = activeChain.blockExplorers?.default?.url || fallbackUrl;
     return `${explorerUrl}/tx/${txHash}`;
   };
 
