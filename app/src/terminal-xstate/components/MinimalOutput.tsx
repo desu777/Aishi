@@ -355,7 +355,9 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
   const outputAreaStyle: React.CSSProperties = {
     flex: 1,
     overflowY: 'auto',
-    padding: isMobile ? '1rem' : isTablet ? '1.5rem' : '2rem',
+    paddingTop: isMobile ? '1rem' : isTablet ? '1.5rem' : '2rem',
+    paddingLeft: isMobile ? '1rem' : isTablet ? '1.5rem' : '2rem',
+    paddingRight: isMobile ? '1rem' : isTablet ? '1.5rem' : '2rem',
     paddingBottom: 0,
     color: colors.pearl,
     fontFamily: 'Inter, -apple-system, "SF Pro Display", system-ui, sans-serif',
