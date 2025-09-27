@@ -78,7 +78,7 @@ export const getChainConfig = () => {
   return {
     id: activeChain.id,
     name: activeChain.name,
-    network: activeChain.network,
+    network: activeChain.name,
     currency: activeChain.nativeCurrency,
     rpcUrls: activeChain.rpcUrls,
     blockExplorers: activeChain.blockExplorers,

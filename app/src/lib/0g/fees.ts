@@ -32,7 +32,7 @@ export async function getViemProvider(): Promise<[PublicClient | null, Error | n
     const publicClient = createPublicClient({
       chain: activeChain,
       transport: http(rpcUrl)
-    }) as any as PublicClient;
+    });
     return [publicClient, null];
   } catch (error) {
     console.error('Failed to create public client:', error);

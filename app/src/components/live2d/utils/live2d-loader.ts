@@ -1,11 +1,10 @@
 // Live2D model loader with error handling and performance optimization
 import * as PIXI from 'pixi.js';
 import { Live2DModel, config, MotionPreloadStrategy } from 'pixi-live2d-display-lipsyncpatch/cubism4';
-import { Ticker } from '@pixi/ticker';
 import { Live2DLoadError, Live2DWebGLError } from './live2d-types';
 
 // Register Ticker for Live2DModel to enable automatic updates
-Live2DModel.registerTicker(Ticker);
+Live2DModel.registerTicker(PIXI.Ticker);
 
 // Expose PIXI globally for pixi-live2d-display (legacy support)
 if (typeof window !== 'undefined') {

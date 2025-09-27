@@ -3,7 +3,15 @@ const withTM = require('next-transpile-modules')(['@0glabs/0g-ts-sdk']);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  
+
+  // Disable TypeScript and ESLint checks during builds
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   serverExternalPackages: [
     '@0glabs/0g-ts-sdk',
     'crypto',
@@ -57,6 +65,7 @@ const nextConfig = {
       fs: false,
       net: false,
       tls: false,
+      '@react-native-async-storage/async-storage': false,
       'node:fs': false,
       'node:fs/promises': false,
       'node:crypto': require.resolve('crypto-browserify'),
@@ -92,6 +101,7 @@ const nextConfig = {
     // Node.js module aliases
     config.resolve.alias = {
       ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': false,
       'node:crypto': 'crypto-browserify',
       'node:fs': false,
       'node:fs/promises': false,

@@ -17,7 +17,7 @@ export const getContractConfig = () => {
     abi: aishiAgentAbi,
     chainId: activeChain.id,
     contractName: 'AishiAgent',
-    network: activeChain.network
+    network: activeChain.name
   } as const;
 };
 

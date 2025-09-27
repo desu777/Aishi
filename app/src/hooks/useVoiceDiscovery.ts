@@ -10,7 +10,8 @@ import { useState, useEffect, useCallback } from 'react';
 const BACKEND_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
 
 export interface VoiceProfile {
-  id: 'aria' | 'nova' | 'atlas' | 'echo';
+  id: 'aria' | 'nova' | 'atlas' | 'echo' | 'aoede' | 'zephyr' |
+      'achernar' | 'kore' | 'charon' | 'fenrir' | 'puck' | string;
   name: string;
   description: string;
   personality: string;
@@ -24,7 +25,7 @@ export interface VoiceProfile {
 const DEFAULT_VOICES: VoiceProfile[] = [
   // Gemini 2.5 Pro Preview TTS Voices - TOP RECOMMENDATIONS
   {
-    id: 'aoede',
+    id: 'aoede' as const,
     name: 'Aoede',
     description: 'Breezy and natural voice',
     personality: 'Friendly, conversational, and naturally engaging',
@@ -35,7 +36,7 @@ const DEFAULT_VOICES: VoiceProfile[] = [
     available: true
   },
   {
-    id: 'zephyr',
+    id: 'zephyr' as const,
     name: 'Zephyr',
     description: 'Bright and cheerful voice',
     personality: 'Uplifting, positive, and enthusiastic',
@@ -46,7 +47,7 @@ const DEFAULT_VOICES: VoiceProfile[] = [
     available: true
   },
   {
-    id: 'achernar',
+    id: 'achernar' as const,
     name: 'Achernar',
     description: 'Soft and gentle voice',
     personality: 'Calming, peaceful, and soothing',
@@ -57,7 +58,7 @@ const DEFAULT_VOICES: VoiceProfile[] = [
     available: true
   },
   {
-    id: 'kore',
+    id: 'kore' as const,
     name: 'Kore',
     description: 'Firm and confident voice',
     personality: 'Professional, authoritative, and confident',
@@ -68,7 +69,7 @@ const DEFAULT_VOICES: VoiceProfile[] = [
     available: true
   },
   {
-    id: 'charon',
+    id: 'charon' as const,
     name: 'Charon',
     description: 'Informative and clear voice',
     personality: 'Educational, articulate, and informative',
@@ -79,7 +80,7 @@ const DEFAULT_VOICES: VoiceProfile[] = [
     available: true
   },
   {
-    id: 'fenrir',
+    id: 'fenrir' as const,
     name: 'Fenrir',
     description: 'Excitable and dynamic voice',
     personality: 'Energetic, passionate, and engaging',
@@ -90,7 +91,7 @@ const DEFAULT_VOICES: VoiceProfile[] = [
     available: true
   },
   {
-    id: 'puck',
+    id: 'puck' as const,
     name: 'Puck',
     description: 'Upbeat and energetic voice',
     personality: 'Versatile, balanced, and adaptable',
