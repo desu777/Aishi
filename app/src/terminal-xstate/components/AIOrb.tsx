@@ -40,11 +40,15 @@ const AIOrb: React.FC<AIorbProps> = ({
     }
   }, [status]);
 
-  // Determine orb size based on device (further reduced sizes for more space)
+  // Determine orb size based on device - more granular sizing for laptops
   const getOrbSize = () => {
-    if (isMobile) return "80px";
-    if (isTablet) return "110px";
-    return "150px";
+    if (isMobile) return "60px";  // Smaller for mobile
+    if (isTablet) return "80px";  // Smaller for tablets
+    // Add laptop detection (768px - 1024px)
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return "100px";
+    // Desktop (1024px - 1280px)
+    if (typeof window !== 'undefined' && window.innerWidth < 1280) return "120px";
+    return "140px";  // Large screens
   };
 
   // Get colors and animation speed based on status
@@ -174,12 +178,12 @@ const AIOrb: React.FC<AIorbProps> = ({
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '1.5rem 0',
+      padding: isMobile ? '0.75rem 0' : isTablet ? '1rem 0' : '1.5rem 0',
       position: 'relative',
     }}>
       {/* Welcome message */}
       <div style={{
-        marginBottom: '1rem',
+        marginBottom: isMobile ? '0.5rem' : isTablet ? '0.75rem' : '1rem',
         textAlign: 'center',
         color: '#9999A5',
         fontSize: isMobile ? '12px' : isTablet ? '13px' : '14px',

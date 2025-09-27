@@ -15,13 +15,15 @@ interface MicrophoneButtonProps {
   isDisabled?: boolean;
   maxDuration?: number; // Max recording duration in seconds
   className?: string;
+  onRecordingStateChange?: (isRecording: boolean) => void;
 }
 
 export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
   onRecordingComplete,
   isDisabled = false,
   maxDuration = 300, // 5 minutes default
-  className = ''
+  className = '',
+  onRecordingStateChange
 }) => {
   const { theme } = useTheme();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -39,6 +41,13 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
     clearRecording,
     getBase64
   } = useAudioRecorder();
+
+  // Notify parent about recording state changes
+  useEffect(() => {
+    if (onRecordingStateChange) {
+      onRecordingStateChange(isRecording);
+    }
+  }, [isRecording, onRecordingStateChange]);
 
   // Update recording duration
   useEffect(() => {

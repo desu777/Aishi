@@ -3,6 +3,7 @@ import { parseCommand, suggestCommands, AVAILABLE_COMMANDS, CommandType } from '
 import MicrophoneButton from './MicrophoneButton';
 import VoiceInputMessage from './VoiceInputMessage';
 import { Send } from 'lucide-react';
+import { breakpoints } from '../../utils/responsive';
 
 interface PremiumCommandBarProps {
   value: string;
@@ -19,6 +20,7 @@ interface PremiumCommandBarProps {
   onEndSession?: () => void;
   onVoiceInput?: (audioBase64: string, audioBlob: Blob) => void;
   isVoiceEnabled?: boolean;
+  onRecordingStateChange?: (isRecording: boolean) => void;
 }
 
 const colors = {
@@ -43,7 +45,8 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   isDreamActive = false,
   onEndSession,
   onVoiceInput,
-  isVoiceEnabled = false
+  isVoiceEnabled = false,
+  onRecordingStateChange
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -51,6 +54,21 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   const [voiceInputBlob, setVoiceInputBlob] = useState<Blob | null>(null);
   const [voiceInputBase64, setVoiceInputBase64] = useState<string | null>(null);
   const [voiceInputUrl, setVoiceInputUrl] = useState<string | null>(null);
+
+  // Responsive detection
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
+  useEffect(() => {
+    const checkViewport = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < breakpoints.sm);
+      setIsTablet(width >= breakpoints.sm && width < breakpoints.md);
+    };
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+    return () => window.removeEventListener('resize', checkViewport);
+  }, []);
   
   // Check if current command is valid
   const isValidCommand = useMemo(() => {
@@ -230,7 +248,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
 
   const commandBarStyle: React.CSSProperties = {
     borderTop: `1px solid ${colors.borderSubtle}`,
-    padding: '1.5rem 2rem',
+    padding: isMobile ? '1rem' : isTablet ? '1.25rem 1.5rem' : '1.5rem 2rem',
     background: 'rgba(26, 26, 26, 0.5)',
     transition: 'all 0.2s ease'
   };
@@ -238,7 +256,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   const commandInputStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '1rem'
+    gap: isMobile ? '0.5rem' : '1rem'
   };
 
   const commandPromptStyle: React.CSSProperties = {
@@ -265,8 +283,8 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   const suggestionsStyle: React.CSSProperties = {
     position: 'absolute',
     bottom: '100%',
-    left: '2rem',
-    right: '2rem',
+    left: isMobile ? '1rem' : isTablet ? '1.5rem' : '2rem',
+    right: isMobile ? '1rem' : isTablet ? '1.5rem' : '2rem',
     marginBottom: '0.5rem',
     background: 'rgba(26, 26, 26, 0.95)',
     border: `1px solid ${colors.borderSubtle}`,
@@ -331,91 +349,109 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
       <div style={commandInputStyle}>
         <span style={commandPromptStyle}>{promptSymbol}</span>
 
-        {/* Show VoiceInputMessage or text input */}
-        {voiceInputBlob ? (
-          <>
-            {process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' &&
-              console.log('[PremiumCommandBar] Rendering VoiceInputMessage', {
-                hasBlob: !!voiceInputBlob,
-                hasBase64: !!voiceInputBase64
-              })
-            }
-            <VoiceInputMessage
-              audioBlob={voiceInputBlob}
-              audioBase64={voiceInputBase64}
-              onDelete={handleDeleteVoiceInput}
+        {/* Input wrapper - maintains consistent layout */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          minWidth: 0 // Allow flex to shrink properly
+        }}>
+          {voiceInputBlob ? (
+            <>
+              {process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' &&
+                console.log('[PremiumCommandBar] Rendering VoiceInputMessage', {
+                  hasBlob: !!voiceInputBlob,
+                  hasBase64: !!voiceInputBase64
+                })
+              }
+              <VoiceInputMessage
+                audioBlob={voiceInputBlob}
+                audioBase64={voiceInputBase64}
+                onDelete={handleDeleteVoiceInput}
+              />
+            </>
+          ) : (
+            <input
+              ref={inputRef}
+              type="text"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={disabled}
+              placeholder={disabled ? 'Processing...' : placeholder}
+              style={{
+                ...commandFieldStyle,
+                width: '100%' // Take full width of wrapper
+              }}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
             />
-          </>
-        ) : (
-          <input
-            ref={inputRef}
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={disabled}
-            placeholder={disabled ? 'Processing...' : placeholder}
-            style={commandFieldStyle}
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck={false}
-          />
-        )}
+          )}
+        </div>
 
-        {/* Microphone button for voice input */}
-        {showMicrophone && !voiceInputBlob && (
-          <MicrophoneButton
-            onRecordingComplete={handleVoiceRecordingComplete}
-            isDisabled={disabled}
-            maxDuration={300}
-          />
-        )}
+        {/* Action buttons container - fixed position */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          flexShrink: 0 // Prevent compression
+        }}>
+          {/* Microphone button for voice input */}
+          {showMicrophone && !voiceInputBlob && (
+            <MicrophoneButton
+              onRecordingComplete={handleVoiceRecordingComplete}
+              isDisabled={disabled}
+              maxDuration={300}
+              onRecordingStateChange={onRecordingStateChange}
+            />
+          )}
 
-        {/* Submit button for dream/chat input */}
-        {(showMicrophone || voiceInputBlob) && (
-          <button
-            onClick={() => {
-              if (voiceInputBlob) {
-                submitVoiceInput();
-              } else {
-                onSubmit();
-              }
-            }}
-            disabled={disabled}
-            style={{
-              width: '40px', // Match MicrophoneButton size
-              height: '40px', // Match MicrophoneButton size
-              minWidth: '40px', // Prevent squashing
-              minHeight: '40px', // Prevent squashing
-              flexShrink: 0, // Prevent compression in flex layout
-              borderRadius: '50%',
-              backgroundColor: colors.accent,
-              border: 'none',
-              color: '#1a1a1a',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: disabled ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease',
-              marginLeft: '8px',
-              opacity: disabled ? 0.5 : 1
-            }}
-            onMouseEnter={(e) => {
-              if (!disabled) {
-                e.currentTarget.style.transform = 'scale(1.1)';
+          {/* Submit button for dream/chat input */}
+          {(showMicrophone || voiceInputBlob) && (
+            <button
+              onClick={() => {
+                if (voiceInputBlob) {
+                  submitVoiceInput();
+                } else {
+                  onSubmit();
+                }
+              }}
+              disabled={disabled}
+              style={{
+                width: '40px', // Match MicrophoneButton size
+                height: '40px', // Match MicrophoneButton size
+                minWidth: '40px', // Prevent squashing
+                minHeight: '40px', // Prevent squashing
+                flexShrink: 0, // Prevent compression in flex layout
+                borderRadius: '50%',
+                backgroundColor: colors.accent,
+                border: 'none',
+                color: '#1a1a1a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: disabled ? 0.5 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!disabled) {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.backgroundColor = colors.accent;
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
                 e.currentTarget.style.backgroundColor = colors.accent;
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.backgroundColor = colors.accent;
-            }}
-            aria-label="Send message"
-          >
-            <Send size={20} />
-          </button>
-        )}
+              }}
+              aria-label="Send message"
+            >
+              <Send size={20} />
+            </button>
+          )}
+        </div>
 
         {/* End Session button for active chat */}
         {isChatActive && onEndSession && (

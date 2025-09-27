@@ -41,6 +41,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
   const publicClient = usePublicClient();
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   
   // Subscribe to agent state using safe selector
   const agentState = useSafeActorState(agentRef);
@@ -298,13 +299,14 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
 
           {/* Terminal Status Line */}
           <TerminalStatusLine
-            status={getOrbStatus()}
+            status={isRecording ? 'recording' : getOrbStatus()}
             agentName={syncedAgentName}
             intelligenceLevel={intelligenceLevel}
             isMobile={isMobile}
             isTablet={isTablet}
             isChatActive={isChatActive}
             chatStatus={chatStatus}
+            isRecording={isRecording}
           />
 
           {/* Minimal Output - Terminal Lines Only */}
@@ -330,6 +332,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             onEndSession={() => send({ type: 'END_SESSION' })}
             onVoiceInput={handleVoiceInput}
             isVoiceEnabled={true}
+            onRecordingStateChange={setIsRecording}
             placeholder={
               isChatActive && chatStatus && chatStatus.includes('typing')
                 ? 'Agent is typing...'

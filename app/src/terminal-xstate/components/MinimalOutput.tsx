@@ -3,6 +3,7 @@ import { TerminalLine } from '../machines/types';
 import { CollapsibleText } from './CollapsibleText';
 import { parseMarkdownToReact, containsMarkdown } from '../services/markdownParser';
 import { VoiceMessage } from '../../terminal-xstate/voice/VoiceMessage';
+import { breakpoints } from '../../utils/responsive';
 
 interface MinimalOutputProps {
   lines: TerminalLine[];
@@ -21,14 +22,28 @@ const colors = {
   warning: '#FCD34D'
 };
 
-const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({ 
-  lines, 
-  welcomeLines, 
+const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
+  lines,
+  welcomeLines,
   agentStatus = 'uninitialized',
   agentName,
-  syncProgress 
+  syncProgress
 }) => {
   const outputRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
+  // Responsive detection
+  useEffect(() => {
+    const checkViewport = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < breakpoints.sm);
+      setIsTablet(width >= breakpoints.sm && width < breakpoints.md);
+    };
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+    return () => window.removeEventListener('resize', checkViewport);
+  }, []);
 
   // Auto-scroll to bottom on new lines
   useEffect(() => {
@@ -340,13 +355,13 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
   const outputAreaStyle: React.CSSProperties = {
     flex: 1,
     overflowY: 'auto',
-    padding: '2rem',
+    padding: isMobile ? '1rem' : isTablet ? '1.5rem' : '2rem',
     paddingBottom: 0,
     color: colors.pearl,
     fontFamily: 'Inter, -apple-system, "SF Pro Display", system-ui, sans-serif',
-    fontSize: '14px',
+    fontSize: isMobile ? '13px' : '14px',
     fontWeight: 300,
-    lineHeight: 1.8,
+    lineHeight: isMobile ? 1.6 : 1.8,
     letterSpacing: '0.02em'
   };
 
