@@ -6,9 +6,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Volume2, Check, Mic, User, Bot, Zap, Play, Loader2 } from 'lucide-react';
+import { ChevronDown, Volume2, Check, Info, X, Mic, Play, Loader2 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { breakpoints } from '../utils/responsive';
+import { breakpoints, touchTargets } from '../utils/responsive';
 import { VoiceProfile } from '../hooks/useVoiceDiscovery';
 
 interface VoiceSelectorProps {
@@ -63,43 +63,12 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
 
   const currentVoice = voices.find(v => v.id === selectedVoice) || voices[0];
 
-  const getVoiceIcon = (voiceId: string) => {
-    switch (voiceId) {
-      // Female voices
-      case 'aoede':
-      case 'zephyr':
-      case 'kore':
-      case 'algenib':
-      case 'algieba':
-      case 'autonoe':
-      case 'callirhoe':
-        return <User size={16} />;
-      // Male voices
-      case 'achernar':
-      case 'charon':
-      case 'fenrir':
-      case 'achird':
-      case 'alnilam':
-        return <Bot size={16} />;
-      // Neutral voice
-      case 'puck':
-        return <Zap size={16} />;
-      default:
-        return <Volume2 size={16} />;
-    }
-  };
+  // Group voices by gender
+  const femaleVoices = voices.filter(v => v.gender === 'female');
+  const maleVoices = voices.filter(v => v.gender === 'male');
+  const neutralVoices = voices.filter(v => v.gender === 'neutral');
 
-  const getVoiceColor = (gender: string) => {
-    switch (gender) {
-      case 'female': return '#EC4899'; // Pink
-      case 'male': return '#3B82F6'; // Blue
-      case 'neutral': return '#8B5CF6'; // Purple
-      default: return theme.accent.primary;
-    }
-  };
-
-  const handleTestVoice = async (e: React.MouseEvent, voiceId: string) => {
-    e.stopPropagation(); // Prevent dropdown from closing
+  const handleTestVoice = async (voiceId: string) => {
     if (onTestVoice && !testingVoiceId) {
       setTestingVoiceId(voiceId);
       try {
@@ -144,8 +113,10 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Volume2 size={16} style={{ color: getVoiceColor(currentVoice?.gender || 'neutral') }} />
-          <span>{currentVoice?.name || 'Select Voice'}</span>
+          <Volume2 size={16} color={theme.accent.primary} />
+          <span style={{ fontSize: '13px' }}>
+            {isLoading ? 'Loading voices...' : (currentVoice?.name || 'Select Voice')}
+          </span>
         </div>
         <ChevronDown
           size={16}
@@ -156,182 +127,380 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         />
       </button>
 
-      {isOpen && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            marginTop: '8px',
-            borderRadius: '8px',
-            border: `1px solid ${theme.border}`,
-            backgroundColor: theme.bg.card,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            zIndex: 1000,
-            minWidth: isMobile ? '300px' : '400px',
-            maxHeight: '400px',
-            overflowY: 'auto'
-          }}
-        >
-          {/* Voice profiles */}
-          {voices.map((voice) => (
+      {isOpen && !isLoading && (
+        <>
+          {/* Mobile Overlay */}
+          {isMobile && (
             <div
-              key={voice.id}
               style={{
-                padding: '12px',
-                borderBottom: `1px solid ${theme.border}`,
-                transition: 'background-color 0.2s ease'
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                zIndex: 999,
+                animation: 'fadeIn 0.2s ease'
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = theme.bg.hover;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between' }}>
-                <button
-                  onClick={() => {
-                    onVoiceChange(voice.id);
-                    setIsOpen(false);
-                  }}
-                  style={{
-                    flex: 1,
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    color: theme.text.primary
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {getVoiceIcon(voice.id)}
-                    <div style={{ flex: 1 }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        marginBottom: '4px'
-                      }}>
-                        <span style={{
-                          fontWeight: '600',
-                          fontSize: '14px',
-                          color: selectedVoice === voice.id ? theme.accent.primary : theme.text.primary
-                        }}>
-                          {voice.name}
-                        </span>
-                        {selectedVoice === voice.id && (
-                          <Check size={14} style={{ color: theme.accent.primary }} />
-                        )}
-                        <span style={{
-                          fontSize: '11px',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          backgroundColor: getVoiceColor(voice.gender),
-                          color: '#fff',
-                          fontWeight: '500'
-                        }}>
-                          {voice.gender}
-                        </span>
-                      </div>
-                      <p style={{
-                        fontSize: '12px',
-                        color: theme.text.secondary,
-                        margin: '0 0 4px 0'
-                      }}>
-                        {voice.description}
-                      </p>
-                      <p style={{
-                        fontSize: '11px',
-                        color: theme.text.tertiary,
-                        margin: 0,
-                        fontStyle: 'italic'
-                      }}>
-                        {voice.personality}
-                      </p>
-                    </div>
-                  </div>
-                </button>
+              onClick={() => setIsOpen(false)}
+            />
+          )}
 
-                {/* Test Voice Button */}
-                {onTestVoice && (
-                  <button
-                    onClick={(e) => handleTestVoice(e, voice.id)}
-                    disabled={testingVoiceId !== null}
-                    style={{
-                      padding: '6px 12px',
-                      marginLeft: '12px',
-                      borderRadius: '6px',
-                      border: `1px solid ${theme.border}`,
-                      backgroundColor: theme.bg.secondary,
-                      color: theme.text.primary,
-                      cursor: testingVoiceId !== null ? 'wait' : 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      transition: 'all 0.2s ease',
-                      opacity: testingVoiceId !== null && testingVoiceId !== voice.id ? 0.5 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                      if (testingVoiceId === null) {
-                        e.currentTarget.style.backgroundColor = theme.bg.hover;
-                        e.currentTarget.style.borderColor = theme.accent.primary;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = theme.bg.secondary;
-                      e.currentTarget.style.borderColor = theme.border;
-                    }}
-                  >
-                    {testingVoiceId === voice.id ? (
-                      <>
-                        <Loader2 size={12} className="animate-spin" />
-                        <span>Testing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play size={12} />
-                        <span>Test</span>
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
+          <div style={{
+            position: isMobile ? 'fixed' : 'absolute',
+            top: isMobile ? '45%' : 'calc(100% + 8px)',
+            left: isMobile ? '50%' : 0,
+            transform: isMobile ? 'translate(-50%, -50%)' : 'none',
+            width: isMobile ? 'calc(100vw - 32px)' : 'auto',
+            minWidth: isMobile ? 'auto' : '380px',
+            maxWidth: isMobile ? '400px' : '480px',
+            maxHeight: isMobile ? '80vh' : '400px',
+            overflowY: 'auto',
+            backgroundColor: theme.bg.panel,
+            border: `1px solid ${theme.border}`,
+            borderRadius: theme.radius.lg,
+            boxShadow: isMobile
+              ? '0 20px 60px rgba(0,0,0,0.3)'
+              : '0 10px 40px rgba(0,0,0,0.15)',
+            zIndex: 1000,
+            animation: isMobile ? 'scaleIn 0.3s ease' : 'slideDown 0.2s ease'
+          }}>
 
-              {/* Emotional range tags */}
-              {!isMobile && voice.emotionalRange && voice.emotionalRange.length > 0 && (
-                <div style={{
-                  display: 'flex',
-                  gap: '4px',
-                  flexWrap: 'wrap',
-                  marginTop: '8px',
-                  marginLeft: '28px'
-                }}>
-                  {voice.emotionalRange.map((emotion) => (
-                    <span
-                      key={emotion}
-                      style={{
-                        fontSize: '10px',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        backgroundColor: theme.bg.secondary,
-                        color: theme.text.secondary,
-                        border: `1px solid ${theme.border}`
-                      }}
-                    >
-                      {emotion}
+            {/* Female Voices */}
+            {femaleVoices.length > 0 && (
+              <div>
+                <div style={{ padding: '8px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '8px 8px 4px 8px'
+                  }}>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      color: theme.text.secondary,
+                      letterSpacing: '0.5px'
+                    }}>
+                      Female Voices
                     </span>
+                  </div>
+                  {femaleVoices.map(voice => (
+                    <VoiceOption
+                      key={voice.id}
+                      voice={voice}
+                      isSelected={selectedVoice === voice.id}
+                      onSelect={() => {
+                        onVoiceChange(voice.id);
+                        setIsOpen(false);
+                      }}
+                      onTest={() => handleTestVoice(voice.id)}
+                      isTestAvailable={!!onTestVoice}
+                      isTesting={testingVoiceId === voice.id}
+                      theme={theme}
+                      isMobile={isMobile}
+                    />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Male Voices */}
+            {maleVoices.length > 0 && (
+              <div style={{ borderTop: femaleVoices.length > 0 ? `1px solid ${theme.border}` : 'none' }}>
+                <div style={{ padding: '8px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '8px 8px 4px 8px'
+                  }}>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      color: theme.text.secondary,
+                      letterSpacing: '0.5px'
+                    }}>
+                      Male Voices
+                    </span>
+                  </div>
+                  {maleVoices.map(voice => (
+                    <VoiceOption
+                      key={voice.id}
+                      voice={voice}
+                      isSelected={selectedVoice === voice.id}
+                      onSelect={() => {
+                        onVoiceChange(voice.id);
+                        setIsOpen(false);
+                      }}
+                      onTest={() => handleTestVoice(voice.id)}
+                      isTestAvailable={!!onTestVoice}
+                      isTesting={testingVoiceId === voice.id}
+                      theme={theme}
+                      isMobile={isMobile}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Neutral Voices */}
+            {neutralVoices.length > 0 && (
+              <div style={{ borderTop: (femaleVoices.length > 0 || maleVoices.length > 0) ? `1px solid ${theme.border}` : 'none' }}>
+                <div style={{ padding: '8px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '8px 8px 4px 8px'
+                  }}>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      color: theme.text.secondary,
+                      letterSpacing: '0.5px'
+                    }}>
+                      Neutral Voices
+                    </span>
+                  </div>
+                  {neutralVoices.map(voice => (
+                    <VoiceOption
+                      key={voice.id}
+                      voice={voice}
+                      isSelected={selectedVoice === voice.id}
+                      onSelect={() => {
+                        onVoiceChange(voice.id);
+                        setIsOpen(false);
+                      }}
+                      onTest={() => handleTestVoice(voice.id)}
+                      isTestAvailable={!!onTestVoice}
+                      isTesting={testingVoiceId === voice.id}
+                      theme={theme}
+                      isMobile={isMobile}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Info footer */}
+            <div style={{
+              borderTop: `1px solid ${theme.border}`,
+              padding: isMobile ? '12px 16px' : '8px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '6px',
+              backgroundColor: theme.bg.card,
+              opacity: 0.8
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Info size={12} color={theme.text.secondary} />
+                <span style={{ fontSize: '11px', color: theme.text.secondary }}>
+                  Test voices before selecting
+                </span>
+              </div>
+              {isMobile && (
+                <button
+                  onClick={() => setIsOpen(false)}
+                  style={{
+                    padding: '4px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <X size={16} color={theme.text.secondary} />
+                </button>
               )}
             </div>
-          ))}
-        </div>
+          </div>
+        </>
       )}
+
+      <style jsx>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// Voice Option Component
+const VoiceOption: React.FC<{
+  voice: VoiceProfile;
+  isSelected: boolean;
+  onSelect: () => void;
+  onTest: () => void;
+  isTestAvailable: boolean;
+  isTesting: boolean;
+  theme: any;
+  isMobile: boolean;
+}> = ({ voice, isSelected, onSelect, onTest, isTestAvailable, isTesting, theme, isMobile }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      onClick={onSelect}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '20px 1fr auto',
+        gap: '12px',
+        alignItems: 'center',
+        padding: isMobile ? '14px 16px' : '12px 16px',
+        minHeight: isMobile ? `${touchTargets.comfortable}px` : 'auto',
+        borderRadius: theme.radius.md,
+        cursor: 'pointer',
+        backgroundColor: isSelected ? theme.bg.card : (isHovered ? theme.bg.card : 'transparent'),
+        transition: theme.effects.transitions.fast,
+        transform: isHovered && !isMobile ? 'scale(1.02)' : 'scale(1)'
+      }}
+    >
+      {/* Icon Column - Fixed Width */}
+      <div style={{
+        width: '20px',
+        height: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Volume2 size={16} color={theme.accent.primary} />
+      </div>
+
+      {/* Text Column - Flexible */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2px',
+        minWidth: 0,
+        overflow: 'hidden'
+      }}>
+        <span style={{
+          fontSize: isMobile ? '14px' : '13px',
+          fontWeight: isSelected ? '600' : '400',
+          color: theme.text.primary,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}>
+          {voice.name}
+        </span>
+        <span style={{
+          fontSize: '10px',
+          color: theme.text.secondary,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}>
+          {voice.description}
+        </span>
+      </div>
+
+      {/* Actions Column - Auto Width */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        flexShrink: 0
+      }}>
+        {/* Test Button */}
+        {isTestAvailable && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTest();
+            }}
+            disabled={isTesting}
+            style={{
+              padding: '4px 8px',
+              borderRadius: theme.radius.sm,
+              border: `1px solid ${theme.border}`,
+              backgroundColor: isHovered ? theme.bg.panel : theme.bg.card,
+              color: theme.text.primary,
+              cursor: isTesting ? 'wait' : 'pointer',
+              fontSize: '11px',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              transition: theme.effects.transitions.fast,
+              opacity: isTesting ? 0.7 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!isTesting) {
+                e.currentTarget.style.borderColor = theme.accent.primary;
+                e.currentTarget.style.backgroundColor = theme.bg.panel;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = theme.border;
+              e.currentTarget.style.backgroundColor = isHovered ? theme.bg.panel : theme.bg.card;
+            }}
+          >
+            {isTesting ? (
+              <>
+                <Loader2 size={10} className="animate-spin" />
+                <span>Testing</span>
+              </>
+            ) : (
+              <>
+                <Play size={10} />
+                <span>Test</span>
+              </>
+            )}
+          </button>
+        )}
+
+        {/* Gender Badge */}
+        <span style={{
+          padding: '3px 8px',
+          borderRadius: theme.radius.sm,
+          fontSize: '10px',
+          fontWeight: '600',
+          backgroundColor: theme.accent.primary,
+          color: '#ffffff',
+          whiteSpace: 'nowrap',
+          opacity: 0.8
+        }}>
+          {voice.gender}
+        </span>
+
+        {isSelected && (
+          <Check size={16} color={theme.accent.primary} />
+        )}
+      </div>
     </div>
   );
 };
