@@ -454,6 +454,7 @@ export const terminalMachine = setup({
       on: {
         'INPUT.SUBMIT': {
           actions: [
+            assign({ wasVoiceInput: false }), // Reset for text input
             'addChatUserInput',
             'sendChatInput',
             'clearInput'
@@ -501,6 +502,7 @@ export const terminalMachine = setup({
         'VOICE.TRANSCRIBED': {
           actions: [
             'handleVoiceTranscript',
+            'setChatThinkingStatus', // Set thinking status immediately after voice transcription
             'addChatUserInput',
             'sendChatInput',
             'clearInput'
@@ -508,7 +510,15 @@ export const terminalMachine = setup({
         },
         'VOICE.ERROR': {
           actions: 'updateVoiceStatus'
-        }
+        },
+        // Voice synthesis events for chat
+        'VOICE.SYNTHESIZE_RESPONSE': {
+          actions: 'forwardToVoice'
+        },
+        'VOICE.TTS_COMPLETE': {
+          actions: 'clearTTSState'
+        },
+        'NOOP': {}
       }
     }
   }

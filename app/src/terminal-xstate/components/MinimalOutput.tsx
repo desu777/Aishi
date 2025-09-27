@@ -11,6 +11,8 @@ interface MinimalOutputProps {
   agentStatus?: string;
   agentName?: string | null;
   syncProgress?: string;
+  isChatActive?: boolean;
+  onEndSession?: () => void;
 }
 
 const colors = {
@@ -27,7 +29,9 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
   welcomeLines,
   agentStatus = 'uninitialized',
   agentName,
-  syncProgress
+  syncProgress,
+  isChatActive = false,
+  onEndSession
 }) => {
   const outputRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -306,6 +310,47 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
       
       // Handle command prefixes
       if (content.startsWith('$ ')) {
+        const command = content.substring(2).trim();
+
+        // Special handling for chat command when chat is active
+        if (command === 'chat' && isChatActive && onEndSession) {
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span>
+                <span style={{ opacity: 0.5 }}>$ </span>
+                <span style={{ fontWeight: 400 }}>{command}</span>
+              </span>
+              <button
+                onClick={onEndSession}
+                style={{
+                  backgroundColor: '#8B5CF6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '20px',
+                  padding: isMobile ? '4px 12px' : '6px 16px',
+                  fontSize: isMobile ? '12px' : '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
+                  fontFamily: 'Inter, -apple-system, system-ui, sans-serif'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#9F7AEA';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#8B5CF6';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.3)';
+                }}
+              >
+                End Session
+              </button>
+            </div>
+          );
+        }
+
+        // Default command rendering
         return (
           <>
             <span style={{ opacity: 0.5 }}>$ </span>
@@ -432,4 +477,22 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
   );
 };
 
-export const MinimalOutput = React.memo(MinimalOutputComponent);
+// Deep comparison function for React.memo to prevent unnecessary re-renders
+const arePropsEqual = (prevProps: MinimalOutputProps, nextProps: MinimalOutputProps) => {
+  // Compare arrays by reference (they should only change when actual content changes)
+  if (prevProps.lines !== nextProps.lines) return false;
+  if (prevProps.welcomeLines !== nextProps.welcomeLines) return false;
+
+  // Compare primitive values
+  if (prevProps.agentStatus !== nextProps.agentStatus) return false;
+  if (prevProps.agentName !== nextProps.agentName) return false;
+  if (prevProps.syncProgress !== nextProps.syncProgress) return false;
+  if (prevProps.isChatActive !== nextProps.isChatActive) return false;
+
+  // onEndSession function can change reference, but functionality stays the same
+  // We can safely ignore it in comparison as it doesn't affect rendering
+
+  return true;
+};
+
+export const MinimalOutput = React.memo(MinimalOutputComponent, arePropsEqual);

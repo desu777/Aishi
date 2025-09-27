@@ -3,7 +3,7 @@
  * @description All actions for the chat state machine
  */
 
-import { assign, sendParent } from 'xstate';
+import { assign, sendParent, enqueueActions } from 'xstate';
 import type { ChatMessage, ChatContext } from './chatMachine';
 import type { TerminalLine } from './types';
 
@@ -53,8 +53,12 @@ export const chatActions = {
     },
     currentTranscript: ({ context, event }: any) => {
       const message = event.message || event.value;
-      return context.currentTranscript + 
+      return context.currentTranscript +
              `User: ${message}\n`;
+    },
+    wasVoiceInput: ({ event }: any) => {
+      // Update wasVoiceInput from event if present
+      return event.wasVoiceInput || false;
     },
     statusMessage: ({ context }: { context: ChatContext }) => `${context.agentName} is thinking...`
   }),
@@ -83,7 +87,7 @@ export const chatActions = {
    */
   setAwaitingConfirmation: assign({
     awaitingConfirmation: true,
-    statusMessage: 'Save this conversation to memory?'
+    statusMessage: 'Waiting for your decision...'
   }),
 
   /**
@@ -140,10 +144,17 @@ export const chatActions = {
   }),
 
   /**
-   * Send lines to parent (terminal)
+   * Send lines to parent (terminal) with voice support
    */
-  sendLinesToParent: [
-    sendParent(({ context }: { context: ChatContext }) => {
+  sendLinesToParent: enqueueActions(({ context, enqueue }: any) => {
+    debugLog('[Chat] sendLinesToParent triggered', {
+      wasVoiceInput: context.wasVoiceInput,
+      messagesCount: context.messages.length,
+      agentName: context.agentName
+    });
+
+    // First action: send lines to parent
+    enqueue(sendParent(() => {
       const lines: TerminalLine[] = [];
       const timestamp = Date.now();
 
@@ -151,16 +162,9 @@ export const chatActions = {
       const lastMessage = context.messages[context.messages.length - 1];
 
       if (lastMessage && lastMessage.role === 'assistant') {
-        // Display AI response - check if voice or text
-        if (context.wasVoiceInput) {
-          // For voice input, prepare for voice output
-          lines.push({
-            type: 'info',
-            content: `~ ${context.agentName} : [Processing voice response...]`,
-            timestamp
-          });
-        } else {
-          // For text input, display regular text
+        // For text input, display the response immediately
+        // For voice input, skip text display (TTS will handle it)
+        if (!context.wasVoiceInput) {
           lines.push({
             type: 'info',
             content: `~ ${context.agentName} : ${lastMessage.content}`,
@@ -170,29 +174,40 @@ export const chatActions = {
       }
 
       return { type: 'APPEND_LINES', lines };
-    }),
-    // Send TTS request if voice input
-    sendParent(({ context }: { context: ChatContext }) => {
+    }));
+
+    // Second action: send TTS request if voice input
+    if (context.wasVoiceInput) {
       const lastMessage = context.messages[context.messages.length - 1];
-      if (context.wasVoiceInput && lastMessage && lastMessage.role === 'assistant') {
-        return {
+
+      if (lastMessage && lastMessage.role === 'assistant') {
+        debugLog('[Chat] ✅ TRIGGERING TTS - Voice input detected with AI response', {
+          textLength: lastMessage.content.length,
+          textPreview: lastMessage.content.substring(0, 100),
+          agentName: context.agentName
+        });
+
+        enqueue(sendParent(() => ({
           type: 'VOICE.SYNTHESIZE_RESPONSE',
           text: lastMessage.content,
-          agentName: context.agentName
-        };
+          agentName: context.agentName,
+          isChatResponse: true
+        })));
       }
-      // Return a no-op event if not voice
-      return { type: 'NOOP' };
-    })
-  ],
+    } else {
+      debugLog('[Chat] ❌ NO TTS TRIGGERED - Text input mode', {
+        wasVoiceInput: context.wasVoiceInput
+      });
+    }
+  }),
 
   /**
    * Send save confirmation prompt
    */
-  sendSavePrompt: sendParent(() => {
+  sendSavePrompt: sendParent(({ context }: { context: ChatContext }) => {
     const lines: TerminalLine[] = [{
       type: 'system',
-      content: 'Do you want to save this conversation to agent memory? (y/n)',
+      content: `Should ${context.agentName} grow with this conversation? (type 'y' or 'n')`,
       timestamp: Date.now()
     }];
     return { type: 'APPEND_LINES', lines };

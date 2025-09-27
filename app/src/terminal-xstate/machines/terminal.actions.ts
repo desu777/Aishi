@@ -25,7 +25,8 @@ export const terminalActions = {
 
   clearInput: assign({
     currentInput: ''
-    // Don't reset wasVoiceInput here - preserve it for dream workflow
+    // Don't reset wasVoiceInput here - preserve it for workflows
+    // It will be reset by clearTTSState after voice response
   }),
 
   /**
@@ -251,7 +252,8 @@ export const terminalActions = {
   completeChat: assign({
     isChatActive: false,
     chatRef: null,
-    chatStatus: null
+    chatStatus: null,
+    wasVoiceInput: false // Reset voice flag only after chat completes
   }),
 
   /**
@@ -450,6 +452,17 @@ export const terminalActions = {
     }
   }),
 
+  setChatThinkingStatus: assign({
+    chatStatus: ({ context }: { context: TerminalContext }) => {
+      if (context.wasVoiceInput && context.agentRef) {
+        const agentState = context.agentRef.getSnapshot();
+        const agentName = agentState?.context?.agentName || 'Agent';
+        return `${agentName} is thinking . . .`;
+      }
+      return null;
+    }
+  }),
+
   sendToVoice: ({ context, event }: any) => {
     if (context.voiceRef && event.type === 'VOICE.SPEAK') {
       context.voiceRef.send({
@@ -562,7 +575,9 @@ export const terminalActions = {
    */
   clearTTSState: assign({
     isSynthesizing: false,
-    dreamStatus: null // Clear dream status after TTS completes
+    dreamStatus: null, // Clear dream status after TTS completes
+    chatStatus: null, // Clear chat status after TTS completes
+    wasVoiceInput: false // Reset voice flag after TTS completes for next message
   }),
 
   /**

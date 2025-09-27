@@ -59,13 +59,13 @@ export interface ChatContext {
 
 export type ChatEvent =
   | { type: 'START_CHAT'; agentId: number; agentName: string; modelId: string; wasVoiceInput?: boolean }
-  | { type: 'USER_MESSAGE'; message: string }
+  | { type: 'USER_MESSAGE'; message: string; wasVoiceInput?: boolean }
   | { type: 'AI_RESPONSE_SUCCESS'; response: string }
   | { type: 'AI_RESPONSE_ERROR'; error: string }
   | { type: 'END_SESSION' }
   | { type: 'CONFIRM_SAVE' }
   | { type: 'CANCEL_SAVE' }
-  | { type: 'INPUT.SUBMIT'; value: string }
+  | { type: 'INPUT.SUBMIT'; value: string; wasVoiceInput?: boolean }
   | { type: 'EXIT' }
   | { type: 'RETRY' }
   | { type: 'SKIP_RETRY' };
@@ -626,12 +626,12 @@ export const chatMachine = setup({
           {
             guard: 'shouldAbortAfterMaxRetries',
             target: 'completed',
-            actions: storageActions.setMaxRetriesExceededStatus
+            actions: storageActions.setMaxRetriesExceededStatus as any
           },
           {
             guard: 'isNoInput',
             target: 'completed',
-            actions: storageActions.setUploadCancelledStatus
+            actions: storageActions.setUploadCancelledStatus as any
           }
         ],
         EXIT: 'completed'

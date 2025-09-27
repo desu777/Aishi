@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { MinimalOutput } from './MinimalOutput';
 import { PremiumCommandBar } from './PremiumCommandBar';
 import { TerminalSystemHeader } from './TerminalSystemHeader';
@@ -230,6 +230,19 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  // Memoized MinimalOutput to prevent re-renders on input changes
+  const memoizedMinimalOutput = useMemo(() => (
+    <MinimalOutput
+      lines={context.lines}
+      welcomeLines={context.welcomeLines}
+      agentStatus={agentStatus}
+      agentName={syncedAgentName}
+      syncProgress={syncProgress}
+      isChatActive={isChatActive}
+      onEndSession={() => send({ type: 'END_SESSION' })}
+    />
+  ), [context.lines, context.welcomeLines, agentStatus, syncedAgentName, syncProgress, isChatActive, send]);
+
   if (!isOpen) return null;
 
   // Inline styles for glass terminal
@@ -329,13 +342,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
           />
 
           {/* Minimal Output - Terminal Lines Only */}
-          <MinimalOutput 
-            lines={context.lines}
-            welcomeLines={context.welcomeLines}
-            agentStatus={agentStatus}
-            agentName={syncedAgentName}
-            syncProgress={syncProgress}
-          />
+          {memoizedMinimalOutput}
 
           {/* Premium Command Bar */}
           <PremiumCommandBar
@@ -355,7 +362,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             placeholder={
               isChatActive && chatStatus && chatStatus.includes('typing')
                 ? 'Agent is typing...'
-                : isChatActive && chatStatus === 'Save conversation? (y/n)'
+                : isChatActive && chatStatus === 'Waiting for your decision...'
                   ? 'Type y or n'
                 : isChatActive
                   ? 'Type your message...'

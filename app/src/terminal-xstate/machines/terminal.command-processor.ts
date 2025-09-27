@@ -233,10 +233,30 @@ export const workflowActions = {
    */
   sendChatInput: ({ context }: { context: TerminalContext }) => {
     if (context.chatRef) {
-      context.chatRef.send({ 
-        type: 'INPUT.SUBMIT', 
-        value: context.currentInput 
-      });
+      const input = (context.currentInput || '').trim().toLowerCase();
+
+      // Check if we're in confirmation state
+      const chatState = context.chatRef.getSnapshot();
+      const isAwaitingConfirmation = chatState?.context?.awaitingConfirmation;
+
+      // Log voice input status for debugging
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[sendChatInput] Sending to chat with wasVoiceInput:', context.wasVoiceInput);
+      }
+
+      // Handle confirmation responses
+      if (isAwaitingConfirmation && (input === 'y' || input === 'yes')) {
+        context.chatRef.send({ type: 'CONFIRM_SAVE' });
+      } else if (isAwaitingConfirmation && (input === 'n' || input === 'no')) {
+        context.chatRef.send({ type: 'CANCEL_SAVE' });
+      } else {
+        // Regular message with voice flag
+        context.chatRef.send({
+          type: 'INPUT.SUBMIT',
+          value: context.currentInput,
+          wasVoiceInput: context.wasVoiceInput // Pass voice flag to chat machine
+        });
+      }
     }
   }
 };

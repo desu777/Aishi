@@ -3,7 +3,7 @@
  * @description All actions for the dream state machine
  */
 
-import { assign, sendParent, type ActionFunction } from 'xstate';
+import { assign, sendParent, enqueueActions, type ActionFunction } from 'xstate';
 import { DreamMachineContext, DreamEvent } from './dreamMachine';
 import { defaultAgentData } from '../types/contextTypes';
 import { TerminalLine } from './types';
@@ -95,10 +95,23 @@ export const dreamActions = {
     }
   }),
   
-  // Mark as completed
-  markCompleted: assign({
-    statusMessage: ({ context }) => `${context.dreamContext?.agentProfile?.name || 'Agent'} has learned from your dream!`,
-    awaitingConfirmation: false
+  // Mark as completed with success message
+  markCompleted: enqueueActions(({ context, enqueue }: any) => {
+    // Send success message to terminal
+    enqueue(sendParent(() => ({
+      type: 'APPEND_LINES',
+      lines: [{
+        type: 'success',
+        content: 'Dream saved successfully!',
+        timestamp: Date.now()
+      }] as TerminalLine[]
+    })));
+
+    // Update status message
+    enqueue(assign({
+      statusMessage: ({ context }: any) => `${context.dreamContext?.agentProfile?.name || 'Agent'} has learned from your dream!`,
+      awaitingConfirmation: false
+    }));
   }),
   
   // Store error

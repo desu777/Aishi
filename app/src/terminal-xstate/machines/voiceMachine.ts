@@ -327,14 +327,6 @@ export const voiceMachine = setup({
       isProcessing: false
     }),
 
-    setSpeaking: assign({
-      isSpeaking: true
-    }),
-
-    clearSpeaking: assign({
-      isSpeaking: false
-    }),
-
     setError: assign({
       errorMessage: ({ event }) => {
         if (event.type === 'xstate.error.actor.transcribe') {
@@ -623,34 +615,12 @@ export const voiceMachine = setup({
           };
         },
         onDone: {
-          target: 'playing',
+          target: 'idle',
           actions: ['setSynthesizedAudio', 'clearProcessing', 'sendVoiceOutputToParent']
         },
         onError: {
           target: 'idle',
           actions: ['setError', 'clearProcessing']
-        }
-      }
-    },
-
-    playing: {
-      entry: 'setSpeaking',
-      on: {
-        STOP_AUDIO: {
-          target: 'idle',
-          actions: 'clearSpeaking'
-        },
-        // Audio finishes playing
-        PLAY_COMPLETE: {
-          target: 'idle',
-          actions: 'clearSpeaking'
-        }
-      },
-      after: {
-        // Auto-complete after max duration (safety)
-        30000: {
-          target: 'idle',
-          actions: 'clearSpeaking'
         }
       }
     },

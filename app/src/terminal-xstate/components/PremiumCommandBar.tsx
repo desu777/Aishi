@@ -452,36 +452,6 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
             </button>
           )}
         </div>
-
-        {/* End Session button for active chat */}
-        {isChatActive && onEndSession && (
-          <button
-            onClick={onEndSession}
-            style={{
-              marginLeft: 'auto',
-              padding: '0.5rem 1rem',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '4px',
-              color: '#EF4444',
-              fontSize: '12px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              fontFamily: 'Inter, -apple-system, "SF Pro Display", system-ui, sans-serif',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-            }}
-          >
-            End Session
-          </button>
-        )}
       </div>
       <style jsx>{`
         input::placeholder {
