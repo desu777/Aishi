@@ -12,6 +12,16 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  // Rewrites for storage API to avoid CORS
+  async rewrites() {
+    return [
+      {
+        source: '/api/storage/:path*',
+        destination: 'https://storage.aishi.app/api/:path*',
+      },
+    ]
+  },
+
   serverExternalPackages: [
     '@0glabs/0g-ts-sdk',
     'crypto',
