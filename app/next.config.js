@@ -17,7 +17,7 @@ const nextConfig = {
     return [
       {
         source: '/api/storage/:path*',
-        destination: 'https://storage.aishi.app/api/:path*',
+        destination: 'https://storage.aishi.app/api/storage/:path*',
       },
     ]
   },
