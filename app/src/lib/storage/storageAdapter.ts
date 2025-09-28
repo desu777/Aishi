@@ -24,9 +24,8 @@ export function useLocalStorage(): boolean {
  */
 export function getStorageEndpoint(): string {
   if (useLocalStorage()) {
-    // Use AISHI storage API (running on port 3004)
-    // Note: NEXT_PUBLIC_AISHI_STORAGE_URL in .env points to 3003, but we override to 3004 for the microservice
-    return 'http://localhost:3004/api/storage';
+    // Use AISHI storage API - configured via environment variable
+    return `${process.env.NEXT_PUBLIC_AISHI_STORAGE_URL}/storage`;
   }
   // Use 0G storage RPC
   return process.env.NEXT_PUBLIC_STANDARD_STORAGE_RPC || 'https://indexer-storage-testnet-standard.0g.ai';
