@@ -16,20 +16,27 @@
 ## 🔧 Zmiany w Kodzie
 
 ### 1. **app/src/lib/0g/network.ts**
-Zmieniono fallback URLs na proxy paths:
+Dodano environment-based storage mode selection:
 ```typescript
-// BEFORE
+// Storage mode kontroluje jak są ładowane endpoints
+const storageMode = process.env.NEXT_PUBLIC_0G_STORAGE_MODE || 'development';
+
+// Development mode (default)
 storageRpc: 'https://indexer-storage-testnet-turbo.0g.ai'
 
-// AFTER
+// Production mode
 storageRpc: '/0g-storage/turbo'  // używa nginx proxy
 ```
 
 ### 2. **app/.env.example**
-Dodano nowe zmienne środowiskowe:
+Dodano nową zmienną kontrolną:
 ```bash
-NEXT_PUBLIC_TURBO_STORAGE_RPC=/0g-storage/turbo
-NEXT_PUBLIC_STANDARD_STORAGE_RPC=/0g-storage/standard
+# Controls storage endpoint selection
+NEXT_PUBLIC_0G_STORAGE_MODE=development
+
+# Optional overrides (leave empty for auto-selection)
+# NEXT_PUBLIC_TURBO_STORAGE_RPC=
+# NEXT_PUBLIC_STANDARD_STORAGE_RPC=
 ```
 
 ### 3. **DEPLOYMENT_GUIDE.md**
@@ -57,8 +64,11 @@ nano .env
 
 **Dodaj/zaktualizuj:**
 ```bash
-NEXT_PUBLIC_TURBO_STORAGE_RPC=/0g-storage/turbo
-NEXT_PUBLIC_STANDARD_STORAGE_RPC=/0g-storage/standard
+# Enable production mode (nginx proxy)
+NEXT_PUBLIC_0G_STORAGE_MODE=production
+# Optional: można też użyć direct overrides
+# NEXT_PUBLIC_TURBO_STORAGE_RPC=/0g-storage/turbo
+# NEXT_PUBLIC_STANDARD_STORAGE_RPC=/0g-storage/standard
 ```
 
 ### KROK 3: Rebuild Aplikacji
@@ -75,7 +85,245 @@ npm run build
 sudo nano /etc/nginx/sites-available/aishi
 ```
 
-**Dodaj w sekcji `server { ... }` dla `aishi.app` PRZED `location /`:**
+**PEŁNY CONFIG DO COPY-PASTE (zastąp cały plik):**
+
+```nginx
+# Główna aplikacja - aishi.app (Port 3301)
+server {
+    server_name aishi.app www.aishi.app;
+
+    # ========================================
+    # 0G STORAGE PROXY - FIX CORS ISSUES
+    # ========================================
+
+    # Proxy dla 0G Storage - Turbo endpoint
+    location /0g-storage/turbo/ {
+        proxy_pass https://indexer-storage-testnet-turbo.0g.ai/;
+        proxy_ssl_server_name on;
+        proxy_set_header Host indexer-storage-testnet-turbo.0g.ai;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Większe limity dla storage uploads
+        client_max_body_size 10M;
+        proxy_connect_timeout 120s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 120s;
+
+        # CORS headers - pozwala na cross-origin requests
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+    }
+
+    # Proxy dla 0G Storage - Standard endpoint
+    location /0g-storage/standard/ {
+        proxy_pass https://indexer-storage-testnet-standard.0g.ai/;
+        proxy_ssl_server_name on;
+        proxy_set_header Host indexer-storage-testnet-standard.0g.ai;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Większe limity dla storage uploads
+        client_max_body_size 10M;
+        proxy_connect_timeout 120s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 120s;
+
+        # CORS headers - pozwala na cross-origin requests
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+    }
+
+    # ========================================
+    # GŁÓWNA APLIKACJA
+    # ========================================
+
+    location / {
+        proxy_pass http://localhost:3301;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Timeout settings for large requests
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    listen [::]:443 ssl; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/aishi.app/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/aishi.app/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+
+# Dokumentacja - docs.aishi.app (Port 3302)
+server {
+    server_name docs.aishi.app;
+
+    location / {
+        proxy_pass http://localhost:3302;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    listen [::]:443 ssl; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/aishi.app/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/aishi.app/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+
+# Backend API - compute.aishi.app (Port 3303)
+server {
+    server_name compute.aishi.app;
+
+    location / {
+        proxy_pass http://localhost:3303;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Większe limity dla API
+        client_max_body_size 10M;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    listen [::]:443 ssl; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/aishi.app/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/aishi.app/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+
+# Storage API - storage.aishi.app (Port 3304)
+server {
+    server_name storage.aishi.app;
+
+    location / {
+        proxy_pass http://localhost:3304;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Większe limity dla storage
+        client_max_body_size 10M;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    listen [::]:443 ssl; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/storage.aishi.app/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/storage.aishi.app/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+
+# HTTP to HTTPS redirects (managed by Certbot)
+server {
+    if ($host = www.aishi.app) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    if ($host = aishi.app) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    listen [::]:80;
+    server_name aishi.app www.aishi.app;
+    return 404; # managed by Certbot
+}
+
+server {
+    if ($host = docs.aishi.app) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    listen [::]:80;
+    server_name docs.aishi.app;
+    return 404; # managed by Certbot
+}
+
+server {
+    if ($host = compute.aishi.app) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    listen [::]:80;
+    server_name compute.aishi.app;
+    return 404; # managed by Certbot
+}
+
+server {
+    if ($host = storage.aishi.app) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    listen [::]:80;
+    server_name storage.aishi.app;
+    return 301 https://$host$request_uri;
+}
+```
+
+**LUB dodaj tylko te 2 location blocks PRZED `location /` w pierwszym server block:**
 
 ```nginx
 # Proxy dla 0G Storage - Turbo endpoint
@@ -284,3 +532,38 @@ Browser → https://aishi.app/0g-storage/turbo/upload
 - Zero code complexity added
 - Zero external dependencies
 - Instant fix dla production issue
+
+---
+
+## 🔄 Development vs Production Modes
+
+### Development Mode (Default)
+```bash
+# .env
+NEXT_PUBLIC_0G_STORAGE_MODE=development
+# lub zostaw puste (auto-default)
+```
+**Behavior:**
+- Używa direct external URLs: `https://indexer-storage-testnet-turbo.0g.ai`
+- Działa out-of-box bez nginx
+- Idealne dla localhost development
+
+### Production Mode
+```bash
+# .env
+NEXT_PUBLIC_0G_STORAGE_MODE=production
+```
+**Behavior:**
+- Używa nginx proxy paths: `/0g-storage/turbo`
+- Wymaga nginx konfiguracji
+- Eliminuje CORS issues na produkcji
+
+### Manual Override (Advanced)
+```bash
+# .env
+NEXT_PUBLIC_TURBO_STORAGE_RPC=https://custom-endpoint.example.com
+```
+**Behavior:**
+- Ignoruje mode selection
+- Używa custom URL
+- Przydatne dla testing/staging
