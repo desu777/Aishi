@@ -73,8 +73,12 @@ const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
   // Extract model info - use prop first, then actor state
   const currentModel = selectedModel || modelState?.context?.selectedModel || 'auto';
   
-  // Check if current model needs broker (only 0G models with phala/ prefix)
-  const modelNeedsBroker = currentModel.startsWith('phala/') ||
+  // Check if current model needs broker (ALL 0G Network models from decentralized providers)
+  // 0G Network models have format: provider/model-name (e.g., phala/*, openai/*, etc.)
+  // Gemini models don't have slash (gemini-2.5-flash-*)
+  const is0GNetworkModel = currentModel.includes('/') && !currentModel.startsWith('gemini-');
+
+  const modelNeedsBroker = is0GNetworkModel ||
                           (modelState?.context?.availableModels?.find(
                             (m: any) => m.id === currentModel
                           )?.needsBroker || false);
@@ -83,26 +87,32 @@ const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
   const formatModelName = (modelId: string) => {
     if (modelId === 'auto') return 'Auto Select';
     if (modelId === 'gemini-2.5-flash') return 'Gemini 2.5 Flash';
-    if (modelId.startsWith('phala/')) {
-      // Extract model name after "phala/" and add 0G logo
-      const modelName = modelId.replace('phala/', '');
+
+    // Handle ALL 0G Network models (provider/model format)
+    // Examples: phala/*, openai/*, anthropic/*, etc.
+    if (modelId.includes('/') && !modelId.startsWith('gemini-')) {
+      // Extract model name after "provider/" and add 0G logo
+      const parts = modelId.split('/');
+      const modelName = parts[1] || modelId; // Fallback to full if no slash
+
       return (
         <span style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.3rem' : '0.4rem' }}>
           <span>{modelName}</span>
-          <img 
-            src="/og.png" 
+          <img
+            src="/og.png"
             alt="0G Network"
-            style={{ 
+            style={{
               height: isMobile ? '14px' : '16px',
               width: 'auto',
               objectFit: 'contain',
               opacity: 0.8,
               flexShrink: 0
-            }} 
+            }}
           />
         </span>
       );
     }
+
     return modelId;
   };
   

@@ -173,19 +173,34 @@ router.post('/0g-compute', aiQueryLimiter, async (req, res) => {
       query,
       selectedModel
     );
-    
+
     if (process.env.TEST_ENV === 'true') {
       console.log(`🤖 API: AI analysis completed for ${walletAddress} using model: ${selectedModel}`);
     }
 
-    // Include selected model in response for frontend feedback
-    const enhancedResult = {
-      ...result,
+    // Unified response format (consistent with Gemini endpoint)
+    // Main content in 'data' field (string), metadata in 'metadata' object
+    const responseText = result.response || '';
+    const metadata = {
+      model: result.model || selectedModel,
+      responseTime: result.responseTime || 0,
+      cost: result.cost || 0,
+      chatId: result.chatId,
+      isValid: result.isValid || false,
+      queryId: result.queryId,
       modelUsed: selectedModel,
-      modelSource: modelId ? 'frontend' : 'env_default'
+      modelSource: modelId ? 'frontend' : 'env_default',
+      provider: '0G Network'
     };
 
-    handleSuccess(res, enhancedResult, 'AI processing completed successfully');
+    // Return in unified format (data = string, metadata = object)
+    res.json({
+      success: true,
+      data: responseText,
+      metadata: metadata,
+      message: 'AI processing completed successfully',
+      timestamp: new Date().toISOString()
+    });
   } catch (error: any) {
     handleError(res, error, 'Failed to process AI query');
   }
