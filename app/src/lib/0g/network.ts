@@ -25,14 +25,16 @@ export function getNetworkConfig(networkType: NetworkType): NetworkConfig {
     standard: {
       name: 'Standard',
       flowAddress: process.env.NEXT_PUBLIC_STANDARD_FLOW_ADDRESS || '0xbD75117F80b4E22698D0Cd7612d92BDb8eaff628',
-      storageRpc: process.env.NEXT_PUBLIC_STANDARD_STORAGE_RPC || 'https://indexer-storage-testnet-standard.0g.ai',
+      // Use nginx proxy path to avoid CORS issues in production
+      storageRpc: process.env.NEXT_PUBLIC_STANDARD_STORAGE_RPC || '/0g-storage/standard',
       explorerUrl: `${explorerBaseUrl}/tx/`,
       l1Rpc: activeChain.rpcUrls?.default?.http[0] || 'https://evmrpc-testnet.0g.ai'
     },
     turbo: {
       name: 'Turbo',
       flowAddress: process.env.NEXT_PUBLIC_TURBO_FLOW_ADDRESS || '0xbD75117F80b4E22698D0Cd7612d92BDb8eaff628',
-      storageRpc: process.env.NEXT_PUBLIC_TURBO_STORAGE_RPC || 'https://indexer-storage-testnet-turbo.0g.ai',
+      // Use nginx proxy path to avoid CORS issues in production
+      storageRpc: process.env.NEXT_PUBLIC_TURBO_STORAGE_RPC || '/0g-storage/turbo',
       explorerUrl: `${explorerBaseUrl}/tx/`,
       l1Rpc: activeChain.rpcUrls?.default?.http[0] || 'https://evmrpc-testnet.0g.ai'
     }
