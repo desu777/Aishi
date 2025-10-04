@@ -179,8 +179,16 @@ export const chatMachine = setup({
       );
 
       debugLog('AI response received', {
-        responseLength: response.response?.length
+        hasResponse: !!response,
+        hasResponseText: !!response?.response,
+        responseLength: response?.response?.length || 0
       });
+
+      // Validate response format before returning
+      if (!response || typeof response.response !== 'string') {
+        debugLog('Invalid response format', { response });
+        throw new Error('Invalid response format from AI service');
+      }
 
       return response;
     }),

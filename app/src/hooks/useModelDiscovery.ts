@@ -53,21 +53,21 @@ export const useModelDiscovery = () => {
       console.error('Failed to discover models:', error);
       setError(error instanceof Error ? error.message : 'Failed to discover models');
       
-      // Fallback to Gemini only
+      // Fallback to Gemini only (fast profile for fallback scenarios)
       const fallbackModels: Model[] = [{
-        id: 'gemini-2.5-flash',
-        name: 'Gemini 2.5 Flash (Fallback)',
+        id: 'gemini-2.5-flash-fast',
+        name: 'Gemini 2.5 Flash (Fast)',
         type: 'centralized',
         provider: 'Google Vertex AI',
         available: true,
         badge: 'Fallback'
       }];
-      
+
       setModels(fallbackModels);
-      
-      // If current selection is not available in fallback, switch to first fallback
+
+      // If current selection is not available in fallback, switch to gemini-2.5-flash-fast
       if (selectedModel !== 'auto' && !fallbackModels.find(m => m.id === selectedModel)) {
-        setSelectedModel('gemini-2.5-flash');
+        setSelectedModel('gemini-2.5-flash-fast');
       }
     } finally {
       setIsLoading(false);
@@ -83,6 +83,45 @@ export const useModelDiscovery = () => {
   useEffect(() => {
     discoverModels();
   }, []);
+
+  // Smart default selection after models are loaded
+  useEffect(() => {
+    // Only set smart default if:
+    // 1. Models are loaded (not empty)
+    // 2. Current selection is 'auto' (user hasn't made explicit choice)
+    // 3. Not loading (discovery completed)
+    if (models.length > 0 && selectedModel === 'auto' && !isLoading) {
+      const has0GModels = models.some(m =>
+        m.type === 'decentralized' && m.available
+      );
+
+      let smartDefault = 'gemini-2.5-flash-fast'; // Default fallback
+
+      if (has0GModels) {
+        // Prefer openai/gpt-oss-120b if available
+        const openaiModel = models.find(m =>
+          m.id === 'openai/gpt-oss-120b' && m.available
+        );
+
+        if (openaiModel) {
+          smartDefault = 'openai/gpt-oss-120b';
+          console.log('🎯 Smart default: openai/gpt-oss-120b (0G models available)');
+        } else {
+          // Fallback to first available 0G model
+          const first0G = models.find(m => m.type === 'decentralized' && m.available);
+          if (first0G) {
+            smartDefault = first0G.id;
+            console.log(`🎯 Smart default: ${first0G.id} (first available 0G model)`);
+          }
+        }
+      } else {
+        console.log('🎯 Smart default: gemini-2.5-flash-fast (0G models unavailable)');
+      }
+
+      setSelectedModel(smartDefault);
+    }
+  }, [models, isLoading]); // Run when models or loading state changes
+  // Note: Don't include selectedModel to avoid infinite loop
 
   // Auto-refresh every 5 minutes
   useEffect(() => {

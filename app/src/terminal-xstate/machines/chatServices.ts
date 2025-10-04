@@ -270,9 +270,9 @@ export async function sendChatMessage(
       isFirstMessage
     });
 
-    // Create timeout promise (30 seconds for AI response)
+    // Create timeout promise (60 seconds for AI response - 0G providers can be slower)
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('AI response timeout after 30 seconds')), 30000);
+      setTimeout(() => reject(new Error('AI response timeout after 60 seconds')), 60000);
     });
 
     // Send to AI with timeout (include walletAddress for 0G Network billing)
@@ -292,17 +292,22 @@ export async function sendChatMessage(
       prompt // For debugging
     };
   } catch (error) {
-    debugLog('Error sending chat message', { error: String(error) });
-    
+    debugLog('Error sending chat message', {
+      error: String(error),
+      errorType: error?.constructor?.name
+    });
+
     // Provide user-friendly error messages
-    if (String(error).includes('timeout')) {
-      throw new Error('Response is taking longer than usual. Please try again.');
+    if (String(error).includes('timeout') || String(error).includes('60 seconds')) {
+      throw new Error('AI is taking longer than usual (60s timeout). The provider may be slow - please try again.');
+    } else if (String(error).includes('Wallet address required')) {
+      throw new Error('Wallet not connected. Please ensure wallet is synced before using 0G models.');
     } else if (String(error).includes('network')) {
       throw new Error('Connection lost. Please check your internet and try again.');
     } else if (String(error).includes('rate limit')) {
       throw new Error('Too many requests. Please wait a moment and try again.');
     } else {
-      throw new Error('Failed to process message. Please try again.');
+      throw new Error(`Failed to process message: ${String(error).replace('Error: ', '')}`);
     }
   }
 }

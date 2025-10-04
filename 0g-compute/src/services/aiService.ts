@@ -271,10 +271,12 @@ export class AIService {
       // Generate authentication headers
       const headers = await broker.inference.getRequestHeaders(providerAddress, query);
 
-      // Create OpenAI client
+      // Create OpenAI client with timeout for 0G Network providers
       const openai = new OpenAI({
         baseURL: endpoint,
         apiKey: '',
+        timeout: 60000, // 60 second timeout (0G providers can be slower than standard APIs)
+        maxRetries: 0   // Disable auto-retry (we handle retries ourselves)
       });
 
       // Prepare headers

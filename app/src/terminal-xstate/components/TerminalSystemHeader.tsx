@@ -190,13 +190,13 @@ const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
         
         {/* System Info - hide on mobile */}
         {!isMobile && (
-          <div style={{ 
+          <div style={{
             color: theme.accent.primary,
             fontWeight: '600',
             letterSpacing: '0.05em',
             whiteSpace: 'nowrap'
           }}>
-            aishiOS v1.0
+            aishiOS v1.1
           </div>
         )}
       
