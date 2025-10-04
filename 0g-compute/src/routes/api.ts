@@ -141,11 +141,22 @@ router.get('/balance/:walletAddress', async (req, res) => {
 router.post('/0g-compute', aiQueryLimiter, async (req, res) => {
   try {
     const { walletAddress, query, modelId } = req.body;
-    
+
     if (!walletAddress || !query) {
       return res.status(400).json({
         success: false,
         error: 'walletAddress and query are required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Validate not zero address (indicates frontend bug - wallet not connected/synced)
+    if (walletAddress === '0x0000000000000000000000000000000000000000') {
+      console.error('❌ Zero address detected in 0G compute request!');
+      console.error('   This indicates wallet not connected or agent not synced in frontend');
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid wallet address (zero address). Please ensure wallet is connected and agent is synced before using 0G Network models.',
         timestamp: new Date().toISOString()
       });
     }

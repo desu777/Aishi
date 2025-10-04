@@ -285,11 +285,24 @@ async function routeToBackend(request: DreamAPIRequest): Promise<BackendResponse
   const requestBody = isGeminiModel ? {
     prompt: request.prompt,
     modelId: request.modelId
-  } : {
-    walletAddress: request.walletAddress || '0x0000000000000000000000000000000000000000',
-    query: request.prompt,
-    modelId: request.modelId
-  };
+  } : (() => {
+    // For 0G Network models, walletAddress is REQUIRED (no zero address fallback!)
+    if (!request.walletAddress || request.walletAddress === '0x0000000000000000000000000000000000000000') {
+      const error = 'Wallet address required for 0G Network models. Please ensure wallet is connected and agent is synced.';
+      debugLog('❌ Missing or invalid walletAddress for 0G model', {
+        modelId: request.modelId,
+        hasWalletAddress: !!request.walletAddress,
+        walletAddress: request.walletAddress || 'undefined'
+      });
+      throw new Error(error);
+    }
+
+    return {
+      walletAddress: request.walletAddress,
+      query: request.prompt,
+      modelId: request.modelId
+    };
+  })();
   
   try {
     const response = await fetch(`${BACKEND_URL}${endpoint}`, {
@@ -424,19 +437,22 @@ export async function sendDreamToAI(
  */
 export async function sendToAI(
   prompt: string,
-  modelId: string = 'gemini-2.0-flash-exp'
+  modelId: string = 'gemini-2.0-flash-exp',
+  walletAddress?: string
 ): Promise<string> {
   debugLog('=== Sending chat message to AI ===', {
     promptLength: prompt.length,
-    modelId
+    modelId,
+    hasWalletAddress: !!walletAddress,
+    walletAddress: walletAddress || 'undefined'
   });
 
   try {
-    // Use the same backend infrastructure
+    // Use the same backend infrastructure (pass walletAddress for 0G models)
     const backendResponse = await routeToBackend({
       prompt,
       modelId,
-      walletAddress: undefined
+      walletAddress
     });
 
     debugLog('Backend response received for chat', {

@@ -31,6 +31,7 @@ export interface ChatContext {
   agentId: number | null;
   agentName: string;
   modelId: string;
+  walletAddress: string | null; // Wallet address for 0G Network billing
   sessionId: string | null;
   messages: ChatMessage[];
   currentTranscript: string;
@@ -58,7 +59,7 @@ export interface ChatContext {
 }
 
 export type ChatEvent =
-  | { type: 'START_CHAT'; agentId: number; agentName: string; modelId: string; wasVoiceInput?: boolean }
+  | { type: 'START_CHAT'; agentId: number; agentName: string; modelId: string; walletAddress?: string; wasVoiceInput?: boolean }
   | { type: 'USER_MESSAGE'; message: string; wasVoiceInput?: boolean }
   | { type: 'AI_RESPONSE_SUCCESS'; response: string }
   | { type: 'AI_RESPONSE_ERROR'; error: string }
@@ -75,6 +76,7 @@ const initialContext: ChatContext = {
   agentId: null,
   agentName: '',
   modelId: 'auto',
+  walletAddress: null,
   sessionId: null,
   messages: [],
   currentTranscript: '',
@@ -146,7 +148,7 @@ export const chatMachine = setup({
     }),
 
     // Process user message with AI
-    processMessage: fromPromise(async ({ input }: { 
+    processMessage: fromPromise(async ({ input }: {
       input: {
         message: string;
         messages: ChatMessage[];
@@ -154,12 +156,14 @@ export const chatMachine = setup({
         historicalData: any;
         agentName: string;
         modelId: string;
+        walletAddress?: string;
       }
     }) => {
       debugLog('Processing user message', {
         messageLength: input.message?.length,
         isFirstMessage: input.messages.length === 1,
-        modelId: input.modelId
+        modelId: input.modelId,
+        hasWalletAddress: !!input.walletAddress
       });
 
       // Dynamic import to avoid circular dependencies
@@ -170,7 +174,8 @@ export const chatMachine = setup({
         input.agentContext,
         input.historicalData,
         input.agentName,
-        input.modelId
+        input.modelId,
+        input.walletAddress
       );
 
       debugLog('AI response received', {
@@ -417,7 +422,8 @@ export const chatMachine = setup({
           agentContext: context.agentContext,
           historicalData: context.historicalData,
           agentName: context.agentName,
-          modelId: context.modelId
+          modelId: context.modelId,
+          walletAddress: context.walletAddress
         }),
         onDone: {
           target: 'displayingResponse',

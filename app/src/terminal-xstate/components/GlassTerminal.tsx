@@ -176,19 +176,19 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
         }
         brokerRef.send({ type: 'INITIALIZE', walletAddress: address });
       }
-      
+
       // Sync agent with contract
       if (agentRef && publicClient) {
         if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[GlassTerminal] Syncing agent with viem publicClient', { 
+          console.log('[GlassTerminal] Syncing agent with viem publicClient', {
             address,
             chainId: publicClient.chain?.id,
             chainName: publicClient.chain?.name,
             transportType: publicClient.transport?.type
           });
         }
-        agentRef.send({ 
-          type: 'SYNC', 
+        agentRef.send({
+          type: 'SYNC',
           walletAddress: address,
           provider: publicClient
         });
@@ -201,6 +201,14 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
           });
         }
       }
+    }
+
+    // Handle wallet disconnect - reset agent state
+    if (!isConnected && agentRef) {
+      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+        console.log('[GlassTerminal] Wallet disconnected, resetting agent');
+      }
+      agentRef.send({ type: 'RESET' });
     }
   }, [isConnected, address, brokerRef, agentRef, publicClient]);
   

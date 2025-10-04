@@ -239,13 +239,16 @@ export async function sendChatMessage(
   agentContext: any,
   historicalData: any,
   agentName: string,
-  modelId: string = 'auto'
+  modelId: string = 'auto',
+  walletAddress?: string
 ) {
   debugLog('Sending chat message to AI', {
     messageLength: message.length,
     previousMessages: messages.length,
     agentName,
-    modelId
+    modelId,
+    hasWalletAddress: !!walletAddress,
+    walletAddress: walletAddress || 'undefined'
   });
 
   try {
@@ -272,10 +275,10 @@ export async function sendChatMessage(
       setTimeout(() => reject(new Error('AI response timeout after 30 seconds')), 30000);
     });
 
-    // Send to AI with timeout
+    // Send to AI with timeout (include walletAddress for 0G Network billing)
     const { sendToAI } = await import('../services/apiService');
     const aiResponse = await Promise.race([
-      sendToAI(prompt, modelId),
+      sendToAI(prompt, modelId, walletAddress),
       timeoutPromise
     ]) as string;
 

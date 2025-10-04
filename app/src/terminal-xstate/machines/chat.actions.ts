@@ -22,6 +22,7 @@ export const chatActions = {
     agentId: ({ event }: any) => event.agentId,
     agentName: ({ event }: any) => event.agentName,
     modelId: ({ event }: any) => event.modelId || 'auto',
+    walletAddress: ({ event }: any) => event.walletAddress || null,
     sessionId: () => `chat_${Date.now()}`,
     statusMessage: ({ event }: any) => `Starting chat with ${event.agentName}...`,
     messages: () => [],

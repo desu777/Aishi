@@ -131,11 +131,25 @@ export const submitCommandAction = assign({
  */
 export const getAgentData = (context: TerminalContext) => {
   const agentState = context.agentRef?.getSnapshot();
-  return {
+  const data = {
     tokenId: agentState?.context?.tokenId,
     agentName: agentState?.context?.agentName || 'agent',
     walletAddress: agentState?.context?.walletAddress
   };
+
+  // Enhanced debug logging for wallet address tracking
+  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
+    console.log('[getAgentData] Retrieved agent data:', {
+      ...data,
+      agentStatus: agentState?.context?.status,
+      hasAgentRef: !!context.agentRef,
+      walletAddressType: typeof data.walletAddress,
+      walletAddressValue: data.walletAddress || 'null/undefined',
+      isZeroAddress: data.walletAddress === '0x0000000000000000000000000000000000000000'
+    });
+  }
+
+  return data;
 };
 
 /**
@@ -155,7 +169,7 @@ export const workflowActions = {
   /**
    * Start dream workflow with context
    */
-  startDreamWorkflow: ({ context }: { context: TerminalContext }) => {
+  startDreamWorkflow: ({ context, enqueue }: { context: TerminalContext; enqueue: any }) => {
     if (context.dreamRef) {
       const { selectedModel } = getModelData(context);
       const { walletAddress, tokenId, agentName } = getAgentData(context);
@@ -164,8 +178,30 @@ export const workflowActions = {
         tokenId,
         agentName,
         wasVoiceInput: context.wasVoiceInput,
-        selectedModel
+        selectedModel,
+        walletAddress: walletAddress || 'undefined',
+        agentStatus: context.agentRef?.getSnapshot()?.context?.status
       });
+
+      // Validate wallet address for 0G Network models
+      const isGeminiModel = selectedModel.startsWith('gemini-');
+      if (!isGeminiModel && !walletAddress) {
+        console.error('[startDreamWorkflow] ❌ Cannot start 0G model without wallet address!');
+        console.error('   Model:', selectedModel);
+        console.error('   WalletAddress:', walletAddress || 'undefined');
+        console.error('   Agent status:', context.agentRef?.getSnapshot()?.context?.status);
+
+        // Send error to terminal
+        enqueue({
+          type: 'APPEND_LINES',
+          lines: [{
+            type: 'error',
+            content: 'Wallet not ready for 0G Network models. Please wait for agent sync to complete or use Gemini models (gemini-2.5-flash-*).',
+            timestamp: Date.now()
+          }]
+        });
+        return; // Don't start dream workflow
+      }
 
       context.dreamRef.send({
         type: 'START',
@@ -183,12 +219,13 @@ export const workflowActions = {
    */
   startChatWorkflow: ({ context }: { context: TerminalContext }) => {
     if (context.chatRef) {
-      const { tokenId, agentName } = getAgentData(context);
+      const { walletAddress, tokenId, agentName } = getAgentData(context);
       const { selectedModel } = getModelData(context);
 
       debugLog('[workflowActions] Starting chat workflow', {
         tokenId,
         agentName,
+        walletAddress: walletAddress || 'undefined',
         wasVoiceInput: context.wasVoiceInput,
         selectedModel
       });
@@ -198,6 +235,7 @@ export const workflowActions = {
         agentId: tokenId || 1,
         agentName,
         modelId: selectedModel,
+        walletAddress,
         wasVoiceInput: context.wasVoiceInput
       });
     }
