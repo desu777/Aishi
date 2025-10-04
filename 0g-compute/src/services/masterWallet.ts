@@ -45,12 +45,51 @@ export class MasterWalletService {
       
       // Ensure ledger exists
       await this.ensureLedgerExists();
-      
+
+      // Log complete wallet info after ledger check
+      const [ethBalance, ledgerBalance] = await Promise.all([
+        this.getWalletBalance(),
+        this.getLedgerBalance()
+      ]);
+
+      console.log('💰 Master Wallet Info:');
+      console.log(`   Address: ${this.wallet.address}`);
+      console.log(`   ETH Balance: ${ethBalance.toFixed(8)} OG`);
+      console.log(`   Ledger Balance: ${ledgerBalance.toFixed(8)} OG`);
+
+      // SDK 0.4.4 balance warnings
+      if (ledgerBalance < 1.0) {
+        console.warn('\n⚠️ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.warn('⚠️  LEDGER BALANCE TOO LOW FOR 0G PROVIDERS');
+        console.warn('⚠️ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.warn(`⚠️  Current ledger: ${ledgerBalance.toFixed(4)} OG`);
+        console.warn('⚠️  Minimum for testing: 1.1 OG');
+        console.warn('⚠️  Cheapest provider: ~1.0 OG (phala/gpt-oss-120b)');
+
+        if (ethBalance >= 1.5) {
+          console.warn(`⚠️  Your ETH balance: ${ethBalance.toFixed(4)} OG ✅`);
+          console.warn('⚠️  SOLUTION: Run funding script');
+          console.warn('⚠️  → npm run fund-ledger:wsl');
+          console.warn('⚠️  → Enter amount: 1.5');
+        } else {
+          console.warn(`⚠️  Your ETH balance: ${ethBalance.toFixed(4)} OG ❌`);
+          console.warn('⚠️  SOLUTION: Send OG to Master Wallet');
+          console.warn(`⚠️  → To: ${this.wallet.address}`);
+          console.warn('⚠️  → Amount: 2 OG (recommended)');
+          console.warn('⚠️  → Then: npm run fund-ledger:wsl');
+        }
+        console.warn('⚠️ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+      } else if (ledgerBalance >= 1.0 && ledgerBalance < 5.0) {
+        console.log(`ℹ️  Ledger sufficient for testing (1 provider) ✅\n`);
+      } else {
+        console.log(`ℹ️  Ledger sufficient for multiple providers ✅\n`);
+      }
+
       // Check and refill if needed
       await this.checkAndRefill();
-      
+
       this.isInitialized = true;
-      
+
       if (process.env.TEST_ENV === 'true') {
         console.log('✅ Master Wallet broker initialized successfully');
       }

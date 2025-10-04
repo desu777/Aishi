@@ -137,9 +137,24 @@ export class AIService {
           };
           
           this.discoveredServices.set(serviceItem.model, discoveredServiceEntry);
-          
+
           this.modelToProviderCache.set(serviceItem.model, serviceItem.provider);
-          
+
+          // Log provider pricing details for SDK 0.4.4 planning
+          if (process.env.TEST_ENV === 'true') {
+            const totalPricePerToken = Number(serviceItem.inputPrice) + Number(serviceItem.outputPrice);
+            const costPer1KTokens = (totalPricePerToken * 1000 / 1e18);
+            const initialDeposit = (totalPricePerToken * 2000000 / 1e18); // SDK topUpTargetThreshold = 2M
+
+            console.log(`💰 Provider Price - ${serviceItem.model}:`);
+            console.log(`   Address: ${serviceItem.provider}`);
+            console.log(`   Input: ${(Number(serviceItem.inputPrice) / 1e18).toFixed(12)} OG/token`);
+            console.log(`   Output: ${(Number(serviceItem.outputPrice) / 1e18).toFixed(12)} OG/token`);
+            console.log(`   Cost/1K tokens: ~${costPer1KTokens.toFixed(10)} OG`);
+            console.log(`   Required sub-account deposit: ~${initialDeposit.toFixed(4)} OG`);
+            console.log(`   Verifiability: ${serviceItem.verifiability || 'none'}`);
+          }
+
           await this.acknowledgeProvider(serviceItem.provider, serviceItem.model);
         }
       }
