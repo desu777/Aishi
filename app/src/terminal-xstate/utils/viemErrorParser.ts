@@ -148,6 +148,17 @@ function parseErrorString(errorStr: string): ParsedError {
     };
   }
 
+  // Transaction receipt timeout (special case - transaction may have succeeded)
+  if ((lowerError.includes('timeout') || lowerError.includes('timed out')) &&
+      (lowerError.includes('receipt') || lowerError.includes('transaction'))) {
+    return {
+      type: 'network_error',
+      message: 'Transaction submitted successfully',
+      details: 'Confirmation is taking longer than usual - transaction may still complete',
+      shouldRetry: true
+    };
+  }
+
   // Network error patterns
   if (lowerError.includes('network') ||
       lowerError.includes('timeout') ||

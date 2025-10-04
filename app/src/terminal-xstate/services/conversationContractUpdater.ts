@@ -46,6 +46,94 @@ function mapConversationType(type: string): ContextType {
 }
 
 /**
+ * Wait for transaction receipt with retry and fallback verification
+ * Handles slow 0G Galileo testnet confirmations gracefully
+ */
+async function waitForReceiptWithRetry(
+  publicClient: PublicClient,
+  txHash: string,
+  maxRetries: number = 2
+): Promise<any> {
+  let lastError: any;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      debugLog(`Waiting for receipt (attempt ${attempt + 1}/${maxRetries + 1})`, {
+        txHash: txHash.substring(0, 10) + '...'
+      });
+
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: txHash as `0x${string}`,
+        confirmations: 1,
+        timeout: 60_000, // 60 seconds (5x default for slow testnet)
+        pollingInterval: 2_000 // Check every 2s (faster than 4s default)
+      });
+
+      debugLog('Receipt received successfully', {
+        blockNumber: receipt.blockNumber,
+        status: receipt.status,
+        attempt: attempt + 1
+      });
+
+      return receipt; // Success!
+
+    } catch (error) {
+      lastError = error;
+      debugLog(`Receipt wait attempt ${attempt + 1} failed`, {
+        error: String(error).substring(0, 200)
+      });
+
+      // On last attempt, try to manually fetch transaction
+      if (attempt === maxRetries) {
+        try {
+          debugLog('Attempting fallback transaction verification...');
+
+          // Fallback: manually check if transaction exists
+          const tx = await publicClient.getTransaction({
+            hash: txHash as `0x${string}`
+          });
+
+          if (tx && tx.blockNumber) {
+            debugLog('⚠️ Transaction found in block but receipt timeout - fetching manually', {
+              blockNumber: tx.blockNumber
+            });
+
+            // Transaction exists! Try to get receipt one more time
+            const receipt = await publicClient.getTransactionReceipt({
+              hash: txHash as `0x${string}`
+            });
+
+            if (receipt) {
+              debugLog('✅ Receipt retrieved via fallback method');
+              return receipt;
+            }
+          }
+        } catch (fallbackError) {
+          debugLog('Fallback transaction check failed', {
+            error: String(fallbackError).substring(0, 200)
+          });
+        }
+      }
+
+      // Wait before retry (exponential backoff)
+      if (attempt < maxRetries) {
+        const delay = Math.min(2000 * Math.pow(2, attempt), 10000);
+        debugLog(`Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  // All retries failed
+  debugLog('All receipt retrieval attempts failed', {
+    txHash: txHash.substring(0, 10) + '...',
+    attempts: maxRetries + 1
+  });
+
+  throw lastError;
+}
+
+/**
  * Update contract with conversation record
  */
 export async function updateConversationContract(
@@ -111,11 +199,8 @@ export async function updateConversationContract(
 
     debugLog('Transaction submitted', { txHash });
 
-    // Wait for confirmation
-    const receipt = await publicClient.waitForTransactionReceipt({
-      hash: txHash,
-      confirmations: 1
-    });
+    // Wait for confirmation with retry logic
+    const receipt = await waitForReceiptWithRetry(publicClient, txHash);
 
     debugLog('Transaction confirmed', {
       txHash,
