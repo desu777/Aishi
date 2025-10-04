@@ -21,30 +21,18 @@ export function getNetworkConfig(networkType: NetworkType): NetworkConfig {
   const fallbackUrl = activeChain.id === 16661 ? 'https://chainscan.0g.ai' : 'https://chainscan-galileo.0g.ai';
   const explorerBaseUrl = activeChain.blockExplorers?.default?.url || fallbackUrl;
 
-  // Storage mode: 'production' (nginx proxy) or 'development' (direct URLs)
-  // Defaults to 'development' for safe out-of-box experience
-  const storageMode = process.env.NEXT_PUBLIC_0G_STORAGE_MODE || 'development';
-
   const NETWORKS: Record<NetworkType, NetworkConfig> = {
     standard: {
       name: 'Standard',
       flowAddress: process.env.NEXT_PUBLIC_STANDARD_FLOW_ADDRESS || '0xbD75117F80b4E22698D0Cd7612d92BDb8eaff628',
-      // Priority: env var override > mode-based selection
-      storageRpc: process.env.NEXT_PUBLIC_STANDARD_STORAGE_RPC ||
-        (storageMode === 'production'
-          ? '/0g-storage/standard'
-          : 'https://indexer-storage-testnet-standard.0g.ai'),
+      storageRpc: process.env.NEXT_PUBLIC_STANDARD_STORAGE_RPC || 'https://indexer-storage-testnet-standard.0g.ai',
       explorerUrl: `${explorerBaseUrl}/tx/`,
       l1Rpc: activeChain.rpcUrls?.default?.http[0] || 'https://evmrpc-testnet.0g.ai'
     },
     turbo: {
       name: 'Turbo',
       flowAddress: process.env.NEXT_PUBLIC_TURBO_FLOW_ADDRESS || '0xbD75117F80b4E22698D0Cd7612d92BDb8eaff628',
-      // Priority: env var override > mode-based selection
-      storageRpc: process.env.NEXT_PUBLIC_TURBO_STORAGE_RPC ||
-        (storageMode === 'production'
-          ? '/0g-storage/turbo'
-          : 'https://indexer-storage-testnet-turbo.0g.ai'),
+      storageRpc: process.env.NEXT_PUBLIC_TURBO_STORAGE_RPC || 'https://indexer-storage-testnet-turbo.0g.ai',
       explorerUrl: `${explorerBaseUrl}/tx/`,
       l1Rpc: activeChain.rpcUrls?.default?.http[0] || 'https://evmrpc-testnet.0g.ai'
     }
