@@ -96,7 +96,7 @@ export class QueryManagerService {
    */
   private async processQueryAtomically(task: QueryTask): Promise<any> {
     const startTime = Date.now();
-    
+
     try {
       // Validate inputs
       if (!task.userWalletAddress || !task.userWalletAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
@@ -105,6 +105,27 @@ export class QueryManagerService {
 
       if (!task.query || task.query.trim().length === 0) {
         throw new Error('Query cannot be empty');
+      }
+
+      // Enhanced debug logging for troubleshooting
+      if (process.env.TEST_ENV === 'true') {
+        const normalizedAddress = task.userWalletAddress.toLowerCase();
+        console.log(`🔍 [Query ${task.id}] Processing for wallet: ${task.userWalletAddress}`);
+        console.log(`🔍 [Query ${task.id}] Normalized address: ${normalizedAddress}`);
+
+        // Check if broker exists in database
+        const broker = database.getBroker(normalizedAddress);
+        console.log(`🔍 [Query ${task.id}] Broker exists: ${!!broker}`);
+
+        if (broker) {
+          const estimatedCost = virtualBrokers.estimateQueryCost(task.query, task.model);
+          console.log(`🔍 [Query ${task.id}] Broker balance: ${broker.balance.toFixed(8)} OG`);
+          console.log(`🔍 [Query ${task.id}] Estimated cost: ${estimatedCost.toFixed(8)} OG`);
+          console.log(`🔍 [Query ${task.id}] Sufficient balance: ${broker.balance >= estimatedCost ? 'YES ✅' : 'NO ❌'}`);
+        } else {
+          console.log(`🔍 [Query ${task.id}] ❌ Virtual broker NOT found in database!`);
+          console.log(`🔍 [Query ${task.id}] User must create broker first: POST /api/create-broker`);
+        }
       }
 
       // Log selected model
@@ -135,8 +156,16 @@ export class QueryManagerService {
       // ATOMIC OPERATION: Check and reserve user balance
       const reservationSuccess = await this.atomicBalanceReservation(task.userWalletAddress, estimatedCost, task.id);
       if (!reservationSuccess) {
-        const balance = await virtualBrokers.checkBalance(task.userWalletAddress);
-        throw new Error(`Insufficient balance. Estimated cost: ${estimatedCost} OG, Available: ${balance.balance} OG`);
+        // Enhanced error handling - distinguish between "no broker" and "insufficient funds"
+        try {
+          const balance = await virtualBrokers.checkBalance(task.userWalletAddress);
+          throw new Error(`Insufficient balance. Estimated cost: ${estimatedCost.toFixed(8)} OG, Available: ${balance.balance.toFixed(8)} OG`);
+        } catch (balanceError: any) {
+          if (balanceError.message.includes('No virtual broker found')) {
+            throw new Error(`Virtual broker not found for ${task.userWalletAddress}. Please create a broker first: POST /api/create-broker with { "walletAddress": "${task.userWalletAddress}" }`);
+          }
+          throw balanceError;
+        }
       }
 
       // Check and refill master wallet if needed

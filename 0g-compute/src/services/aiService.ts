@@ -169,10 +169,10 @@ export class AIService {
     try {
       const masterBroker = masterWallet.getBroker();
 
-      // Add 5-second timeout per provider
+      // Add 30-second timeout per provider (SDK 0.4.4 requires multiple transactions + TEE verification)
       const acknowledgePromise = masterBroker.inference.acknowledgeProviderSigner(providerAddress);
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Provider acknowledgment timeout')), 5000);
+        setTimeout(() => reject(new Error('Provider acknowledgment timeout')), 30000);
       });
 
       await Promise.race([acknowledgePromise, timeoutPromise]);
@@ -554,7 +554,7 @@ export class AIService {
         await Promise.race([
           masterBroker.inference.acknowledgeProviderSigner(providerAddress),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('timeout')), 3000)
+            setTimeout(() => reject(new Error('timeout')), 15000)
           )
         ]);
 
