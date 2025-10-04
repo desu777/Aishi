@@ -1,29 +1,29 @@
 {
-  "timestamp": "2025-09-26T19:44:08.771Z",
-  "network": "Mainnet",
+  "timestamp": "2025-10-04T10:57:11.805Z",
+  "network": "Testnet",
   "optimizer": {
     "enabled": true,
-    "runs": 1
+    "runs": 200
   },
   "contracts": [
     {
       "name": "AishiAgent",
-      "bytecodeSize": 25236,
-      "deployedSize": 24233,
+      "bytecodeSize": 25388,
+      "deployedSize": 24385,
       "hasConstructor": true,
       "isLibrary": false
     },
     {
       "name": "AishiVerifier",
-      "bytecodeSize": 1572,
-      "deployedSize": 1544,
+      "bytecodeSize": 1582,
+      "deployedSize": 1554,
       "hasConstructor": true,
       "isLibrary": false
     }
   ],
   "summary": {
     "totalContracts": 2,
-    "mainContractSize": 24233
+    "mainContractSize": 24385
   },
   "compiler": {
     "version": "0.8.20",

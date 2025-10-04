@@ -6,7 +6,7 @@ const isMainnet = process.env.NEXT_PUBLIC_MAINNET_CONFIG === 'true';
 
 // 0G Galileo Testnet configuration
 export const galileoTestnet = defineChain({
-  id: 16601,
+  id: 16602,
   name: '0G-Galileo-Testnet',
   network: '0g-galileo-testnet',
   nativeCurrency: {

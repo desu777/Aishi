@@ -75,7 +75,7 @@ async function exportABIToFrontend(contractName, contractAddress, network) {
       fs.mkdirSync(frontendPath, { recursive: true });
     }
 
-    const chainId = network === "galileo" ? 16601 :
+    const chainId = network === "galileo" ? 16602 :
                     network === "0g-mainnet" ? 16661 : 31337;
 
     const abiData = {

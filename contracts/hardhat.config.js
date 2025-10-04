@@ -16,7 +16,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1 // Optimized for Mainnet
+        runs: 200 // Optimized for Testnet
       },
       viaIR: true // Fixes "Stack too deep" errors
     }
@@ -40,7 +40,7 @@ module.exports = {
     galileo: {
       url: "https://evmrpc-testnet.0g.ai",
       accounts: [process.env.WALLET_PRIVATE_KEY || ""],
-      chainId: 16601, // Updated to correct Galileo chain ID
+      chainId: 16602, // Updated to correct Galileo chain ID
       live: true,
       saveDeployments: true,
       tags: ["testnet"]

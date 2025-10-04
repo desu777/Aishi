@@ -169,7 +169,7 @@ class ABIGenerator {
       // Determine chain ID
       switch (deploymentInfo.network) {
         case 'galileo':
-          chainId = 16601;
+          chainId = 16602;
           break;
         case '0g-mainnet':
           chainId = 16661;

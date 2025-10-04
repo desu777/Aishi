@@ -15,7 +15,7 @@
 
 - **Max Agents:** 1,000 (testnet limit)
 - **Minting Fee:** 0.1 OG
-- **Chain ID:** 16601
+- **Chain ID:** 16602
 - **RPC URL:** https://evmrpc-testnet.0g.ai
 
 ## Environment Variables

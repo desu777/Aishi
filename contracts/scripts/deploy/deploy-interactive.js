@@ -58,7 +58,7 @@ const NETWORKS = {
   1: {
     name: "Galileo Testnet",
     networkName: "galileo",
-    chainId: 16601,
+    chainId: 16602,
     rpcUrl: "https://evmrpc-testnet.0g.ai",
     explorer: "https://chainscan-testnet.0g.ai",
     symbol: "0G",

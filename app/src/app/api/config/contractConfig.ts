@@ -12,7 +12,7 @@ import { getActiveChain } from '../../../config/chains';
 export const getContractConfig = () => {
   const activeChain = getActiveChain();
   return {
-    address: aishiAgentAddress[activeChain.id as 16601 | 16661],
+    address: aishiAgentAddress[activeChain.id as 16602 | 16661],
     abi: aishiAgentAbi,
     chainId: activeChain.id,
     contractName: 'AishiAgent',

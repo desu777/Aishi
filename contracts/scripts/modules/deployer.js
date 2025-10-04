@@ -43,7 +43,7 @@ const log = {
 const NETWORKS = {
   testnet: {
     name: 'Galileo Testnet',
-    chainId: 16601,
+    chainId: 16602,
     rpcUrl: 'https://evmrpc-testnet.0g.ai',
     explorer: 'https://chainscan-testnet.0g.ai',
     symbol: '0G',
@@ -101,7 +101,7 @@ class ContractDeployer {
    */
   async selectNetwork() {
     console.log(`\n${colors.cyan}Select deployment network:${colors.reset}\n`);
-    console.log('  1. Galileo Testnet (16601)');
+    console.log('  1. Galileo Testnet (16602)');
     console.log(`  2. 0G Mainnet (16661) ${colors.bgRed} REAL MONEY ${colors.reset}`);
     console.log('  3. Local Hardhat (31337)');
     console.log('\n' + '-'.repeat(50));

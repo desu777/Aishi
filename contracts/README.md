@@ -84,7 +84,7 @@ Output structure:
   "contractName": "AishiAgent",
   "address": "0x5Bc063f0eeFa5D90831FD2b4AF33D1529c993bFe",
   "network": "galileo",
-  "chainId": 16601,
+  "chainId": 16602,
   "abi": [...],
   "deployedAt": "2024-11-23T15:30:45.123Z"
 }
@@ -113,7 +113,7 @@ import { aishiAgentAbi } from '../../../generated';
 export const getContractConfig = () => ({
   address: process.env.NEXT_PUBLIC_AISHI_AGENT_ADDRESS || '0x5Bc...',
   abi: aishiAgentAbi,
-  chainId: 16601
+  chainId: 16602
 });
 ```
 
@@ -122,7 +122,7 @@ All hooks and services use this centralized configuration for consistency.
 ## Network Configuration
 
 ### Galileo Testnet
-- **Chain ID**: 16601
+- **Chain ID**: 16602
 - **RPC URL**: https://evmrpc-testnet.0g.ai
 - **Explorer**: https://explorer-testnet.0g.ai
 - **Faucet**: https://faucet.0g.ai

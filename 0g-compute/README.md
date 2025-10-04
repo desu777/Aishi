@@ -569,7 +569,7 @@ npm run dev:wsl 2>&1 | grep -i "response.*ms"
 ## 🌐 Network Information
 
 **0G Network Testnet (Galileo):**
-- **Chain ID:** 16601
+- **Chain ID:** 16602
 - **RPC URL:** `https://evmrpc-testnet.0g.ai`
 - **Faucet:** `https://faucet.0g.ai`
 - **Explorer:** `https://explorer-testnet.0g.ai`

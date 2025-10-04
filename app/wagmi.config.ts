@@ -24,7 +24,7 @@ export default defineConfig({
       name: 'AishiAgent',
       abi: AishiAgentABI.abi as any,
       address: {
-        16601: (testnetAddresses.AishiAgent?.address || '0x6Ea891A7223459aCC46030aae203DCC218a388C6') as `0x${string}`, // Galileo testnet
+        16602: (testnetAddresses.AishiAgent?.address || '0x6Ea891A7223459aCC46030aae203DCC218a388C6') as `0x${string}`, // Galileo testnet
         16661: (mainnetAddresses.AishiAgent?.address || '0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6') as `0x${string}`, // 0G mainnet
       },
     },
@@ -32,7 +32,7 @@ export default defineConfig({
       name: 'AishiVerifier',
       abi: AishiVerifierABI.abi as any,
       address: {
-        16601: (testnetAddresses.AishiVerifier?.address || '0x978a566B8817f14fEAaA783177E41e2d6dCA000C') as `0x${string}`, // Galileo testnet
+        16602: (testnetAddresses.AishiVerifier?.address || '0x978a566B8817f14fEAaA783177E41e2d6dCA000C') as `0x${string}`, // Galileo testnet
         16661: (mainnetAddresses.AishiVerifier?.address || '0x14e54c132A82d6c5ac3723a47b2AE9002b9b78b8') as `0x${string}`, // 0G mainnet
       },
     },

@@ -29,7 +29,7 @@ import { aishiAgentAbi } from '../../../generated';
 export const getContractConfig = (): ContractConfig => ({
   address: process.env.NEXT_PUBLIC_AISHI_AGENT_ADDRESS || '0x5Bc063f0...',
   abi: aishiAgentAbi,  // Type-safe ABI from generated.ts
-  chainId: 16601,
+  chainId: 16602,
   contractName: 'AishiAgent',
   network: 'galileo'
 });
@@ -153,8 +153,8 @@ When smart contracts are updated:
 # Contract Configuration
 NEXT_PUBLIC_AISHI_AGENT_ADDRESS=0x5Bc063f0eeFa5D90831FD2b4AF33D1529c993bFe
 
-# Network Configuration  
-NEXT_PUBLIC_CHAIN_ID=16601
+# Network Configuration
+NEXT_PUBLIC_CHAIN_ID=16602
 NEXT_PUBLIC_L1_RPC=https://evmrpc-testnet.0g.ai
 
 # Storage Configuration
@@ -215,7 +215,7 @@ npm run generate-abi    # Generate TypeScript types from ABI
 ## Network Configuration
 
 ### Galileo Testnet
-- **Chain ID**: 16601
+- **Chain ID**: 16602
 - **RPC**: https://evmrpc-testnet.0g.ai
 - **Explorer**: https://explorer-testnet.0g.ai
 - **Faucet**: https://faucet.0g.ai
