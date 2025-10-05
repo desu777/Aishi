@@ -1296,7 +1296,7 @@ export const aishiAgentAbi = [
  * [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x6878F1E6CB28e20759FDef8933809822F7C81f8a)
  */
 export const aishiAgentAddress = {
-  16602: '0xaf7ebF0a6a0e0b8781E3b3D989cc72c2d85BBCb6',
+  16602: '0xDBA5DcdfbC1140EEc3319F3AaA846f3ffA2f8467',
   16661: '0x6878F1E6CB28e20759FDef8933809822F7C81f8a',
 } as const
 
@@ -1359,7 +1359,7 @@ export const aishiVerifierAbi = [
  * [__View Contract on 0 G Mainnet 0 G Block Chain Explorer__](https://chainscan.0g.ai/address/0x7ac6C8543C6cB0CB388267E5a7a717Fc9872408f)
  */
 export const aishiVerifierAddress = {
-  16602: '0xb01CB9fC0e3BEf733127bD141A90e4217b3BFC9F',
+  16602: '0x1a0F991B9a2F8835dFabED2225F413Cc4c4c9134',
   16661: '0x7ac6C8543C6cB0CB388267E5a7a717Fc9872408f',
 } as const
 
