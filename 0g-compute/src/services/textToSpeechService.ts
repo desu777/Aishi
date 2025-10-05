@@ -169,7 +169,13 @@ export class TextToSpeechService {
       const ttsModel = process.env.TTS_MODEL || 'gemini-2.5-flash-preview-tts';
       const isChirp3HD = ttsModel.includes('Chirp3-HD');
 
-      const prompt = `Prepare text for ${ttsModel} TTS synthesis.
+      const prompt = `Detect language and prepare chunking for TTS synthesis.
+
+CRITICAL RULES:
+- DO NOT MODIFY TEXT CONTENT!
+- PRESERVE EXACT WORDING, PUNCTUATION, AND STRUCTURE!
+- ONLY add [CHUNK] markers if text is too long
+- ONLY detect language code
 
 Model: ${ttsModel}
 Selected voice: ${voiceProfile.name}
@@ -178,16 +184,17 @@ Text length: ${text.length} characters
 Tasks:
 1. Detect language from text content (pl-PL, en-US, es-ES, de-DE, fr-FR, ja-JP, etc.)
 2. Build complete voice name: ${isChirp3HD ? '[language]-Chirp3-HD-' + voiceProfile.name : voiceProfile.name}
-3. Smart chunking:
+3. Smart chunking (PRESERVE EXACT TEXT):
    ${isChirp3HD
-     ? '- If text >4500 chars, split at natural boundaries (paragraph/sentence end)\n   - Mark splits with [CHUNK] between segments\n   - Each chunk max 4500 characters'
-     : '- If text >800 bytes, split into chunks of max 800 bytes\n   - Mark splits with [CHUNK] at natural pauses'}
+     ? '- If text >4500 chars: insert [CHUNK] at sentence/paragraph boundaries\n   - Each chunk max 4500 characters\n   - DO NOT rewrite or modify sentences!'
+     : '- If text >3000 chars: insert [CHUNK] at natural pauses (periods, commas)\n   - Each chunk max 3000 characters\n   - DO NOT rewrite or modify text!'}
 
-Text: "${text}"
+ORIGINAL TEXT (preserve exactly):
+"${text}"
 
 Return ONLY valid JSON (no markdown):
 {
-  "text": "processed text with [CHUNK] markers if needed",
+  "text": "EXACT original text with [CHUNK] markers ONLY (no other changes)",
   "language": "detected-language-code",
   "voice": "complete-voice-name-ready-for-TTS"
 }`;
