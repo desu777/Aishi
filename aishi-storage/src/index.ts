@@ -18,9 +18,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3004;
 
+// Parse CORS origins from environment
+const allowedOrigins = process.env.CORS_ORIGINS?.split(',').map(o => o.trim()) || [
+  'http://localhost:3003',
+  'http://localhost:3001',
+  'http://localhost:3000'
+];
+
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3003', 'http://localhost:3001', 'http://localhost:3000'],
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json());
