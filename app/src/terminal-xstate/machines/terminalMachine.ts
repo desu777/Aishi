@@ -15,10 +15,11 @@ import { voiceMachine } from './voiceMachine';
 import { commandExecutors } from './terminal.command-executors';
 import { terminalActions } from './terminal.actions';
 import { terminalGuards } from './terminal.guards';
-import { 
-  submitCommandAction, 
-  workflowActions, 
-  getAgentData 
+import {
+  submitCommandAction,
+  workflowActions,
+  getAgentData,
+  getModelData
 } from './terminal.command-processor';
 
 // Initial context

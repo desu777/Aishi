@@ -402,16 +402,34 @@ export const commandExecutors = {
         walletAddress: input.walletAddress
       });
 
-      // Call AI API with selected model
+      // Call AI API with model-based routing (Gemini vs 0G Network)
       const apiUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${apiUrl}/0g-compute`, {
+      const selectedModel = input.modelId || 'gemini-2.5-flash-auto';
+
+      // Route to correct endpoint based on model type
+      const isGeminiModel = selectedModel.startsWith('gemini-');
+      const endpoint = isGeminiModel ? '/gemini' : '/0g-compute';
+
+      debugLog('Model routing', {
+        selectedModel,
+        isGemini: isGeminiModel,
+        endpoint
+      });
+
+      // Prepare request body based on endpoint
+      const requestBody = isGeminiModel ? {
+        prompt: prompt,
+        modelId: selectedModel
+      } : {
+        walletAddress: input.walletAddress,
+        query: prompt,
+        modelId: selectedModel
+      };
+
+      const response = await fetch(`${apiUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          walletAddress: input.walletAddress,
-          query: prompt,
-          modelId: input.modelId
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -424,8 +442,15 @@ export const commandExecutors = {
         throw new Error(apiResult.error || 'AI consolidation failed');
       }
 
-      const aiResponse = apiResult.data.response;
-      debugLog('AI response received', { responseLength: aiResponse.length });
+      // Handle different response formats (Gemini vs 0G Network)
+      const aiResponse = isGeminiModel
+        ? apiResult.data  // Gemini: data is direct string
+        : apiResult.data.response;  // 0G: data.response is string
+
+      debugLog('AI response received', {
+        responseLength: aiResponse.length,
+        isGemini: isGeminiModel
+      });
 
       const parseResult = parseMonthLearnResponse(aiResponse);
 
@@ -707,16 +732,34 @@ export const commandExecutors = {
         walletAddress: input.walletAddress
       });
 
-      // Call AI API with selected model
+      // Call AI API with model-based routing (Gemini vs 0G Network)
       const apiUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${apiUrl}/0g-compute`, {
+      const selectedModel = input.modelId || 'gemini-2.5-flash-auto';
+
+      // Route to correct endpoint based on model type
+      const isGeminiModel = selectedModel.startsWith('gemini-');
+      const endpoint = isGeminiModel ? '/gemini' : '/0g-compute';
+
+      debugLog('Model routing', {
+        selectedModel,
+        isGemini: isGeminiModel,
+        endpoint
+      });
+
+      // Prepare request body based on endpoint
+      const requestBody = isGeminiModel ? {
+        prompt: prompt,
+        modelId: selectedModel
+      } : {
+        walletAddress: input.walletAddress,
+        query: prompt,
+        modelId: selectedModel
+      };
+
+      const response = await fetch(`${apiUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          walletAddress: input.walletAddress,
-          query: prompt,
-          modelId: input.modelId
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -729,8 +772,15 @@ export const commandExecutors = {
         throw new Error(apiResult.error || 'Memory core generation failed');
       }
 
-      const aiResponse = apiResult.data.response;
-      debugLog('AI response received', { responseLength: aiResponse.length });
+      // Handle different response formats (Gemini vs 0G Network)
+      const aiResponse = isGeminiModel
+        ? apiResult.data  // Gemini: data is direct string
+        : apiResult.data.response;  // 0G: data.response is string
+
+      debugLog('AI response received', {
+        responseLength: aiResponse.length,
+        isGemini: isGeminiModel
+      });
 
       const parseResult = parseYearLearnResponse(aiResponse);
 
