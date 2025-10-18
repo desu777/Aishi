@@ -12,6 +12,8 @@ import { agentMachine } from './agentMachine';
 import { dreamMachine } from './dreamMachine';
 import { chatMachine } from './chatMachine';
 import { voiceMachine } from './voiceMachine';
+import { monthLearnMachine } from './monthLearnMachine';
+import { memoryCoreMemachine } from './memoryCoreMemachine';
 import { commandExecutors } from './terminal.command-executors';
 import { terminalActions } from './terminal.actions';
 import { terminalGuards } from './terminal.guards';
@@ -36,6 +38,8 @@ const initialContext: TerminalContext = {
   dreamRef: null,
   chatRef: null,
   voiceRef: null,
+  monthLearnRef: null,
+  memoryCoreRef: null,
   selectedModel: null,
   selectedVoice: null,
   isVoiceEnabled: false,
@@ -46,6 +50,10 @@ const initialContext: TerminalContext = {
   isChatActive: false,
   dreamStatus: null,
   chatStatus: null,
+  isMonthLearnActive: false,
+  monthLearnStatus: null,
+  isMemoryCoreActive: false,
+  memoryCoreStatus: null,
   lastParsedCommand: null,
   isSynthesizing: false
 };
@@ -64,6 +72,8 @@ export const terminalMachine = setup({
     dreamActor: dreamMachine,
     chatActor: chatMachine,
     voiceActor: voiceMachine,
+    monthLearnActor: monthLearnMachine,
+    memoryCoreActor: memoryCoreMemachine,
     // Command executors
     ...commandExecutors
   },
@@ -179,6 +189,18 @@ export const terminalMachine = setup({
           guard: 'isChatCommandWithoutAgent',
           actions: 'displayNoChatAgentError'
         },
+        // Month-learn command with agent
+        {
+          target: 'monthLearnWorkflow',
+          guard: 'isMonthLearnCommand',
+          actions: 'spawnMonthLearnMachine'
+        },
+        // Memory-core command with agent
+        {
+          target: 'memoryCoreWorkflow',
+          guard: 'isMemoryCoreCommand',
+          actions: 'spawnMemoryCoreMachine'
+        },
         // Clear command
         {
           target: 'idle',
@@ -237,14 +259,6 @@ export const terminalMachine = setup({
             {
               target: 'memory',
               guard: ({ context }) => context.lastParsedCommand === 'memory'
-            },
-            {
-              target: 'monthLearn',
-              guard: ({ context }) => context.lastParsedCommand === 'month-learn'
-            },
-            {
-              target: 'memoryCore',
-              guard: ({ context }) => context.lastParsedCommand === 'memory-core'
             }
           ]
         },
@@ -361,73 +375,8 @@ export const terminalMachine = setup({
           }
         },
 
-        monthLearn: {
-          entry: ({ context, self }) => {
-            const { agentName } = getAgentData(context);
-            self.send({ type: 'UPDATE_STATUS', status: `${agentName} is consolidating memories...` });
-          },
-          invoke: {
-            src: 'monthLearnExecutor',
-            input: ({ context }) => {
-              const { tokenId, agentName, walletAddress } = getAgentData(context);
-              const { selectedModel } = getModelData(context);
-              return {
-                tokenId: tokenId!,
-                agentName,
-                walletAddress,
-                modelId: selectedModel
-              };
-            },
-            onDone: {
-              target: '#terminal.idle',
-              actions: [
-                assign({ lastParsedCommand: null }),
-                'displayCommandResult'
-              ]
-            },
-            onError: {
-              target: '#terminal.idle',
-              actions: [
-                assign({ lastParsedCommand: null }),
-                'displayCommandError'
-              ]
-            }
-          }
-        },
-
-        memoryCore: {
-          entry: ({ context, self }) => {
-            const { agentName } = getAgentData(context);
-            self.send({ type: 'UPDATE_STATUS', status: `${agentName} is crystallizing consciousness...` });
-          },
-          invoke: {
-            src: 'memoryCoreExecutor',
-            input: ({ context }) => {
-              const { tokenId, agentName, walletAddress } = getAgentData(context);
-              const { selectedModel } = getModelData(context);
-              return {
-                tokenId: tokenId!,
-                agentName,
-                walletAddress,
-                modelId: selectedModel
-              };
-            },
-            onDone: {
-              target: '#terminal.idle',
-              actions: [
-                assign({ lastParsedCommand: null }),
-                'displayCommandResult'
-              ]
-            },
-            onError: {
-              target: '#terminal.idle',
-              actions: [
-                assign({ lastParsedCommand: null }),
-                'displayCommandError'
-              ]
-            }
-          }
-        }
+        // Month-learn and memory-core now spawn dedicated machines
+        // These are handled as workflows (like dream and chat)
       }
     },
     
@@ -596,6 +545,48 @@ export const terminalMachine = setup({
           actions: 'clearTTSState'
         },
         'NOOP': {}
+      }
+    },
+
+    monthLearnWorkflow: {
+      entry: [
+        'clearInput',
+        'startMonthLearnWorkflow'
+      ],
+      on: {
+        'APPEND_LINES': {
+          actions: 'appendLines'
+        },
+        'UPDATE_STATUS': {
+          actions: assign({
+            monthLearnStatus: ({ event }: any) => event.status
+          })
+        },
+        'MONTH_LEARN.COMPLETE': {
+          target: 'idle',
+          actions: 'completeMonthLearn'
+        }
+      }
+    },
+
+    memoryCoreWorkflow: {
+      entry: [
+        'clearInput',
+        'startMemoryCoreWorkflow'
+      ],
+      on: {
+        'APPEND_LINES': {
+          actions: 'appendLines'
+        },
+        'UPDATE_STATUS': {
+          actions: assign({
+            memoryCoreStatus: ({ event }: any) => event.status
+          })
+        },
+        'MEMORY_CORE.COMPLETE': {
+          target: 'idle',
+          actions: 'completeMemoryCore'
+        }
       }
     }
   }

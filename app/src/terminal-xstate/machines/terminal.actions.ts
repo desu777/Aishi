@@ -190,14 +190,28 @@ export const terminalActions = {
       const agentState = context.agentRef?.getSnapshot();
       const agentId = agentState?.context?.tokenId || 1;
       const agentName = agentState?.context?.agentName || 'Agent';
-      
-      return spawn('chatActor', { 
+
+      return spawn('chatActor', {
         id: 'chat',
         input: { agentId, agentName }
       });
     },
     isChatActive: true,
     chatStatus: 'Initializing chat session...',
+    lastParsedCommand: null
+  }),
+
+  spawnMonthLearnMachine: assign({
+    monthLearnRef: ({ spawn }: any) => spawn('monthLearnActor', { id: 'monthLearn' }),
+    isMonthLearnActive: true,
+    monthLearnStatus: 'Initializing month-learn workflow...',
+    lastParsedCommand: null
+  }),
+
+  spawnMemoryCoreMachine: assign({
+    memoryCoreRef: ({ spawn }: any) => spawn('memoryCoreActor', { id: 'memoryCore' }),
+    isMemoryCoreActive: true,
+    memoryCoreStatus: 'Initializing memory-core workflow...',
     lastParsedCommand: null
   }),
 
@@ -254,6 +268,18 @@ export const terminalActions = {
     chatRef: null,
     chatStatus: null,
     wasVoiceInput: false // Reset voice flag only after chat completes
+  }),
+
+  completeMonthLearn: assign({
+    isMonthLearnActive: false,
+    monthLearnRef: null,
+    monthLearnStatus: null
+  }),
+
+  completeMemoryCore: assign({
+    isMemoryCoreActive: false,
+    memoryCoreRef: null,
+    memoryCoreStatus: null
   }),
 
   /**

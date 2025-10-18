@@ -96,10 +96,11 @@ export const terminalGuards = {
   },
 
   /**
-   * Command that needs agent (personality, unique-features, stats, memory, month-learn, memory-core)
+   * Command that needs agent (personality, unique-features, stats, memory)
+   * Note: month-learn and memory-core have dedicated workflow states
    */
   isAgentRequiredCommand: ({ context }: { context: TerminalContext }) => {
-    const agentCommands = ['personality', 'unique-features', 'stats', 'memory', 'month-learn', 'memory-core'];
+    const agentCommands = ['personality', 'unique-features', 'stats', 'memory'];
     return agentCommands.includes(context.lastParsedCommand || '');
   },
 

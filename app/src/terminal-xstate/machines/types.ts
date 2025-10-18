@@ -63,6 +63,8 @@ export interface TerminalContext {
   dreamRef: any; // ActorRef from XState for dream workflow
   chatRef: any; // ActorRef from XState for chat workflow
   voiceRef: any; // ActorRef from XState for voice control
+  monthLearnRef: any; // ActorRef from XState for month-learn workflow
+  memoryCoreRef: any; // ActorRef from XState for memory-core workflow
   selectedModel: string | null;
   // Voice state
   selectedVoice: GeminiVoiceId | null;
@@ -76,6 +78,12 @@ export interface TerminalContext {
   // Chat workflow state
   isChatActive: boolean;
   chatStatus: string | null;
+  // Month-learn workflow state
+  isMonthLearnActive: boolean;
+  monthLearnStatus: string | null;
+  // Memory-core workflow state
+  isMemoryCoreActive: boolean;
+  memoryCoreStatus: string | null;
   // Last parsed command for state transitions
   lastParsedCommand: string | null;
   // TTS synthesis state
@@ -97,6 +105,8 @@ export type TerminalEvent =
   | { type: 'UPDATE_STATUS'; status: string }
   | { type: 'DREAM.COMPLETE' }
   | { type: 'CHAT_COMPLETED' }
+  | { type: 'MONTH_LEARN.COMPLETE' }
+  | { type: 'MEMORY_CORE.COMPLETE' }
   | { type: 'END_SESSION' }
   // Voice events
   | { type: 'VOICE.TOGGLE' }

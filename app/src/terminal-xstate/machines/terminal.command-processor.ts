@@ -301,5 +301,55 @@ export const workflowActions = {
         });
       }
     }
+  },
+
+  /**
+   * Start month-learn workflow with context
+   */
+  startMonthLearnWorkflow: ({ context }: { context: TerminalContext }) => {
+    if (context.monthLearnRef) {
+      const { walletAddress, tokenId, agentName } = getAgentData(context);
+      const { selectedModel } = getModelData(context);
+
+      debugLog('[workflowActions] Starting month-learn workflow', {
+        tokenId,
+        agentName,
+        walletAddress: walletAddress || 'undefined',
+        selectedModel
+      });
+
+      context.monthLearnRef.send({
+        type: 'START',
+        tokenId: tokenId || 1,
+        agentName,
+        walletAddress,
+        modelId: selectedModel
+      });
+    }
+  },
+
+  /**
+   * Start memory-core workflow with context
+   */
+  startMemoryCoreWorkflow: ({ context }: { context: TerminalContext }) => {
+    if (context.memoryCoreRef) {
+      const { walletAddress, tokenId, agentName } = getAgentData(context);
+      const { selectedModel } = getModelData(context);
+
+      debugLog('[workflowActions] Starting memory-core workflow', {
+        tokenId,
+        agentName,
+        walletAddress: walletAddress || 'undefined',
+        selectedModel
+      });
+
+      context.memoryCoreRef.send({
+        type: 'START',
+        tokenId: tokenId || 1,
+        agentName,
+        walletAddress,
+        modelId: selectedModel
+      });
+    }
   }
 };
