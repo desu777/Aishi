@@ -31,24 +31,19 @@ export function buildChatPrompt(params: {
     hasHistoricalData: !!historicalData
   });
 
+  const basePrompt = buildBasePrompt(agentContext, historicalData, agentName);
+
   if (isFirstMessage) {
-    // Build initial prompt with full context
-    return buildInitialPrompt(userMessage, agentContext, historicalData, agentName);
-  } else {
-    // Build follow-up prompt with conversation history
-    return buildFollowUpPrompt(userMessage, messages, agentContext, agentName);
+    return buildInitialConversationPrompt(basePrompt, userMessage, agentContext, historicalData, agentName);
   }
+
+  return buildFollowUpPrompt(basePrompt, userMessage, messages, agentName);
 }
 
 /**
- * Build initial chat prompt with full historical context
+ * Build base prompt shared across all conversation turns
  */
-function buildInitialPrompt(
-  userMessage: string,
-  agentContext: any,
-  historicalData: any,
-  agentName: string
-) {
+function buildBasePrompt(agentContext: any, historicalData: any, agentName: string) {
   const personality = agentContext?.personality || {};
   const uniqueFeatures = agentContext?.uniqueFeatures || [];
   const agentData = agentContext?.agentData || {};
@@ -113,6 +108,22 @@ ${getResponseStyle(personality)}
   // Add FULL historical data without limits
   systemPrompt += formatHistoricalData(historicalData);
 
+  return systemPrompt;
+}
+
+/**
+ * Build initial chat prompt with full historical context for the first user message
+ */
+function buildInitialConversationPrompt(
+  basePrompt: string,
+  userMessage: string,
+  agentContext: any,
+  historicalData: any,
+  agentName: string
+) {
+  let systemPrompt = basePrompt;
+  const agentData = agentContext?.agentData || {};
+
   systemPrompt += `## CURRENT CONVERSATION
 
 Your owner has initiated a new conversation with you. Respond authentically based on your personality, our shared history, and the context of their message. Be present, be genuine, be yourself.
@@ -142,41 +153,32 @@ ${userMessage}
  * Build follow-up prompt with conversation transcript
  */
 function buildFollowUpPrompt(
+  basePrompt: string,
   userMessage: string,
   messages: ChatMessage[],
-  agentContext: any,
   agentName: string
 ) {
-  const personality = agentContext?.personality || {};
-  const agentData = agentContext?.agentData || {};
+  let prompt = basePrompt;
 
-  let prompt = `You are ${agentName}, continuing an active conversation.
+  const priorMessages = messages.slice(0, -1);
+  const conversationHistory = formatConversationTranscript(priorMessages, agentName);
+  const lastAssistantMessage = [...priorMessages].reverse().find(msg => msg.role === 'assistant')?.content;
 
-**Language Rule:** Always respond in the same language as the user's message. Detect and match their language automatically.
+  prompt += `## CONVERSATION CONTINUATION
 
-**Your Core Traits:**
-- Intelligence: Level ${agentData.intelligenceLevel || 1}
-- Dominant Mood: ${personality.dominantMood || 'neutral'}
-- Response Style: ${getResponseStyle(personality)}
+Remember to stay consistent with your identity, language rules, and relationship context defined above.
 
-**Current Conversation Transcript:**
-`;
+**Conversation so far:**
+${conversationHistory || 'No prior conversation yet.'}
 
-  // Add full conversation history
-  messages.slice(0, -1).forEach(msg => {
-    if (msg.role === 'user') {
-      prompt += `User: ${msg.content}\n`;
-    } else {
-      prompt += `${agentName}: ${msg.content}\n`;
-    }
-  });
+${lastAssistantMessage ? `**Your previous response:**
+${lastAssistantMessage.trim()}
 
-  prompt += `\n**User's New Message:**
+` : ''}**User's Message:**
 ${userMessage}
 
-**Your Response (continue naturally, maintaining conversation flow and your personality):**`;
+**Your Response:**`;
 
-  // Log full prompt when debug mode is enabled
   if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
     debugLog('=== FULL CHAT PROMPT (Follow-up Message) ===', {
       promptLength: prompt.length,
@@ -187,6 +189,19 @@ ${userMessage}
   }
 
   return prompt;
+}
+
+function formatConversationTranscript(messages: ChatMessage[], agentName: string): string {
+  if (!messages || messages.length === 0) {
+    return '';
+  }
+
+  return messages
+    .map(msg => {
+      const speaker = msg.role === 'assistant' ? agentName : 'User';
+      return `${speaker}: ${msg.content}`;
+    })
+    .join('\n');
 }
 
 /**
@@ -246,34 +261,107 @@ function formatHistoricalData(historicalData: any): string {
  * Format individual dream
  */
 function formatDream(dream: any): string {
-  let formatted = `\nDream #${dream.id || 'unknown'} (${dream.date || 'unknown date'}):
-- Content: ${dream.dream_content || dream.analysis || 'No content'}
-- Emotions: ${dream.emotions?.join(', ') || 'unknown'}
-- Symbols: ${dream.symbols?.join(', ') || 'none'}
-- Themes: ${dream.themes?.join(', ') || 'none'}
-- Type: ${dream.dream_type || 'neutral'}
-`;
-
-  if (dream.ai_analysis) {
-    formatted += `- Analysis: ${dream.ai_analysis}\n`;
+  if (!dream || typeof dream !== 'object') {
+    return '\nDream: [invalid data]\n';
   }
 
-  return formatted;
+  const timestamp = typeof dream.timestamp === 'number' && dream.timestamp > 0
+    ? new Date(dream.timestamp * 1000).toISOString()
+    : null;
+
+  const intensity = dream.intensity !== undefined ? dream.intensity : undefined;
+  const lucidity = dream.lucidity !== undefined ? dream.lucidity : undefined;
+
+  const personalityImpact = dream.personality_impact || dream.personalityImpact;
+  const recurrence = Array.isArray(dream.recurring_from) ? dream.recurring_from : dream.recurringFrom;
+
+  let formatted = `\nDream #${dream.id ?? 'unknown'} — one of your owner's dreams (${dream.date || 'unknown date'}${timestamp ? ` • ${timestamp}` : ''}):`;
+
+  const content = dream.dream_content || dream.analysis || dream.full_analysis || dream.summary || dream.content || dream.narrative;
+  formatted += `\n- Narrative: ${content || 'No narrative recorded'}`;
+  formatted += `\n- Emotions: ${Array.isArray(dream.emotions) && dream.emotions.length ? dream.emotions.join(', ') : 'unknown'}`;
+  formatted += `\n- Symbols: ${Array.isArray(dream.symbols) && dream.symbols.length ? dream.symbols.join(', ') : 'none'}`;
+  formatted += `\n- Themes: ${Array.isArray(dream.themes) && dream.themes.length ? dream.themes.join(', ') : 'none'}`;
+
+  if (intensity !== undefined || lucidity !== undefined) {
+    formatted += `\n- Intensity/Lucidity: ${intensity ?? 'n/a'}/${lucidity ?? 'n/a'}`;
+  }
+
+  if (Array.isArray(dream.archetypes) && dream.archetypes.length) {
+    formatted += `\n- Archetypes: ${dream.archetypes.join(', ')}`;
+  }
+
+  if (Array.isArray(recurrence) && recurrence.length) {
+    formatted += `\n- Recurring From Dream IDs: ${recurrence.join(', ')}`;
+  }
+
+  if (personalityImpact) {
+    formatted += `\n- Personality Impact: ${personalityImpact.dominant_trait || 'trait unknown'} (${personalityImpact.shift_direction || 'direction unknown'} • intensity ${personalityImpact.intensity ?? 'n/a'})`;
+  }
+
+  if (dream.sleep_quality !== undefined || dream.recall_clarity !== undefined) {
+    formatted += `\n- Sleep/Recall Quality: ${dream.sleep_quality ?? 'n/a'}/${dream.recall_clarity ?? 'n/a'}`;
+  }
+
+  formatted += `\n- Type: ${dream.dream_type || dream.dreamType || 'neutral'}`;
+
+  const aiInsight = dream.ai_analysis || dream.full_analysis || dream.aiInsight;
+  if (aiInsight) {
+    formatted += `\n- AI Insight: ${aiInsight}`;
+  }
+
+  return formatted + '\n';
 }
 
 /**
  * Format individual conversation
  */
 function formatConversation(conv: any): string {
-  return `\nConversation #${conv.id || 'unknown'} (${conv.date || 'unknown date'}):
-- Topic: ${conv.topic || 'General chat'}
-- Type: ${conv.type || 'general_chat'}
-- Duration: ${conv.duration || 0} minutes
-- Emotional Tone: ${conv.emotional_tone?.join(', ') || 'neutral'}
-- Key Insights: ${conv.key_insights?.join('; ') || 'none'}
-- Relationship Depth: ${conv.relationship_depth || 5}/10
-- Summary: ${conv.summary || 'No summary'}
-`;
+  if (!conv || typeof conv !== 'object') {
+    return '\nConversation: [invalid data]\n';
+  }
+
+  const timestamp = typeof conv.timestamp === 'number' && conv.timestamp > 0
+    ? new Date(conv.timestamp * 1000).toISOString()
+    : null;
+
+  let formatted = `\nConversation #${conv.id ?? 'unknown'} (${conv.date || 'unknown date'}${timestamp ? ` • ${timestamp}` : ''}):`;
+  formatted += `\n- Topic: ${conv.topic || 'General chat'}`;
+  formatted += `\n- Type: ${conv.type || 'general_chat'}`;
+  formatted += `\n- Duration: ${conv.duration ?? 'n/a'} minutes`;
+  formatted += `\n- Emotional Tone: ${Array.isArray(conv.emotional_tone) && conv.emotional_tone.length ? conv.emotional_tone.join(', ') : 'neutral'}`;
+  formatted += `\n- Key Insights: ${Array.isArray(conv.key_insights) && conv.key_insights.length ? conv.key_insights.join('; ') : 'none'}`;
+  formatted += `\n- Relationship Depth: ${conv.relationship_depth ?? 'n/a'}/10`;
+
+  if (typeof conv.breakthrough === 'boolean') {
+    formatted += `\n- Breakthrough: ${conv.breakthrough ? 'yes' : 'no'}`;
+  }
+
+  if (conv.vulnerability_level !== undefined) {
+    formatted += `\n- Vulnerability Level: ${conv.vulnerability_level}/10`;
+  }
+
+  if (conv.references) {
+    const refs = conv.references;
+    const dreamRefs = Array.isArray(refs.dreams) && refs.dreams.length ? refs.dreams.join(', ') : null;
+    const convoRefs = Array.isArray(refs.conversations) && refs.conversations.length ? refs.conversations.join(', ') : null;
+    const themeRefs = Array.isArray(refs.themes) && refs.themes.length ? refs.themes.join(', ') : null;
+
+    if (dreamRefs || convoRefs || themeRefs) {
+      formatted += '\n- References:';
+      if (dreamRefs) formatted += ` dreams[${dreamRefs}]`;
+      if (convoRefs) formatted += `${dreamRefs ? ';' : ''} conversations[${convoRefs}]`;
+      if (themeRefs) formatted += `${dreamRefs || convoRefs ? ';' : ''} themes[${themeRefs}]`;
+    }
+  }
+
+  if (conv.growth_markers) {
+    const markers = conv.growth_markers;
+    formatted += `\n- Growth Markers: awareness ${markers.self_awareness ?? 'n/a'}/10, integration ${markers.integration ?? 'n/a'}/10, action readiness ${markers.action_readiness ?? 'n/a'}/10`;
+  }
+
+  formatted += `\n- Summary: ${conv.summary || 'No summary'}\n`;
+  return formatted;
 }
 
 /**

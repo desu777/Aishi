@@ -354,10 +354,28 @@ export async function generateConversationSummary(
         summary = JSON.parse(aiResponse);
       }
 
+      if (summary && typeof summary === 'object') {
+        const firstMessageTs = messages.find(msg => msg.timestamp)?.timestamp || messages[0]?.timestamp;
+        const lastMessageTs = [...messages].reverse().find(msg => msg.timestamp)?.timestamp || messages[messages.length - 1]?.timestamp;
+
+        if (firstMessageTs) {
+          const startDate = new Date(firstMessageTs);
+          summary.date = startDate.toISOString().split('T')[0];
+          summary.timestamp = Math.floor(firstMessageTs / 1000);
+        }
+
+        if (firstMessageTs && lastMessageTs) {
+          const durationMinutes = Math.max(1, Math.round((lastMessageTs - firstMessageTs) / 60000));
+          summary.duration = durationMinutes;
+        }
+      }
+
       debugLog('Summary parsed successfully', {
-        hasId: 'id' in summary,
-        hasDate: 'date' in summary,
-        hasTopic: 'topic' in summary
+        hasId: summary && typeof summary === 'object' && 'id' in summary,
+        hasDate: summary && typeof summary === 'object' && 'date' in summary,
+        hasTopic: summary && typeof summary === 'object' && 'topic' in summary,
+        timestamp: summary?.timestamp,
+        duration: summary?.duration
       });
 
     } catch (parseError) {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { CSSProperties } from 'react';
-import { Home, Upload, X, User, ChevronLeft, ChevronRight, Brain, Sparkles } from 'lucide-react';
+import { Home, Upload, X, User, ChevronLeft, ChevronRight, Brain, Sparkles, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '../../contexts/ThemeContext';
 import SVGIcon from '../ui/SVGIcon';
@@ -171,6 +171,13 @@ const Sidebar = ({ isOpen, isMobile, isCollapsed, onClose, onToggleCollapse }: S
           icon={<SVGIcon src="/microchip-ai.svg" size={18} alt="AishiOS" />} 
           label="aishiOS" 
           to="/aishiOS"
+          isCollapsed={isCollapsed}
+          onClick={isMobile ? onClose : undefined}
+        />
+        <SidebarItem 
+          icon={<SVGIcon src="/house-hands.svg" size={18} alt="Companion" />} 
+          label="Companion" 
+          to="/companion"
           isCollapsed={isCollapsed}
           onClick={isMobile ? onClose : undefined}
         />
