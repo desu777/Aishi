@@ -9,10 +9,15 @@ import TerminalStatusLine from './TerminalStatusLine';
 import { MemoryDownloadHandler } from './MemoryDownloadHandler';
 import { useTerminal } from '../hooks/useTerminal';
 import { useTerminalAgent } from '../hooks/useTerminalAgent';
+import { useConsolidationStatus } from '../hooks/useConsolidationStatus';
 import { zIndex } from '../../styles/zIndex';
 import { useAccount, usePublicClient } from 'wagmi';
 import { useSafeActorState } from '../hooks/useSafeSelector';
 import { breakpoints } from '../../utils/responsive';
+import {
+  useWatchAishiAgentConsolidationCompletedEvent,
+  useWatchAishiAgentYearlyReflectionAvailableEvent
+} from '../../generated';
 
 interface GlassTerminalProps {
   isOpen: boolean;
@@ -37,6 +42,7 @@ const colors = {
 export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, selectedModel, selectedVoice }) => {
   const { context, send, state, brokerRef, modelRef, agentRef, voiceRef, isDreamActive, dreamStatus, isChatActive, chatStatus, isVoiceEnabled } = useTerminal();
   const { agentName, isLoading: agentLoading } = useTerminalAgent();
+  const { shouldShowMonthLearnPrompt, shouldShowYearLearnPrompt } = useConsolidationStatus();
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
   const [isMobile, setIsMobile] = useState(false);
@@ -226,6 +232,48 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     }
   }, [selectedVoice, voiceRef]);
 
+  // Watch for ConsolidationCompleted events
+  useWatchAishiAgentConsolidationCompletedEvent({
+    onLogs: (logs) => {
+      logs.forEach(log => {
+        const { tokenId, period, bonus, specialReward } = log.args;
+        const currentTokenId = agentState?.context?.tokenId;
+
+        if (currentTokenId && Number(tokenId) === currentTokenId) {
+          send({
+            type: 'APPEND_LINES',
+            lines: [{
+              type: 'success',
+              content: `✓ Monthly consolidation completed! Period: ${period}, Bonus: +${bonus} INT${specialReward ? `, Reward: ${specialReward}` : ''}`,
+              timestamp: Date.now()
+            }]
+          });
+        }
+      });
+    }
+  });
+
+  // Watch for YearlyReflectionAvailable events
+  useWatchAishiAgentYearlyReflectionAvailableEvent({
+    onLogs: (logs) => {
+      logs.forEach(log => {
+        const { tokenId, year } = log.args;
+        const currentTokenId = agentState?.context?.tokenId;
+
+        if (currentTokenId && Number(tokenId) === currentTokenId) {
+          send({
+            type: 'APPEND_LINES',
+            lines: [{
+              type: 'success',
+              content: `✓ Yearly memory core available for ${year}! Type 'memory-core' to crystallize consciousness (+5 INT)`,
+              timestamp: Date.now()
+            }]
+          });
+        }
+      });
+    }
+  });
+
   // Handle escape key to close
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -347,6 +395,8 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             isChatActive={isChatActive}
             chatStatus={chatStatus}
             isRecording={isRecording}
+            shouldShowMonthLearnPrompt={shouldShowMonthLearnPrompt}
+            shouldShowYearLearnPrompt={shouldShowYearLearnPrompt}
           />
 
           {/* Minimal Output - Terminal Lines Only */}

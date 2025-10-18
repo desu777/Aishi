@@ -14,6 +14,8 @@ interface TerminalStatusLineProps {
   isChatActive?: boolean;
   chatStatus?: string | null;
   isRecording?: boolean;
+  shouldShowMonthLearnPrompt?: boolean;
+  shouldShowYearLearnPrompt?: boolean;
 }
 
 const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
@@ -23,7 +25,9 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
   isMobile = false,
   isTablet = false,
   isChatActive = false,
-  chatStatus = null
+  chatStatus = null,
+  shouldShowMonthLearnPrompt = false,
+  shouldShowYearLearnPrompt = false
 }) => {
   const [dots, setDots] = useState('');
   const [prevStatus, setPrevStatus] = useState(status);
@@ -179,11 +183,28 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
           {status !== 'no_agent' && intelligenceLevel > 0 && (
             <>
               <span style={{ color: '#9CA3AF' }}> | intelligence: </span>
-              <span style={{ 
+              <span style={{
                 color: '#A855F7',
                 fontWeight: '500',
               }}>
                 {intelligenceLevel}
+              </span>
+            </>
+          )}
+
+          {/* Consolidation hints - pulsating prompts */}
+          {status === 'online' && (shouldShowMonthLearnPrompt || shouldShowYearLearnPrompt) && (
+            <>
+              <span style={{ color: '#9CA3AF' }}> | </span>
+              <span style={{
+                color: '#A855F7',
+                fontWeight: '500',
+                animation: 'pulse 2s ease-in-out infinite'
+              }}>
+                {shouldShowMonthLearnPrompt && 'month-learn'}
+                {shouldShowMonthLearnPrompt && shouldShowYearLearnPrompt && ', '}
+                {shouldShowYearLearnPrompt && 'memory-core'}
+                {' available'}
               </span>
             </>
           )}

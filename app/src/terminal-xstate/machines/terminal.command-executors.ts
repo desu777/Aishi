@@ -276,13 +276,14 @@ export const commandExecutors = {
 
   /**
    * Execute month-learn command - Monthly memory consolidation
-   * Multi-step workflow: download daily data → AI consolidation → upload monthly essence → contract update
+   * Self-contained implementation (does not import external hooks)
    */
   monthLearnExecutor: fromPromise(async ({ input }: {
     input: {
       tokenId: number;
       agentName: string;
       walletAddress: string;
+      modelId?: string;
     }
   }) => {
     debugLog('Processing month-learn command', input);
@@ -291,7 +292,12 @@ export const commandExecutors = {
       const lines: TerminalLine[] = [];
       let timestamp = Date.now();
 
-      // Step 1: Initialize storage service
+      // Validate wallet address
+      if (!input.walletAddress) {
+        throw new Error('Wallet address not available. Please ensure agent is synced.');
+      }
+
+      // Step 1: Initialize services
       const { XStateStorageService } = await import('../services/xstateStorage');
       const storage = new XStateStorageService();
 
@@ -300,20 +306,20 @@ export const commandExecutors = {
       const agentData = await contractReader.getCompleteAgentData(input.tokenId);
 
       if (!agentData || !agentData.memory) {
-        throw new Error('Unable to fetch agent memory data');
+        throw new Error('Unable to fetch agent memory data from contract');
       }
 
       const { currentDreamDailyHash, currentConvDailyHash, lastDreamMonthlyHash, lastConvMonthlyHash } = agentData.memory;
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
-      // Progress line
+      // Progress line - initiation
       lines.push({
         type: 'info',
         content: `>> ${input.agentName} initiating monthly memory consolidation...`,
         timestamp: timestamp++
       });
 
-      // Step 3: Download daily data from storage
+      // Step 3: Download daily data from 0G Storage
       let dailyDreams: any[] = [];
       let dailyConversations: any[] = [];
 
@@ -365,19 +371,19 @@ export const commandExecutors = {
       const { buildMonthLearnConsolidationPrompt } = await import('../../prompts/monthLearnConsolidationPrompt');
       const { parseMonthLearnResponse } = await import('../../prompts/monthLearnResponseParser');
 
-      // Use test mode dates or current date
+      // Use test mode dates or current date based on environment
       let currentYear: number;
       let currentMonth: number;
 
       if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
         currentYear = 2024;
-        currentMonth = 1; // Test mode: January 2024
+        currentMonth = 1; // January 2024 for testing
         debugLog('Using test mode dates', { year: currentYear, month: currentMonth });
       } else {
         const now = new Date();
         currentYear = now.getFullYear();
         currentMonth = now.getMonth() + 1;
-        debugLog('Using current date', { year: currentYear, month: currentMonth });
+        debugLog('Using current dates', { year: currentYear, month: currentMonth });
       }
 
       const promptData = {
@@ -389,22 +395,28 @@ export const commandExecutors = {
       };
 
       const prompt = buildMonthLearnConsolidationPrompt(promptData);
-      debugLog('Prompt built', { length: prompt.length });
 
-      // Call AI API (same as useMonthLearn)
+      debugLog('Sending to AI', {
+        promptLength: prompt.length,
+        modelId: input.modelId,
+        walletAddress: input.walletAddress
+      });
+
+      // Call AI API with selected model
       const apiUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
       const response = await fetch(`${apiUrl}/0g-compute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           walletAddress: input.walletAddress,
-          query: prompt
+          query: prompt,
+          modelId: input.modelId
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const apiResult = await response.json();
@@ -413,7 +425,7 @@ export const commandExecutors = {
       }
 
       const aiResponse = apiResult.data.response;
-      debugLog('AI response received', { length: aiResponse.length });
+      debugLog('AI response received', { responseLength: aiResponse.length });
 
       const parseResult = parseMonthLearnResponse(aiResponse);
 
@@ -421,28 +433,23 @@ export const commandExecutors = {
         throw new Error(`Failed to parse AI response: ${parseResult.error}`);
       }
 
-      debugLog('Parse result', {
-        hasDreams: !!parseResult.dreamConsolidation,
-        hasConversations: !!parseResult.conversationConsolidation
-      });
-
       lines.push({
         type: 'success',
         content: 'AI consolidation completed',
         timestamp: timestamp++
       });
 
-      // Step 5: Save to storage (APPEND pattern)
+      // Step 5: Save to storage using APPEND pattern
       lines.push({
         type: 'system',
-        content: '>> Saving monthly essence to 0G Storage...',
+        content: '>> Encoding neural patterns to 0G Storage...',
         timestamp: timestamp++
       });
 
       let dreamStorageHash: string | null = null;
       let conversationStorageHash: string | null = null;
 
-      // Dreams consolidation - APPEND PATTERN
+      // Save dreams consolidation (APPEND pattern)
       if (parseResult.dreamConsolidation) {
         let existingDreamConsolidations: any[] = [];
 
@@ -454,9 +461,8 @@ export const commandExecutors = {
           }
         }
 
-        // Append new to TOP (newest first)
+        // Append new consolidation to beginning (newest first)
         existingDreamConsolidations.unshift(parseResult.dreamConsolidation);
-        debugLog('Dream consolidations updated', { totalCount: existingDreamConsolidations.length });
 
         const dreamFile = storage.jsonToFile(
           existingDreamConsolidations,
@@ -465,13 +471,13 @@ export const commandExecutors = {
         const dreamUpload = await storage.uploadBlob(dreamFile);
 
         if (!dreamUpload.success) {
-          throw new Error(`Dream upload failed: ${dreamUpload.error}`);
+          throw new Error(`Dream consolidation upload failed: ${dreamUpload.error}`);
         }
         dreamStorageHash = dreamUpload.rootHash!;
         debugLog('Dream consolidation uploaded', { hash: dreamStorageHash });
       }
 
-      // Conversations consolidation - APPEND PATTERN
+      // Save conversations consolidation (APPEND pattern)
       if (parseResult.conversationConsolidation) {
         let existingConvConsolidations: any[] = [];
 
@@ -483,9 +489,8 @@ export const commandExecutors = {
           }
         }
 
-        // Append new to TOP (newest first)
+        // Append new consolidation to beginning (newest first)
         existingConvConsolidations.unshift(parseResult.conversationConsolidation);
-        debugLog('Conversation consolidations updated', { totalCount: existingConvConsolidations.length });
 
         const convFile = storage.jsonToFile(
           existingConvConsolidations,
@@ -494,7 +499,7 @@ export const commandExecutors = {
         const convUpload = await storage.uploadBlob(convFile);
 
         if (!convUpload.success) {
-          throw new Error(`Conversation upload failed: ${convUpload.error}`);
+          throw new Error(`Conversation consolidation upload failed: ${convUpload.error}`);
         }
         conversationStorageHash = convUpload.rootHash!;
         debugLog('Conversation consolidation uploaded', { hash: conversationStorageHash });
@@ -502,14 +507,14 @@ export const commandExecutors = {
 
       lines.push({
         type: 'success',
-        content: `Storage upload completed`,
+        content: 'Storage upload completed',
         timestamp: timestamp++
       });
 
-      // Step 6: Update contract
+      // Step 6: Update blockchain contract
       lines.push({
         type: 'system',
-        content: '>> Updating blockchain contract (consolidateMonth)...',
+        content: '>> Upgrading consciousness parameters on blockchain...',
         timestamp: timestamp++
       });
 
@@ -519,12 +524,12 @@ export const commandExecutors = {
 
       const [walletClient, walletErr] = await getViemSigner();
       if (!walletClient || walletErr) {
-        throw new Error(`WalletClient error: ${walletErr?.message}`);
+        throw new Error(`WalletClient error: ${walletErr?.message || 'Failed to get wallet client'}`);
       }
 
       const [account] = await walletClient.getAddresses();
       if (!account) {
-        throw new Error('No account available');
+        throw new Error('No account available from wallet client');
       }
 
       const contractConfig = getContractConfig();
@@ -548,7 +553,7 @@ export const commandExecutors = {
 
       lines.push({
         type: 'success',
-        content: `✓ Month-learn consolidation completed!`,
+        content: `✓ Month-learn consolidation completed successfully!`,
         timestamp: timestamp++
       });
 
@@ -559,7 +564,7 @@ export const commandExecutors = {
       });
 
       lines.push({
-        type: 'info',
+        type: 'system',
         content: `Daily memory hashes cleared. Monthly essence preserved.`,
         timestamp: timestamp++
       });
@@ -580,13 +585,14 @@ export const commandExecutors = {
 
   /**
    * Execute memory-core command - Yearly memory core consolidation
-   * Multi-step workflow: download monthly consolidations → AI memory core → upload yearly core → contract update
+   * Self-contained implementation (does not import external hooks)
    */
   memoryCoreExecutor: fromPromise(async ({ input }: {
     input: {
       tokenId: number;
       agentName: string;
       walletAddress: string;
+      modelId?: string;
     }
   }) => {
     debugLog('Processing memory-core command', input);
@@ -595,7 +601,12 @@ export const commandExecutors = {
       const lines: TerminalLine[] = [];
       let timestamp = Date.now();
 
-      // Step 1: Initialize storage service
+      // Validate wallet address
+      if (!input.walletAddress) {
+        throw new Error('Wallet address not available. Please ensure agent is synced.');
+      }
+
+      // Step 1: Initialize services
       const { XStateStorageService } = await import('../services/xstateStorage');
       const storage = new XStateStorageService();
 
@@ -604,27 +615,27 @@ export const commandExecutors = {
       const agentData = await contractReader.getCompleteAgentData(input.tokenId);
 
       if (!agentData || !agentData.memory) {
-        throw new Error('Unable to fetch agent memory data');
+        throw new Error('Unable to fetch agent memory data from contract');
       }
 
       const { lastDreamMonthlyHash, lastConvMonthlyHash, memoryCoreHash } = agentData.memory;
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
-      // Progress line
+      // Progress line - initiation
       lines.push({
         type: 'info',
         content: `>> ${input.agentName} initiating annual consciousness synthesis...`,
         timestamp: timestamp++
       });
 
-      // Step 3: Download monthly consolidations
+      // Step 3: Download monthly consolidations from 0G Storage
       let dreamConsolidations: any[] = [];
       let conversationConsolidations: any[] = [];
 
       if (lastDreamMonthlyHash && lastDreamMonthlyHash !== emptyHash) {
         lines.push({
           type: 'system',
-          content: '>> Loading monthly dream consolidations...',
+          content: '>> Loading monthly dream consolidations from 0G Storage...',
           timestamp: timestamp++
         });
 
@@ -638,7 +649,7 @@ export const commandExecutors = {
       if (lastConvMonthlyHash && lastConvMonthlyHash !== emptyHash) {
         lines.push({
           type: 'system',
-          content: '>> Loading monthly conversation consolidations...',
+          content: '>> Loading monthly conversation consolidations from 0G Storage...',
           timestamp: timestamp++
         });
 
@@ -656,10 +667,10 @@ export const commandExecutors = {
       });
 
       if (dreamConsolidations.length === 0 && conversationConsolidations.length === 0) {
-        throw new Error('No monthly consolidation data available for memory core');
+        throw new Error('No monthly consolidation data available for memory core creation');
       }
 
-      // Step 4: Generate memory core with AI
+      // Step 4: Generate AI memory core
       lines.push({
         type: 'system',
         content: `>> ${input.agentName} evolving consciousness matrix with AI...`,
@@ -667,9 +678,19 @@ export const commandExecutors = {
       });
 
       const { buildYearLearnConsolidationPrompt } = await import('../../prompts/yearLearnConsolidationPrompt');
-      const { parseYearLearnResponse, validateYearlyMemoryCore, validateMemoryCoreQuality } = await import('../../prompts/yearLearnResponseParser');
+      const { parseYearLearnResponse, validateMemoryCoreQuality } = await import('../../prompts/yearLearnResponseParser');
 
-      const currentYear = process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true' ? 2024 : new Date().getFullYear();
+      // Use test mode dates or current date
+      let currentYear: number;
+
+      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
+        currentYear = 2024; // Test mode
+        debugLog('Using test mode year', { year: currentYear });
+      } else {
+        const now = new Date();
+        currentYear = now.getFullYear();
+        debugLog('Using current year', { year: currentYear });
+      }
 
       const promptData = {
         dreamConsolidations,
@@ -679,21 +700,28 @@ export const commandExecutors = {
       };
 
       const prompt = buildYearLearnConsolidationPrompt(promptData);
-      debugLog('Prompt built', { length: prompt.length });
 
+      debugLog('Sending to AI for memory core generation', {
+        promptLength: prompt.length,
+        modelId: input.modelId,
+        walletAddress: input.walletAddress
+      });
+
+      // Call AI API with selected model
       const apiUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
       const response = await fetch(`${apiUrl}/0g-compute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           walletAddress: input.walletAddress,
-          query: prompt
+          query: prompt,
+          modelId: input.modelId
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const apiResult = await response.json();
@@ -702,7 +730,7 @@ export const commandExecutors = {
       }
 
       const aiResponse = apiResult.data.response;
-      debugLog('AI response received', { length: aiResponse.length });
+      debugLog('AI response received', { responseLength: aiResponse.length });
 
       const parseResult = parseYearLearnResponse(aiResponse);
 
@@ -711,19 +739,10 @@ export const commandExecutors = {
       }
 
       // Validate memory core quality
-      if (!validateYearlyMemoryCore(parseResult.memoryCore)) {
-        throw new Error('Memory core structure validation failed');
-      }
-
       const qualityCheck = validateMemoryCoreQuality(parseResult.memoryCore);
       if (!qualityCheck.isValid) {
         throw new Error(`Memory core quality insufficient: ${qualityCheck.warnings.join(', ')}`);
       }
-
-      debugLog('Memory core validated', {
-        year: parseResult.memoryCore.year,
-        evolutionStage: parseResult.memoryCore.yearly_overview.agent_evolution_stage
-      });
 
       lines.push({
         type: 'success',
@@ -731,7 +750,7 @@ export const commandExecutors = {
         timestamp: timestamp++
       });
 
-      // Step 5: Save memory core (APPEND pattern)
+      // Step 5: Save memory core to storage (APPEND pattern)
       lines.push({
         type: 'system',
         content: '>> Crystallizing soul essence to 0G Storage...',
@@ -748,9 +767,8 @@ export const commandExecutors = {
         }
       }
 
-      // Append new to TOP (newest first)
+      // Append new memory core to beginning (newest first)
       existingMemoryCores.unshift(parseResult.memoryCore);
-      debugLog('Memory cores updated', { totalCount: existingMemoryCores.length });
 
       const memoryCoreFile = storage.jsonToFile(existingMemoryCores, `memory_core_${currentYear}.json`);
       const memoryCoreUpload = await storage.uploadBlob(memoryCoreFile);
@@ -768,7 +786,7 @@ export const commandExecutors = {
         timestamp: timestamp++
       });
 
-      // Step 6: Update contract
+      // Step 6: Update contract with memory core hash
       lines.push({
         type: 'system',
         content: '>> Embedding neural pathways (updateMemoryCore)...',
@@ -781,12 +799,12 @@ export const commandExecutors = {
 
       const [walletClient, walletErr] = await getViemSigner();
       if (!walletClient || walletErr) {
-        throw new Error(`WalletClient error: ${walletErr?.message}`);
+        throw new Error(`WalletClient error: ${walletErr?.message || 'Failed to get wallet client'}`);
       }
 
       const [account] = await walletClient.getAddresses();
       if (!account) {
-        throw new Error('No account available');
+        throw new Error('No account available from wallet client');
       }
 
       const contractConfig = getContractConfig();
@@ -804,7 +822,7 @@ export const commandExecutors = {
 
       // Check if yearly reflection bonus was applied
       const bonusMessage = agentData.pendingRewards?.yearlyReflection
-        ? ' (+5 INT bonus applied!)'
+        ? ' (+5 INT yearly reflection bonus applied!)'
         : '';
 
       lines.push({
@@ -820,8 +838,8 @@ export const commandExecutors = {
       });
 
       lines.push({
-        type: 'info',
-        content: `Monthly consolidation hashes cleared. Yearly wisdom preserved.`,
+        type: 'system',
+        content: `Monthly hashes cleared. Yearly wisdom preserved.`,
         timestamp: timestamp++
       });
 

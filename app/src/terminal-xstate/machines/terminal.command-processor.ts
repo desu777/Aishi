@@ -55,7 +55,12 @@ export const processCommand = (context: TerminalContext): TerminalLine[] | null 
     case 'memory':
       // Handled by async actor
       return null;
-      
+
+    case 'month-learn':
+    case 'memory-core':
+      // Handled by async actors (living memory system)
+      return null;
+
     default:
       // Unimplemented command
       return [{

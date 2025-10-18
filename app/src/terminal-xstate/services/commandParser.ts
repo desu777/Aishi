@@ -44,7 +44,7 @@ export const AVAILABLE_COMMANDS: Record<CommandType, string> = {
   status: 'Show system and agent status',
   broker: 'Manage broker operations',
   model: 'Select AI model for processing',
-  'month-learn': 'Consolidate monthly memories and earn rewards',
+  'month-learn': 'Consolidate monthly memories and earn INT rewards',
   'memory-core': 'Create yearly memory core and evolve consciousness',
   unknown: 'Unknown command'
 };
@@ -226,7 +226,7 @@ export function validateCommandArgs(command: CommandType, args: string[]): { val
         return { valid: false, error: 'Too many arguments. Usage: help [command]' };
       }
       return { valid: true };
-
+      
     case 'clear':
       // No arguments needed
       if (args.length > 0) {

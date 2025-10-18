@@ -236,6 +236,14 @@ export const terminalMachine = setup({
             {
               target: 'memory',
               guard: ({ context }) => context.lastParsedCommand === 'memory'
+            },
+            {
+              target: 'monthLearn',
+              guard: ({ context }) => context.lastParsedCommand === 'month-learn'
+            },
+            {
+              target: 'memoryCore',
+              guard: ({ context }) => context.lastParsedCommand === 'memory-core'
             }
           ]
         },
@@ -334,6 +342,74 @@ export const terminalMachine = setup({
             input: ({ context }) => {
               const { tokenId, agentName } = getAgentData(context);
               return { tokenId: tokenId!, agentName };
+            },
+            onDone: {
+              target: '#terminal.idle',
+              actions: [
+                assign({ lastParsedCommand: null }),
+                'displayCommandResult'
+              ]
+            },
+            onError: {
+              target: '#terminal.idle',
+              actions: [
+                assign({ lastParsedCommand: null }),
+                'displayCommandError'
+              ]
+            }
+          }
+        },
+
+        monthLearn: {
+          entry: ({ context, self }) => {
+            const { agentName } = getAgentData(context);
+            self.send({ type: 'UPDATE_STATUS', status: `${agentName} is consolidating memories...` });
+          },
+          invoke: {
+            src: 'monthLearnExecutor',
+            input: ({ context }) => {
+              const { tokenId, agentName, walletAddress } = getAgentData(context);
+              const { selectedModel } = getModelData(context);
+              return {
+                tokenId: tokenId!,
+                agentName,
+                walletAddress,
+                modelId: selectedModel
+              };
+            },
+            onDone: {
+              target: '#terminal.idle',
+              actions: [
+                assign({ lastParsedCommand: null }),
+                'displayCommandResult'
+              ]
+            },
+            onError: {
+              target: '#terminal.idle',
+              actions: [
+                assign({ lastParsedCommand: null }),
+                'displayCommandError'
+              ]
+            }
+          }
+        },
+
+        memoryCore: {
+          entry: ({ context, self }) => {
+            const { agentName } = getAgentData(context);
+            self.send({ type: 'UPDATE_STATUS', status: `${agentName} is crystallizing consciousness...` });
+          },
+          invoke: {
+            src: 'memoryCoreExecutor',
+            input: ({ context }) => {
+              const { tokenId, agentName, walletAddress } = getAgentData(context);
+              const { selectedModel } = getModelData(context);
+              return {
+                tokenId: tokenId!,
+                agentName,
+                walletAddress,
+                modelId: selectedModel
+              };
             },
             onDone: {
               target: '#terminal.idle',
