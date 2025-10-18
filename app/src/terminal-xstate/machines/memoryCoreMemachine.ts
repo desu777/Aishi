@@ -472,25 +472,7 @@ export const memoryCoreMemachine = setup({
           timestamp: Date.now()
         }, {
           type: 'info',
-          content: (
-            <>
-              <span style={{ color: '#9CA3AF' }}>TX: </span>
-              <a
-                href={getTxExplorerUrl(context.contractTxHash!)}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: '#8B5CF6',
-                  textDecoration: 'underline',
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = '#A855F7'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = '#8B5CF6'; }}
-              >
-                {context.contractTxHash?.slice(0, 10)}...{context.contractTxHash?.slice(-8)}
-              </a>
-            </>
-          ),
+          content: buildTxLinkContent(context.contractTxHash),
           timestamp: Date.now() + 1
         }, {
           type: 'system',
@@ -655,3 +637,51 @@ export const memoryCoreMemachine = setup({
     }
   }
 });
+
+function buildTxLinkContent(txHash: string | null | undefined) {
+  if (!txHash) {
+    return React.createElement(
+      React.Fragment,
+      null,
+      React.createElement(
+        'span',
+        { style: { color: '#9CA3AF' } },
+        'TX: '
+      ),
+      React.createElement('span', { style: { color: '#6B7280' } }, 'pending')
+    );
+  }
+
+  const linkHref = getTxExplorerUrl(txHash);
+  const linkStyle = {
+    color: '#8B5CF6',
+    textDecoration: 'underline',
+    cursor: 'pointer'
+  } as const;
+
+  return React.createElement(
+    React.Fragment,
+    null,
+    React.createElement(
+      'span',
+      { style: { color: '#9CA3AF' } },
+      'TX: '
+    ),
+    React.createElement(
+      'a',
+      {
+        href: linkHref,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        style: linkStyle,
+        onMouseEnter: (e: React.MouseEvent<HTMLAnchorElement>) => {
+          e.currentTarget.style.color = '#A855F7';
+        },
+        onMouseLeave: (e: React.MouseEvent<HTMLAnchorElement>) => {
+          e.currentTarget.style.color = '#8B5CF6';
+        }
+      },
+      `${txHash.slice(0, 10)}...${txHash.slice(-8)}`
+    )
+  );
+}
