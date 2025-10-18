@@ -20,7 +20,7 @@
     "fund-ledger:windows": "set ENV_FILE_PATH=C:\\Users\\kubas\\Desktop\\env\\dreamscape\\.env && npm run fund-ledger"
   },
   "dependencies": {
-    "@0glabs/0g-serving-broker": "^0.4.4",
+    "@0glabs/0g-serving-broker": "^0.5.4",
     "@google-cloud/speech": "^7.2.0",
     "@google-cloud/text-to-speech": "^6.3.0",
     "@google/genai": "^1.13.0",
@@ -32,6 +32,8 @@
     "express": "^4.18.2",
     "express-rate-limit": "^8.0.1",
     "helmet": "^7.1.0",
+    "install": "^0.13.0",
+    "npm": "^11.6.2",
     "openai": "^4.78.1",
     "winston": "^3.11.0"
   },
