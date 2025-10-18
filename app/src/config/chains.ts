@@ -85,4 +85,15 @@ export const getChainConfig = () => {
     isTestnet: activeChain.testnet ?? false,
     isMainnet
   };
+};
+
+/**
+ * Get block explorer transaction URL for active chain
+ * @param txHash - Transaction hash (0x...)
+ * @returns Full URL to transaction in block explorer
+ */
+export const getTxExplorerUrl = (txHash: string): string => {
+  const activeChain = getActiveChain();
+  const explorerUrl = activeChain.blockExplorers?.default?.url || 'https://chainscan-galileo.0g.ai';
+  return `${explorerUrl}/tx/${txHash}`;
 }; 

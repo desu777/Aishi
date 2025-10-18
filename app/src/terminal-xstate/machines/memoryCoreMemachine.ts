@@ -4,9 +4,11 @@
  * @description State machine for yearly memory core consolidation workflow
  */
 
+import React from 'react';
 import { setup, assign, sendParent, fromPromise } from 'xstate';
 import { ContractReaderService } from '../services/contractReader';
 import { XStateStorageService } from '../services/xstateStorage';
+import { getTxExplorerUrl } from '../../config/chains';
 import type { TerminalLine } from './types';
 
 // Debug logging
@@ -456,7 +458,7 @@ export const memoryCoreMemachine = setup({
       }] as TerminalLine[]
     })),
 
-    // Send contract COMPLETE message (with TX hash from context)
+    // Send contract COMPLETE message (with clickable TX hash link)
     sendContractCompleteMessage: sendParent(({ context }) => {
       const bonusMessage = context.hasYearlyReflectionBonus
         ? ' (+5 INT yearly reflection bonus applied!)'
@@ -470,7 +472,25 @@ export const memoryCoreMemachine = setup({
           timestamp: Date.now()
         }, {
           type: 'info',
-          content: `TX: ${context.contractTxHash?.slice(0, 10)}...${context.contractTxHash?.slice(-8)}`,
+          content: (
+            <>
+              <span style={{ color: '#9CA3AF' }}>TX: </span>
+              <a
+                href={getTxExplorerUrl(context.contractTxHash!)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: '#8B5CF6',
+                  textDecoration: 'underline',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#A855F7'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = '#8B5CF6'; }}
+              >
+                {context.contractTxHash?.slice(0, 10)}...{context.contractTxHash?.slice(-8)}
+              </a>
+            </>
+          ),
           timestamp: Date.now() + 1
         }, {
           type: 'system',
