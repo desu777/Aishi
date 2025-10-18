@@ -53,7 +53,13 @@ export interface Live2DModelRef {
   // Advanced control
   setParameterValue: (id: string, value: number, weight?: number) => void;
   getParameterValue: (id: string) => number;
-  
+
+  // Transform control (zoom & positioning)
+  updateScale: (scale: number, x?: number, y?: number) => void;
+  updatePosition: (x: number, y: number) => void;
+  getScale: () => number;
+  getPosition: () => { x: number; y: number };
+
   // Model instance access (for advanced usage)
   getModel: () => PixiLive2DModel | null;
   getApp: () => Application | null;

@@ -200,7 +200,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           Model {isModelReady ? 'Ready' : 'Loading'}
         </div>
         <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)' }}>
-          水母_vts (Jellyfish VTuber Model)
+          Aishi (Jellyfish VTuber Model)
         </div>
       </div>
 
@@ -534,7 +534,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
         borderRadius: '16px',
         border: '1px solid rgba(139, 92, 246, 0.3)',
         padding: '20px',
-        zIndex: 50,
+        zIndex: 60,
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
@@ -571,7 +571,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
               fontFamily: "'JetBrains Mono', monospace",
             }}
           >
-            水母 Model Testing Environment
+            Aishi Model Testing Environment
           </p>
         </div>
 

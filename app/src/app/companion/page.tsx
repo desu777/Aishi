@@ -32,6 +32,12 @@ export default function CompanionPreview() {
   const [fps, setFps] = useState(60);
   const [memory, setMemory] = useState(0);
 
+  // Zoom & Pan state
+  const [currentScale, setCurrentScale] = useState(0.4);
+  const [modelPosition, setModelPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number; modelX: number; modelY: number } | null>(null);
+
   // Auto-save ref
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -203,6 +209,65 @@ export default function CompanionPreview() {
     console.log('[Companion] Auto-saved state');
   }, [allParameters, activeExpressions]);
 
+  // Zoom handlers
+  const handleZoomIn = useCallback(() => {
+    if (!modelRef.current) return;
+    const newScale = Math.min(currentScale + 0.05, 2.0);  // Max 200%
+    setCurrentScale(newScale);
+    modelRef.current.updateScale(newScale);
+  }, [currentScale]);
+
+  const handleZoomOut = useCallback(() => {
+    if (!modelRef.current) return;
+    const newScale = Math.max(currentScale - 0.05, 0.1);  // Min 10%
+    setCurrentScale(newScale);
+    modelRef.current.updateScale(newScale);
+  }, [currentScale]);
+
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (!modelRef.current) return;
+    e.preventDefault();
+
+    const delta = e.deltaY > 0 ? -0.02 : 0.02;  // Scroll down = zoom out
+    const newScale = Math.max(0.1, Math.min(2.0, currentScale + delta));
+
+    setCurrentScale(newScale);
+    modelRef.current.updateScale(newScale);
+  }, [currentScale]);
+
+  // Drag handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!modelRef.current) return;
+
+    setIsDragging(true);
+    const pos = modelRef.current.getPosition();
+
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      modelX: pos.x,
+      modelY: pos.y
+    };
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging || !dragStartRef.current || !modelRef.current) return;
+
+    const deltaX = e.clientX - dragStartRef.current.x;
+    const deltaY = e.clientY - dragStartRef.current.y;
+
+    const newX = dragStartRef.current.modelX + deltaX;
+    const newY = dragStartRef.current.modelY + deltaY;
+
+    setModelPosition({ x: newX, y: newY });
+    modelRef.current.updatePosition(newX, newY);
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    dragStartRef.current = null;
+  }, []);
+
   // Update active expressions list
   useEffect(() => {
     if (!modelRef.current || !isModelReady) return;
@@ -233,6 +298,17 @@ export default function CompanionPreview() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Mouse wheel zoom (attached to model container)
+  useEffect(() => {
+    const modelContainer = document.querySelector('.model-container');
+    if (!modelContainer) return;
+
+    const wheelHandler = (e: WheelEvent) => handleWheel(e);
+    modelContainer.addEventListener('wheel', wheelHandler, { passive: false });
+
+    return () => modelContainer.removeEventListener('wheel', wheelHandler);
+  }, [handleWheel]);
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -302,7 +378,7 @@ export default function CompanionPreview() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 20px',
-          zIndex: 40,
+          zIndex: 30,
         }}
       >
         {/* Left: Back Button */}
@@ -354,7 +430,7 @@ export default function CompanionPreview() {
               fontFamily: "'JetBrains Mono', monospace",
             }}
           >
-            水母 Model Testing Environment
+            Aishi Model Testing Environment
           </p>
         </div>
 
@@ -378,6 +454,58 @@ export default function CompanionPreview() {
             <span>•</span>
             <span>Mem: {memory}MB</span>
           </div>
+
+          {/* Zoom Controls */}
+          {isModelReady && (
+            <div
+              style={{
+                padding: '6px 10px',
+                backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                border: '1px solid rgba(34, 197, 94, 0.3)',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontFamily: "'JetBrains Mono', monospace",
+                color: '#22C55E',
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'center',
+              }}
+            >
+              <button
+                onClick={handleZoomOut}
+                disabled={currentScale <= 0.1}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: currentScale <= 0.1 ? 'rgba(255, 255, 255, 0.3)' : '#22C55E',
+                  cursor: currentScale <= 0.1 ? 'not-allowed' : 'pointer',
+                  fontSize: '16px',
+                  padding: '2px 6px',
+                }}
+                title="Zoom Out"
+              >
+                ➖
+              </button>
+              <span style={{ minWidth: '45px', textAlign: 'center' }}>
+                {(currentScale * 100).toFixed(0)}%
+              </span>
+              <button
+                onClick={handleZoomIn}
+                disabled={currentScale >= 2.0}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: currentScale >= 2.0 ? 'rgba(255, 255, 255, 0.3)' : '#22C55E',
+                  cursor: currentScale >= 2.0 ? 'not-allowed' : 'pointer',
+                  fontSize: '16px',
+                  padding: '2px 6px',
+                }}
+                title="Zoom In"
+              >
+                ➕
+              </button>
+            </div>
+          )}
 
           {/* Fullscreen Toggle */}
           <button
@@ -413,10 +541,16 @@ export default function CompanionPreview() {
       >
         {/* Model View (Left Side) */}
         <div
+          className="model-container"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
           style={{
             flex: 1,
             position: 'relative',
             overflow: 'hidden',
+            cursor: isDragging ? 'grabbing' : 'grab',
           }}
         >
           <Live2DModel
@@ -520,7 +654,7 @@ export default function CompanionPreview() {
               animation: 'pulse 2s ease-in-out infinite',
             }}
           >
-            Loading 水母 Model...
+            Loading Aishi Model...
           </div>
           <div
             style={{

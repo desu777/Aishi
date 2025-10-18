@@ -361,6 +361,34 @@ export const useLive2D = (options: UseLive2DOptions) => {
     expressionManagerRef.current.applyFormPreset(presetName);
   }, []);
 
+  // Position control
+  const updatePosition = useCallback((x: number, y: number) => {
+    const model = modelRef.current;
+    if (!model || model.destroyed) return;
+
+    model.x = x;
+    model.y = y;
+  }, []);
+
+  // Get current scale
+  const getScale = useCallback((): number => {
+    const model = modelRef.current;
+    if (!model) return targetDimensionsRef.current.scale;
+    return model.scale.x;
+  }, []);
+
+  // Get current position
+  const getPosition = useCallback((): { x: number; y: number } => {
+    const model = modelRef.current;
+    if (!model) {
+      return {
+        x: targetDimensionsRef.current.width / 2,
+        y: targetDimensionsRef.current.height / 2
+      };
+    }
+    return { x: model.x, y: model.y };
+  }, []);
+
   // Create model ref object
   const modelRefObject: Live2DModelRef = {
     playMotion,
@@ -384,6 +412,10 @@ export const useLive2D = (options: UseLive2DOptions) => {
     getCurrentExpression,
     setParameterValue,
     getParameterValue,
+    updateScale,
+    updatePosition,
+    getScale,
+    getPosition,
     getModel: () => modelRef.current,
     getApp: () => appRef.current,
   };
@@ -604,5 +636,8 @@ export const useLive2D = (options: UseLive2DOptions) => {
     metrics,
     resizeModel,
     updateScale,
+    updatePosition,
+    getScale,
+    getPosition,
   };
 };
