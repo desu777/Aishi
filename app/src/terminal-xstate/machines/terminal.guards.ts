@@ -59,6 +59,14 @@ export const terminalGuards = {
     return context.lastParsedCommand === 'memory';
   },
 
+  isMonthLearnCommand: ({ context }: { context: TerminalContext }) => {
+    return context.lastParsedCommand === 'month-learn';
+  },
+
+  isMemoryCoreCommand: ({ context }: { context: TerminalContext }) => {
+    return context.lastParsedCommand === 'memory-core';
+  },
+
   /**
    * Agent state guards
    */
@@ -88,10 +96,10 @@ export const terminalGuards = {
   },
 
   /**
-   * Command that needs agent (personality, unique-features, stats, memory)
+   * Command that needs agent (personality, unique-features, stats, memory, month-learn, memory-core)
    */
   isAgentRequiredCommand: ({ context }: { context: TerminalContext }) => {
-    const agentCommands = ['personality', 'unique-features', 'stats', 'memory'];
+    const agentCommands = ['personality', 'unique-features', 'stats', 'memory', 'month-learn', 'memory-core'];
     return agentCommands.includes(context.lastParsedCommand || '');
   },
 

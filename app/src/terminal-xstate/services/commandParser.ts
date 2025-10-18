@@ -11,7 +11,7 @@ export interface ParsedCommand {
   error?: string;
 }
 
-export type CommandType = 
+export type CommandType =
   | 'dream'
   | 'info'
   | 'stats'
@@ -25,6 +25,8 @@ export type CommandType =
   | 'status'
   | 'broker'
   | 'model'
+  | 'month-learn'
+  | 'memory-core'
   | 'unknown';
 
 // Available commands with descriptions
@@ -42,6 +44,8 @@ export const AVAILABLE_COMMANDS: Record<CommandType, string> = {
   status: 'Show system and agent status',
   broker: 'Manage broker operations',
   model: 'Select AI model for processing',
+  'month-learn': 'Consolidate monthly memories and earn rewards',
+  'memory-core': 'Create yearly memory core and evolve consciousness',
   unknown: 'Unknown command'
 };
 
@@ -85,7 +89,21 @@ export const COMMAND_TOOLTIPS: Record<string, string> = {
 • Daily: Individual experiences
 • Monthly: AI-consolidated summaries
 • Yearly: Deep reflection & core
-• Consolidation rewards for streaks`
+• Consolidation rewards for streaks`,
+
+  'month-learn': `Monthly memory consolidation
+• Available after month change
+• Consolidates daily dreams + conversations
+• Rewards: +2 INT + streak bonus
+• Clears daily memory hashes
+• Required for living memory system`,
+
+  'memory-core': `Yearly consciousness crystallization
+• Available after December consolidation
+• Analyzes 12 monthly consolidations
+• Creates soul/wisdom core
+• Rewards: +5 INT bonus
+• Represents agent's evolved essence`
 };
 
 // Command aliases for user convenience
@@ -208,8 +226,16 @@ export function validateCommandArgs(command: CommandType, args: string[]): { val
         return { valid: false, error: 'Too many arguments. Usage: help [command]' };
       }
       return { valid: true };
-      
+
     case 'clear':
+      // No arguments needed
+      if (args.length > 0) {
+        return { valid: false, error: `Command '${command}' takes no arguments` };
+      }
+      return { valid: true };
+
+    case 'month-learn':
+    case 'memory-core':
       // No arguments needed
       if (args.length > 0) {
         return { valid: false, error: `Command '${command}' takes no arguments` };
