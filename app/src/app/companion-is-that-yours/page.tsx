@@ -319,7 +319,7 @@ export default function CompanionIsYours() {
           modelPath="/水母_vts/水母.model3.json"
           width={windowSize.width}
           height={windowSize.height}
-          scale={0.18}
+          scale={0.25}
           transparent={true}
           autoPlay={true}
           className="w-full h-full"

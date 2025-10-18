@@ -3,19 +3,19 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Heart,
-  Shirt,
-  Star,
-  Palette,
-  Sliders,
-  Bookmark,
-  Save,
-  BarChart3,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Search
-} from 'lucide-react';
+  FaHeart,
+  FaTshirt,
+  FaStar,
+  FaPalette,
+  FaSliders,
+  FaBookmark,
+  FaSave,
+  FaChartBar,
+  FaTimes,
+  FaChevronLeft,
+  FaChevronRight,
+  FaSearch
+} from 'react-icons/fa';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 import { ParameterSlider } from './ParameterSlider';
 import { PhysicsPresetsLibrary, type PhysicsPreset } from './PhysicsPresetsLibrary';
@@ -474,16 +474,16 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
     return result;
   }, [filteredParameters]);
 
-  // Tab configuration
+  // Tab configuration (using emoji strings, consistent with existing codebase pattern)
   const tabs = [
-    { id: 'emotions' as TabType, label: 'Emotions', Icon: Heart, count: 8 },
-    { id: 'accessories' as TabType, label: 'Accessories', Icon: Shirt, count: 9 },
-    { id: 'decorations' as TabType, label: 'Decorations', Icon: Star, count: 4 },
-    { id: 'special' as TabType, label: 'Special FX', Icon: Palette, count: 7 },
-    { id: 'physics' as TabType, label: 'Physics', Icon: Sliders, count: getTotalParameterCount() },
-    { id: 'presets' as TabType, label: 'Presets', Icon: Bookmark, count: 9 },
-    { id: 'state' as TabType, label: 'State', Icon: Save, count: 0 },
-    { id: 'performance' as TabType, label: 'Performance', Icon: BarChart3, count: 0 }
+    { id: 'emotions' as TabType, icon: '💖', label: 'Emotions', count: 8 },
+    { id: 'accessories' as TabType, icon: '👔', label: 'Accessories', count: 9 },
+    { id: 'decorations' as TabType, icon: '⭐', label: 'Decorations', count: 4 },
+    { id: 'special' as TabType, icon: '🎨', label: 'Special FX', count: 7 },
+    { id: 'physics' as TabType, icon: '🎚️', label: 'Physics', count: getTotalParameterCount() },
+    { id: 'presets' as TabType, icon: '🔖', label: 'Presets', count: 9 },
+    { id: 'state' as TabType, icon: '💾', label: 'State', count: 0 },
+    { id: 'performance' as TabType, icon: '📊', label: 'Performance', count: 0 }
   ];
 
   if (!isPanelOpen) {
@@ -512,7 +512,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
           boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)',
         }}
       >
-        <ChevronLeft size={20} />
+        <FaChevronLeft size={20} />
       </motion.button>
     );
   }
@@ -591,7 +591,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
             transition: 'all 0.2s ease',
           }}
         >
-          <ChevronRight size={14} />
+          <FaChevronRight size={14} />
         </button>
       </div>
 
@@ -604,48 +604,45 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
           marginBottom: '16px',
         }}
       >
-        {tabs.map(tab => {
-          const IconComponent = tab.Icon as React.ComponentType<any> | undefined;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setCurrentTab(tab.id)}
-              style={{
-                padding: '10px 8px',
-                backgroundColor: currentTab === tab.id ? 'rgba(139, 92, 246, 0.3)' : 'transparent',
-                border: `1px solid ${currentTab === tab.id ? '#8B5CF6' : 'rgba(255, 255, 255, 0.1)'}`,
-                borderRadius: '6px',
-                color: currentTab === tab.id ? '#8B5CF6' : 'rgba(255, 255, 255, 0.6)',
-                cursor: 'pointer',
-                fontSize: '11px',
-                fontFamily: "'JetBrains Mono', monospace",
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {IconComponent ? <IconComponent size={16} /> : <span style={{ width: 16, height: 16 }} />}
-                {tab.count > 0 && (
-                  <span
-                    style={{
-                      fontSize: '9px',
-                      backgroundColor: currentTab === tab.id ? '#8B5CF6' : 'rgba(255, 255, 255, 0.2)',
-                      color: currentTab === tab.id ? '#fff' : 'rgba(255, 255, 255, 0.6)',
-                      padding: '2px 4px',
-                      borderRadius: '3px',
-                    }}
-                  >
-                    {tab.count}
-                  </span>
-                )}
-              </div>
-              <span style={{ fontSize: '9px' }}>{tab.label}</span>
-            </button>
-          );
-        })}
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setCurrentTab(tab.id)}
+            style={{
+              padding: '10px 8px',
+              backgroundColor: currentTab === tab.id ? 'rgba(139, 92, 246, 0.3)' : 'transparent',
+              border: `1px solid ${currentTab === tab.id ? '#8B5CF6' : 'rgba(255, 255, 255, 0.1)'}`,
+              borderRadius: '6px',
+              color: currentTab === tab.id ? '#8B5CF6' : 'rgba(255, 255, 255, 0.6)',
+              cursor: 'pointer',
+              fontSize: '11px',
+              fontFamily: "'JetBrains Mono', monospace",
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '16px' }}>{tab.icon}</span>
+              {tab.count > 0 && (
+                <span
+                  style={{
+                    fontSize: '9px',
+                    backgroundColor: currentTab === tab.id ? '#8B5CF6' : 'rgba(255, 255, 255, 0.2)',
+                    color: currentTab === tab.id ? '#fff' : 'rgba(255, 255, 255, 0.6)',
+                    padding: '2px 4px',
+                    borderRadius: '3px',
+                  }}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize: '9px' }}>{tab.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Tab Content */}
@@ -774,7 +771,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
                     borderRadius: '8px',
                   }}
                 >
-                  <Search size={14} color="rgba(255, 255, 255, 0.5)" />
+                  <FaSearch size={14} color="rgba(255, 255, 255, 0.5)" />
                   <input
                     type="text"
                     placeholder="Search parameters..."
@@ -801,7 +798,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
                         fontSize: '12px',
                       }}
                     >
-                      <X size={14} />
+                      <FaTimes />
                     </button>
                   )}
                 </div>

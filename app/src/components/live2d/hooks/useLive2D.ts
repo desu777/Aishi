@@ -70,15 +70,18 @@ export const useLive2D = (options: UseLive2DOptions) => {
 
     app.renderer.resize(newWidth, newHeight);
 
-    model.x = newWidth / 2;
-    model.y = newHeight * 0.75;
+    // Safe positioning with proper null checks
+    if (model && !model.destroyed) {
+      model.x = newWidth / 2;
+      model.y = newHeight * 0.5;  // Center positioning (was 0.75 - too low!)
+    }
   }, []);
 
   const updateScale = useCallback((newScale: number, x?: number, y?: number) => {
     targetDimensionsRef.current.scale = newScale;
 
     const model = modelRef.current;
-    if (!model) return;
+    if (!model || model.destroyed) return;
 
     model.scale.set(newScale);
     if (typeof x === 'number') {
@@ -90,7 +93,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
     if (typeof y === 'number') {
       model.y = y;
     } else {
-      model.y = targetDimensionsRef.current.height * 0.75;
+      model.y = targetDimensionsRef.current.height * 0.5;  // Center positioning (was 0.75)
     }
   }, []);
 
@@ -426,10 +429,32 @@ export const useLive2D = (options: UseLive2DOptions) => {
 
         modelRef.current = model;
 
-        // Set model properties
+        // Set model properties with proper centering
+        model.anchor.set(0.5, 0.5);  // Ensure center pivot
         model.x = width / 2;
-        model.y = height * 0.75; // Position model lower on screen (75% of height)
-        model.scale.set(scale);
+        model.y = height * 0.5;  // CENTER positioning for full character visibility
+
+        // Calculate optimal scale to fit viewport (maintain aspect ratio)
+        try {
+          const modelBounds = model.getBounds();
+          const scaleX = (width * 0.7) / modelBounds.width;  // 70% of width
+          const scaleY = (height * 0.85) / modelBounds.height;  // 85% of height
+          const optimalScale = Math.min(scaleX, scaleY, scale);  // Don't exceed user-provided scale
+
+          model.scale.set(optimalScale);
+
+          console.log('[useLive2D] Auto-fit scaling:', {
+            modelBounds: { width: modelBounds.width, height: modelBounds.height },
+            viewport: { width, height },
+            requestedScale: scale,
+            optimalScale: optimalScale,
+            position: { x: model.x, y: model.y }
+          });
+        } catch (error) {
+          // Fallback to user-provided scale if bounds calculation fails
+          model.scale.set(scale);
+          console.warn('[useLive2D] Failed to calculate optimal scale, using provided scale:', scale);
+        }
 
         // Add event listeners
         model.on('hit', (hitAreaNames: string[]) => {

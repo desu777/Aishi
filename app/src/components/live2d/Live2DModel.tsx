@@ -124,13 +124,19 @@ export const Live2DModel = forwardRef<Live2DModelRef, Live2DModelOptions>((props
   // Expose model ref to parent
   useImperativeHandle(ref, () => modelRef, [modelRef]);
 
+  // Only resize after model is ready to prevent null errors
   useEffect(() => {
-    resizeModel(width, height);
-  }, [width, height, resizeModel]);
+    if (isReady && resizeModel) {
+      resizeModel(width, height);
+    }
+  }, [width, height, resizeModel, isReady]);
 
+  // Only update scale after model is ready
   useEffect(() => {
-    updateScale(scale, x, y);
-  }, [scale, x, y, updateScale]);
+    if (isReady && updateScale) {
+      updateScale(scale, x, y);
+    }
+  }, [scale, x, y, updateScale, isReady]);
 
   return (
     <div 

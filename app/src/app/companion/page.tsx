@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaArrowLeft, FaExpand, FaCompress } from 'react-icons/fa';
 import { Live2DModel } from '@/components/live2d/Live2DModel';
@@ -255,35 +255,9 @@ export default function CompanionPreview() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const modelContainerRef = useRef<HTMLDivElement>(null);
-  const [modelViewport, setModelViewport] = useState({ width: 0, height: 0 });
-
-  useEffect(() => {
-    if (!modelContainerRef.current) return;
-
-    const element = modelContainerRef.current;
-    const observer = new ResizeObserver(entries => {
-      const entry = entries[0];
-      if (!entry) return;
-
-      const { width, height } = entry.contentRect;
-      setModelViewport({ width, height });
-    });
-
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, []);
-
-  const modelScale = useMemo(() => {
-    const baseWidth = 1600;
-    const minScale = 0.18;
-    const maxScale = 0.32;
-    if (!modelViewport.width) return 0.25;
-
-    const scale = modelViewport.width / baseWidth;
-    return Math.min(Math.max(scale, minScale), maxScale);
-  }, [modelViewport.width]);
+  // Calculate model view width (accounting for control panel)
+  const controlPanelWidth = 420 + 40; // Panel width + margins
+  const modelViewWidth = windowSize.width - controlPanelWidth;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 overflow-hidden">
@@ -427,22 +401,30 @@ export default function CompanionPreview() {
       </div>
 
       {/* Main Content Area */}
-      <div className="fixed top-[60px] left-0 right-0 bottom-0 overflow-y-auto lg:overflow-hidden">
+      <div
+        style={{
+          position: 'fixed',
+          top: '60px',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+        }}
+      >
+        {/* Model View (Left Side) */}
         <div
-          className="flex h-full flex-col gap-6 p-4 lg:grid lg:p-8"
-          style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, 420px)' }}
+          style={{
+            flex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
         >
-          {/* Model View (Left Side) */}
-          <div
-            ref={modelContainerRef}
-            className="relative flex-1 overflow-hidden rounded-2xl border border-white/10 bg-black/20 lg:rounded-lg"
-          >
           <Live2DModel
             ref={modelRef}
             modelPath="/水母_vts/水母.model3.json"
-            width={modelViewport.width || windowSize.width}
-            height={modelViewport.height || Math.max(windowSize.height - 60, 360)}
-            scale={modelScale}
+            width={modelViewWidth}
+            height={windowSize.height - 60}
+            scale={0.4}
             transparent={true}
             autoPlay={false}
             onLoad={handleModelLoad}
@@ -501,21 +483,18 @@ export default function CompanionPreview() {
               💡 Use Control Panel to adjust physics and expressions
             </div>
           )}
-          </div>
-
-          {/* Control Panel (Right Side) */}
-          <div className="flex w-full justify-center lg:justify-end">
-            <CompanionControlPanel
-              modelRef={modelRef}
-              isModelReady={isModelReady}
-              currentParameters={allParameters}
-              onParameterChange={handleParameterChange}
-              onParameterReset={handleParameterReset}
-              onResetAllParameters={handleResetAllParameters}
-              currentExpressions={activeExpressions}
-            />
-          </div>
         </div>
+
+        {/* Control Panel (Right Side) */}
+        <CompanionControlPanel
+          modelRef={modelRef}
+          isModelReady={isModelReady}
+          currentParameters={allParameters}
+          onParameterChange={handleParameterChange}
+          onParameterReset={handleParameterReset}
+          onResetAllParameters={handleResetAllParameters}
+          currentExpressions={activeExpressions}
+        />
       </div>
 
       {/* Loading Overlay */}
