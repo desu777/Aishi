@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { FaDownload, FaUpload, FaCopy, FaSave, FaTrash, FaRedo } from 'react-icons/fa';
+import { Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { getModifiedParameterCount, PARAMETER_DEFINITIONS } from './ParameterDefinitions';
@@ -471,7 +472,7 @@ export const StateManager: React.FC<StateManagerProps> = ({
                     transition: 'all 0.2s ease',
                   }}
                 >
-                  <FaPlay size={10} />
+                  <Play size={14} />
                   Load State
                 </button>
               </motion.div>

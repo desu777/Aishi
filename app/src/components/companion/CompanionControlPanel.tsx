@@ -3,19 +3,19 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FaHeart,
-  FaTshirt,
-  FaStar,
-  FaPalette,
-  FaSliders,
-  FaBookmark,
-  FaSave,
-  FaChartBar,
-  FaTimes,
-  FaChevronLeft,
-  FaChevronRight,
-  FaSearch
-} from 'react-icons/fa';
+  Heart,
+  Shirt,
+  Star,
+  Palette,
+  Sliders,
+  Bookmark,
+  Save,
+  BarChart3,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Search
+} from 'lucide-react';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 import { ParameterSlider } from './ParameterSlider';
 import { PhysicsPresetsLibrary, type PhysicsPreset } from './PhysicsPresetsLibrary';
@@ -476,14 +476,14 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
 
   // Tab configuration
   const tabs = [
-    { id: 'emotions' as TabType, label: 'Emotions', Icon: FaHeart, count: 8 },
-    { id: 'accessories' as TabType, label: 'Accessories', Icon: FaTshirt, count: 9 },
-    { id: 'decorations' as TabType, label: 'Decorations', Icon: FaStar, count: 4 },
-    { id: 'special' as TabType, label: 'Special FX', Icon: FaPalette, count: 7 },
-    { id: 'physics' as TabType, label: 'Physics', Icon: FaSliders, count: getTotalParameterCount() },
-    { id: 'presets' as TabType, label: 'Presets', Icon: FaBookmark, count: 9 },
-    { id: 'state' as TabType, label: 'State', Icon: FaSave, count: 0 },
-    { id: 'performance' as TabType, label: 'Performance', Icon: FaChartBar, count: 0 }
+    { id: 'emotions' as TabType, label: 'Emotions', Icon: Heart, count: 8 },
+    { id: 'accessories' as TabType, label: 'Accessories', Icon: Shirt, count: 9 },
+    { id: 'decorations' as TabType, label: 'Decorations', Icon: Star, count: 4 },
+    { id: 'special' as TabType, label: 'Special FX', Icon: Palette, count: 7 },
+    { id: 'physics' as TabType, label: 'Physics', Icon: Sliders, count: getTotalParameterCount() },
+    { id: 'presets' as TabType, label: 'Presets', Icon: Bookmark, count: 9 },
+    { id: 'state' as TabType, label: 'State', Icon: Save, count: 0 },
+    { id: 'performance' as TabType, label: 'Performance', Icon: BarChart3, count: 0 }
   ];
 
   if (!isPanelOpen) {
@@ -512,7 +512,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
           boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)',
         }}
       >
-        <FaChevronLeft size={20} />
+        <ChevronLeft size={20} />
       </motion.button>
     );
   }
@@ -591,7 +591,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
             transition: 'all 0.2s ease',
           }}
         >
-          <FaChevronRight size={14} />
+          <ChevronRight size={14} />
         </button>
       </div>
 
@@ -605,7 +605,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
         }}
       >
         {tabs.map(tab => {
-          const IconComponent = tab.Icon;
+          const IconComponent = tab.Icon as React.ComponentType<any> | undefined;
           return (
             <button
               key={tab.id}
@@ -627,7 +627,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <IconComponent />
+                {IconComponent ? <IconComponent size={16} /> : <span style={{ width: 16, height: 16 }} />}
                 {tab.count > 0 && (
                   <span
                     style={{
@@ -774,7 +774,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
                     borderRadius: '8px',
                   }}
                 >
-                  <FaSearch size={14} color="rgba(255, 255, 255, 0.5)" />
+                  <Search size={14} color="rgba(255, 255, 255, 0.5)" />
                   <input
                     type="text"
                     placeholder="Search parameters..."
@@ -801,7 +801,7 @@ export const CompanionControlPanel: React.FC<CompanionControlPanelProps> = ({
                         fontSize: '12px',
                       }}
                     >
-                      <FaTimes />
+                      <X size={14} />
                     </button>
                   )}
                 </div>

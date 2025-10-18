@@ -58,6 +58,41 @@ export const useLive2D = (options: UseLive2DOptions) => {
   const expressionManagerRef = useRef<ExpressionCategoryManager>(
     new ExpressionCategoryManager(process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true')
   );
+  const targetDimensionsRef = useRef({ width, height, scale });
+  const resizeModel = useCallback((newWidth: number, newHeight: number) => {
+    targetDimensionsRef.current.width = newWidth;
+    targetDimensionsRef.current.height = newHeight;
+
+    const app = appRef.current;
+    const model = modelRef.current;
+
+    if (!app || !model) return;
+
+    app.renderer.resize(newWidth, newHeight);
+
+    model.x = newWidth / 2;
+    model.y = newHeight * 0.75;
+  }, []);
+
+  const updateScale = useCallback((newScale: number, x?: number, y?: number) => {
+    targetDimensionsRef.current.scale = newScale;
+
+    const model = modelRef.current;
+    if (!model) return;
+
+    model.scale.set(newScale);
+    if (typeof x === 'number') {
+      model.x = x;
+    } else {
+      model.x = targetDimensionsRef.current.width / 2;
+    }
+
+    if (typeof y === 'number') {
+      model.y = y;
+    } else {
+      model.y = targetDimensionsRef.current.height * 0.75;
+    }
+  }, []);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -542,5 +577,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
     error,
     isReady,
     metrics,
+    resizeModel,
+    updateScale,
   };
 };

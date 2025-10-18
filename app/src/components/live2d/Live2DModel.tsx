@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle, useEffect } from 'react';
 import { useLive2D } from './hooks/useLive2D';
 import type { Live2DModelOptions, Live2DModelRef } from './utils/live2d-types';
 
@@ -105,6 +105,8 @@ export const Live2DModel = forwardRef<Live2DModelRef, Live2DModelOptions>((props
     error,
     isReady,
     metrics,
+    resizeModel,
+    updateScale,
   } = useLive2D({
     modelPath,
     width,
@@ -121,6 +123,14 @@ export const Live2DModel = forwardRef<Live2DModelRef, Live2DModelOptions>((props
 
   // Expose model ref to parent
   useImperativeHandle(ref, () => modelRef, [modelRef]);
+
+  useEffect(() => {
+    resizeModel(width, height);
+  }, [width, height, resizeModel]);
+
+  useEffect(() => {
+    updateScale(scale, x, y);
+  }, [scale, x, y, updateScale]);
 
   return (
     <div 
