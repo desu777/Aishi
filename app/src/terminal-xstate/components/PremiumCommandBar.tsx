@@ -26,6 +26,7 @@ interface PremiumCommandBarProps {
   chatStatus?: string | null;
   chatPrompt?: string | null;
   onQuickSubmit?: (value: string) => void;
+  isInitialState?: boolean;
 }
 
 const colors = {
@@ -56,7 +57,8 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   dreamPrompt = null,
   chatStatus = null,
   chatPrompt = null,
-  onQuickSubmit
+  onQuickSubmit,
+  isInitialState = false
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -197,6 +199,10 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   const retryingActive = activeStatus.includes('retrying') || activePromptLower.includes('retrying');
 
   const smartPlaceholder = useMemo(() => {
+    // Initial state - friendly prompt
+    if (isInitialState) {
+      return 'Type a command or "help" to get started';
+    }
     if (retryPromptActive || promptAsksConfirmation) {
       return "Type 'y' to retry or 'n' to cancel";
     }
@@ -237,7 +243,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
       return 'Describe your dream here';
     }
     return placeholder;
-  }, [retryPromptActive, retryingActive, activeStatus, isChatActive, isDreamActive, lowerChatStatus, lowerDreamStatus, dreamStatus, placeholder]);
+  }, [retryPromptActive, retryingActive, activeStatus, isChatActive, isDreamActive, lowerChatStatus, lowerDreamStatus, dreamStatus, placeholder, isInitialState, promptAsksConfirmation, activePromptLower, activePrompt]);
 
   const inputPlaceholder = disabled ? 'Processing...' : smartPlaceholder;
 
@@ -311,10 +317,11 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   }, [suggestions, value]);
 
   const commandBarStyle: React.CSSProperties = {
-    borderTop: `1px solid ${colors.borderSubtle}`,
-    padding: isMobile ? '1rem' : isTablet ? '1.25rem 1.5rem' : '1.5rem 2rem',
-    background: 'rgba(26, 26, 26, 0.5)',
-    transition: 'all 0.2s ease'
+    // Consistent styling throughout all states
+    padding: isMobile ? '0.75rem 1rem' : isTablet ? '1rem 1.25rem' : '1rem 1.5rem',
+    background: 'rgba(26, 26, 26, 0.85)',
+    borderRadius: '24px',
+    transition: 'all 0.3s ease'
   };
 
   const commandInputStyle: React.CSSProperties = {
@@ -341,7 +348,9 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
     fontWeight: isValidCommand ? 400 : 300,
     letterSpacing: '0.02em',
     caretColor: colors.accent,
-    transition: 'color 0.2s ease, font-weight 0.2s ease'
+    transition: 'color 0.2s ease, font-weight 0.2s ease',
+    lineHeight: '1.6', // Increase line height to prevent text cutoff
+    padding: '0.25rem 0' // Add vertical padding
   };
   
   const suggestionsStyle: React.CSSProperties = {

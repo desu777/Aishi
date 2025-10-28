@@ -16,6 +16,7 @@ interface TerminalStatusLineProps {
   isRecording?: boolean;
   shouldShowMonthLearnPrompt?: boolean;
   shouldShowYearLearnPrompt?: boolean;
+  isInitialState?: boolean;
 }
 
 const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
@@ -27,7 +28,8 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
   workflowStatus = null,
   workflowPrompt = null,
   shouldShowMonthLearnPrompt = false,
-  shouldShowYearLearnPrompt = false
+  shouldShowYearLearnPrompt = false,
+  isInitialState = false
 }) => {
   const [dots, setDots] = useState('');
   const [prevStatus, setPrevStatus] = useState(status);
@@ -253,7 +255,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
         )}
       </div>
 
-      {(promptMessage || activeWorkflowStatus || retryInfo || progressPercent > 0) && (
+      {!isInitialState && (promptMessage || activeWorkflowStatus || retryInfo || progressPercent > 0) && (
         <div style={{
           marginTop: isMobile ? '24px' : '28px',
           display: 'flex',

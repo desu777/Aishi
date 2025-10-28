@@ -13,6 +13,7 @@ interface MinimalOutputProps {
   syncProgress?: string;
   isChatActive?: boolean;
   onEndSession?: () => void;
+  isInitialState?: boolean;
 }
 
 const colors = {
@@ -31,7 +32,8 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
   agentName,
   syncProgress,
   isChatActive = false,
-  onEndSession
+  onEndSession,
+  isInitialState = false
 }) => {
   const outputRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -505,10 +507,24 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
       `}</style>
 
       <div ref={outputRef} style={outputAreaStyle} className="minimal-output">
-        {/* Command lines only - status moved to AIOrb */}
+        {/* Welcome message only in initial state */}
+        {isInitialState && (
+          <div style={{
+            color: colors.silver,
+            textAlign: 'center',
+            marginBottom: '20px',
+            fontSize: '14px',
+            opacity: 0.8,
+            animation: 'fadeInLine 0.3s ease'
+          }}>
+            Welcome to aishiOS terminal. Type 'help' for available commands.
+          </div>
+        )}
+
+        {/* Command lines - shown always */}
         {lines.map((line, index) => (
-          <div 
-            key={`line-${index}`} 
+          <div
+            key={`line-${index}`}
             style={getLineStyle(line.type)}
           >
             {formatContent(line)}
@@ -530,6 +546,7 @@ const arePropsEqual = (prevProps: MinimalOutputProps, nextProps: MinimalOutputPr
   if (prevProps.agentName !== nextProps.agentName) return false;
   if (prevProps.syncProgress !== nextProps.syncProgress) return false;
   if (prevProps.isChatActive !== nextProps.isChatActive) return false;
+  if (prevProps.isInitialState !== nextProps.isInitialState) return false;
 
   // onEndSession function can change reference, but functionality stays the same
   // We can safely ignore it in comparison as it doesn't affect rendering

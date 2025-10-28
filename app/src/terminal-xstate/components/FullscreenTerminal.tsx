@@ -314,6 +314,9 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
     return () => window.removeEventListener('keydown', handleEscape);
   }, [handleClose]);
 
+  // Detect if we're in initial state (no messages yet)
+  const isInitialState = context.lines.length === 0;
+
   // Memoized MinimalOutput to prevent re-renders on input changes
   const memoizedMinimalOutput = useMemo(() => (
     <MinimalOutput
@@ -324,8 +327,9 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
       syncProgress={syncProgress}
       isChatActive={isChatActive}
       onEndSession={() => send({ type: 'END_SESSION' })}
+      isInitialState={isInitialState}
     />
-  ), [context.lines, context.welcomeLines, agentStatus, syncedAgentName, syncProgress, isChatActive, send]);
+  ), [context.lines, context.welcomeLines, agentStatus, syncedAgentName, syncProgress, isChatActive, send, isInitialState]);
 
   // Fullscreen layout styles
   const containerStyle: React.CSSProperties = {
@@ -333,7 +337,7 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
     flexDirection: 'column',
     height: '100vh',
     width: '100vw',
-    background: colors.noir, // Solid background instead of glass
+    background: '#000000', // Pure black background
     color: colors.pearl,
     overflow: 'hidden',
     position: 'relative'
@@ -355,7 +359,7 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
     alignItems: 'center',
     overflow: 'hidden',
     padding: isMobile ? '20px 10px' : '20px',
-    background: `linear-gradient(to bottom, ${colors.noir}, ${colors.charcoal})`
+    background: '#000000' // Pure black background
   };
 
   const orbSectionStyle: React.CSSProperties = {
@@ -363,34 +367,61 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: '20px'
+    marginBottom: isInitialState ? '20px' : '10px',
+    transform: isInitialState ? 'scale(1)' : 'scale(0.8)',
+    transition: 'transform 0.3s ease, margin 0.3s ease'
   };
 
   const statusSectionStyle: React.CSSProperties = {
     flexShrink: 0,
     width: '100%',
     maxWidth: '800px',
-    marginBottom: '20px'
+    marginBottom: isInitialState ? '20px' : '10px',
+    fontSize: isInitialState ? '14px' : '12px',
+    transform: isInitialState ? 'scale(1)' : 'scale(0.9)',
+    transition: 'all 0.3s ease'
   };
 
   const messageAreaStyle: React.CSSProperties = {
-    flex: 1,
+    flex: isInitialState ? 'none' : 1,
     width: '100%',
     maxWidth: '1200px',
-    minHeight: 0, // Important for flex child with overflow
+    minHeight: isInitialState ? 'auto' : 0, // Auto height for initial state to show welcome
     display: 'flex',
     flexDirection: 'column',
-    marginBottom: '20px'
+    marginBottom: isInitialState ? '10px' : '20px'
   };
 
-  const commandBarContainerStyle: React.CSSProperties = {
+  // Command bar wrapper - handles positioning
+  const commandBarWrapperStyle: React.CSSProperties = {
     flexShrink: 0,
-    borderTop: `1px solid ${colors.borderSubtle}`,
-    background: colors.charcoal,
-    position: 'sticky',
-    bottom: 0,
-    zIndex: 10,
-    width: '100%'
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '0 20px',
+    transition: 'all 0.3s ease',
+    ...(isInitialState ? {
+      // Initial state: relative position
+      position: 'relative' as const,
+      marginBottom: '40px'
+    } : {
+      // Chat state: sticky bottom (no background or border)
+      position: 'sticky' as const,
+      bottom: 0,
+      zIndex: 10,
+      paddingTop: '10px',
+      paddingBottom: '10px'
+    })
+  };
+
+  // Command bar inner container - always centered and rounded
+  const commandBarInnerStyle: React.CSSProperties = {
+    maxWidth: '700px',
+    width: '100%',
+    background: 'rgba(26, 26, 26, 0.85)',
+    border: `1px solid ${colors.borderSubtle}`,
+    borderRadius: '24px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
   };
 
   return (
@@ -447,6 +478,7 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
               syncProgress={syncProgress}
               isMobile={isMobile}
               isTablet={isTablet}
+              isInitialState={isInitialState}
             />
           </div>
 
@@ -464,6 +496,7 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
               isRecording={isRecording}
               shouldShowMonthLearnPrompt={shouldShowMonthLearnPrompt}
               shouldShowYearLearnPrompt={shouldShowYearLearnPrompt}
+              isInitialState={isInitialState}
             />
           </div>
 
@@ -473,29 +506,32 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
           </div>
         </div>
 
-        {/* Fixed Command Bar at Bottom */}
-        <div style={commandBarContainerStyle}>
-          <PremiumCommandBar
-            value={context.currentInput}
-            onChange={handleInputChange}
-            onSubmit={handleSubmit}
-            onHistoryUp={handleHistoryUp}
-            onHistoryDown={handleHistoryDown}
-            onClear={handleClear}
-            disabled={state.matches('processing')}
-            isChatActive={isChatActive}
-            isDreamActive={isDreamActive}
-            onEndSession={() => send({ type: 'END_SESSION' })}
-            onVoiceInput={handleVoiceInput}
-            isVoiceEnabled={true}
-            onRecordingStateChange={setIsRecording}
-            dreamStatus={dreamStatus}
-            dreamPrompt={dreamPrompt}
-            chatStatus={chatStatus}
-            chatPrompt={chatPrompt}
-            onQuickSubmit={handleQuickSubmit}
-            promptSymbol={isChatActive ? '~' : isDreamActive ? '~' : '>'}
-          />
+        {/* Command Bar - Always centered and rounded, moves to bottom after first message */}
+        <div style={commandBarWrapperStyle}>
+          <div style={commandBarInnerStyle}>
+            <PremiumCommandBar
+              value={context.currentInput}
+              onChange={handleInputChange}
+              onSubmit={handleSubmit}
+              onHistoryUp={handleHistoryUp}
+              onHistoryDown={handleHistoryDown}
+              onClear={handleClear}
+              disabled={state.matches('processing')}
+              isChatActive={isChatActive}
+              isDreamActive={isDreamActive}
+              onEndSession={() => send({ type: 'END_SESSION' })}
+              onVoiceInput={handleVoiceInput}
+              isVoiceEnabled={true}
+              onRecordingStateChange={setIsRecording}
+              dreamStatus={dreamStatus}
+              dreamPrompt={dreamPrompt}
+              chatStatus={chatStatus}
+              chatPrompt={chatPrompt}
+              onQuickSubmit={handleQuickSubmit}
+              promptSymbol={isChatActive ? '~' : isDreamActive ? '~' : '>'}
+              isInitialState={isInitialState}
+            />
+          </div>
         </div>
 
         {/* Memory Download Handler - handles download clicks */}

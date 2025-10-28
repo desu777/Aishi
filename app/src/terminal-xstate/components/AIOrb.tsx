@@ -13,15 +13,17 @@ interface AIorbProps {
   syncProgress?: string;
   isMobile?: boolean;
   isTablet?: boolean;
+  isInitialState?: boolean;
 }
 
-const AIOrb: React.FC<AIorbProps> = ({ 
-  status, 
+const AIOrb: React.FC<AIorbProps> = ({
+  status,
   agentName,
   intelligenceLevel = 0,
   syncProgress,
   isMobile = false,
-  isTablet = false
+  isTablet = false,
+  isInitialState = false
 }) => {
   const [dots, setDots] = useState('');
   
@@ -192,19 +194,6 @@ const AIOrb: React.FC<AIorbProps> = ({
       padding: isMobile ? '0.75rem 0' : isTablet ? '1rem 0' : '1.5rem 0',
       position: 'relative',
     }}>
-      {/* Welcome message */}
-      <div style={{
-        marginBottom: isMobile ? '0.5rem' : isTablet ? '0.75rem' : '1rem',
-        textAlign: 'center',
-        color: '#9999A5',
-        fontSize: isMobile ? '12px' : isTablet ? '13px' : '14px',
-        fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-        letterSpacing: '0.02em',
-        opacity: 0.8,
-        lineHeight: '1.4',
-      }}>
-        Welcome to aishiOS terminal. Type 'help' for available commands.
-      </div>
 
       {/* Orb Container */}
       <div style={{
