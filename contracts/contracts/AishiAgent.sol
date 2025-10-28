@@ -47,9 +47,13 @@ contract AishiAgent is
     Pausable
 {
     /* ───────────────────────────────────────────────────────── CONSTANTS ───── */
+    // Base mint fee (kept for compatibility) – used as the starting price tier
+    uint256 public constant MINTING_FEE  = 0.1 ether;  // base price per agent – sent to `treasury`
 
-    uint256 public constant MAX_AGENTS   = 50;         // test‑net cap (adjust for main‑net)
-    uint256 public constant MINTING_FEE  = 0.1 ether;  // price per agent – sent to `treasury`
+    // Demand-based pricing params
+    // Every PRICE_STEP_INTERVAL minted agents, price increases by PRICE_STEP
+    uint256 public constant PRICE_STEP_INTERVAL = 10;       // mints per tier
+    uint256 public constant PRICE_STEP          = 0.01 ether; // increment per tier
 
     /* ───────────────────────────────────────────────────────── IMMUTABLES ──── */
 
@@ -182,10 +186,10 @@ contract AishiAgent is
         /* ── basic checks ── */
         require(to != address(0), "!to");
         require(ownerToTokenId[to] == 0, "exists");
-        require(totalAgents < MAX_AGENTS, "max");
         require(bytes(agentName).length > 0 && bytes(agentName).length <= 32, "name");
         require(!nameExists[agentName], "taken");
-        require(msg.value >= MINTING_FEE, "fee");
+        uint256 price = currentMintPrice();
+        require(msg.value >= price, "fee");
 
         /* ── optional proof verification ── */
         bytes32[] memory dataHashes;
@@ -256,19 +260,19 @@ contract AishiAgent is
         /* ── economics ── */
         unchecked {
             totalAgents          += 1;
-            totalFeesCollected   += MINTING_FEE;
+            totalFeesCollected   += price;
         }
 
-        (bool sent, ) = treasury.call{value: MINTING_FEE}("");
+        (bool sent, ) = treasury.call{value: price}("");
         require(sent, "!sent");
-        if (msg.value > MINTING_FEE) {
-            (bool refund, ) = msg.sender.call{value: msg.value - MINTING_FEE}("");
+        if (msg.value > price) {
+            (bool refund, ) = msg.sender.call{value: msg.value - price}("");
             require(refund, "!refund");
         }
         
         /* ── events ── */
         emit Minted(tokenId, msg.sender, to, dataHashes, descriptions);
-        emit FeePaid(tokenId, msg.sender, MINTING_FEE);
+        emit FeePaid(tokenId, msg.sender, price);
     }
 
     /* ───────────────────────────────────────────────── PERSONALITY LOGIC ─── */
@@ -551,6 +555,34 @@ contract AishiAgent is
     function getAgentMemory(uint256 tokenId) external view returns (AgentMemory memory) {
         require(agents[tokenId].owner != address(0), "agent !exist");
         return agentMemories[tokenId];
+    }
+
+    /**
+     * @notice Current mint price based on totalAgents already minted
+     *         Example: 0–9 → 0.1; 10–19 → 0.11; 20–29 → 0.12; etc.
+     */
+    function currentMintPrice() public view returns (uint256) {
+        uint256 tier = totalAgents / PRICE_STEP_INTERVAL;
+        return MINTING_FEE + (tier * PRICE_STEP);
+    }
+
+    /**
+     * @notice Pricing parameters and current tier (for UI)
+     * @return base Base price
+     * @return step Price increment per tier
+     * @return interval Number of mints per tier
+     * @return currentTier Current pricing tier index
+     */
+    function pricingInfo() external view returns (
+        uint256 base,
+        uint256 step,
+        uint256 interval,
+        uint256 currentTier
+    ) {
+        base        = MINTING_FEE;
+        step        = PRICE_STEP;
+        interval    = PRICE_STEP_INTERVAL;
+        currentTier = totalAgents / PRICE_STEP_INTERVAL;
     }
 
 

@@ -41,6 +41,20 @@
         "AishiAgentMemory": "0x6893cd3Af1C538576066104525f0Be9ACb240D49",
         "AishiAgent": "0x6878F1E6CB28e20759FDef8933809822F7C81f8a"
       }
+    },
+    {
+      "id": "1761642020829",
+      "timestamp": "2025-10-28T09:00:20.829Z",
+      "network": "0G Mainnet",
+      "chainId": 16661,
+      "deployer": "0x232CA04565A7aAffff9b715D88562E48715e9185",
+      "contracts": {
+        "AishiVerifier": "0x8520A5e82a8e31268035d1F8485675c3F5F37ab5",
+        "AishiAgentCore": "0xF1f9F11a36bB2C4CCF95ccA015ac0Be65544a171",
+        "AishiAgentPersonality": "0x3361f41634c37F96b6622ca8BB5Ca5B0DffAddCe",
+        "AishiAgentMemory": "0x6893cd3Af1C538576066104525f0Be9ACb240D49",
+        "AishiAgent": "0x8eDB03ae1bF70D78455ea1b04c8700Bc56b87472"
+      }
     }
   ]
 }

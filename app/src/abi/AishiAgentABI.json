@@ -1,8 +1,8 @@
 {
   "contractName": "AishiAgent",
-  "address": "0xDBA5DcdfbC1140EEc3319F3AaA846f3ffA2f8467",
-  "network": "galileo",
-  "chainId": 16602,
+  "address": "0x8eDB03ae1bF70D78455ea1b04c8700Bc56b87472",
+  "network": "0g-mainnet",
+  "chainId": 16661,
   "abi": [
     {
       "inputs": [
@@ -950,19 +950,6 @@
     },
     {
       "inputs": [],
-      "name": "MAX_AGENTS",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
       "name": "MINTING_FEE",
       "outputs": [
         {
@@ -982,6 +969,32 @@
           "internalType": "bytes32",
           "name": "",
           "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PRICE_STEP",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PRICE_STEP_INTERVAL",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -1289,6 +1302,19 @@
         }
       ],
       "name": "consolidationStreak",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "currentMintPrice",
       "outputs": [
         {
           "internalType": "uint256",
@@ -1903,6 +1929,34 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "pricingInfo",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "base",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "step",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "interval",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "currentTier",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "uint256",
@@ -2218,5 +2272,5 @@
       "type": "function"
     }
   ],
-  "deployedAt": "2025-10-05T08:56:36.532Z"
+  "deployedAt": "2025-10-28T09:00:20.615Z"
 }

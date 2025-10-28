@@ -16,7 +16,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200 // Optimized for Testnet
+        runs: 1 // Optimized for Mainnet
       },
       viaIR: true // Fixes "Stack too deep" errors
     }
