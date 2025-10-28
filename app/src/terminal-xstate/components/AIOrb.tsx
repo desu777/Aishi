@@ -44,13 +44,20 @@ const AIOrb: React.FC<AIorbProps> = ({
 
   // Determine orb size based on device - more granular sizing for laptops
   const getOrbSize = () => {
-    if (isMobile) return "60px";  // Smaller for mobile
-    if (isTablet) return "80px";  // Smaller for tablets
-    // Add laptop detection (768px - 1024px)
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) return "100px";
-    // Desktop (1024px - 1280px)
-    if (typeof window !== 'undefined' && window.innerWidth < 1280) return "120px";
-    return "140px";  // Large screens
+    if (isInitialState) {
+      if (isMobile) return "58px";
+      if (isTablet) return "78px";
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) return "98px";
+      if (typeof window !== 'undefined' && window.innerWidth < 1280) return "116px";
+      return "132px";
+    }
+
+    // Active chat state - tighter sizing
+    if (isMobile) return "46px";
+    if (isTablet) return "64px";
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return "82px";
+    if (typeof window !== 'undefined' && window.innerWidth < 1280) return "96px";
+    return "108px";
   };
 
   // Get colors and animation speed based on status
@@ -185,14 +192,24 @@ const AIOrb: React.FC<AIorbProps> = ({
 
   const orbConfig = getOrbConfig();
 
+  const verticalPadding = isInitialState
+    ? (isMobile ? '0.75rem 0' : isTablet ? '0.9rem 0' : '1.2rem 0')
+    : (isMobile ? '0.5rem 0' : isTablet ? '0.65rem 0' : '0.8rem 0');
+
+  const shadowStrength = status === 'learning' ? 'rgba(16, 185, 129, ' :
+    status === 'evolving' ? 'rgba(245, 158, 11, ' :
+      'rgba(139, 92, 246, ';
+
+  const shadowOpacity = isInitialState ? '0.25' : '0.18';
+
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: isMobile ? '0.75rem 0' : isTablet ? '1rem 0' : '1.5rem 0',
-      position: 'relative',
+      padding: verticalPadding,
+      position: 'relative'
     }}>
 
       {/* Orb Container */}
@@ -224,11 +241,7 @@ const AIOrb: React.FC<AIorbProps> = ({
           }
           
           .drop-shadow-2xl {
-            filter: drop-shadow(0 25px 25px ${
-              status === 'learning' ? 'rgba(16, 185, 129, 0.25)' :
-              status === 'evolving' ? 'rgba(245, 158, 11, 0.25)' :
-              'rgba(139, 92, 246, 0.25)'
-            });
+            filter: drop-shadow(0 ${isInitialState ? '22px' : '16px'} ${isInitialState ? '22px' : '18px'} ${shadowStrength}${shadowOpacity});
             animation: pulse-glow 2s ease-in-out infinite;
           }
         `}</style>

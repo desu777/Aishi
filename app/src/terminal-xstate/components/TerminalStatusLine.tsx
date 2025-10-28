@@ -121,25 +121,31 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
 
   const progressPercent = getProgressPercent();
 
+  const hasPromptSection = !isInitialState && (promptMessage || activeWorkflowStatus || retryInfo || progressPercent > 0);
+
   return (
     <div style={{
       textAlign: 'center',
-      margin: '1rem 0 1.5rem 0',
+      margin: '0.75rem 0 1.25rem 0',
       fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
       fontSize: isMobile ? '11px' : isTablet ? '12px' : '13px',
       lineHeight: '1.4',
       color: '#E5E5E5',
       letterSpacing: '0.5px',
       fontWeight: '400',
-      position: 'relative',
-      minHeight: progressPercent > 0 || activeWorkflowStatus ? (isMobile ? '64px' : '68px') : '32px'
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: hasPromptSection ? (isMobile ? '0.8rem' : '1rem') : 0,
+      minHeight: 'auto',
+      transition: 'gap 0.3s ease'
     }}>
       <div style={{
-        position: 'absolute',
         width: '100%',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         opacity: isTransitioning ? 0 : 1,
-        transform: isTransitioning ? 'translateY(-3px)' : 'translateY(0)',
+        transform: isTransitioning ? 'translateY(-3px)' : 'translateY(0)'
       }}>
         {status === 'recording' ? (
           // Special display for recording state
@@ -255,9 +261,8 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
         )}
       </div>
 
-      {!isInitialState && (promptMessage || activeWorkflowStatus || retryInfo || progressPercent > 0) && (
+      {hasPromptSection && (
         <div style={{
-          marginTop: isMobile ? '24px' : '28px',
           display: 'flex',
           flexDirection: 'column',
           gap: '6px',

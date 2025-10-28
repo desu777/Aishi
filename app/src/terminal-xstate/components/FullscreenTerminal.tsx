@@ -367,8 +367,8 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: isInitialState ? '20px' : '10px',
-    transform: isInitialState ? 'scale(1)' : 'scale(0.8)',
+    marginBottom: isInitialState ? '12px' : '4px',
+    transform: isInitialState ? 'scale(1)' : 'scale(0.82)',
     transition: 'transform 0.3s ease, margin 0.3s ease'
   };
 
@@ -376,7 +376,7 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
     flexShrink: 0,
     width: '100%',
     maxWidth: '800px',
-    marginBottom: isInitialState ? '20px' : '10px',
+    marginBottom: isInitialState ? '14px' : '6px',
     fontSize: isInitialState ? '14px' : '12px',
     transform: isInitialState ? 'scale(1)' : 'scale(0.9)',
     transition: 'all 0.3s ease'
@@ -389,6 +389,7 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
     minHeight: isInitialState ? 'auto' : 0, // Auto height for initial state to show welcome
     display: 'flex',
     flexDirection: 'column',
+    marginTop: isInitialState ? '0' : '8px',
     marginBottom: isInitialState ? '10px' : '20px'
   };
 
@@ -403,14 +404,14 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
     ...(isInitialState ? {
       // Initial state: relative position
       position: 'relative' as const,
-      marginBottom: '40px'
+      marginBottom: '32px'
     } : {
       // Chat state: sticky bottom (no background or border)
       position: 'sticky' as const,
       bottom: 0,
       zIndex: 10,
-      paddingTop: '10px',
-      paddingBottom: '10px'
+      paddingTop: '8px',
+      paddingBottom: '8px'
     })
   };
 
