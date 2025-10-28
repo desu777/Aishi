@@ -10,18 +10,16 @@ import { MemoryDownloadHandler } from './MemoryDownloadHandler';
 import { useTerminal } from '../hooks/useTerminal';
 import { useTerminalAgent } from '../hooks/useTerminalAgent';
 import { useConsolidationStatus } from '../hooks/useConsolidationStatus';
-import { zIndex } from '../../styles/zIndex';
 import { useAccount, usePublicClient } from 'wagmi';
 import { useSafeActorState } from '../hooks/useSafeSelector';
 import { breakpoints } from '../../utils/responsive';
+import { useRouter } from 'next/navigation';
 import {
   useWatchAishiAgentConsolidationCompletedEvent,
   useWatchAishiAgentYearlyReflectionAvailableEvent
 } from '../../generated';
 
-interface GlassTerminalProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface FullscreenTerminalProps {
   selectedModel?: string;
   selectedVoice?: string;
 }
@@ -35,11 +33,11 @@ const colors = {
   pearl: '#F0F0F0',
   accent: '#8B5CF6',
   accentMuted: 'rgba(139, 92, 246, 0.1)',
-  glassBg: 'rgba(26, 26, 26, 0.7)',
   borderSubtle: 'rgba(255, 255, 255, 0.05)'
 };
 
-export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, selectedModel, selectedVoice }) => {
+export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selectedModel, selectedVoice }) => {
+  const router = useRouter();
   const {
     context,
     send,
@@ -63,14 +61,14 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  
+
   // Subscribe to agent state using safe selector
   const agentState = useSafeActorState(agentRef);
   const agentStatus = agentState?.context?.status || 'uninitialized';
   const syncedAgentName = agentState?.context?.agentName || null;
   const syncProgress = agentState?.context?.syncProgress || undefined;
   const intelligenceLevel = agentState?.context?.intelligenceLevel || 0;
-  
+
   // Map agent status to orb status
   const getOrbStatus = () => {
     if (!isConnected) return 'uninitialized';
@@ -122,7 +120,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     if (agentLoading) return 'connecting';
     return 'uninitialized';
   };
-  
+
   // Detect viewport size
   useEffect(() => {
     const checkViewport = () => {
@@ -169,7 +167,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
   // Handle voice input
   const handleVoiceInput = useCallback((audioBase64: string, audioBlob: Blob) => {
     if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-      console.log('[GlassTerminal] handleVoiceInput triggered', {
+      console.log('[FullscreenTerminal] handleVoiceInput triggered', {
         audioBase64Length: audioBase64.length,
         audioBlobSize: audioBlob.size,
         hasVoiceRef: !!voiceRef,
@@ -192,10 +190,15 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
       // Send audio to STT through voice machine
       voiceRef.send({ type: 'TRANSCRIBE', audioBase64 });
       if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[GlassTerminal] Sent TRANSCRIBE to voice machine');
+        console.log('[FullscreenTerminal] Sent TRANSCRIBE to voice machine');
       }
     }
   }, [voiceRef, send, isDreamActive, isChatActive]);
+
+  // Handle navigation back to aishiOS
+  const handleClose = useCallback(() => {
+    router.push('/aishiOS');
+  }, [router]);
 
   // Initialize broker and agent when wallet is connected
   useEffect(() => {
@@ -203,7 +206,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
       // Initialize broker
       if (brokerRef) {
         if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[GlassTerminal] Initializing broker', { address });
+          console.log('[FullscreenTerminal] Initializing broker', { address });
         }
         brokerRef.send({ type: 'INITIALIZE', walletAddress: address });
       }
@@ -211,7 +214,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
       // Sync agent with contract
       if (agentRef && publicClient) {
         if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[GlassTerminal] Syncing agent with viem publicClient', {
+          console.log('[FullscreenTerminal] Syncing agent with viem publicClient', {
             address,
             chainId: publicClient.chain?.id,
             chainName: publicClient.chain?.name,
@@ -225,7 +228,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
         });
       } else {
         if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[GlassTerminal] Cannot sync agent', {
+          console.log('[FullscreenTerminal] Cannot sync agent', {
             hasAgentRef: !!agentRef,
             hasPublicClient: !!publicClient,
             address
@@ -237,12 +240,12 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     // Handle wallet disconnect - reset agent state
     if (!isConnected && agentRef) {
       if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[GlassTerminal] Wallet disconnected, resetting agent');
+        console.log('[FullscreenTerminal] Wallet disconnected, resetting agent');
       }
       agentRef.send({ type: 'RESET' });
     }
   }, [isConnected, address, brokerRef, agentRef, publicClient]);
-  
+
   // Update model in terminal when selectedModel changes
   useEffect(() => {
     if (selectedModel && modelRef) {
@@ -299,17 +302,17 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     }
   });
 
-  // Handle escape key to close
+  // Handle escape key to go back (optional)
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
+      if (e.key === 'Escape') {
+        handleClose();
       }
     };
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+  }, [handleClose]);
 
   // Memoized MinimalOutput to prevent re-renders on input changes
   const memoizedMinimalOutput = useMemo(() => (
@@ -324,55 +327,86 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
     />
   ), [context.lines, context.welcomeLines, agentStatus, syncedAgentName, syncProgress, isChatActive, send]);
 
-  if (!isOpen) return null;
-
-  // Inline styles for glass terminal
-  const glassTerminalStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(10, 10, 10, 0.4)',
-    backdropFilter: 'blur(40px)',
-    WebkitBackdropFilter: 'blur(40px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: zIndex.terminal,
-    animation: 'fadeIn 0.3s ease'
-  };
-
-  const terminalBodyStyle: React.CSSProperties = {
-    width: isMobile ? '100%' : '90%',
-    maxWidth: isMobile ? '100%' : '1200px',
-    height: isMobile ? '100vh' : '85vh',
-    background: colors.glassBg,
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: isMobile ? 'none' : `1px solid ${colors.borderSubtle}`,
-    borderRadius: isMobile ? '0' : '20px',
+  // Fullscreen layout styles
+  const containerStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
+    height: '100vh',
+    width: '100vw',
+    background: colors.noir, // Solid background instead of glass
+    color: colors.pearl,
     overflow: 'hidden',
-    boxShadow: isMobile ? 'none' : `
-      0 20px 60px rgba(0, 0, 0, 0.3),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.02)
-    `,
-    animation: isMobile ? 'fadeIn 0.3s ease' : 'slideUp 0.4s ease'
+    position: 'relative'
   };
 
-  // Close button removed - will be added to header
+  const headerContainerStyle: React.CSSProperties = {
+    flexShrink: 0,
+    borderBottom: `1px solid ${colors.borderSubtle}`,
+    background: colors.charcoal,
+    position: 'sticky',
+    top: 0,
+    zIndex: 10
+  };
 
+  const mainContentStyle: React.CSSProperties = {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    overflow: 'hidden',
+    padding: isMobile ? '20px 10px' : '20px',
+    background: `linear-gradient(to bottom, ${colors.noir}, ${colors.charcoal})`
+  };
+
+  const orbSectionStyle: React.CSSProperties = {
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginBottom: '20px'
+  };
+
+  const statusSectionStyle: React.CSSProperties = {
+    flexShrink: 0,
+    width: '100%',
+    maxWidth: '800px',
+    marginBottom: '20px'
+  };
+
+  const messageAreaStyle: React.CSSProperties = {
+    flex: 1,
+    width: '100%',
+    maxWidth: '1200px',
+    minHeight: 0, // Important for flex child with overflow
+    display: 'flex',
+    flexDirection: 'column',
+    marginBottom: '20px'
+  };
+
+  const commandBarContainerStyle: React.CSSProperties = {
+    flexShrink: 0,
+    borderTop: `1px solid ${colors.borderSubtle}`,
+    background: colors.charcoal,
+    position: 'sticky',
+    bottom: 0,
+    zIndex: 10,
+    width: '100%'
+  };
 
   return (
     <>
       <style jsx global>{`
+        body {
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+        }
+
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        
+
         @keyframes slideUp {
           from {
             transform: translateY(20px);
@@ -384,51 +418,63 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
           }
         }
       `}</style>
-      
-      <div style={glassTerminalStyle}>
-        <div style={terminalBodyStyle}>
-          {/* Terminal Header with Close Button */}
-          <TerminalSystemHeader 
+
+      <div style={containerStyle}>
+        {/* Fixed Header */}
+        <div style={headerContainerStyle}>
+          <TerminalSystemHeader
             agentName={syncedAgentName || agentName}
             isLoading={agentLoading}
             selectedModel={selectedModel}
             terminalState={state}
             brokerRef={brokerRef}
             modelRef={modelRef}
-            onClose={onClose}
+            onClose={handleClose}
             isMobile={isMobile}
             isTablet={isTablet}
+            isFullscreen={true}
           />
+        </div>
 
-          {/* AI Orb - Central Visual Element */}
-          <AIOrb
-            status={getOrbStatus()}
-            agentName={syncedAgentName}
-            intelligenceLevel={intelligenceLevel}
-            syncProgress={syncProgress}
-            isMobile={isMobile}
-            isTablet={isTablet}
-          />
+        {/* Main Content Area */}
+        <div style={mainContentStyle}>
+          {/* AI Orb Section */}
+          <div style={orbSectionStyle}>
+            <AIOrb
+              status={getOrbStatus()}
+              agentName={syncedAgentName}
+              intelligenceLevel={intelligenceLevel}
+              syncProgress={syncProgress}
+              isMobile={isMobile}
+              isTablet={isTablet}
+            />
+          </div>
 
-          {/* Terminal Status Line */}
-          <TerminalStatusLine
-            status={isRecording ? 'recording' : getOrbStatus()}
-            agentName={syncedAgentName}
-            intelligenceLevel={intelligenceLevel}
-            isMobile={isMobile}
-            isTablet={isTablet}
-            workflowStatus={isChatActive ? chatStatus : dreamStatus}
-            workflowPrompt={isChatActive ? chatPrompt : dreamPrompt}
-            isChatActive={isChatActive}
-            isRecording={isRecording}
-            shouldShowMonthLearnPrompt={shouldShowMonthLearnPrompt}
-            shouldShowYearLearnPrompt={shouldShowYearLearnPrompt}
-          />
+          {/* Status Line Section */}
+          <div style={statusSectionStyle}>
+            <TerminalStatusLine
+              status={isRecording ? 'recording' : getOrbStatus()}
+              agentName={syncedAgentName}
+              intelligenceLevel={intelligenceLevel}
+              isMobile={isMobile}
+              isTablet={isTablet}
+              workflowStatus={isChatActive ? chatStatus : dreamStatus}
+              workflowPrompt={isChatActive ? chatPrompt : dreamPrompt}
+              isChatActive={isChatActive}
+              isRecording={isRecording}
+              shouldShowMonthLearnPrompt={shouldShowMonthLearnPrompt}
+              shouldShowYearLearnPrompt={shouldShowYearLearnPrompt}
+            />
+          </div>
 
-          {/* Minimal Output - Terminal Lines Only */}
-          {memoizedMinimalOutput}
+          {/* Messages Area - Expandable */}
+          <div style={messageAreaStyle}>
+            {memoizedMinimalOutput}
+          </div>
+        </div>
 
-          {/* Premium Command Bar */}
+        {/* Fixed Command Bar at Bottom */}
+        <div style={commandBarContainerStyle}>
           <PremiumCommandBar
             value={context.currentInput}
             onChange={handleInputChange}
@@ -450,10 +496,10 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             onQuickSubmit={handleQuickSubmit}
             promptSymbol={isChatActive ? '~' : isDreamActive ? '~' : '>'}
           />
-          
-          {/* Memory Download Handler - handles download clicks */}
-          <MemoryDownloadHandler send={send} />
         </div>
+
+        {/* Memory Download Handler - handles download clicks */}
+        <MemoryDownloadHandler send={send} />
       </div>
     </>
   );

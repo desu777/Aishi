@@ -21,11 +21,12 @@ interface TerminalSystemHeaderProps {
   onClose?: () => void;
   isMobile?: boolean;
   isTablet?: boolean;
+  isFullscreen?: boolean;
 }
 
 
-const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({ 
-  agentName, 
+const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
+  agentName,
   isLoading,
   selectedModel,
   terminalState,
@@ -33,7 +34,8 @@ const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
   modelRef: propModelRef,
   onClose,
   isMobile = false,
-  isTablet = false
+  isTablet = false,
+  isFullscreen = false
 }) => {
   const { theme } = useTheme();
   const { address } = useAccount();

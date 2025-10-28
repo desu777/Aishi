@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Layout from '../../components/layout/Layout';
-import { Terminal } from '../../terminal-xstate/components/Terminal';
 import { MockTerminal } from '../../components/MockTerminal';
 import { useTheme } from '../../contexts/ThemeContext';
-import { TerminalModal } from './components/TerminalModal';
 import SplitText from '../../components/ui/SplitText';
 import ModelSelector from '../../components/ModelSelector';
 import useModelDiscovery from '../../hooks/useModelDiscovery';
@@ -16,7 +15,8 @@ export default function AishiOSPage() {
   const { theme, debugLog } = useTheme();
   const [darkMode, setDarkMode] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  // Terminal modal state removed - now using fullscreen route
+  // const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   
   // Model discovery hook
   const {
@@ -53,27 +53,28 @@ export default function AishiOSPage() {
   }, []);
 
 
-  const toggleTerminal = () => {
-    setIsTerminalOpen(!isTerminalOpen);
-    debugLog('Terminal toggled', { isTerminalOpen: !isTerminalOpen });
-  };
+  // Terminal toggle function removed - now using fullscreen route
+  // const toggleTerminal = () => {
+  //   setIsTerminalOpen(!isTerminalOpen);
+  //   debugLog('Terminal toggled', { isTerminalOpen: !isTerminalOpen });
+  // };
 
-  // Handle escape key to close terminal
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isTerminalOpen) {
-        setIsTerminalOpen(false);
-      }
-    };
+  // Handle escape key to close terminal - removed for fullscreen route
+  // useEffect(() => {
+  //   const handleEscape = (e: KeyboardEvent) => {
+  //     if (e.key === 'Escape' && isTerminalOpen) {
+  //       setIsTerminalOpen(false);
+  //     }
+  //   };
 
-    if (isTerminalOpen) {
-      document.addEventListener('keydown', handleEscape);
-    }
+  //   if (isTerminalOpen) {
+  //     document.addEventListener('keydown', handleEscape);
+  //   }
 
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isTerminalOpen]);
+  //   return () => {
+  //     document.removeEventListener('keydown', handleEscape);
+  //   };
+  // }, [isTerminalOpen]);
 
   return (
     <Layout backgroundType="faulty-terminal">
@@ -208,8 +209,8 @@ export default function AishiOSPage() {
             backdropFilter: 'blur(2px)',
             borderRadius: '24px'
           }}>
-            <button
-              onClick={toggleTerminal}
+            <Link
+              href="/aishiOS/chat"
               className="terminal-open-button"
               style={{
                 padding: isMobile ? '16px 32px' : '20px 40px',
@@ -222,7 +223,9 @@ export default function AishiOSPage() {
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
                 boxShadow: `0 8px 24px ${theme.accent.primary}33`,
-                fontFamily: "'Space Grotesk', sans-serif"
+                fontFamily: "'Space Grotesk', sans-serif",
+                display: 'inline-block',
+                textDecoration: 'none'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = theme.accent.primary;
@@ -236,12 +239,12 @@ export default function AishiOSPage() {
               }}
             >
               Open Terminal
-            </button>
+            </Link>
           </div>
         </div>
 
-        {/* Terminal Modal */}
-        <TerminalModal
+        {/* Terminal Modal - removed in favor of fullscreen route */}
+        {/* <TerminalModal
           isTerminalOpen={isTerminalOpen}
           setIsTerminalOpen={setIsTerminalOpen}
           darkMode={darkMode}
@@ -249,7 +252,7 @@ export default function AishiOSPage() {
           theme={theme}
           selectedModel={selectedModel}
           selectedVoice={selectedVoice}
-        />
+        /> */}
       </div>
 
       {/* Mobile-specific styles */}
