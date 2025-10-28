@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import SiriOrb from './SiriOrb';
 
 interface AIorbProps {
-  status: 'uninitialized' | 'connecting' | 'syncing' | 'online' | 'thinking' | 'responding' | 'learning' | 'evolving' | 'error' | 'no_agent';
+  status: 'uninitialized' | 'connecting' | 'syncing' | 'online' | 'thinking' | 'responding' | 'learning' | 'evolving' | 'error' | 'no_agent' | 'retrying';
   agentName?: string | null;
   intelligenceLevel?: number;
   syncProgress?: string;
@@ -108,6 +108,17 @@ const AIOrb: React.FC<AIorbProps> = ({
             c3: "rgba(230, 230, 230, 0.9)",       // Light white with transparency
           },
           animationDuration: 10,  // Fast
+        };
+
+      case 'retrying':
+        return {
+          colors: {
+            bg: "rgba(26, 26, 26, 0.85)",         // Dark background, slightly transparent
+            c1: "rgba(251, 191, 36, 0.95)",       // Amber retry highlight
+            c2: "rgba(139, 92, 246, 0.9)",        // Violet accent
+            c3: "rgba(253, 224, 71, 0.75)",       // Soft amber glow
+          },
+          animationDuration: 6,   // Slightly faster pulse to indicate action
         };
       
       case 'learning':

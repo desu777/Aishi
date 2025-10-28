@@ -22,6 +22,7 @@ export interface UploadResult {
   txHash?: string;
   error?: string;
   alreadyExists?: boolean;
+  message?: string;
 }
 
 export interface DownloadResult {
@@ -249,7 +250,7 @@ export const storageServiceCreator = {
  * Standalone helper functions for simpler imports
  * Used by chat and conversation services
  */
-export async function uploadToStorage(data: any, fileName: string): Promise<UploadResult> {
+export async function uploadToStorage(data: any, fileName: string, onStatus?: (message: string) => void): Promise<UploadResult> {
   const service = new XStateStorageService();
   
   // If data is string (JSON), parse it first to validate
@@ -260,8 +261,11 @@ export async function uploadToStorage(data: any, fileName: string): Promise<Uplo
     dataType: typeof data,
     isString: typeof data === 'string'
   });
-  
-  return service.uploadJson(jsonData, fileName);
+
+  onStatus?.('Uploading conversation data...');
+  const result = await service.uploadJson(jsonData, fileName);
+  onStatus?.(result.success ? 'Upload successful' : `Upload failed: ${result.error || 'Unknown error'}`);
+  return result;
 }
 
 export async function downloadFromStorage(rootHash: string): Promise<string> {

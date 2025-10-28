@@ -47,7 +47,7 @@ export const storageActions = {
     if (retryCount < maxRetries) {
       lines.push({
         type: 'system',
-        content: `Do you want to try uploading again? (Attempt ${retryCount + 1}/${maxRetries}) Type y/n`,
+        content: `Do you want to try uploading again? (Attempt ${retryCount + 1}/${maxRetries}) Type y or n`,
         timestamp: Date.now() + 1
       });
     } else {
@@ -76,6 +76,11 @@ export const storageActions = {
     statusMessage: ({ context }: any) => 
       `Retrying upload... (Attempt ${(context.retryCount || 0) + 1}/${context.maxRetries || 3})`
   }),
+
+  announceRetryStatus: sendParent(({ context }: any) => ({
+    type: 'UPDATE_STATUS',
+    status: `Retrying upload... (Attempt ${context.retryCount}/${context.maxRetries || 3})`
+  })),
 
   /**
    * Reset retry count
@@ -114,7 +119,12 @@ export const storageActions = {
       debugLog('Storing storage result', { rootHash });
       return rootHash;
     },
-    statusMessage: 'Updating contract...'
+    statusMessage: ({ event }: any) => {
+      if (event.output?.alreadyExists) {
+        return 'Storage already synced. Updating contract...';
+      }
+      return 'Updating contract...';
+    }
   }),
 
   /**

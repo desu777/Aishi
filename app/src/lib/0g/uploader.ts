@@ -76,7 +76,8 @@ export async function uploadToStorage(
           console.log('[uploadToStorage] Data already exists - successful upload');
           return [{ 
             success: true, 
-            alreadyExists: true 
+            alreadyExists: true,
+            message: 'File already exists in storage'
           }, null];
         } else {
           return [null, error];
@@ -85,7 +86,8 @@ export async function uploadToStorage(
         return [{ 
           success: true, 
           txHash: result,
-          alreadyExists: false 
+          alreadyExists: false,
+          message: 'File uploaded successfully'
         }, null];
       }
     }
@@ -93,7 +95,8 @@ export async function uploadToStorage(
     // Default success case
     return [{ 
       success: true, 
-      alreadyExists: false 
+      alreadyExists: false,
+      message: 'File uploaded successfully'
     }, null];
   } catch (error) {
     console.error('[uploadToStorage] Upload error:', error);

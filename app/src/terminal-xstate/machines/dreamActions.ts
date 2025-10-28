@@ -20,20 +20,16 @@ export const dreamActions = {
   initializeDream: assign({
     tokenId: ({ event }) => event.type === 'START' && event.tokenId ? event.tokenId : defaultAgentData.tokenId,
     agentName: ({ event }) => event.type === 'START' && event.agentName ? event.agentName : '',
-    statusMessage: 'Describe your dream...', // This will be used for placeholder
+    statusMessage: 'Describe your dream and optionally rate your sleep quality (1-10).',
     errorMessage: null,
     modelId: ({ event }) => event.type === 'START' ? event.modelId : undefined,
     walletAddress: ({ event }) => event.type === 'START' ? event.walletAddress : undefined
   }),
   
   // Send dream instruction to parent
-  sendDreamInstruction: sendParent(() => ({
-    type: 'APPEND_LINES',
-    lines: [{
-      type: 'info',
-      content: '~ Now u can describe your dream! Add your sleep quality review 1-10 if u want agent to know that!',
-      timestamp: Date.now()
-    }]
+  sendDreamInstruction: sendParent(({ context }) => ({
+    type: 'UPDATE_STATUS',
+    status: context.statusMessage
   })),
   
   // Store dream input

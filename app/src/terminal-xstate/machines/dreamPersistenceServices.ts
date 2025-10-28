@@ -78,6 +78,7 @@ export const fileManagementService = fromPromise(async ({ input }: { input: {
 export const storageUploadService = fromPromise(async ({ input }: { input: {
   data: StandardDreamFields[];
   fileName: string;
+  onStatus?: (message: string) => void;
 }}) => {
   debugLog('☁️ Starting storage upload service', {
     fileName: input.fileName,
@@ -96,7 +97,8 @@ export const storageUploadService = fromPromise(async ({ input }: { input: {
         maxRetries: 3,
         retryDelay: 1000,
         verificationTimeout: 10000
-      }
+      },
+      input.onStatus
     );
     
     if (!result.success || !result.rootHash) {

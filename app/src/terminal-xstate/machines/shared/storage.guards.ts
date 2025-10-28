@@ -76,22 +76,35 @@ export const storageGuards = {
    */
   isStorageUploadError: ({ event }: { event: any }) => {
     if ('error' in event && event.error) {
-      const errorMsg = event.error instanceof Error ? event.error.message : String(event.error);
-      
-      const isStorageError = errorMsg.includes('Upload failed') ||
-                            errorMsg.includes('0G Network') ||
-                            errorMsg.includes('storage error') ||
-                            errorMsg.includes('Storage upload') ||
-                            errorMsg.includes('No root hash') ||
-                            errorMsg.includes('uploadToStorage') ||
-                            errorMsg.includes('Network timeout') ||
-                            errorMsg.includes('ECONNREFUSED');
-      
-      debugLog('Checking if storage upload error', { 
-        errorMsg: errorMsg.substring(0, 50),
-        isStorageError 
+      const raw = event.error instanceof Error ? event.error.message : String(event.error);
+      const normalizedMsg = raw.toLowerCase();
+
+      const storageErrorPatterns = [
+        'upload failed',
+        '0g network',
+        'storage error',
+        'storage upload',
+        'no root hash',
+        'uploadtostorage',
+        'network timeout',
+        'econnrefused',
+        'failed to fetch',
+        'fetch failed',
+        'networkerror',
+        'socket hang up',
+        'etimedout',
+        'connection refused',
+        'status 5',
+        'status: 5'
+      ];
+
+      const isStorageError = storageErrorPatterns.some(pattern => normalizedMsg.includes(pattern));
+
+      debugLog('Checking if storage upload error', {
+        errorMsg: raw.substring(0, 50),
+        isStorageError
       });
-      
+
       return isStorageError;
     }
     return false;

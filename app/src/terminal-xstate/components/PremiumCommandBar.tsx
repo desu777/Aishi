@@ -21,6 +21,9 @@ interface PremiumCommandBarProps {
   onVoiceInput?: (audioBase64: string, audioBlob: Blob) => void;
   isVoiceEnabled?: boolean;
   onRecordingStateChange?: (isRecording: boolean) => void;
+  dreamStatus?: string | null;
+  chatStatus?: string | null;
+  onQuickSubmit?: (value: string) => void;
 }
 
 const colors = {
@@ -46,7 +49,10 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   onEndSession,
   onVoiceInput,
   isVoiceEnabled = false,
-  onRecordingStateChange
+  onRecordingStateChange,
+  dreamStatus = null,
+  chatStatus = null,
+  onQuickSubmit
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -176,6 +182,48 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
       }
     };
   }, [voiceInputUrl]);
+
+  const lowerDreamStatus = dreamStatus?.toLowerCase() ?? '';
+  const lowerChatStatus = chatStatus?.toLowerCase() ?? '';
+  const activeStatus = isChatActive ? lowerChatStatus : lowerDreamStatus;
+  const retryPromptActive = activeStatus.includes('type y or n') || activeStatus.includes('type y/n');
+  const retryingActive = activeStatus.includes('retrying');
+
+  const smartPlaceholder = useMemo(() => {
+    if (retryPromptActive) {
+      return "Type 'y' to retry or 'n' to cancel";
+    }
+    if (retryingActive) {
+      return 'Retrying... type n to cancel';
+    }
+    if (activeStatus.includes('waiting for your response')) {
+      return "Type your response or 'n' to cancel";
+    }
+    if (isChatActive) {
+      if (lowerChatStatus.includes('typing')) {
+        return 'Agent is typing...';
+      }
+      if (lowerChatStatus === 'waiting for your decision...') {
+        return 'Type y or n';
+      }
+      return 'Type your message...';
+    }
+    if (isDreamActive) {
+      if (lowerDreamStatus.includes('thinking')) {
+        return dreamStatus || 'Processing dream...';
+      }
+      if (lowerDreamStatus === 'type y/n to confirm' || lowerDreamStatus === 'type y or n to confirm') {
+        return 'Type y or n';
+      }
+      if (dreamStatus) {
+        return dreamStatus;
+      }
+      return 'Describe your dream here';
+    }
+    return placeholder;
+  }, [retryPromptActive, retryingActive, activeStatus, isChatActive, isDreamActive, lowerChatStatus, lowerDreamStatus, dreamStatus, placeholder]);
+
+  const inputPlaceholder = disabled ? 'Processing...' : smartPlaceholder;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Handle suggestions navigation
@@ -378,7 +426,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={disabled}
-              placeholder={disabled ? 'Processing...' : placeholder}
+            placeholder={inputPlaceholder}
               style={{
                 ...commandFieldStyle,
                 width: '100%' // Take full width of wrapper
@@ -452,6 +500,36 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
             </button>
           )}
         </div>
+
+      {retryPromptActive && (
+        <button
+          onClick={() => !disabled && onQuickSubmit?.('n')}
+          disabled={disabled}
+          style={{
+            marginLeft: '8px',
+            padding: isMobile ? '4px 10px' : '6px 14px',
+            borderRadius: '999px',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            background: 'rgba(239, 68, 68, 0.12)',
+            color: '#F87171',
+            fontSize: isMobile ? '10px' : '12px',
+            letterSpacing: '0.4px',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+            flexShrink: 0
+          }}
+          onMouseEnter={e => {
+            if (!disabled) {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+            }
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+          }}
+        >
+          Cancel retry
+        </button>
+      )}
       </div>
       <style jsx>{`
         input::placeholder {

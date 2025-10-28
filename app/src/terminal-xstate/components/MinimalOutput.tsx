@@ -73,11 +73,27 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
       case 'output':
         return { ...baseStyle, color: colors.pearl, opacity: 0.9 };
       case 'error':
-        return { ...baseStyle, color: colors.error, opacity: 0.8 };
+        return {
+          ...baseStyle,
+          color: colors.error,
+          opacity: 0.9,
+          background: 'rgba(239, 68, 68, 0.08)',
+          borderLeft: '3px solid rgba(239, 68, 68, 0.6)',
+          padding: '8px 12px',
+          borderRadius: '6px'
+        };
       case 'success':
         return { ...baseStyle, color: colors.success, opacity: 0.8 };
       case 'warning':
-        return { ...baseStyle, color: colors.warning, opacity: 0.9 };
+        return {
+          ...baseStyle,
+          color: colors.warning,
+          opacity: 0.95,
+          background: 'rgba(252, 211, 77, 0.08)',
+          borderLeft: '3px solid rgba(252, 211, 77, 0.6)',
+          padding: '8px 12px',
+          borderRadius: '6px'
+        };
       case 'help-command':
         return { ...baseStyle, color: colors.pearl, opacity: 0.95, fontFamily: 'monospace' };
       case 'help-header':
@@ -359,6 +375,32 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
         );
       }
       
+      // Annotate retry progress blocks
+      const retryMatch = content.match(/Retrying[^0-9]*(\d+)\/(\d+)/i);
+      if (retryMatch) {
+        const attempt = Number.parseInt(retryMatch[1], 10);
+        const max = Number.parseInt(retryMatch[2], 10);
+        if (max > 0) {
+          const totalBlocks = Math.min(5, Math.max(2, max));
+          const filledBlocks = Math.max(1, Math.min(totalBlocks, Math.round((attempt / max) * totalBlocks)));
+          const progressBar = '█'.repeat(filledBlocks).padEnd(totalBlocks, '░');
+          return (
+            <span>
+              {content}
+              <span style={{
+                marginLeft: '8px',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '11px',
+                color: '#FCD34D',
+                letterSpacing: '0.4px'
+              }}>
+                [{progressBar}]
+              </span>
+            </span>
+          );
+        }
+      }
+
       // Check if this is a dream input or agent response (needs collapsing)
       const isDreamInput = line.type === 'input' && content.startsWith('~');
       const isAgentResponse = line.type === 'info' && content.includes('~ ') && content.includes(' :');

@@ -58,10 +58,17 @@ const DEFAULT_CONFIG: UploadConfig = {
 export async function uploadDreamDataSecurely(
   dreamFileData: StandardDreamFields[],
   fileName: string,
-  config: Partial<UploadConfig> = {}
+  config: Partial<UploadConfig> = {},
+  statusCallback?: (message: string) => void
 ): Promise<SecureUploadResult> {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
-  
+
+  const emitStatus = (message: string) => {
+    statusCallback?.(message);
+  };
+
+  emitStatus('Preparing upload payload');
+
   debugLog('Starting secure dream data upload', {
     fileName,
     dreamsCount: dreamFileData.length,
@@ -86,12 +93,15 @@ export async function uploadDreamDataSecurely(
       storageService,
       dreamFileData,
       fileName,
-      finalConfig
+      finalConfig,
+      emitStatus
     );
 
     if (!uploadResult.success || !uploadResult.rootHash) {
       throw new Error(`Upload failed: ${uploadResult.error}`);
     }
+
+    emitStatus('Upload complete, verifying...');
 
     debugLog('Upload completed successfully', {
       rootHash: uploadResult.rootHash.substring(0, 10) + '...',
@@ -121,8 +131,10 @@ export async function uploadDreamDataSecurely(
         debugLog('Upload verification failed', { error: verificationResult.error });
         // Note: We don't fail the entire upload if verification fails
         // The upload itself was successful, verification is additional safety
+        emitStatus('Upload verification failed');
       } else {
         debugLog('Upload verification successful', { verificationTime });
+        emitStatus('Upload verified successfully');
       }
     }
 
@@ -147,6 +159,8 @@ export async function uploadDreamDataSecurely(
       uploadTime: Date.now() - uploadStartTime
     });
 
+    emitStatus(`Upload failed: ${errorMessage}`);
+
     return {
       success: false,
       error: errorMessage,
@@ -162,36 +176,45 @@ async function uploadWithRetry(
   storageService: XStateStorageService,
   dreamFileData: StandardDreamFields[],
   fileName: string,
-  config: UploadConfig
+  config: UploadConfig,
+  onStatus?: (message: string) => void
 ): Promise<UploadResult> {
-  let lastError: string = '';
+  let lastError = '';
+  const baseDelay = Math.max(config.retryDelay, 250);
+  const maxDelay = 20000; // cap wait times to 20s to avoid runaway delays
 
   for (let attempt = 1; attempt <= config.maxRetries; attempt++) {
-    debugLog(`Upload attempt ${attempt}/${config.maxRetries}`, { fileName });
+    const attemptLabel = `${attempt}/${config.maxRetries}`;
+    debugLog(`Upload attempt ${attemptLabel}`, { fileName });
+    onStatus?.(`Upload attempt ${attemptLabel}…`);
 
     try {
       const result = await storageService.uploadJson(dreamFileData, fileName);
-      
+
       if (result.success) {
         debugLog(`Upload successful on attempt ${attempt}`, {
           rootHash: result.rootHash?.substring(0, 10) + '...'
         });
+        onStatus?.(result.alreadyExists ? 'Upload skipped (already exists)' : 'Upload successful');
         return result;
-      } else {
-        lastError = result.error || 'Unknown upload error';
-        debugLog(`Upload attempt ${attempt} failed`, { error: lastError });
       }
 
+      lastError = result.error || 'Unknown upload error';
+      debugLog(`Upload attempt ${attempt} failed`, { error: lastError });
+      onStatus?.(`Upload failed: ${lastError}`);
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
       debugLog(`Upload attempt ${attempt} threw error`, { error: lastError });
+      onStatus?.(`Upload error: ${lastError}`);
     }
 
-    // Wait before retry (except on last attempt)
     if (attempt < config.maxRetries) {
-      const delay = config.retryDelay * attempt; // Progressive delay
-      debugLog(`Waiting ${delay}ms before retry`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay);
+      const jitter = Math.floor(Math.random() * Math.min(baseDelay, 1000));
+      const waitTime = exponentialDelay + jitter;
+      debugLog(`Waiting ${waitTime}ms before retry`, { attempt, exponentialDelay, jitter });
+      onStatus?.(`Retrying in ${waitTime}ms…`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }
 

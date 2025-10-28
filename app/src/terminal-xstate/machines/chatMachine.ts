@@ -120,9 +120,9 @@ export const chatMachine = setup({
     // Import shared storage actions
     storeUploadError: storageActions.storeUploadError,
     displayUploadErrorPrompt: storageActions.displayUploadErrorPrompt,
-    incrementRetry: storageActions.incrementRetryCount,
     storeFilePreparation: storageActions.storeFilePreparation,
     storeStorageResult: storageActions.storeStorageResult,
+    announceRetryStatus: storageActions.announceRetryStatus,
     
     // Import shared terminal actions
     sendStatusToParent: contextualTerminalActions.sendStatusFromContext
@@ -263,6 +263,7 @@ export const chatMachine = setup({
     uploadToStorage: fromPromise(async ({ input }: { 
       input: {
         fileData: any;
+        onStatus?: (message: string) => void;
       }
     }) => {
       debugLog('Uploading conversation to storage', {
@@ -274,7 +275,8 @@ export const chatMachine = setup({
       const { uploadToStorage } = await import('../services/xstateStorage');
       const uploadResult = await uploadToStorage(
         input.fileData.fileContent,
-        input.fileData.fileName
+        input.fileData.fileName,
+        input.onStatus
       );
 
       debugLog('Upload result', {
@@ -573,12 +575,17 @@ export const chatMachine = setup({
           ],
           invoke: {
             src: 'uploadToStorage',
-            input: ({ context }) => ({
-              fileData: context.preparedFileData
+            input: ({ context, self }) => ({
+              fileData: context.preparedFileData,
+              onStatus: (status: string) => {
+                if (status) {
+                  self.parent?.send({ type: 'UPDATE_STATUS', status });
+                }
+              }
             }),
             onDone: {
               target: 'updatingContract',
-              actions: ['storeStorageResult']
+              actions: ['storeStorageResult', 'sendStatusToParent']
             },
             onError: {
               target: '#chatMachine.storageUploadFailed',
@@ -629,23 +636,35 @@ export const chatMachine = setup({
     },
 
     storageUploadFailed: {
-      entry: 'displayUploadErrorPrompt',
+      entry: [
+        sendParent(({ context }: any) => {
+          const retryCount = context.retryCount || 0;
+          const maxRetries = context.maxRetries || 3;
+          const nextAttempt = Math.min(retryCount + 1, maxRetries);
+          const errorMsg = context.error || context.lastError || 'Upload failed';
+          return {
+            type: 'UPDATE_STATUS',
+            status: `Upload failed (${errorMsg}). Retry attempt ${nextAttempt}/${maxRetries}? Type y or n`
+          };
+        }),
+        'displayUploadErrorPrompt'
+      ],
       on: {
         'INPUT.SUBMIT': [
           {
             guard: 'shouldRetry',
             target: 'savingConversation.uploadingToStorage',
-            actions: ['incrementRetry']
+            actions: ['incrementRetry', 'announceRetryStatus']
           },
           {
             guard: 'shouldAbortAfterMaxRetries',
             target: 'completed',
-            actions: storageActions.setMaxRetriesExceededStatus as any
+            actions: [storageActions.setMaxRetriesExceededStatus as any, 'sendStatusToParent'] as any
           },
           {
             guard: 'isNoInput',
             target: 'completed',
-            actions: storageActions.setUploadCancelledStatus as any
+            actions: [storageActions.setUploadCancelledStatus as any, 'sendStatusToParent'] as any
           }
         ],
         EXIT: 'completed'

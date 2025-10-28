@@ -64,6 +64,11 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
       // Priority 1: Check if TTS is synthesizing (voice workflow active)
       if (context.isSynthesizing) return 'thinking';
       // Priority 2: Check if any processing with status message
+      const lowerDreamStatus = dreamStatus?.toLowerCase() || '';
+      const lowerChatStatus = chatStatus?.toLowerCase() || '';
+      if (lowerDreamStatus.includes('retry') || lowerChatStatus.includes('retry')) {
+        return 'retrying';
+      }
       if (dreamStatus) {
         if (dreamStatus.includes('thinking')) return 'thinking';
         if (dreamStatus.includes('learning')) return 'learning';
@@ -139,6 +144,11 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
   // Handle clear
   const handleClear = useCallback(() => {
     send({ type: 'CLEAR' });
+  }, [send]);
+
+  const handleQuickSubmit = useCallback((value: string) => {
+    send({ type: 'INPUT.CHANGE', value });
+    send({ type: 'INPUT.SUBMIT' });
   }, [send]);
 
   // Handle voice input
@@ -394,6 +404,7 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             isTablet={isTablet}
             isChatActive={isChatActive}
             chatStatus={chatStatus}
+            dreamStatus={dreamStatus}
             isRecording={isRecording}
             shouldShowMonthLearnPrompt={shouldShowMonthLearnPrompt}
             shouldShowYearLearnPrompt={shouldShowYearLearnPrompt}
@@ -417,21 +428,9 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             onVoiceInput={handleVoiceInput}
             isVoiceEnabled={true}
             onRecordingStateChange={setIsRecording}
-            placeholder={
-              isChatActive && chatStatus && chatStatus.includes('typing')
-                ? 'Agent is typing...'
-                : isChatActive && chatStatus === 'Waiting for your decision...'
-                  ? 'Type y or n'
-                : isChatActive
-                  ? 'Type your message...'
-                : isDreamActive && dreamStatus && dreamStatus.includes('thinking')
-                  ? dreamStatus
-                : isDreamActive && dreamStatus === 'Type y/n to confirm'
-                  ? 'Type y or n'
-                : isDreamActive 
-                  ? 'Describe your dream here'
-                  : 'Enter command'
-            }
+            dreamStatus={dreamStatus}
+            chatStatus={chatStatus}
+            onQuickSubmit={handleQuickSubmit}
             promptSymbol={isChatActive ? '~' : isDreamActive ? '~' : '>'}
           />
           

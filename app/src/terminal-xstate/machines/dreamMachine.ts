@@ -157,7 +157,7 @@ export const dreamMachine = setup({
         return defaultAgentData.tokenId;
       },
       agentName: ({ event }) => event.type === 'START' && event.agentName ? event.agentName : '',
-      statusMessage: 'Describe your dream...',
+      statusMessage: 'Describe your dream and optionally rate your sleep quality (1-10).',
       errorMessage: null,
       modelId: ({ event }) => event.type === 'START' ? event.modelId : undefined,
       walletAddress: ({ event }) => event.type === 'START' ? event.walletAddress : undefined,
@@ -165,13 +165,9 @@ export const dreamMachine = setup({
     }),
     
     // Send dream instruction to parent
-    sendDreamInstruction: sendParent(() => ({
-      type: 'APPEND_LINES',
-      lines: [{
-        type: 'info',
-        content: '~ Now u can describe your dream! Add your sleep quality review 1-10 if u want agent to know that!',
-        timestamp: Date.now()
-      }]
+    sendDreamInstruction: sendParent(({ context }) => ({
+      type: 'UPDATE_STATUS',
+      status: context.statusMessage
     })),
     
     // Store dream input
@@ -272,7 +268,8 @@ export const dreamMachine = setup({
     displayUploadErrorPrompt: storageActions.displayUploadErrorPrompt,
     incrementRetryCount: storageActions.incrementRetryCount,
     storeDreamFileData: storageActions.storeDreamFileData,
-    storeStorageResult: storageActions.storeStorageResult
+    storeStorageResult: storageActions.storeStorageResult,
+    announceRetryStatus: storageActions.announceRetryStatus
   },
   guards: {
     // Import shared memory guards
@@ -297,7 +294,7 @@ export const dreamMachine = setup({
       on: {
         START: {
           target: 'awaitingDreamInput',
-          actions: ['initializeDream', 'sendDreamInstruction', 'sendStatusToParent']
+          actions: ['initializeDream', 'sendDreamInstruction']
         }
       }
     },
@@ -442,26 +439,38 @@ export const dreamMachine = setup({
           ] as const,
           invoke: {
             src: 'storageUpload',
-            input: ({ context }) => {
+            input: ({ context, self }) => {
               const fileData = (context.persistenceResult as any)?.fileData;
               return {
                 data: fileData?.data || [],
-                fileName: fileData?.fileName || 'unknown'
+                fileName: fileData?.fileName || 'unknown',
+                onStatus: (status: string) => {
+                  if (status) {
+                    self.parent?.send({ type: 'UPDATE_STATUS', status });
+                  }
+                }
               };
             },
             onDone: [
               {
                 target: 'contractUpdate',
                 guard: 'hasValidRootHash',
-                actions: assign({
-                  storageRootHash: ({ event }) => {
-                    return (event as any).output.rootHash;
-                  },
-                  persistenceResult: ({ context, event }) => ({
-                    ...context.persistenceResult,
-                    storageData: (event as any).output
-                  })
-                })
+                actions: [
+                  assign({
+                    storageRootHash: ({ event }) => {
+                      return (event as any).output.rootHash;
+                    },
+                    persistenceResult: ({ context, event }) => ({
+                      ...context.persistenceResult,
+                      storageData: (event as any).output
+                    }),
+                    statusMessage: ({ event }) =>
+                      (event as any).output?.alreadyExists
+                        ? 'Storage already synced. Updating contract...'
+                        : 'Updating contract...'
+                  }),
+                  'sendStatusToParent'
+                ]
               },
               {
                 target: '#dream.storageUploadFailed',
@@ -532,28 +541,40 @@ export const dreamMachine = setup({
     },
     
     storageUploadFailed: {
-      entry: 'displayUploadErrorPrompt' as const,
+      entry: [
+        sendParent(({ context }: any) => {
+          const retryCount = context.retryCount || 0;
+          const maxRetries = context.maxRetries || 3;
+          const nextAttempt = Math.min(retryCount + 1, maxRetries);
+          const errorMsg = context.error || context.lastError || 'Upload failed';
+          return {
+            type: 'UPDATE_STATUS',
+            status: `Upload failed (${errorMsg}). Retry attempt ${nextAttempt}/${maxRetries}? Type y or n`
+          };
+        }),
+        'displayUploadErrorPrompt'
+      ] as const,
       on: {
         CONFIRM_SAVE: [
           {
             target: 'savingDream.storageUpload',
             guard: 'shouldRetry',
-            actions: 'incrementRetryCount'
+            actions: ['incrementRetryCount', 'announceRetryStatus']
           },
           {
             target: 'completed',
             guard: 'shouldAbortAfterMaxRetries',
-            actions: storageActions.setMaxRetriesExceededStatus as any
+            actions: [storageActions.setMaxRetriesExceededStatus as any, 'sendStatusToParent'] as any
           },
           {
             target: 'completed',
             guard: 'isNoInput',
-            actions: storageActions.setUploadCancelledStatus as any
+            actions: [storageActions.setUploadCancelledStatus as any, 'sendStatusToParent'] as any
           }
         ],
         CANCEL_SAVE: {
           target: 'completed',
-          actions: storageActions.setUploadCancelledStatus as any
+          actions: [storageActions.setUploadCancelledStatus as any, 'sendStatusToParent'] as any
         }
       }
     },
