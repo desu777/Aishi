@@ -11,7 +11,7 @@ interface WalletConnectionProps {
   existingTokenId: any;
   hasInsufficientBalance: boolean;
   balance: any;
-  mintingFee: bigint;
+  currentMintPrice: bigint;
 }
 
 export default function WalletConnection({
@@ -20,7 +20,7 @@ export default function WalletConnection({
   existingTokenId,
   hasInsufficientBalance,
   balance,
-  mintingFee,
+  currentMintPrice,
 }: WalletConnectionProps) {
   const { theme } = useTheme();
 
@@ -137,11 +137,11 @@ export default function WalletConnection({
         }}>
           Insufficient balance
         </p>
-        <p style={{ 
-          color: theme.text.secondary, 
+        <p style={{
+          color: theme.text.secondary,
           fontSize: theme.typography.fontSizes.xs
         }}>
-          You need {formatEther(mintingFee)} OG to mint
+          You need {formatEther(currentMintPrice)} OG to mint
         </p>
         {balance && (
           <p style={{ 

@@ -147,26 +147,29 @@ async function main() {
   log.step(3, "Reading contract information...");
 
   try {
-    const [name, symbol, totalAgents, maxAgents, mintingFee] = await Promise.all([
+    const [name, symbol, totalAgents, mintingFee, priceStep, priceStepInterval] = await Promise.all([
       aishiAgent.name(),
       aishiAgent.symbol(),
       aishiAgent.totalAgents(),
-      aishiAgent.MAX_AGENTS(),
-      aishiAgent.MINTING_FEE()
+      aishiAgent.MINTING_FEE(),
+      aishiAgent.PRICE_STEP(),
+      aishiAgent.PRICE_STEP_INTERVAL()
     ]);
 
     console.log("\nContract Information:");
     console.log(`  Name: ${name}`);
     console.log(`  Symbol: ${symbol}`);
-    console.log(`  Total Agents: ${totalAgents}/${maxAgents}`);
-    console.log(`  Minting Fee: ${ethers.formatEther(mintingFee)} 0G`);
+    console.log(`  Total Agents: ${totalAgents} (unlimited supply)`);
+    console.log(`  Base Mint Price: ${ethers.formatEther(mintingFee)} 0G`);
+    console.log(`  Price Increase: ${ethers.formatEther(priceStep)} 0G every ${priceStepInterval} mints`);
 
     saveDeploymentAddress("AishiAgent", agentAddress, network, {
       name,
       symbol,
       totalAgents: totalAgents.toString(),
-      maxAgents: maxAgents.toString(),
-      mintingFee: ethers.formatEther(mintingFee),
+      baseMintingFee: ethers.formatEther(mintingFee),
+      priceStep: ethers.formatEther(priceStep),
+      priceStepInterval: priceStepInterval.toString(),
       treasury: treasuryAddress,
       verifier: verifierAddress,
       gasUsed: (await aishiAgent.deploymentTransaction().wait()).gasUsed.toString()

@@ -5,7 +5,7 @@ import Layout from '../../components/layout/Layout';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMintAgent } from './hooks/useMintAgent';
 import MintStatus from './components/MintStatus';
-import AgentCounter from './components/AgentCounter';
+import PriceDisplay from './components/PriceDisplay';
 
 export default function AishiMintPage() {
   const { theme } = useTheme();
@@ -66,7 +66,7 @@ export default function AishiMintPage() {
               reset={mintAgent.reset}
               
               // Constants
-              mintingFee={mintAgent.MINTING_FEE}
+              currentMintPrice={mintAgent.currentMintPrice}
               maxNameLength={mintAgent.MAX_NAME_LENGTH}
             />
           </div>
@@ -96,11 +96,10 @@ export default function AishiMintPage() {
               />
             </div>
             
-            {/* Agent Counter */}
-            <AgentCounter
-              agentsMinted={mintAgent.totalAgents}
-              agentsRemaining={mintAgent.agentsRemaining}
-              maxAgents={mintAgent.maxAgents}
+            {/* Price Display */}
+            <PriceDisplay
+              currentMintPrice={mintAgent.currentMintPrice}
+              totalAgents={mintAgent.totalAgents}
             />
           </div>
         </div>

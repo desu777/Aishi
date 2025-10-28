@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import toast from 'react-hot-toast';
 import { getActiveChain } from '../../../config/chains';
-import { getContractConfig, MINTING_FEE, MAX_NAME_LENGTH, MAX_AGENTS } from '../config/contractConfig';
+import { getContractConfig, MINTING_FEE, MAX_NAME_LENGTH } from '../config/contractConfig';
 
 export function useMintAgent() {
   const { address, isConnected } = useAccount();
@@ -43,6 +43,13 @@ export function useMintAgent() {
     address: contractConfig.address,
     abi: contractConfig.abi,
     functionName: 'totalAgents',
+  });
+
+  // Get current mint price (dynamic pricing)
+  const { data: currentMintPrice } = useReadContract({
+    address: contractConfig.address,
+    abi: contractConfig.abi,
+    functionName: 'currentMintPrice',
   });
 
   // Mint transaction
@@ -112,6 +119,9 @@ export function useMintAgent() {
     if (!address || !agentName || nameError) return;
 
     try {
+      // Use current mint price (dynamic pricing)
+      const mintPrice = currentMintPrice || MINTING_FEE;
+
       await writeContractAsync({
         address: contractConfig.address,
         abi: contractConfig.abi,
@@ -122,7 +132,7 @@ export function useMintAgent() {
           agentName,
           address
         ],
-        value: MINTING_FEE,
+        value: mintPrice,
         account: address,
         chain: getActiveChain(),
       });
@@ -149,16 +159,13 @@ export function useMintAgent() {
 
   // Check if user can mint
   const hasExistingAgent = existingTokenId && Number(existingTokenId) > 0;
-  const hasInsufficientBalance = balance && balance.value < MINTING_FEE;
-  const canMint = isConnected && !hasExistingAgent && !hasInsufficientBalance && 
+  const mintPrice = currentMintPrice || MINTING_FEE;
+  const hasInsufficientBalance = balance && balance.value < mintPrice;
+  const canMint = isConnected && !hasExistingAgent && !hasInsufficientBalance &&
                   agentName && !nameError && !isCheckingName;
 
   // Transaction status
   const isProcessing = isWritePending || isTxLoading;
-
-  // Calculate remaining agents
-  const agentsRemaining = MAX_AGENTS - Number(totalAgents || 0);
-  const agentsMinted = Number(totalAgents || 0);
 
   return {
     // State
@@ -178,9 +185,8 @@ export function useMintAgent() {
     existingTokenId,
     
     // Stats
-    totalAgents: agentsMinted,
-    agentsRemaining,
-    maxAgents: MAX_AGENTS,
+    totalAgents: Number(totalAgents || 0),
+    currentMintPrice: currentMintPrice || MINTING_FEE,
     
     // Transaction
     isProcessing,

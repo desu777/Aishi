@@ -34,7 +34,7 @@ interface MintStatusProps {
   reset: () => void;
   
   // Constants
-  mintingFee: bigint;
+  currentMintPrice: bigint;
   maxNameLength: number;
 }
 
@@ -55,7 +55,7 @@ export default function MintStatus(props: MintStatusProps) {
     txHash,
     shareOnX,
     reset,
-    mintingFee,
+    currentMintPrice,
   } = props;
 
   // Show success state
@@ -85,7 +85,7 @@ export default function MintStatus(props: MintStatusProps) {
         existingTokenId={existingTokenId}
         hasInsufficientBalance={hasInsufficientBalance}
         balance={balance}
-        mintingFee={mintingFee}
+        currentMintPrice={currentMintPrice}
       />
     );
   }
@@ -132,7 +132,7 @@ export default function MintStatus(props: MintStatusProps) {
           canMint={props.canMint}
           isProcessing={props.isProcessing}
           maxNameLength={props.maxNameLength}
-          mintingFee={props.mintingFee}
+          currentMintPrice={props.currentMintPrice}
           onMint={props.handleMint}
         />
       </>
@@ -149,7 +149,7 @@ export default function MintStatus(props: MintStatusProps) {
           existingTokenId={null}
           hasInsufficientBalance={hasInsufficientBalance}
           balance={balance}
-          mintingFee={mintingFee}
+          currentMintPrice={currentMintPrice}
         />
       )}
       <MintForm
@@ -160,7 +160,7 @@ export default function MintStatus(props: MintStatusProps) {
         canMint={props.canMint}
         isProcessing={props.isProcessing}
         maxNameLength={props.maxNameLength}
-        mintingFee={props.mintingFee}
+        currentMintPrice={props.currentMintPrice}
         onMint={props.handleMint}
       />
     </>

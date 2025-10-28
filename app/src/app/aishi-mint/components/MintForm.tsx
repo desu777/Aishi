@@ -13,7 +13,7 @@ interface MintFormProps {
   canMint: boolean;
   isProcessing: boolean;
   maxNameLength: number;
-  mintingFee: bigint;
+  currentMintPrice: bigint;
   onMint: () => void;
 }
 
@@ -25,7 +25,7 @@ export default function MintForm({
   canMint,
   isProcessing,
   maxNameLength,
-  mintingFee,
+  currentMintPrice,
   onMint,
 }: MintFormProps) {
   const { theme } = useTheme();
@@ -171,7 +171,7 @@ export default function MintForm({
             color: theme.text.secondary,
             fontSize: theme.typography.fontSizes.sm,
           }}>
-            Minting Fee
+            Current Mint Price
           </span>
           <span style={{
             color: theme.accent.primary,
@@ -179,7 +179,7 @@ export default function MintForm({
             fontWeight: theme.typography.fontWeights.bold,
             fontFamily: theme.typography.fontFamilies.monospace,
           }}>
-            {formatEther(mintingFee)} OG
+            {formatEther(currentMintPrice)} OG
           </span>
         </div>
       </div>

@@ -22,6 +22,5 @@ export const getContractConfig = () => {
 };
 
 // Minting-specific constants
-export const MINTING_FEE = parseEther('0.1'); // 0.1 OG
+export const MINTING_FEE = parseEther('0.1'); // 0.1 OG base price
 export const MAX_NAME_LENGTH = 32;
-export const MAX_AGENTS = Number(process.env.NEXT_PUBLIC_AGENTS) || 50;
