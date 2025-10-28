@@ -5,6 +5,7 @@
 
 import { aishiAgentAbi, aishiAgentAddress } from '../../../generated';
 import { getActiveChain } from '../../../config/chains';
+import { getNetworkConfig } from '../../../lib/0g/network';
 
 /**
  * @returns Contract configuration with type-safe ABI for API operations
@@ -24,6 +25,8 @@ export const getContractConfig = () => {
  * 0G Storage configuration for API routes
  */
 export const STORAGE_CONFIG = {
-  storageRpc: process.env.NEXT_PUBLIC_TURBO_STORAGE_RPC || 'https://indexer-storage-testnet-turbo.0g.ai',
-  l1Rpc: process.env.NEXT_PUBLIC_L1_RPC || 'https://evmrpc-testnet.0g.ai'
+  ...(() => {
+    const net = getNetworkConfig('turbo');
+    return { storageRpc: net.storageRpc, l1Rpc: net.l1Rpc };
+  })()
 };

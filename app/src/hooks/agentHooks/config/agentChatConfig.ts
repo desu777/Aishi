@@ -5,14 +5,16 @@
 import { getContractConfig } from './contractConfig';
 import { getActiveChain } from '../../../config/chains';
 import { StorageConfig, ComputeConfig } from '../types/agentChatTypes';
+import { getNetworkConfig } from '../../../lib/0g/network';
 
 // Contract configuration
 export const contractConfig = getContractConfig();
 
-// 0G Storage configuration - używamy te same URL co useAgentDream
+// 0G Storage configuration (follows active network via network config)
+const turboNetwork = getNetworkConfig('turbo');
 export const STORAGE_CONFIG: StorageConfig = {
-  storageRpc: process.env.NEXT_PUBLIC_TURBO_STORAGE_RPC || 'https://indexer-storage-testnet-turbo.0g.ai',
-  l1Rpc: process.env.NEXT_PUBLIC_L1_RPC || 'https://evmrpc-testnet.0g.ai'
+  storageRpc: turboNetwork.storageRpc,
+  l1Rpc: turboNetwork.l1Rpc
 };
 
 // 0G Compute configuration

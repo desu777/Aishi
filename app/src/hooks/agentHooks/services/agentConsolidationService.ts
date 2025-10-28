@@ -5,6 +5,7 @@ import { uploadFileComplete } from '../../../lib/0g/uploader';
 import { getContractConfig } from '../config/contractConfig';
 import { getEthersSignerForZeroG } from '../../../lib/0g/adapter/viemAdapter';
 import { getActiveChain } from '../../../config/chains';
+import { getNetworkConfig } from '../../../lib/0g/network';
 import type { PublicClient, WalletClient } from 'viem';
 
 // Schemat JSON dla konsolidacji miesięcznej snów (UNIFIED)
@@ -111,11 +112,8 @@ export interface MonthlyConversationConsolidation {
   };
 }
 
-// Konfiguracja storage - używamy doors.md
-const STORAGE_CONFIG = {
-  storageRpc: process.env.NEXT_PUBLIC_TURBO_STORAGE_RPC || 'https://indexer-storage-testnet-turbo.0g.ai',
-  l1Rpc: process.env.NEXT_PUBLIC_L1_RPC || 'https://evmrpc-testnet.0g.ai'
-};
+// Network-aware storage configuration
+const NETWORK = getNetworkConfig('turbo');
 
 // Debug log helper
 const debugLog = (message: string, data?: any) => {
@@ -595,8 +593,8 @@ export const saveConsolidationToStorage = async (
 
     // Upload both files
     const [dreamResult, convResult] = await Promise.all([
-      uploadFileComplete(dreamFile, STORAGE_CONFIG.storageRpc, STORAGE_CONFIG.l1Rpc, signer),
-      uploadFileComplete(convFile, STORAGE_CONFIG.storageRpc, STORAGE_CONFIG.l1Rpc, signer)
+      uploadFileComplete(dreamFile, NETWORK.storageRpc, NETWORK.l1Rpc, signer),
+      uploadFileComplete(convFile, NETWORK.storageRpc, NETWORK.l1Rpc, signer)
     ]);
 
     if (!dreamResult.success) {
@@ -708,8 +706,8 @@ export const clearMonthlyFiles = async (
 
     // Upload empty files
     const [dreamResult, convResult] = await Promise.all([
-      uploadFileComplete(emptyDreamFile, STORAGE_CONFIG.storageRpc, STORAGE_CONFIG.l1Rpc, signer),
-      uploadFileComplete(emptyConvFile, STORAGE_CONFIG.storageRpc, STORAGE_CONFIG.l1Rpc, signer)
+      uploadFileComplete(emptyDreamFile, NETWORK.storageRpc, NETWORK.l1Rpc, signer),
+      uploadFileComplete(emptyConvFile, NETWORK.storageRpc, NETWORK.l1Rpc, signer)
     ]);
 
     if (!dreamResult.success || !convResult.success) {

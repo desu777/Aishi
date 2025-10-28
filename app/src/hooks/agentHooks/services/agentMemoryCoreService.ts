@@ -5,6 +5,7 @@ import { uploadFileComplete } from '../../../lib/0g/uploader';
 import { getContractConfig } from '../config/contractConfig';
 import { getActiveChain } from '../../../config/chains';
 import { getEthersSignerForZeroG } from '../../../lib/0g/adapter/viemAdapter';
+import { getNetworkConfig } from '../../../lib/0g/network';
 import type { PublicClient, WalletClient } from 'viem';
 import type { MonthlyDreamConsolidation, MonthlyConversationConsolidation } from './agentConsolidationService';
 
@@ -73,11 +74,8 @@ export interface YearlyMemoryCore {
   };
 }
 
-// Konfiguracja storage - używamy doors.md
-const STORAGE_CONFIG = {
-  storageRpc: process.env.NEXT_PUBLIC_TURBO_STORAGE_RPC || 'https://indexer-storage-testnet-turbo.0g.ai',
-  l1Rpc: process.env.NEXT_PUBLIC_L1_RPC || 'https://evmrpc-testnet.0g.ai'
-};
+// Network-aware storage configuration
+const NETWORK = getNetworkConfig('turbo');
 
 // Debug log helper
 const debugLog = (message: string, data?: any) => {
@@ -398,8 +396,8 @@ export const saveMemoryCoreToStorage = async (
     // Upload file
     const uploadResult = await uploadFileComplete(
       memoryCoreFile, 
-      STORAGE_CONFIG.storageRpc, 
-      STORAGE_CONFIG.l1Rpc, 
+      NETWORK.storageRpc, 
+      NETWORK.l1Rpc, 
       signer
     );
 
