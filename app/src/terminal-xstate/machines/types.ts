@@ -75,9 +75,11 @@ export interface TerminalContext {
   // Dream workflow state
   isDreamActive: boolean;
   dreamStatus: string | null;
+  dreamPrompt: string | null;
   // Chat workflow state
   isChatActive: boolean;
   chatStatus: string | null;
+  chatPrompt: string | null;
   // Month-learn workflow state
   isMonthLearnActive: boolean;
   monthLearnStatus: string | null;
@@ -102,7 +104,7 @@ export type TerminalEvent =
   | { type: 'INITIALIZE_BROKER'; walletAddress: string }
   | { type: 'SYNC_AGENT'; walletAddress: string; provider: any }
   | { type: 'APPEND_LINES'; lines: TerminalLine[] }
-  | { type: 'UPDATE_STATUS'; status: string }
+  | { type: 'UPDATE_STATUS'; status?: string | null; prompt?: string | null; source?: 'global' | 'dream' | 'chat' | 'month' | 'memory'; preservePrompt?: boolean }
   | { type: 'DREAM.COMPLETE' }
   | { type: 'CHAT_COMPLETED' }
   | { type: 'MONTH_LEARN.COMPLETE' }

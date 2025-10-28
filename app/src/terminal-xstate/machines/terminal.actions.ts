@@ -181,6 +181,7 @@ export const terminalActions = {
     dreamRef: ({ spawn }: any) => spawn('dreamActor', { id: 'dream' }),
     isDreamActive: true,
     dreamStatus: 'Initializing dream workflow...',
+    dreamPrompt: null,
     lastParsedCommand: null
   }),
 
@@ -198,6 +199,7 @@ export const terminalActions = {
     },
     isChatActive: true,
     chatStatus: 'Initializing chat session...',
+    chatPrompt: null,
     lastParsedCommand: null
   }),
 
@@ -220,27 +222,77 @@ export const terminalActions = {
    */
   updateDreamStatus: assign({
     dreamStatus: ({ context, event }: any) => {
-      if (event.type === 'UPDATE_STATUS') {
-        // Don't allow null status during active workflow
-        if (event.status === null && context.isDreamActive) {
-          return context.dreamStatus; // Keep existing status
-        }
-        return event.status;
+      if (event.type !== 'UPDATE_STATUS') {
+        return context.dreamStatus;
       }
-      return null;
+      const source = event.source ?? (context.isDreamActive ? 'dream' : 'global');
+      if (source !== 'dream') {
+        if (source === 'global') {
+          if (event.status === undefined) {
+            return context.dreamStatus;
+          }
+          return event.status;
+        }
+        return context.dreamStatus;
+      }
+      if (event.status === undefined) {
+        return context.dreamStatus;
+      }
+      if (event.status === null && context.isDreamActive) {
+        return context.dreamStatus;
+      }
+      return event.status;
+    },
+    dreamPrompt: ({ context, event }: any) => {
+      if (event.type !== 'UPDATE_STATUS') {
+        return context.dreamPrompt;
+      }
+      const source = event.source ?? (context.isDreamActive ? 'dream' : 'global');
+      if (source !== 'dream') {
+        return context.dreamPrompt;
+      }
+      if (event.prompt !== undefined) {
+        if (event.prompt === null && event.preservePrompt) {
+          return context.dreamPrompt;
+        }
+        return event.prompt;
+      }
+      return context.dreamPrompt;
     }
   }),
 
   updateChatStatus: assign({
     chatStatus: ({ context, event }: any) => {
-      if (event.type === 'UPDATE_STATUS') {
-        // Don't allow null status during active workflow
-        if (event.status === null && context.isChatActive) {
-          return context.chatStatus; // Keep existing status
-        }
-        return event.status;
+      if (event.type !== 'UPDATE_STATUS') {
+        return context.chatStatus;
       }
-      return null;
+      const source = event.source ?? (context.isChatActive ? 'chat' : 'global');
+      if (source !== 'chat') {
+        return context.chatStatus;
+      }
+      if (event.status === undefined) {
+        return context.chatStatus;
+      }
+      if (event.status === null && context.isChatActive) {
+        return context.chatStatus;
+      }
+      return event.status;
+    },
+    chatPrompt: ({ context, event }: any) => {
+      if (event.type !== 'UPDATE_STATUS') {
+        return context.chatPrompt;
+      }
+      const source = event.source ?? (context.isChatActive ? 'chat' : 'global');
+      if (source !== 'chat') {
+        return context.chatPrompt;
+      }
+      if (event.prompt !== undefined) {
+        if (event.prompt === null && event.preservePrompt) {
+          return context.chatPrompt;
+        }
+        return event.prompt;
+      }
+      return context.chatPrompt;
     }
   }),
 
@@ -259,6 +311,7 @@ export const terminalActions = {
   completeDream: assign({
     isDreamActive: false,
     dreamStatus: null,
+    dreamPrompt: null,
     dreamRef: null,
     wasVoiceInput: false // Reset voice flag only after dream completes
   }),
@@ -267,6 +320,7 @@ export const terminalActions = {
     isChatActive: false,
     chatRef: null,
     chatStatus: null,
+    chatPrompt: null,
     wasVoiceInput: false // Reset voice flag only after chat completes
   }),
 
@@ -612,18 +666,28 @@ export const terminalActions = {
    */
   resetThinkingStatus: assign({
     dreamStatus: ({ context }: { context: TerminalContext }) => {
-      // Only reset if in dream workflow
       if (context.isDreamActive) {
-        return 'Waiting for your response...';
+        return null;
       }
       return context.dreamStatus;
     },
+    dreamPrompt: ({ context }: { context: TerminalContext }) => {
+      if (context.isDreamActive) {
+        return 'Waiting for your response...';
+      }
+      return context.dreamPrompt;
+    },
     chatStatus: ({ context }: { context: TerminalContext }) => {
-      // Only reset if in chat workflow
+      if (context.isChatActive) {
+        return null;
+      }
+      return context.chatStatus;
+    },
+    chatPrompt: ({ context }: { context: TerminalContext }) => {
       if (context.isChatActive) {
         return 'Type your message...';
       }
-      return context.chatStatus;
+      return context.chatPrompt;
     }
   })
 };

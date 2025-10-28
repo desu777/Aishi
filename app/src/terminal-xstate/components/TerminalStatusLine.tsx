@@ -11,9 +11,8 @@ interface TerminalStatusLineProps {
   intelligenceLevel?: number;
   isMobile?: boolean;
   isTablet?: boolean;
-  isChatActive?: boolean;
-  chatStatus?: string | null;
-  dreamStatus?: string | null;
+  workflowStatus?: string | null;
+  workflowPrompt?: string | null;
   isRecording?: boolean;
   shouldShowMonthLearnPrompt?: boolean;
   shouldShowYearLearnPrompt?: boolean;
@@ -25,9 +24,8 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
   intelligenceLevel = 0,
   isMobile = false,
   isTablet = false,
-  isChatActive = false,
-  chatStatus = null,
-  dreamStatus = null,
+  workflowStatus = null,
+  workflowPrompt = null,
   shouldShowMonthLearnPrompt = false,
   shouldShowYearLearnPrompt = false
 }) => {
@@ -62,7 +60,8 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
       return () => clearTimeout(fadeTimer);
     }
   }, [status, prevStatus]);
-  const activeWorkflowStatus = isChatActive ? chatStatus : dreamStatus;
+  const activeWorkflowStatus = workflowStatus;
+  const promptMessage = workflowPrompt;
 
   const getStatusText = () => {
     switch (status) {
@@ -254,7 +253,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
         )}
       </div>
 
-      {(activeWorkflowStatus || retryInfo || progressPercent > 0) && (
+      {(promptMessage || activeWorkflowStatus || retryInfo || progressPercent > 0) && (
         <div style={{
           marginTop: isMobile ? '24px' : '28px',
           display: 'flex',
@@ -262,7 +261,21 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
           gap: '6px',
           alignItems: 'center'
         }}>
-          {activeWorkflowStatus && (
+          {promptMessage && (
+            <div style={{
+              color: '#CBD5F5',
+              fontSize: isMobile ? '10px' : '12px',
+              letterSpacing: '0.4px',
+              maxWidth: '90%',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {promptMessage}
+            </div>
+          )}
+
+          {!promptMessage && activeWorkflowStatus && !/\bis\s+(thinking|learning|evolving)\b/i.test(activeWorkflowStatus) && (
             <div style={{
               color: '#CBD5F5',
               fontSize: isMobile ? '10px' : '12px',

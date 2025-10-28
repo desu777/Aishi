@@ -51,8 +51,10 @@ export interface DreamMachineContext {
   contractTxHash: string | null;
   
   // Status and errors
-  statusMessage: string;
+  statusMessage: string | null;
+  promptMessage: string | null;
   errorMessage: string | null;
+  statusSource: 'dream';
   
   // Confirmation state
   awaitingConfirmation: boolean;
@@ -114,8 +116,10 @@ const initialContext: DreamMachineContext = {
   persistenceResult: null,
   storageRootHash: null,
   contractTxHash: null,
-  statusMessage: '',
+  statusMessage: null,
+  promptMessage: null,
   errorMessage: null,
+  statusSource: 'dream',
   awaitingConfirmation: false,
   modelId: undefined,
   walletAddress: undefined,
@@ -157,7 +161,8 @@ export const dreamMachine = setup({
         return defaultAgentData.tokenId;
       },
       agentName: ({ event }) => event.type === 'START' && event.agentName ? event.agentName : '',
-      statusMessage: 'Describe your dream and optionally rate your sleep quality (1-10).',
+      statusMessage: 'Awaiting dream input',
+      promptMessage: 'Describe your dream and optionally rate your sleep quality (1-10).',
       errorMessage: null,
       modelId: ({ event }) => event.type === 'START' ? event.modelId : undefined,
       walletAddress: ({ event }) => event.type === 'START' ? event.walletAddress : undefined,
@@ -167,7 +172,9 @@ export const dreamMachine = setup({
     // Send dream instruction to parent
     sendDreamInstruction: sendParent(({ context }) => ({
       type: 'UPDATE_STATUS',
-      status: context.statusMessage
+      source: 'dream',
+      prompt: context.promptMessage ?? context.statusMessage ?? undefined,
+      status: undefined
     })),
     
     // Store dream input
@@ -192,7 +199,8 @@ export const dreamMachine = setup({
         }
         return false;
       },
-      statusMessage: ({ context }) => `${context.agentName} is thinking . . .`
+      statusMessage: ({ context }) => `${context.agentName} is thinking . . .`,
+      promptMessage: null
     }),
     
     // Store context and update agent name
@@ -242,13 +250,15 @@ export const dreamMachine = setup({
         return 'An unknown error occurred';
       },
       statusMessage: null, // Clear status to allow new input
+      promptMessage: null,
       awaitingConfirmation: false // Reset confirmation state
     }),
     
     // Reset confirmation
     resetConfirmation: assign({
       awaitingConfirmation: false,
-      statusMessage: 'Dream not saved.'
+      statusMessage: 'Dream not saved.',
+      promptMessage: null
     }),
     
     // Send lines to parent with evolution awareness
@@ -382,13 +392,24 @@ export const dreamMachine = setup({
     
     awaitingSaveConfirmation: {
       entry: [
-        // Reset thinking status after AI response is displayed
-        sendParent({ type: 'UPDATE_STATUS', status: 'Waiting for your response...' })
+        assign({
+          promptMessage: () => 'Waiting for your response...',
+          statusMessage: () => ''
+        }),
+        sendParent(({ context }) => ({
+          type: 'UPDATE_STATUS',
+          source: 'dream',
+          prompt: context.promptMessage,
+          status: null
+        }))
       ],
       on: {
         CONFIRM_SAVE: {
           target: 'savingDream',
-          actions: 'sendStatusToParent'
+          actions: [
+            assign({ promptMessage: () => null }),
+            'sendStatusToParent'
+          ]
         },
         CANCEL_SAVE: {
           target: 'completed',
@@ -446,7 +467,11 @@ export const dreamMachine = setup({
                 fileName: fileData?.fileName || 'unknown',
                 onStatus: (status: string) => {
                   if (status) {
-                    self.parent?.send({ type: 'UPDATE_STATUS', status });
+                    self.parent?.send({
+                      type: 'UPDATE_STATUS',
+                      source: 'dream',
+                      status
+                    });
                   }
                 }
               };
@@ -549,7 +574,8 @@ export const dreamMachine = setup({
           const errorMsg = context.error || context.lastError || 'Upload failed';
           return {
             type: 'UPDATE_STATUS',
-            status: `Upload failed (${errorMsg}). Retry attempt ${nextAttempt}/${maxRetries}? Type y or n`
+            source: 'dream',
+            prompt: `Upload failed (${errorMsg}). Retry attempt ${nextAttempt}/${maxRetries}? Type y or n`
           };
         }),
         'displayUploadErrorPrompt'
@@ -591,6 +617,7 @@ export const dreamMachine = setup({
       // Automatically transition to completed after showing error
       entry: sendParent(() => ({
         type: 'UPDATE_STATUS',
+        source: 'dream',
         status: null // Clear status for new input
       })),
       always: {

@@ -49,7 +49,9 @@ const initialContext: TerminalContext = {
   isDreamActive: false,
   isChatActive: false,
   dreamStatus: null,
+  dreamPrompt: null,
   chatStatus: null,
+  chatPrompt: null,
   isMonthLearnActive: false,
   monthLearnStatus: null,
   isMemoryCoreActive: false,
@@ -136,7 +138,7 @@ export const terminalMachine = setup({
           actions: 'appendLines'
         },
         'UPDATE_STATUS': {
-          actions: 'updateDreamStatus'
+          actions: ['updateDreamStatus', 'updateChatStatus']
         },
         // Voice events
         'VOICE.TOGGLE': {
@@ -266,7 +268,7 @@ export const terminalMachine = setup({
         personality: {
           entry: ({ context, self }) => {
             const { agentName } = getAgentData(context);
-            self.send({ type: 'UPDATE_STATUS', status: `${agentName} is thinking...` });
+            self.send({ type: 'UPDATE_STATUS', source: 'global', status: `${agentName} is thinking...` });
           },
           invoke: {
             src: 'personalityExecutor',
@@ -294,7 +296,7 @@ export const terminalMachine = setup({
         uniqueFeatures: {
           entry: ({ context, self }) => {
             const { agentName } = getAgentData(context);
-            self.send({ type: 'UPDATE_STATUS', status: `${agentName} is thinking...` });
+            self.send({ type: 'UPDATE_STATUS', source: 'global', status: `${agentName} is thinking...` });
           },
           invoke: {
             src: 'uniqueFeaturesExecutor',
@@ -322,7 +324,7 @@ export const terminalMachine = setup({
         stats: {
           entry: ({ context, self }) => {
             const { agentName } = getAgentData(context);
-            self.send({ type: 'UPDATE_STATUS', status: `${agentName} is thinking...` });
+            self.send({ type: 'UPDATE_STATUS', source: 'global', status: `${agentName} is thinking...` });
           },
           invoke: {
             src: 'statsExecutor',
@@ -350,7 +352,7 @@ export const terminalMachine = setup({
         memory: {
           entry: ({ context, self }) => {
             const { agentName } = getAgentData(context);
-            self.send({ type: 'UPDATE_STATUS', status: `${agentName} is accessing memory...` });
+            self.send({ type: 'UPDATE_STATUS', source: 'global', status: `${agentName} is accessing memory...` });
           },
           invoke: {
             src: 'memoryExecutor',

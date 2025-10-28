@@ -40,7 +40,22 @@ const colors = {
 };
 
 export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, selectedModel, selectedVoice }) => {
-  const { context, send, state, brokerRef, modelRef, agentRef, voiceRef, isDreamActive, dreamStatus, isChatActive, chatStatus, isVoiceEnabled } = useTerminal();
+  const {
+    context,
+    send,
+    state,
+    brokerRef,
+    modelRef,
+    agentRef,
+    voiceRef,
+    isDreamActive,
+    dreamStatus,
+    dreamPrompt,
+    isChatActive,
+    chatStatus,
+    chatPrompt,
+    isVoiceEnabled
+  } = useTerminal();
   const { agentName, isLoading: agentLoading } = useTerminalAgent();
   const { shouldShowMonthLearnPrompt, shouldShowYearLearnPrompt } = useConsolidationStatus();
   const { address, isConnected } = useAccount();
@@ -402,9 +417,9 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             intelligenceLevel={intelligenceLevel}
             isMobile={isMobile}
             isTablet={isTablet}
+            workflowStatus={isChatActive ? chatStatus : dreamStatus}
+            workflowPrompt={isChatActive ? chatPrompt : dreamPrompt}
             isChatActive={isChatActive}
-            chatStatus={chatStatus}
-            dreamStatus={dreamStatus}
             isRecording={isRecording}
             shouldShowMonthLearnPrompt={shouldShowMonthLearnPrompt}
             shouldShowYearLearnPrompt={shouldShowYearLearnPrompt}
@@ -429,7 +444,9 @@ export const GlassTerminal: React.FC<GlassTerminalProps> = ({ isOpen, onClose, s
             isVoiceEnabled={true}
             onRecordingStateChange={setIsRecording}
             dreamStatus={dreamStatus}
+            dreamPrompt={dreamPrompt}
             chatStatus={chatStatus}
+            chatPrompt={chatPrompt}
             onQuickSubmit={handleQuickSubmit}
             promptSymbol={isChatActive ? '~' : isDreamActive ? '~' : '>'}
           />

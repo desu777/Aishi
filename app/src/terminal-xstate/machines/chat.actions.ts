@@ -25,6 +25,7 @@ export const chatActions = {
     walletAddress: ({ event }: any) => event.walletAddress || null,
     sessionId: () => `chat_${Date.now()}`,
     statusMessage: ({ event }: any) => `Starting chat with ${event.agentName}...`,
+    promptMessage: () => 'Type your message...',
     messages: () => [],
     currentTranscript: () => '',
     wasVoiceInput: ({ event }: any) => event.wasVoiceInput || false
@@ -37,7 +38,8 @@ export const chatActions = {
     agentContext: ({ event }: any) => event.output.agentContext,
     historicalData: ({ event }: any) => event.output.historicalData,
     isInitialized: true,
-    statusMessage: ({ context }: { context: ChatContext }) => `Chat ready with ${context.agentName}`
+    statusMessage: ({ context }: { context: ChatContext }) => `Chat ready with ${context.agentName}`,
+    promptMessage: () => 'Type your message...'
   }),
 
   /**
@@ -61,7 +63,8 @@ export const chatActions = {
       // Update wasVoiceInput from event if present
       return event.wasVoiceInput || false;
     },
-    statusMessage: ({ context }: { context: ChatContext }) => `${context.agentName} is thinking...`
+    statusMessage: ({ context }: { context: ChatContext }) => `${context.agentName} is thinking...`,
+    promptMessage: () => null
   }),
 
   /**
@@ -88,7 +91,8 @@ export const chatActions = {
    */
   setAwaitingConfirmation: assign({
     awaitingConfirmation: true,
-    statusMessage: 'Waiting for your decision...'
+    statusMessage: null,
+    promptMessage: () => 'Waiting for your decision...'
   }),
 
   /**
@@ -96,7 +100,8 @@ export const chatActions = {
    */
   storeConversationSummary: assign({
     conversationSummary: ({ event }: any) => event.output.summary,
-    statusMessage: 'Saving conversation...'
+    statusMessage: 'Saving conversation...',
+    promptMessage: () => null
   }),
 
   /**
@@ -105,6 +110,7 @@ export const chatActions = {
   storePersistenceResult: assign({
     contractTxHash: ({ event }: any) => event.output.txHash,
     statusMessage: 'Conversation saved successfully!',
+    promptMessage: () => null,
     retryCount: 0 // Reset retry count on success
   }),
 
@@ -115,6 +121,7 @@ export const chatActions = {
     error: ({ event }: any) => event.error || 'An error occurred',
     lastError: ({ event }: any) => event.error || 'Unknown error',
     statusMessage: null, // Clear status for new input
+    promptMessage: () => null,
     awaitingConfirmation: false // Reset any confirmation state
   }),
 
@@ -294,7 +301,8 @@ export const chatActions = {
    * Set cancelled status
    */
   setCancelledStatus: assign({
-    statusMessage: 'Chat cancelled.'
+    statusMessage: 'Chat cancelled.',
+    promptMessage: () => null
   })
 };
 

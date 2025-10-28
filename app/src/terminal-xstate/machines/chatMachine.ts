@@ -37,7 +37,9 @@ export interface ChatContext {
   currentTranscript: string;
   isInitialized: boolean;
   awaitingConfirmation: boolean;
-  statusMessage: string;
+  statusMessage: string | null;
+  promptMessage: string | null;
+  statusSource: 'chat';
   error: string | null;
   // Context data
   agentContext: any | null;
@@ -82,7 +84,9 @@ const initialContext: ChatContext = {
   currentTranscript: '',
   isInitialized: false,
   awaitingConfirmation: false,
-  statusMessage: 'Initializing chat...',
+  statusMessage: null,
+  promptMessage: null,
+  statusSource: 'chat',
   error: null,
   agentContext: null,
   historicalData: null,
@@ -420,7 +424,8 @@ export const chatMachine = setup({
     processingMessage: {
       entry: [
         assign({ 
-          statusMessage: ({ context }) => `${context.agentName} is thinking...` 
+          statusMessage: ({ context }) => `${context.agentName} is thinking...`,
+          promptMessage: () => null
         }),
         'sendStatusToParent'
       ],
@@ -454,7 +459,7 @@ export const chatMachine = setup({
     chatting: {
       entry: [
         // Reset thinking status after AI response is displayed
-        assign({ statusMessage: 'Type your message...' }),
+        assign({ statusMessage: null, promptMessage: () => 'Type your message...' }),
         'sendStatusToParent'
       ],
       on: {
@@ -544,7 +549,8 @@ export const chatMachine = setup({
         preparingFile: {
           entry: [
             assign({ 
-              statusMessage: ({ context }) => `${context.agentName} is learning...` 
+              statusMessage: ({ context }) => `${context.agentName} is learning...`,
+              promptMessage: () => null
             }),
             'sendStatusToParent'
           ],
@@ -569,7 +575,8 @@ export const chatMachine = setup({
         uploadingToStorage: {
           entry: [
             assign({ 
-              statusMessage: ({ context }) => `${context.agentName} is learning...` 
+              statusMessage: ({ context }) => `${context.agentName} is learning...`,
+              promptMessage: () => null
             }),
             'sendStatusToParent'
           ],
@@ -579,7 +586,7 @@ export const chatMachine = setup({
               fileData: context.preparedFileData,
               onStatus: (status: string) => {
                 if (status) {
-                  self.parent?.send({ type: 'UPDATE_STATUS', status });
+                  self.parent?.send({ type: 'UPDATE_STATUS', source: 'chat', status });
                 }
               }
             }),
@@ -597,7 +604,8 @@ export const chatMachine = setup({
         updatingContract: {
           entry: [
             assign({ 
-              statusMessage: ({ context }) => `${context.agentName} is evolving...` 
+              statusMessage: ({ context }) => `${context.agentName} is evolving...`,
+              promptMessage: () => null
             }),
             'sendStatusToParent'
           ],
@@ -624,7 +632,7 @@ export const chatMachine = setup({
     saveFailed: {
       entry: [
         'sendSaveError',
-        assign({ statusMessage: null }) // Clear status for new input
+        assign({ statusMessage: null, promptMessage: () => null }) // Clear status for new input
       ],
       // Auto-transition to completed after showing error
       after: {
@@ -644,7 +652,8 @@ export const chatMachine = setup({
           const errorMsg = context.error || context.lastError || 'Upload failed';
           return {
             type: 'UPDATE_STATUS',
-            status: `Upload failed (${errorMsg}). Retry attempt ${nextAttempt}/${maxRetries}? Type y or n`
+            source: 'chat',
+            prompt: `Upload failed (${errorMsg}). Retry attempt ${nextAttempt}/${maxRetries}? Type y or n`
           };
         }),
         'displayUploadErrorPrompt'

@@ -22,7 +22,9 @@ interface PremiumCommandBarProps {
   isVoiceEnabled?: boolean;
   onRecordingStateChange?: (isRecording: boolean) => void;
   dreamStatus?: string | null;
+  dreamPrompt?: string | null;
   chatStatus?: string | null;
+  chatPrompt?: string | null;
   onQuickSubmit?: (value: string) => void;
 }
 
@@ -51,7 +53,9 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   isVoiceEnabled = false,
   onRecordingStateChange,
   dreamStatus = null,
+  dreamPrompt = null,
   chatStatus = null,
+  chatPrompt = null,
   onQuickSubmit
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -186,15 +190,27 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   const lowerDreamStatus = dreamStatus?.toLowerCase() ?? '';
   const lowerChatStatus = chatStatus?.toLowerCase() ?? '';
   const activeStatus = isChatActive ? lowerChatStatus : lowerDreamStatus;
+  const activePromptLower = (isChatActive ? chatPrompt : dreamPrompt)?.toLowerCase() ?? '';
+  const activePrompt = isChatActive ? chatPrompt : dreamPrompt;
   const retryPromptActive = activeStatus.includes('type y or n') || activeStatus.includes('type y/n');
-  const retryingActive = activeStatus.includes('retrying');
+  const promptAsksConfirmation = activePromptLower.includes('type y or n') || activePromptLower.includes('type y/n');
+  const retryingActive = activeStatus.includes('retrying') || activePromptLower.includes('retrying');
 
   const smartPlaceholder = useMemo(() => {
-    if (retryPromptActive) {
+    if (retryPromptActive || promptAsksConfirmation) {
       return "Type 'y' to retry or 'n' to cancel";
     }
     if (retryingActive) {
       return 'Retrying... type n to cancel';
+    }
+    if (activePromptLower.includes('waiting for your response')) {
+      return "Type your response or 'n' to cancel";
+    }
+    if (activePromptLower.includes('waiting for your decision')) {
+      return "Type y or n";
+    }
+    if (activePrompt) {
+      return activePrompt;
     }
     if (activeStatus.includes('waiting for your response')) {
       return "Type your response or 'n' to cancel";
@@ -501,7 +517,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
           )}
         </div>
 
-      {retryPromptActive && (
+      {(retryPromptActive || promptAsksConfirmation) && (
         <button
           onClick={() => !disabled && onQuickSubmit?.('n')}
           disabled={disabled}

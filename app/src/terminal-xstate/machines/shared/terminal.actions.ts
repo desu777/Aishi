@@ -108,10 +108,22 @@ export const contextualTerminalActions = {
   /**
    * Send dynamic status from context to parent
    */
-  sendStatusFromContext: sendParent(({ context }: any) => ({
-    type: 'UPDATE_STATUS',
-    status: context.statusMessage || 'Processing...'
-  })),
+  sendStatusFromContext: sendParent(({ context }: any) => {
+    const payload: Record<string, any> = {
+      type: 'UPDATE_STATUS',
+      source: context.statusSource || 'global'
+    };
+
+    if (context.statusMessage !== undefined) {
+      payload.status = context.statusMessage ?? null;
+    }
+
+    if (context.promptMessage !== undefined) {
+      payload.prompt = context.promptMessage ?? null;
+    }
+
+    return payload;
+  }),
 
   /**
    * Send error from context to parent
