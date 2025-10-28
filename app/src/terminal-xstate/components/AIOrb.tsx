@@ -44,20 +44,26 @@ const AIOrb: React.FC<AIorbProps> = ({
 
   // Determine orb size based on device - more granular sizing for laptops
   const getOrbSize = () => {
-    if (isInitialState) {
-      if (isMobile) return "58px";
-      if (isTablet) return "78px";
-      if (typeof window !== 'undefined' && window.innerWidth < 1024) return "98px";
-      if (typeof window !== 'undefined' && window.innerWidth < 1280) return "116px";
-      return "132px";
+    const isLaptop = typeof window !== 'undefined' && window.innerWidth < 1024;
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1280;
+
+    if (isMobile) {
+      // Mobile keeps consistent size regardless of state
+      return isInitialState ? '58px' : '58px';
     }
 
-    // Active chat state - tighter sizing
-    if (isMobile) return "46px";
-    if (isTablet) return "64px";
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) return "82px";
-    if (typeof window !== 'undefined' && window.innerWidth < 1280) return "96px";
-    return "108px";
+    if (isInitialState) {
+      if (isTablet) return '78px';
+      if (isLaptop) return '98px';
+      if (isDesktop) return '132px';
+      return '120px';
+    }
+
+    // Active state on larger screens
+    if (isTablet) return '64px';
+    if (isLaptop) return '82px';
+    if (isDesktop) return '108px';
+    return '96px';
   };
 
   // Get colors and animation speed based on status
@@ -193,14 +199,15 @@ const AIOrb: React.FC<AIorbProps> = ({
   const orbConfig = getOrbConfig();
 
   const verticalPadding = isInitialState
-    ? (isMobile ? '0.75rem 0' : isTablet ? '0.9rem 0' : '1.2rem 0')
-    : (isMobile ? '0.5rem 0' : isTablet ? '0.65rem 0' : '0.8rem 0');
+    ? (isMobile ? '0.7rem 0' : isTablet ? '0.9rem 0' : '1.1rem 0')
+    : (isMobile ? '0.7rem 0' : isTablet ? '0.6rem 0' : '0.75rem 0');
 
   const shadowStrength = status === 'learning' ? 'rgba(16, 185, 129, ' :
     status === 'evolving' ? 'rgba(245, 158, 11, ' :
       'rgba(139, 92, 246, ';
 
   const shadowOpacity = isInitialState ? '0.25' : '0.18';
+  const orbSize = getOrbSize();
 
   return (
     <div style={{
@@ -215,16 +222,35 @@ const AIOrb: React.FC<AIorbProps> = ({
       {/* Orb Container */}
       <div style={{
         position: 'relative',
+        width: orbSize,
+        height: orbSize,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}>
         {/* Siri Orb */}
         <SiriOrb
-          size={getOrbSize()}
+          size={orbSize}
           colors={orbConfig.colors}
           animationDuration={orbConfig.animationDuration}
           className="drop-shadow-2xl"
+        />
+
+        {/* Aishi logo with glass blur + glow effect */}
+        <img
+          src="/aishi.png"
+          alt="Aishi logo with glow effect"
+          className="aishi-glow"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            pointerEvents: 'none',
+            mixBlendMode: 'screen',
+            opacity: 0.9
+          }}
         />
 
 
@@ -232,20 +258,33 @@ const AIOrb: React.FC<AIorbProps> = ({
 
 
 
-      {/* Additional glow effect for active states */}
-      {(status === 'thinking' || status === 'responding' || status === 'learning' || status === 'evolving') && (
-        <style jsx>{`
+      {/* Combined styles: Aishi PNG glow + active state effects */}
+      <style jsx>{`
+        @keyframes aishi-glow-pulse {
+          0%, 100% {
+            filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.8)) drop-shadow(0 0 24px rgba(139, 92, 246, 0.5)) drop-shadow(0 0 36px rgba(139, 92, 246, 0.3));
+          }
+          50% {
+            filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.95)) drop-shadow(0 0 32px rgba(139, 92, 246, 0.65)) drop-shadow(0 0 48px rgba(139, 92, 246, 0.45));
+          }
+        }
+
+        .aishi-glow {
+          animation: aishi-glow-pulse 3s ease-in-out infinite;
+        }
+
+        ${(status === 'thinking' || status === 'responding' || status === 'learning' || status === 'evolving') ? `
           @keyframes pulse-glow {
             0%, 100% { opacity: 0.3; }
             50% { opacity: 0.6; }
           }
-          
+
           .drop-shadow-2xl {
             filter: drop-shadow(0 ${isInitialState ? '22px' : '16px'} ${isInitialState ? '22px' : '18px'} ${shadowStrength}${shadowOpacity});
             animation: pulse-glow 2s ease-in-out infinite;
           }
-        `}</style>
-      )}
+        ` : ''}
+      `}</style>
     </div>
   );
 };
