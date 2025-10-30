@@ -505,15 +505,6 @@ contract AishiAgent is
 
     /* ───────────────────────────────────────────────── VIEW HELPERS ────────── */
 
-    /// @notice Static image URI for iNFT badge (collection-wide)
-    function imageURI(uint256 /* tokenId */)
-        external
-        pure
-        returns (string memory)
-    {
-        return "https://pink-gradual-fish-611.mypinata.cloud/ipfs/bafkreiftcoalfi5iklixg547onf2olg3bcp6akapgwtxpy32qliniviwiq";
-    }
-
     function getPersonalityTraits(uint256 tokenId)
         external view override returns (PersonalityTraits memory) {
         require(agents[tokenId].owner != address(0), "agent !exist");
