@@ -10,6 +10,7 @@ import { useAccount } from 'wagmi';
 import { FundBrokerModal } from './FundBrokerModal';
 import { X } from 'lucide-react';
 import { touchTargets } from '../../utils/responsive';
+import GradientText from '../../components/ui/GradientText';
 
 interface TerminalSystemHeaderProps {
   agentName: string | null;
@@ -193,12 +194,18 @@ const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
         {/* System Info - hide on mobile */}
         {!isMobile && (
           <div style={{
-            color: theme.accent.primary,
             fontWeight: '600',
             letterSpacing: '0.05em',
             whiteSpace: 'nowrap'
           }}>
-            aishiOS v1.1
+            <GradientText
+              inline
+              showBorder={false}
+              colors={['#FFFFFF', '#8B5CF6', '#FFFFFF', '#8B5CF6', '#FFFFFF']}
+              animationSpeed={3}
+            >
+              aishiOS v2.0
+            </GradientText>
           </div>
         )}
       

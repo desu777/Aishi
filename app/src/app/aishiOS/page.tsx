@@ -10,6 +10,7 @@ import ModelSelector from '../../components/ModelSelector';
 import useModelDiscovery from '../../hooks/useModelDiscovery';
 import VoiceSelector from '../../components/VoiceSelector';
 import useVoiceDiscovery from '../../hooks/useVoiceDiscovery';
+import GradientText from '../../components/ui/GradientText';
 
 export default function AishiOSPage() {
   const { theme, debugLog } = useTheme();
@@ -238,7 +239,14 @@ export default function AishiOSPage() {
                 e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              Open Terminal
+              <GradientText
+                inline
+                showBorder={false}
+                colors={['#FFFFFF', '#8B5CF6', '#FFFFFF', '#8B5CF6', '#FFFFFF']}
+                animationSpeed={3}
+              >
+                Talk with your Aishi
+              </GradientText>
             </Link>
           </div>
         </div>

@@ -9,6 +9,7 @@ interface GradientTextProps {
   colors?: string[];
   animationSpeed?: number;
   showBorder?: boolean;
+  inline?: boolean; // Minimal inline mode for use in terminal status line
 }
 
 // Simple className utility function
@@ -21,9 +22,32 @@ export default function GradientText({
   className = '',
   colors = ['#FFFFFF', '#8B5CF6', '#FFFFFF', '#8B5CF6', '#FFFFFF'], // White to Dreamscape violet gradient
   animationSpeed = 3,
-  showBorder = true
+  showBorder = true,
+  inline = false
 }: GradientTextProps) {
   const gradientString = `linear-gradient(to right, ${colors.join(', ')})`;
+
+  // Conditional styling based on inline mode
+  const wrapperStyle = inline ? {
+    position: 'relative' as const,
+    display: 'inline-block' as const,
+    fontWeight: 500
+  } : {
+    position: 'relative' as const,
+    margin: '0 auto',
+    display: 'inline-flex' as const,
+    maxWidth: 'fit-content',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    padding: '1rem 2rem',
+    borderRadius: '1.25rem',
+    fontWeight: 500,
+    backdropFilter: 'blur(10px)',
+    transition: 'box-shadow 0.5s ease-out',
+    overflow: 'hidden' as const,
+    cursor: 'pointer' as const
+  };
 
   return (
     <>
@@ -48,25 +72,10 @@ export default function GradientText({
 
       <div
         className={cn('gradient-text-wrapper', className)}
-        style={{
-          position: 'relative',
-          margin: '0 auto',
-          display: 'inline-flex',
-          maxWidth: 'fit-content',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem 2rem',
-          borderRadius: '1.25rem',
-          fontWeight: 500,
-          backdropFilter: 'blur(10px)',
-          transition: 'box-shadow 0.5s ease-out',
-          overflow: 'hidden',
-          cursor: 'pointer'
-        }}
+        style={wrapperStyle}
       >
         {/* Animated gradient border */}
-        {showBorder && (
+        {showBorder && !inline && (
           <>
             <div
               style={{

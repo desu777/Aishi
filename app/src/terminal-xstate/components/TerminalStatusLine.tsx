@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import GradientText from '@/components/ui/GradientText';
 
 interface TerminalStatusLineProps {
   status: 'uninitialized' | 'connecting' | 'syncing' | 'online' | 'thinking' | 'responding' | 'learning' | 'evolving' | 'error' | 'no_agent' | 'recording' | 'retrying';
@@ -98,6 +99,37 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
     }
   };
 
+  const getGradientColorsForStatus = (statusType: typeof status): string[] => {
+    switch (statusType) {
+      case 'thinking':
+      case 'responding':
+        return ['#A855F7', '#EC4899', '#A855F7', '#EC4899', '#A855F7']; // Purple-Pink gradient
+
+      case 'learning':
+        return ['#10B981', '#34D399', '#10B981', '#34D399', '#10B981']; // Emerald-Green gradient
+
+      case 'evolving':
+        return ['#F59E0B', '#FBBF24', '#F59E0B', '#FBBF24', '#F59E0B']; // Amber-Yellow gradient
+
+      case 'recording':
+        return ['#EF4444', '#F87171', '#EF4444', '#F87171', '#EF4444']; // Red gradient
+
+      case 'connecting':
+      case 'syncing':
+      case 'retrying':
+        return ['#FCD34D', '#FDE68A', '#FCD34D', '#FDE68A', '#FCD34D']; // Yellow gradient
+
+      case 'online':
+        return ['#10B981', '#34D399', '#10B981', '#34D399', '#10B981']; // Green gradient
+
+      case 'error':
+        return ['#EF4444', '#F87171', '#EF4444', '#F87171', '#EF4444']; // Red gradient
+
+      default:
+        return ['#FFFFFF', '#8B5CF6', '#FFFFFF', '#8B5CF6', '#FFFFFF']; // Default white-violet
+    }
+  };
+
   const retryMatch = activeWorkflowStatus?.match(/Attempt\s*(\d+)\/(\d+)/i);
   const retryInfo = retryMatch ? {
     attempt: Number.parseInt(retryMatch[1], 10),
@@ -151,12 +183,14 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
           // Special display for recording state
           <>
             <span style={{ color: '#9CA3AF' }}>status: </span>
-            <span style={{
-              color: getStatusColor(),
-              fontWeight: '500',
-            }}>
+            <GradientText
+              inline
+              showBorder={false}
+              colors={getGradientColorsForStatus(status)}
+              animationSpeed={2.5}
+            >
               {getStatusText()}
-            </span>
+            </GradientText>
             <span style={{
               color: getStatusColor(),
               fontWeight: '500',
@@ -171,18 +205,23 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
           // Special display for active processing states
           <>
             <span style={{ color: '#9CA3AF' }}>status: </span>
-            <span style={{
-              color: '#FFFFFF',
-              fontWeight: '500',
-            }}>
+            <GradientText
+              inline
+              showBorder={false}
+              colors={['#FFFFFF', '#8B5CF6', '#FFFFFF', '#8B5CF6', '#FFFFFF']}
+              animationSpeed={3}
+            >
               {agentName}
-            </span>
-            <span style={{
-              color: getStatusColor(),
-              fontWeight: '500',
-            }}>
-              {' is ' + getStatusText()}
-            </span>
+            </GradientText>
+            <span style={{ color: '#9CA3AF' }}>{' is '}</span>
+            <GradientText
+              inline
+              showBorder={false}
+              colors={getGradientColorsForStatus(status)}
+              animationSpeed={2.5}
+            >
+              {getStatusText()}
+            </GradientText>
             <span style={{
               color: getStatusColor(),
               fontWeight: '500',
@@ -197,22 +236,26 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
           // Normal status display
           <>
             <span style={{ color: '#9CA3AF' }}>status: </span>
-            <span style={{
-              color: getStatusColor(),
-              fontWeight: '500',
-            }}>
+            <GradientText
+              inline
+              showBorder={false}
+              colors={getGradientColorsForStatus(status)}
+              animationSpeed={2.5}
+            >
               {getStatusText()}
-            </span>
-          
+            </GradientText>
+
           {status !== 'no_agent' && agentName && (
             <>
               <span style={{ color: '#9CA3AF' }}> with </span>
-              <span style={{ 
-                color: '#FFFFFF',
-                fontWeight: '500',
-              }}>
+              <GradientText
+                inline
+                showBorder={false}
+                colors={['#FFFFFF', '#8B5CF6', '#FFFFFF', '#8B5CF6', '#FFFFFF']}
+                animationSpeed={3}
+              >
                 {agentName}
-              </span>
+              </GradientText>
             </>
           )}
 

@@ -1,0 +1,71 @@
+[
+  {
+    "id": 2,
+    "date": "2025-10-30",
+    "timestamp": 1761809596,
+    "duration": 1,
+    "topic": "Interpretation of user's recent intense and transformative dreams",
+    "type": "dream_discussion",
+    "emotional_tone": [
+      "curious",
+      "introspective",
+      "contemplative",
+      "analytical"
+    ],
+    "key_insights": [
+      "Dreams indicate a deep internal transformation and self-discovery process.",
+      "Recurring themes of travel, confrontation with shadow, and searching for identity are prominent.",
+      "The user is likely in a pivotal life moment, processing past experiences and seeking acceptance.",
+      "There's a struggle with control, balanced by determination and growing intuition."
+    ],
+    "relationship_depth": 7,
+    "breakthrough": false,
+    "vulnerability_level": 6,
+    "references": {
+      "dreams": [],
+      "conversations": [],
+      "themes": [
+        "transformation",
+        "self-discovery",
+        "identity",
+        "confrontation with shadow",
+        "loss of control",
+        "new beginnings",
+        "intuition"
+      ]
+    },
+    "summary": "The user inquired about the meaning of their recent intense dreams, and Victoria provided a detailed analysis, highlighting themes of deep transformation, self-discovery, and the processing of inner conflicts, suggesting the user is at a significant turning point in their life.",
+    "growth_markers": {
+      "self_awareness": 8,
+      "integration": 7,
+      "action_readiness": 6
+    }
+  },
+  {
+    "id": 1,
+    "date": "2025-10-28",
+    "timestamp": 1761665873,
+    "duration": 1,
+    "topic": "Initial greeting",
+    "type": "general_chat",
+    "emotional_tone": [
+      "neutral",
+      "friendly"
+    ],
+    "key_insights": [],
+    "relationship_depth": 1,
+    "breakthrough": false,
+    "vulnerability_level": 1,
+    "references": {
+      "dreams": [],
+      "conversations": [],
+      "themes": []
+    },
+    "summary": "The conversation consists of a brief initial greeting from the user and a friendly welcome and inquiry about well-being from Victoria.",
+    "growth_markers": {
+      "self_awareness": 1,
+      "integration": 1,
+      "action_readiness": 1
+    }
+  }
+]
