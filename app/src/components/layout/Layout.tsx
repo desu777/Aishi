@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, ReactNode } from 'react';
-import Sidebar from './Sidebar';
-import Header from './Header';
+import StaggeredMenu from './StaggeredMenu';
+import WalletStatus from '../wallet/WalletStatus';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Menu } from 'lucide-react';
 import { FaultyTerminal } from '../backgrounds';
 import { FaultyTerminalErrorBoundary } from '../backgrounds/FaultyTerminal/FaultyTerminalErrorBoundary';
 import { zIndex } from '../../styles/zIndex';
@@ -16,60 +15,27 @@ interface LayoutProps {
 
 const Layout = ({ children, backgroundType = 'video' }: LayoutProps) => {
   const { theme, debugLog } = useTheme();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    // Persist sidebar collapsed state
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('sidebar-collapsed');
-      return saved === 'true';
-    }
-    return false;
-  });
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Check if we're on mobile on mount and when window resizes
   useEffect(() => {
     const checkIsMobile = (): void => {
       setIsMobile(window.innerWidth < 768);
-      // Auto-close sidebar on mobile
-      if (window.innerWidth < 768) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
     };
-    
+
     // Initial check
     checkIsMobile();
     debugLog('Layout initialized', { isMobile: window.innerWidth < 768 });
-    
+
     // Add resize listener
     window.addEventListener('resize', checkIsMobile);
-    
+
     // Cleanup
     return () => window.removeEventListener('resize', checkIsMobile);
   }, [debugLog]);
   
-  // Toggle sidebar
-  const toggleSidebar = (): void => {
-    setSidebarOpen(prev => !prev);
-    debugLog('Sidebar toggled', { open: !sidebarOpen });
-  };
-
-  // Toggle sidebar collapse
-  const toggleSidebarCollapse = (): void => {
-    const newCollapsed = !sidebarCollapsed;
-    setSidebarCollapsed(newCollapsed);
-    // Save to localStorage
-    localStorage.setItem('sidebar-collapsed', newCollapsed.toString());
-    debugLog('Sidebar collapse toggled', { collapsed: newCollapsed });
-  };
-
-  // Obliczamy szerokość sidebara
-  const sidebarWidth = sidebarCollapsed ? 80 : 240;
-  
   return (
-    <div style={{ 
+    <div style={{
       color: theme.text.primary,
       minHeight: '100vh',
       display: 'flex',
@@ -97,7 +63,7 @@ const Layout = ({ children, backgroundType = 'video' }: LayoutProps) => {
           <source src="/pendi-bg.mp4" type="video/mp4" />
         </video>
       )}
-      
+
       {backgroundType === 'faulty-terminal' && (
         <FaultyTerminalErrorBoundary>
           <div style={{
@@ -125,43 +91,43 @@ const Layout = ({ children, backgroundType = 'video' }: LayoutProps) => {
           </div>
         </FaultyTerminalErrorBoundary>
       )}
-      {/* Mobile Sidebar Overlay */}
-      {isMobile && sidebarOpen && (
-        <div 
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: zIndex.sidebarOverlay,
-            transition: 'opacity 0.3s ease'
-          }}
-          onClick={toggleSidebar}
-        />
-      )}
-      
-      {/* Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        isMobile={isMobile}
-        isCollapsed={sidebarCollapsed}
-        onClose={toggleSidebar}
-        onToggleCollapse={toggleSidebarCollapse}
+
+      {/* New StaggeredMenu - replaces Sidebar + Header */}
+      <StaggeredMenu
+        position="right"
+        colors={['#8B5CF6', '#A855F7']}
+        logoUrl="/logo_clean.png"
+        menuButtonColor="#fff"
+        openMenuButtonColor="#8B5CF6"
+        accentColor="#8B5CF6"
+        changeMenuColorOnOpen={true}
+        onMenuOpen={() => debugLog('Menu opened')}
+        onMenuClose={() => debugLog('Menu closed')}
       />
-      
+
+      {/* Wallet Status - shows when connecting */}
+      <div style={{
+        position: 'fixed',
+        top: '80px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 45,
+        pointerEvents: 'none'
+      }}>
+        <div style={{ pointerEvents: 'auto' }}>
+          <WalletStatus />
+        </div>
+      </div>
+
       {/* Main Content */}
-      <div style={{ 
+      <div style={{
         flex: 1,
-        transition: 'margin-left 0.3s ease',
         width: '100%',
-        marginLeft: !isMobile && sidebarOpen ? `${sidebarWidth}px` : 0,
         overflowX: 'hidden'
       }}>
-        {/* Header */}
-        <Header toggleSidebar={toggleSidebar} isMobile={isMobile} />
-        
-        {/* Spacer for fixed header */}
-        <div style={{ height: '80px' }} />
-        
+        {/* Spacer for fixed menu header */}
+        <div style={{ height: '90px' }} />
+
         {/* Page Content */}
         <div style={{ padding: '20px', maxWidth: '100%' }}>
           {children}
