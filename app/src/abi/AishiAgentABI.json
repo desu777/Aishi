@@ -1,6 +1,6 @@
 {
   "contractName": "AishiAgent",
-  "address": "0x8eDB03ae1bF70D78455ea1b04c8700Bc56b87472",
+  "address": "0x4b92d778171b235841D96e2a0d2C0f4434869038",
   "network": "0g-mainnet",
   "chainId": 16661,
   "abi": [
@@ -943,6 +943,19 @@
           "internalType": "bytes32",
           "name": "",
           "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_SUPPLY",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -2272,5 +2285,5 @@
       "type": "function"
     }
   ],
-  "deployedAt": "2025-10-28T09:00:20.615Z"
+  "deployedAt": "2025-10-30T10:05:50.635Z"
 }

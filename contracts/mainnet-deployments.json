@@ -55,6 +55,17 @@
         "AishiAgentMemory": "0x6893cd3Af1C538576066104525f0Be9ACb240D49",
         "AishiAgent": "0x8eDB03ae1bF70D78455ea1b04c8700Bc56b87472"
       }
+    },
+    {
+      "id": "1761818750801",
+      "timestamp": "2025-10-30T10:05:50.801Z",
+      "network": "0G Mainnet",
+      "chainId": 16661,
+      "deployer": "0x232CA04565A7aAffff9b715D88562E48715e9185",
+      "contracts": {
+        "AishiVerifier": "0x4386aa6bB6BB35985E00e7ee0703a64B4939d370",
+        "AishiAgent": "0x4b92d778171b235841D96e2a0d2C0f4434869038"
+      }
     }
   ]
 }

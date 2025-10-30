@@ -41,7 +41,7 @@ export const valueProps: ValueProp[] = [
   {
     icon: Sparkles,
     title: 'Support in tough moments',
-    description: '"talk" mode for real-time voice; gentle, personalized coping tips learned from your data.'
+    description: 'Real-time chat mode with your Live2D companion; gentle, personalized coping tips learned from your data.'
   },
   {
     icon: Lock,
@@ -57,9 +57,9 @@ export const valueProps: ValueProp[] = [
 
 export const steps: Step[] = [
   { title: 'Connect & mint', desc: 'Name your Aishi iNFT on 0G Chain.' },
-  { title: 'Share a dream or chat', desc: 'Type dream to analyze your night dream, chat to talk freely, or use the Live2D "talk" mode for real-time voice.' },
-  { title: 'You choose what to remember', desc: 'After each dream/chat/talk you can teach Aishi about yourself – you decide what is saved.' },
-  { title: 'Auto-consolidation', desc: 'The backend automatically runs month-learn and year-learn when due; long-term memory is kept without linear bloat. Unlike typical agents that lose month-scale context, Aishi\'s optimized method preserves an entire month (and years) coherently.' },
+  { title: 'Share a dream or chat', desc: 'Type dream to analyze your night dream, chat to talk freely with your Live2D companion, or help to see more commands.' },
+  { title: 'You choose what to remember', desc: 'After each dream or chat you can teach Aishi about yourself – you decide what is saved.' },
+  { title: 'Auto-consolidation', desc: 'The backend automatically runs month-learn and memory-core when due; long-term memory is kept without linear bloat. Unlike typical agents that lose month-scale context, Aishi\'s optimized method preserves an entire month (and years) coherently.' },
   { title: 'Evolve', desc: 'Watch intelligence, traits, and response style improve as Aishi learns.' }
 ];
 
@@ -139,7 +139,7 @@ export interface RealityStep {
 export const howAishiMakesItReal: RealityStep[] = [
   {
     icon: Brain,
-    title: 'Dream/chat/talk',
+    title: 'Dream/chat',
     description: '0G Compute analysis'
   },
   {
@@ -213,7 +213,7 @@ export const aishiSolutions: AishiSolution[] = [
   },
   {
     title: 'Auto-consolidation',
-    description: 'Backend runs month-learn/year-learn when due; keeps long-term context compact instead of bloated.'
+    description: 'Backend runs month-learn and memory-core when due; keeps long-term context compact instead of bloated.'
   },
   {
     title: '0G-native privacy',
@@ -241,7 +241,7 @@ export interface HowItWorksStep {
 export const howAishiWorksSteps: HowItWorksStep[] = [
   {
     step: 1,
-    description: 'Share a dream, chat, or use Live2D talk → analysis on 0G Compute.'
+    description: 'Share a dream or chat → analysis on 0G Compute.'
   },
   {
     step: 2,
@@ -249,7 +249,7 @@ export const howAishiWorksSteps: HowItWorksStep[] = [
   },
   {
     step: 3,
-    description: 'Backend auto-consolidates months/years → compact long-term memory that most agents can\'t afford to keep.'
+    description: 'Backend auto-consolidates with month-learn and memory-core → compact long-term memory that most agents can\'t afford to keep.'
   },
   {
     step: 4,

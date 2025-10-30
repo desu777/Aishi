@@ -27,25 +27,23 @@ export default function HeroSection() {
   const rotatingTexts = [
     'Built 100% on 0G: Compute · Storage · DA · Chain.',
     'Your dreams and chats become a private memory.',
-    'Auto month‑learn/year‑learn keeps long‑term context.',
+    'Auto month-learn and memory-core keeps long-term context.',
     'You choose what Aishi remembers – always.',
-    'Talk in real time with a Live2D persona.',
-    'Spot hidden patterns and self‑defeating loops.',
-    'An ownable self‑learning iNFT you name and keep.',
+    'Chat in real time with your Live2D companion.',
+    'Spot hidden patterns and self-defeating loops.',
+    'An ownable self-learning iNFT you name and keep.',
     'Intelligence and traits evolve with you.',
     'Encrypted on 0G Storage; we can\'t see your data.',
-    'Operate via AishiOS: type dream, chat, or talk.'
+    'Operate via AishiOS: type dream, chat, and help to see more available commands.'
   ];
 
   return (
     <section style={{
       position: 'relative',
-      minHeight: '100vh',
       display: 'flex',
       alignItems: 'flex-start',
       justifyContent: 'center',
-      paddingTop: '12vh',
-      padding: isMobile ? '80px 20px 40px 20px' : '12vh 20px 40px 20px',
+      padding: isMobile ? '60px 20px 40px 20px' : '70px 20px 60px 20px',
       zIndex: 1
     }}>
       <div style={{
@@ -53,24 +51,6 @@ export default function HeroSection() {
         width: '100%',
         textAlign: 'center'
       }}>
-        {/* Aishi Logo */}
-        <div style={{
-          marginBottom: '40px',
-          animation: 'fadeInUp 1s ease-out'
-        }}>
-          <img 
-            src="/logo.png" 
-            alt="Aishi"
-            style={{
-              width: 'min(220px, 50vw)',
-              height: 'min(220px, 50vw)',
-              objectFit: 'contain',
-              margin: '0 auto',
-              filter: 'drop-shadow(0 10px 30px rgba(139, 92, 246, 0.3))'
-            }}
-          />
-        </div>
-
         {/* Title */}
         <h1 style={{
           fontSize: 'clamp(2rem, 5vw, 4rem)',
@@ -86,14 +66,16 @@ export default function HeroSection() {
               display: 'inline-block',
               margin: '0 8px'
             }}>
-              <span style={{
-                background: theme.gradients.primary,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}>
-                AI
-              </span>
+              <img
+                src="/AI.png"
+                alt="AI"
+                style={{
+                  display: 'inline-block',
+                  height: isMobile ? '1.5em' : '2em',
+                  verticalAlign: 'middle',
+                  margin: '0 4px'
+                }}
+              />
               <span style={{
                 position: 'absolute',
                 top: '-10px',
@@ -112,9 +94,9 @@ export default function HeroSection() {
         {/* Subtitle with rotating text */}
         <div style={{
           maxWidth: '800px',
-          margin: '0 auto 24px',
+          margin: '0 auto 32px',
           animation: 'fadeInUp 1s ease-out 0.4s both',
-          minHeight: '3em'
+          minHeight: '2em'
         }}>
           <SplitText
             texts={rotatingTexts}
@@ -140,10 +122,10 @@ export default function HeroSection() {
         {/* Badges */}
         <div style={{
           display: 'flex',
-          gap: '12px',
+          gap: '8px',
           justifyContent: 'center',
           flexWrap: 'wrap',
-          marginBottom: '32px'
+          marginBottom: '40px'
         }}>
           {badges.map((badge, i) => (
             <div 
@@ -168,7 +150,7 @@ export default function HeroSection() {
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          marginTop: '32px',
+          marginTop: '0',
           animation: 'fadeInUp 1s ease-out 0.8s both'
         }}>
           <PillNav

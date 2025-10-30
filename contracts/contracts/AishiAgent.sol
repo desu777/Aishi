@@ -55,6 +55,9 @@ contract AishiAgent is
     uint256 public constant PRICE_STEP_INTERVAL = 10;       // mints per tier
     uint256 public constant PRICE_STEP          = 0.01 ether; // increment per tier
 
+    // Maximum number of iNFTs that can ever be minted
+    uint256 public constant MAX_SUPPLY = 1888;
+
     /* ───────────────────────────────────────────────────────── IMMUTABLES ──── */
 
     address public immutable treasury;                  // fee recipient
@@ -188,6 +191,7 @@ contract AishiAgent is
         require(ownerToTokenId[to] == 0, "exists");
         require(bytes(agentName).length > 0 && bytes(agentName).length <= 32, "name");
         require(!nameExists[agentName], "taken");
+        require(totalAgents < MAX_SUPPLY, "sold out");
         uint256 price = currentMintPrice();
         require(msg.value >= price, "fee");
 
@@ -500,6 +504,15 @@ contract AishiAgent is
     }
 
     /* ───────────────────────────────────────────────── VIEW HELPERS ────────── */
+
+    /// @notice Static image URI for iNFT badge (collection-wide)
+    function imageURI(uint256 /* tokenId */)
+        external
+        pure
+        returns (string memory)
+    {
+        return "https://pink-gradual-fish-611.mypinata.cloud/ipfs/bafkreiftcoalfi5iklixg547onf2olg3bcp6akapgwtxpy32qliniviwiq";
+    }
 
     function getPersonalityTraits(uint256 tokenId)
         external view override returns (PersonalityTraits memory) {
