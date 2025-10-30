@@ -4,6 +4,8 @@
  */
 
 import { assign, sendParent, enqueueActions } from 'xstate';
+import React from 'react';
+import { getTxExplorerUrl } from '../../config/chains';
 import type { ChatMessage, ChatContext } from './chatMachine';
 import type { TerminalLine } from './types';
 
@@ -225,11 +227,28 @@ export const chatActions = {
    * Send completion to parent
    */
   sendCompletionToParent: sendParent(({ context }: { context: ChatContext }) => {
-    const lines: TerminalLine[] = [{
+    const ts = Date.now();
+    const lines: TerminalLine[] = [];
+    lines.push({
       type: 'success',
       content: context.statusMessage,
-      timestamp: Date.now()
-    }];
+      timestamp: ts
+    });
+    const shortHash = (h?: string | null) => (h && h.length > 12 ? `${h.slice(0, 10)}...${h.slice(-8)}` : h || '');
+    if (context.storageRootHash) {
+      lines.push({
+        type: 'info',
+        content: `Completed: chat | root: ${shortHash(context.storageRootHash)}`,
+        timestamp: ts + 1
+      });
+    }
+    if (context.contractTxHash) {
+      lines.push({
+        type: 'info',
+        content: buildTxLinkContent(context.contractTxHash),
+        timestamp: ts + 2
+      });
+    }
     return { type: 'APPEND_LINES', lines };
   }),
 
@@ -314,3 +333,51 @@ export const chatGuards = {
   // Keep this empty for now - all guards moved to shared modules
   // Add any chat-specific guards here in the future
 };
+
+function buildTxLinkContent(txHash: string | null | undefined) {
+  if (!txHash) {
+    return React.createElement(
+      React.Fragment,
+      null,
+      React.createElement(
+        'span',
+        { style: { color: '#9CA3AF' } },
+        'TX: '
+      ),
+      React.createElement('span', { style: { color: '#6B7280' } }, 'pending')
+    );
+  }
+
+  const linkHref = getTxExplorerUrl(txHash);
+  const linkStyle = {
+    color: '#8B5CF6',
+    textDecoration: 'none',
+    cursor: 'pointer'
+  } as const;
+
+  return React.createElement(
+    React.Fragment,
+    null,
+    React.createElement(
+      'span',
+      { style: { color: '#9CA3AF' } },
+      'TX: '
+    ),
+    React.createElement(
+      'a',
+      {
+        href: linkHref,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        style: linkStyle,
+        onMouseEnter: (e: React.MouseEvent<HTMLAnchorElement>) => {
+          (e.currentTarget as any).style.color = '#A855F7';
+        },
+        onMouseLeave: (e: React.MouseEvent<HTMLAnchorElement>) => {
+          (e.currentTarget as any).style.color = '#8B5CF6';
+        }
+      },
+      `${txHash.slice(0, 10)}...${txHash.slice(-8)}`
+    )
+  );
+}

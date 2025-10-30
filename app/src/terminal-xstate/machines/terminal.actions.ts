@@ -457,7 +457,8 @@ export const terminalActions = {
       if (isConfirmation) {
         formattedContent = `> ${context.currentInput}`;
       } else {
-        formattedContent = `~ you: ${context.currentInput}`;
+        // Use spaced pattern to match MinimalOutput regex (~ name : ...)
+        formattedContent = `~ you : ${context.currentInput}`;
       }
 
       return [...context.lines, {

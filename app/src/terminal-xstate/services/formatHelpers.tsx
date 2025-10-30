@@ -648,7 +648,7 @@ export function formatMemoryOutput(agentData: CompleteAgentData | null): Termina
               fontWeight: '600',
               marginLeft: '12px',
               cursor: 'pointer',
-              textDecoration: 'underline'
+              textDecoration: 'none'
             }}
             data-roothash={memory.hash}
             data-memorytype={memory.type}

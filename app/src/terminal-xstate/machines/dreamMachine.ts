@@ -5,6 +5,8 @@
  */
 
 import { setup, assign, sendParent } from 'xstate';
+import React from 'react';
+import { getTxExplorerUrl } from '../../config/chains';
 import { defaultAgentData } from '../types/contextTypes';
 import { memoryGuards } from './shared/memory.guards';
 import { memoryActions } from './shared/memory.actions';
@@ -280,6 +282,28 @@ export const dreamMachine = setup({
     storeDreamFileData: storageActions.storeDreamFileData,
     storeStorageResult: storageActions.storeStorageResult,
     announceRetryStatus: storageActions.announceRetryStatus
+    ,
+    // Append completion info lines (root hash + tx link)
+    sendDreamCompletionInfo: sendParent(({ context }) => {
+      const lines: TerminalLine[] = [];
+      const ts = Date.now();
+      const shortHash = (h?: string | null) => (h && h.length > 12 ? `${h.slice(0, 10)}...${h.slice(-8)}` : h || '');
+      if (context.storageRootHash) {
+        lines.push({
+          type: 'info',
+          content: `Completed: dream | root: ${shortHash(context.storageRootHash)}`,
+          timestamp: ts
+        });
+      }
+      if (context.contractTxHash) {
+        lines.push({
+          type: 'info',
+          content: buildTxLinkContent(context.contractTxHash),
+          timestamp: ts + 1
+        });
+      }
+      return { type: 'APPEND_LINES', lines };
+    })
   },
   guards: {
     // Import shared memory guards
@@ -536,7 +560,8 @@ export const dreamMachine = setup({
                   })
                 }),
                 'markCompleted',
-                'sendStatusToParent'
+              'sendStatusToParent',
+              'sendDreamCompletionInfo'
               ] as const
             },
             onError: {
@@ -633,3 +658,51 @@ export const dreamMachine = setup({
     }
   }
 });
+
+function buildTxLinkContent(txHash: string | null | undefined) {
+  if (!txHash) {
+    return React.createElement(
+      React.Fragment,
+      null,
+      React.createElement(
+        'span',
+        { style: { color: '#9CA3AF' } },
+        'TX: '
+      ),
+      React.createElement('span', { style: { color: '#6B7280' } }, 'pending')
+    );
+  }
+
+  const linkHref = getTxExplorerUrl(txHash);
+  const linkStyle = {
+    color: '#8B5CF6',
+    textDecoration: 'none',
+    cursor: 'pointer'
+  } as const;
+
+  return React.createElement(
+    React.Fragment,
+    null,
+    React.createElement(
+      'span',
+      { style: { color: '#9CA3AF' } },
+      'TX: '
+    ),
+    React.createElement(
+      'a',
+      {
+        href: linkHref,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        style: linkStyle,
+        onMouseEnter: (e: React.MouseEvent<HTMLAnchorElement>) => {
+          (e.currentTarget as any).style.color = '#A855F7';
+        },
+        onMouseLeave: (e: React.MouseEvent<HTMLAnchorElement>) => {
+          (e.currentTarget as any).style.color = '#8B5CF6';
+        }
+      },
+      `${txHash.slice(0, 10)}...${txHash.slice(-8)}`
+    )
+  );
+}

@@ -449,7 +449,7 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
     paddingRight: isMobile ? '1rem' : isTablet ? '1.5rem' : '2rem',
     paddingBottom: 0,
     color: colors.pearl,
-    fontFamily: 'Inter, -apple-system, "SF Pro Display", system-ui, sans-serif',
+    fontFamily: 'Poppins, -apple-system, "SF Pro Display", system-ui, sans-serif',
     fontSize: isMobile ? '13px' : '14px',
     fontWeight: 300,
     lineHeight: isMobile ? 1.6 : 1.8,

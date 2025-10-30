@@ -281,13 +281,18 @@ const uploadMonthlyService = fromPromise(async ({ input }: {
     }
 
     existing.unshift(input.dreamConsolidation);
-    const dreamFile = storage.jsonToFile(existing, `dream_essence_monthly_${input.year}-${String(input.month).padStart(2, '0')}.json`);
-    const dreamUpload = await storage.uploadBlob(dreamFile);
-
-    if (!dreamUpload.success) {
-      throw new Error(`Dream upload failed: ${dreamUpload.error}`);
+    const fileName = `dream_essence_monthly_${input.year}-${String(input.month).padStart(2, '0')}.json`;
+    const { uploadJsonWithRetry } = await import('../services/storageRetryUploader');
+    const dreamUpload = await uploadJsonWithRetry(existing, fileName, {
+      enableVerification: true,
+      maxRetries: 3,
+      retryDelay: 1000,
+      verificationTimeout: 10000
+    });
+    if (!dreamUpload.success || !dreamUpload.rootHash) {
+      throw new Error(`Dream upload failed: ${dreamUpload.error || 'Unknown error'}`);
     }
-    dreamStorageHash = dreamUpload.rootHash!;
+    dreamStorageHash = dreamUpload.rootHash;
   }
 
   // Conversations APPEND
@@ -302,13 +307,18 @@ const uploadMonthlyService = fromPromise(async ({ input }: {
     }
 
     existing.unshift(input.conversationConsolidation);
-    const convFile = storage.jsonToFile(existing, `conversation_essence_monthly_${input.year}-${String(input.month).padStart(2, '0')}.json`);
-    const convUpload = await storage.uploadBlob(convFile);
-
-    if (!convUpload.success) {
-      throw new Error(`Conversation upload failed: ${convUpload.error}`);
+    const convFileName = `conversation_essence_monthly_${input.year}-${String(input.month).padStart(2, '0')}.json`;
+    const { uploadJsonWithRetry } = await import('../services/storageRetryUploader');
+    const convUpload = await uploadJsonWithRetry(existing, convFileName, {
+      enableVerification: true,
+      maxRetries: 3,
+      retryDelay: 1000,
+      verificationTimeout: 10000
+    });
+    if (!convUpload.success || !convUpload.rootHash) {
+      throw new Error(`Conversation upload failed: ${convUpload.error || 'Unknown error'}`);
     }
-    conversationStorageHash = convUpload.rootHash!;
+    conversationStorageHash = convUpload.rootHash;
   }
 
   return { dreamStorageHash, conversationStorageHash };
@@ -707,7 +717,7 @@ function buildTxLinkContent(txHash: string | null | undefined) {
   const linkHref = getTxExplorerUrl(txHash);
   const linkStyle = {
     color: '#8B5CF6',
-    textDecoration: 'underline',
+    textDecoration: 'none',
     cursor: 'pointer'
   } as const;
 

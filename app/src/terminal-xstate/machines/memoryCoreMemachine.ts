@@ -266,14 +266,20 @@ const uploadCoreService = fromPromise(async ({ input }: {
 
   existingMemoryCores.unshift(input.memoryCore);
 
-  const memoryCoreFile = storage.jsonToFile(existingMemoryCores, `memory_core_${input.year}.json`);
-  const upload = await storage.uploadBlob(memoryCoreFile);
+  const fileName = `memory_core_${input.year}.json`;
+  const { uploadJsonWithRetry } = await import('../services/storageRetryUploader');
+  const upload = await uploadJsonWithRetry(existingMemoryCores, fileName, {
+    enableVerification: true,
+    maxRetries: 3,
+    retryDelay: 1000,
+    verificationTimeout: 10000
+  });
 
-  if (!upload.success) {
-    throw new Error(`Memory core upload failed: ${upload.error}`);
+  if (!upload.success || !upload.rootHash) {
+    throw new Error(`Memory core upload failed: ${upload.error || 'Unknown error'}`);
   }
 
-  return { memoryCoreStorageHash: upload.rootHash! };
+  return { memoryCoreStorageHash: upload.rootHash };
 });
 
 const contractUpdateService = fromPromise(async ({ input }: {
@@ -655,7 +661,7 @@ function buildTxLinkContent(txHash: string | null | undefined) {
   const linkHref = getTxExplorerUrl(txHash);
   const linkStyle = {
     color: '#8B5CF6',
-    textDecoration: 'underline',
+    textDecoration: 'none',
     cursor: 'pointer'
   } as const;
 

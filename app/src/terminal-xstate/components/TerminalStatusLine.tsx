@@ -187,7 +187,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
               inline
               showBorder={false}
               colors={getGradientColorsForStatus(status)}
-              animationSpeed={2.5}
+              animationSpeed={3.5}
             >
               {getStatusText()}
             </GradientText>
@@ -209,7 +209,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
               inline
               showBorder={false}
               colors={['#FFFFFF', '#8B5CF6', '#FFFFFF', '#8B5CF6', '#FFFFFF']}
-              animationSpeed={3}
+              animationSpeed={3.5}
             >
               {agentName}
             </GradientText>
@@ -218,7 +218,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
               inline
               showBorder={false}
               colors={getGradientColorsForStatus(status)}
-              animationSpeed={2.5}
+              animationSpeed={3.5}
             >
               {getStatusText()}
             </GradientText>
@@ -240,7 +240,7 @@ const TerminalStatusLine: React.FC<TerminalStatusLineProps> = ({
               inline
               showBorder={false}
               colors={getGradientColorsForStatus(status)}
-              animationSpeed={2.5}
+              animationSpeed={3.5}
             >
               {getStatusText()}
             </GradientText>

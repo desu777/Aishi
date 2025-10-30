@@ -202,7 +202,7 @@ const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
               inline
               showBorder={false}
               colors={['#FFFFFF', '#8B5CF6', '#FFFFFF', '#8B5CF6', '#FFFFFF']}
-              animationSpeed={3}
+              animationSpeed={3.5}
             >
               aishiOS v2.0
             </GradientText>
