@@ -6,6 +6,12 @@ import toast from 'react-hot-toast';
 import { getActiveChain } from '../../../config/chains';
 import { getContractConfig, MINTING_FEE, MAX_NAME_LENGTH } from '../config/contractConfig';
 
+const contractValueToNumber = (value: unknown, fallback = 0) => {
+  if (typeof value === 'bigint') return Number(value);
+  if (typeof value === 'number') return value;
+  return fallback;
+};
+
 export function useMintAgent() {
   const { address, isConnected } = useAccount();
   const { data: balance } = useBalance({ address });
@@ -39,10 +45,24 @@ export function useMintAgent() {
   });
 
   // Get total agents for stats
-  const { data: totalAgents } = useReadContract({
+  const { data: totalAgents, refetch: refetchTotalAgents } = useReadContract({
     address: contractConfig.address,
     abi: contractConfig.abi,
     functionName: 'totalAgents',
+  });
+
+  // Get next token id (used for success state)
+  const { data: nextTokenId, refetch: refetchNextTokenId } = useReadContract({
+    address: contractConfig.address,
+    abi: contractConfig.abi,
+    functionName: 'nextTokenId',
+  });
+
+  // Get max supply (hard cap)
+  const { data: maxSupply } = useReadContract({
+    address: contractConfig.address,
+    abi: contractConfig.abi,
+    functionName: 'MAX_SUPPLY',
   });
 
   // Get current mint price (dynamic pricing)
@@ -69,6 +89,13 @@ export function useMintAgent() {
   } = useWaitForTransactionReceipt({
     hash: txHash,
   });
+
+
+  const totalAgentsCount = contractValueToNumber(totalAgents);
+  const maxSupplyCount = contractValueToNumber(maxSupply, 1888);
+
+  const remainingSupply = Math.max(maxSupplyCount - totalAgentsCount, 0);
+  const isSoldOut = remainingSupply <= 0;
 
   // Name validation
   useEffect(() => {
@@ -107,16 +134,38 @@ export function useMintAgent() {
   // Success handler
   useEffect(() => {
     if (isTxSuccess && txHash) {
-      setShowSuccess(true);
-      const tokenId = Number(totalAgents || 0) + 1;
-      setMintedTokenId(tokenId);
-      toast.success('Agent created successfully!');
+      const updateSupplyState = async () => {
+        setShowSuccess(true);
+
+        const [totalAgentsResult, nextTokenIdResult] = await Promise.allSettled([
+          refetchTotalAgents(),
+          refetchNextTokenId(),
+        ]);
+
+        const totalAgentsValue =
+          totalAgentsResult.status === 'fulfilled'
+            ? totalAgentsResult.value?.data
+            : totalAgents;
+        const nextTokenIdValue =
+          nextTokenIdResult.status === 'fulfilled'
+            ? nextTokenIdResult.value?.data
+            : nextTokenId;
+
+        const totalMinted = contractValueToNumber(totalAgentsValue);
+        const nextId = contractValueToNumber(nextTokenIdValue, totalMinted + 1);
+        const resolvedTokenId = Math.max(nextId - 1, totalMinted);
+
+        setMintedTokenId(resolvedTokenId > 0 ? resolvedTokenId : null);
+        toast.success('Agent created successfully!');
+      };
+
+      updateSupplyState();
     }
-  }, [isTxSuccess, txHash, totalAgents]);
+  }, [isTxSuccess, txHash, refetchTotalAgents, refetchNextTokenId, totalAgents, nextTokenId]);
 
   // Handle mint
   const handleMint = async () => {
-    if (!address || !agentName || nameError) return;
+    if (!address || !agentName || nameError || isSoldOut) return;
 
     try {
       // Use current mint price (dynamic pricing)
@@ -157,12 +206,12 @@ export function useMintAgent() {
     resetWrite();
   };
 
-  // Check if user can mint
+  // Eligibility checks
   const hasExistingAgent = existingTokenId && Number(existingTokenId) > 0;
   const mintPrice = currentMintPrice || MINTING_FEE;
   const hasInsufficientBalance = balance && balance.value < mintPrice;
   const canMint = isConnected && !hasExistingAgent && !hasInsufficientBalance &&
-                  agentName && !nameError && !isCheckingName;
+                  agentName && !nameError && !isCheckingName && !isSoldOut;
 
   // Transaction status
   const isProcessing = isWritePending || isTxLoading;
@@ -185,7 +234,10 @@ export function useMintAgent() {
     existingTokenId,
     
     // Stats
-    totalAgents: Number(totalAgents || 0),
+    totalAgents: totalAgentsCount,
+    maxSupply: maxSupplyCount,
+    remainingSupply,
+    isSoldOut,
     currentMintPrice: currentMintPrice || MINTING_FEE,
     
     // Transaction

@@ -12,6 +12,9 @@ interface WalletConnectionProps {
   hasInsufficientBalance: boolean;
   balance: any;
   currentMintPrice: bigint;
+  isSoldOut: boolean;
+  remainingSupply: number;
+  maxSupply: number;
 }
 
 export default function WalletConnection({
@@ -21,8 +24,21 @@ export default function WalletConnection({
   hasInsufficientBalance,
   balance,
   currentMintPrice,
+  isSoldOut,
+  remainingSupply,
+  maxSupply,
 }: WalletConnectionProps) {
   const { theme } = useTheme();
+
+  const supplyInfo = (
+    <div style={{
+      fontSize: theme.typography.fontSizes.xs,
+      color: theme.text.secondary,
+      marginTop: theme.spacing.sm,
+    }}>
+      Remaining supply: {remainingSupply.toLocaleString()} / {maxSupply.toLocaleString()}
+    </div>
+  );
 
   if (!isConnected) {
     return (
@@ -35,6 +51,7 @@ export default function WalletConnection({
       }}>
         <WalletPrompt />
         <ConnectButton />
+        {supplyInfo}
       </div>
     );
   }
@@ -115,6 +132,7 @@ export default function WalletConnection({
             >
               Go to Terminal
             </button>
+            {supplyInfo}
           </div>
         </div>
       </>
@@ -152,28 +170,36 @@ export default function WalletConnection({
             Current balance: {formatEther(balance.value)} OG
           </p>
         )}
+        {supplyInfo}
       </div>
     );
   }
 
   return (
     <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
       padding: `${theme.spacing.sm} ${theme.spacing.md}`,
       backgroundColor: `${theme.bg.card}cc`,
       backdropFilter: theme.effects.blur.sm,
       borderRadius: theme.radius.md,
       border: `1px solid ${theme.accent.primary}22`,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: theme.spacing.xs,
     }}>
-      <span style={{
-        color: theme.text.secondary,
-        fontSize: theme.typography.fontSizes.xs,
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
       }}>
-        Connected
-      </span>
-      <ConnectButton />
+        <span style={{
+          color: theme.text.secondary,
+          fontSize: theme.typography.fontSizes.xs,
+        }}>
+          Connected
+        </span>
+        <ConnectButton />
+      </div>
+      {supplyInfo}
     </div>
   );
 }

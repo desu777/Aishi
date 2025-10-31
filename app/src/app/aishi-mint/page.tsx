@@ -68,6 +68,9 @@ export default function AishiMintPage() {
               // Constants
               currentMintPrice={mintAgent.currentMintPrice}
               maxNameLength={mintAgent.MAX_NAME_LENGTH}
+              isSoldOut={mintAgent.isSoldOut}
+              remainingSupply={mintAgent.remainingSupply}
+              maxSupply={mintAgent.maxSupply}
             />
           </div>
 
@@ -100,6 +103,8 @@ export default function AishiMintPage() {
             <PriceDisplay
               currentMintPrice={mintAgent.currentMintPrice}
               totalAgents={mintAgent.totalAgents}
+              maxSupply={mintAgent.maxSupply}
+              remainingSupply={mintAgent.remainingSupply}
             />
           </div>
         </div>

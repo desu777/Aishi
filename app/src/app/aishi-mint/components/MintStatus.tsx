@@ -36,6 +36,9 @@ interface MintStatusProps {
   // Constants
   currentMintPrice: bigint;
   maxNameLength: number;
+  isSoldOut: boolean;
+  remainingSupply: number;
+  maxSupply: number;
 }
 
 export default function MintStatus(props: MintStatusProps) {
@@ -56,7 +59,92 @@ export default function MintStatus(props: MintStatusProps) {
     shareOnX,
     reset,
     currentMintPrice,
+    isSoldOut,
+    remainingSupply,
+    maxSupply,
   } = props;
+
+  if (isSoldOut) {
+    const mintedCount = Math.max(maxSupply - remainingSupply, 0);
+
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1.5rem',
+          padding: '2.5rem 2rem',
+          borderRadius: '20px',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          background: 'rgba(8, 8, 8, 0.45)',
+          textAlign: 'center',
+        }}
+      >
+        <div>
+          <h2
+            style={{
+              fontSize: '1.85rem',
+              marginBottom: '0.5rem',
+              fontWeight: 700,
+            }}
+          >
+            Mint Closed
+          </h2>
+          <p
+            style={{
+              fontSize: '0.95rem',
+              color: 'rgba(255, 255, 255, 0.72)',
+              margin: 0,
+            }}
+          >
+            All {maxSupply.toLocaleString()} agents have been born.
+          </p>
+          <p
+            style={{
+              fontSize: '0.85rem',
+              color: 'rgba(255, 255, 255, 0.5)',
+              marginTop: '0.75rem',
+            }}
+          >
+            Connect to your terminal to continue evolving yours.
+          </p>
+        </div>
+
+        <button
+          onClick={() => (window.location.href = '/aishiOS')}
+          style={{
+            padding: '0.85rem 1.9rem',
+            borderRadius: '999px',
+            border: 'none',
+            background: '#ffffff',
+            color: '#050505',
+            fontWeight: 700,
+            cursor: 'pointer',
+            minHeight: '48px',
+            transition: 'transform 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          Open Terminal
+        </button>
+
+        <div
+          style={{
+            fontSize: '0.75rem',
+            color: 'rgba(255, 255, 255, 0.45)',
+          }}
+        >
+          Minted agents: {mintedCount.toLocaleString()} / {maxSupply.toLocaleString()}
+        </div>
+      </div>
+    );
+  }
 
   // Show success state
   if (showSuccess) {
@@ -86,6 +174,9 @@ export default function MintStatus(props: MintStatusProps) {
         hasInsufficientBalance={hasInsufficientBalance}
         balance={balance}
         currentMintPrice={currentMintPrice}
+        isSoldOut={isSoldOut}
+        remainingSupply={remainingSupply}
+        maxSupply={maxSupply}
       />
     );
   }
@@ -134,6 +225,9 @@ export default function MintStatus(props: MintStatusProps) {
           maxNameLength={props.maxNameLength}
           currentMintPrice={props.currentMintPrice}
           onMint={props.handleMint}
+          remainingSupply={remainingSupply}
+          maxSupply={maxSupply}
+          isSoldOut={isSoldOut}
         />
       </>
     );
@@ -150,6 +244,9 @@ export default function MintStatus(props: MintStatusProps) {
           hasInsufficientBalance={hasInsufficientBalance}
           balance={balance}
           currentMintPrice={currentMintPrice}
+        isSoldOut={isSoldOut}
+        remainingSupply={remainingSupply}
+        maxSupply={maxSupply}
         />
       )}
       <MintForm
@@ -162,6 +259,9 @@ export default function MintStatus(props: MintStatusProps) {
         maxNameLength={props.maxNameLength}
         currentMintPrice={props.currentMintPrice}
         onMint={props.handleMint}
+        remainingSupply={remainingSupply}
+        maxSupply={maxSupply}
+        isSoldOut={isSoldOut}
       />
     </>
   );

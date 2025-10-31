@@ -15,6 +15,9 @@ interface MintFormProps {
   maxNameLength: number;
   currentMintPrice: bigint;
   onMint: () => void;
+  remainingSupply: number;
+  maxSupply: number;
+  isSoldOut: boolean;
 }
 
 export default function MintForm({
@@ -27,6 +30,9 @@ export default function MintForm({
   maxNameLength,
   currentMintPrice,
   onMint,
+  remainingSupply,
+  maxSupply,
+  isSoldOut,
 }: MintFormProps) {
   const { theme } = useTheme();
 
@@ -182,20 +188,38 @@ export default function MintForm({
             {formatEther(currentMintPrice)} OG
           </span>
         </div>
+        <div style={{
+          marginTop: theme.spacing.sm,
+          fontSize: theme.typography.fontSizes.xs,
+          color: theme.text.secondary,
+          display: 'flex',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: theme.spacing.xs,
+        }}>
+          <span>
+            Remaining supply: {remainingSupply.toLocaleString()} / {maxSupply.toLocaleString()}
+          </span>
+          {isSoldOut && (
+            <span style={{ color: theme.accent.error }}>
+              Sold out
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Mint Button */}
       <button
         onClick={onMint}
-        disabled={!canMint || isProcessing}
+        disabled={!canMint || isProcessing || isSoldOut}
         style={{
           width: '100%',
           padding: `clamp(14px, 2vw, ${theme.spacing.md})`,
           minHeight: '52px',
           fontSize: `clamp(${theme.typography.fontSizes.sm}, 3vw, ${theme.typography.fontSizes.md})`,
           fontWeight: theme.typography.fontWeights.bold,
-          color: canMint && !isProcessing ? theme.text.primary : theme.text.secondary,
-          backgroundColor: canMint && !isProcessing ? theme.accent.primary : `${theme.accent.primary}44`,
+          color: canMint && !isProcessing && !isSoldOut ? theme.text.primary : theme.text.secondary,
+          backgroundColor: canMint && !isProcessing && !isSoldOut ? theme.accent.primary : `${theme.accent.primary}44`,
           border: 'none',
           borderRadius: theme.radius.md,
           cursor: canMint && !isProcessing ? 'pointer' : 'not-allowed',
@@ -208,13 +232,13 @@ export default function MintForm({
           touchAction: 'manipulation',
         }}
         onMouseEnter={(e) => {
-          if (canMint && !isProcessing) {
+          if (canMint && !isProcessing && !isSoldOut) {
             e.currentTarget.style.transform = 'scale(1.02)';
             e.currentTarget.style.boxShadow = `0 4px 16px ${theme.accent.primary}66`;
           }
         }}
         onMouseLeave={(e) => {
-          if (canMint && !isProcessing) {
+          if (canMint && !isProcessing && !isSoldOut) {
             e.currentTarget.style.transform = 'scale(1)';
             e.currentTarget.style.boxShadow = 'none';
           }
@@ -224,6 +248,11 @@ export default function MintForm({
           <>
             <FiLoader style={{ animation: 'spin 1s linear infinite' }} />
             Processing...
+          </>
+        ) : isSoldOut ? (
+          <>
+            <FiX />
+            Mint Closed
           </>
         ) : (
           <>

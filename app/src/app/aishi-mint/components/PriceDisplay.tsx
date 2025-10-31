@@ -7,11 +7,15 @@ import { FiTrendingUp, FiUsers } from 'react-icons/fi';
 interface PriceDisplayProps {
   currentMintPrice: bigint;
   totalAgents: number;
+  maxSupply: number;
+  remainingSupply: number;
 }
 
 export default function PriceDisplay({
   currentMintPrice,
-  totalAgents
+  totalAgents,
+  maxSupply,
+  remainingSupply
 }: PriceDisplayProps) {
   const { theme } = useTheme();
 
@@ -20,8 +24,10 @@ export default function PriceDisplay({
   const PRICE_STEP = parseEther('0.01');
 
   const currentTier = Math.floor(totalAgents / PRICE_STEP_INTERVAL);
-  const nextTierAgents = (currentTier + 1) * PRICE_STEP_INTERVAL;
+  const nextTierAgents = Math.min((currentTier + 1) * PRICE_STEP_INTERVAL, maxSupply);
   const nextTierPrice = currentMintPrice + PRICE_STEP;
+  const mintedShare = Math.min(totalAgents, maxSupply);
+  const isSoldOut = remainingSupply <= 0;
 
   // Format prices for display
   const currentPriceFormatted = formatEther(currentMintPrice);
@@ -76,31 +82,47 @@ export default function PriceDisplay({
             <span style={{
               fontSize: `clamp(11px, 2.5vw, ${theme.typography.fontSizes.xs})`,
             }}>
-              {totalAgents} agents created
+              {mintedShare.toLocaleString()} / {maxSupply.toLocaleString()} agents
             </span>
           </div>
 
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: theme.spacing.xs,
-            marginTop: theme.spacing.xs,
-          }}>
-            <FiTrendingUp />
-            <span style={{
+          {isSoldOut ? (
+            <div style={{
               fontSize: `clamp(10px, 2.5vw, 11px)`,
+              color: theme.accent.error,
+              display: 'flex',
+              alignItems: 'center',
+              gap: theme.spacing.xs,
+              marginTop: theme.spacing.xs,
             }}>
-              Next tier at {nextTierAgents}: {nextPriceFormatted} OG
-            </span>
-          </div>
+              <FiTrendingUp />
+              <span>Mint closed – cap reached</span>
+            </div>
+          ) : (
+            <>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: theme.spacing.xs,
+                marginTop: theme.spacing.xs,
+              }}>
+                <FiTrendingUp />
+                <span style={{
+                  fontSize: `clamp(10px, 2.5vw, 11px)`,
+                }}>
+                  Next tier at {nextTierAgents}: {nextPriceFormatted} OG
+                </span>
+              </div>
 
-          <div style={{
-            fontSize: `clamp(9px, 2vw, 10px)`,
-            color: theme.text.tertiary,
-            marginTop: theme.spacing.xs,
-          }}>
-            +0.01 OG every 10 mints
-          </div>
+              <div style={{
+                fontSize: `clamp(9px, 2vw, 10px)`,
+                color: theme.text.tertiary,
+                marginTop: theme.spacing.xs,
+              }}>
+                +0.01 OG every 10 mints
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
