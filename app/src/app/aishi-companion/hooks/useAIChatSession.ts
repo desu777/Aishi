@@ -25,6 +25,10 @@ export type SessionState =
   | 'thinking'
   | 'animating'
   | 'speaking'
+  | 'confirmingSave'
+  | 'summarizing'
+  | 'saving'
+  | 'completed'
   | 'error';
 
 interface SessionContext {
@@ -68,6 +72,12 @@ export const useAIChatSession = (
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sessionContext, setSessionContext] = useState<SessionContext | null>(null);
+  const [saveData, setSaveData] = useState<{
+    summary: any | null;
+    fileData: any | null;
+    rootHash: string | null;
+    txHash: string | null;
+  }>({ summary: null, fileData: null, rootHash: null, txHash: null });
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -224,14 +234,131 @@ export const useAIChatSession = (
     }
   }, []);
 
+  /**
+   * End session - trigger save confirmation
+   */
+  const endSession = useCallback(() => {
+    debugLog('Ending session, showing save confirmation');
+    setState('confirmingSave');
+  }, []);
+
+  /**
+   * Confirm save - execute full save workflow (1:1 from chatMachine)
+   */
+  const confirmSave = useCallback(async (shouldSave: boolean) => {
+    if (!shouldSave || !sessionContext) {
+      debugLog('Save cancelled, completing session');
+      setState('completed');
+      setTimeout(() => {
+        resetSession();
+      }, 500);
+      return;
+    }
+
+    if (messages.length === 0) {
+      debugLog('No messages to save');
+      setState('completed');
+      setTimeout(() => {
+        resetSession();
+      }, 500);
+      return;
+    }
+
+    try {
+      // Step 1: Generate conversation summary (like chatMachine summarizingConversation)
+      debugLog('Generating conversation summary');
+      setState('summarizing');
+
+      const { generateConversationSummary } = await import('@/terminal-xstate/machines/chatServices');
+
+      const transcript = messages
+        .map(m => `${m.role === 'user' ? 'User' : sessionContext.agentName}: ${m.content}`)
+        .join('\n');
+
+      const summaryResult = await generateConversationSummary(
+        transcript,
+        messages,
+        sessionContext.agentId,
+        'gemini-2.5-flash'
+      );
+
+      setSaveData(prev => ({ ...prev, summary: summaryResult.summary }));
+      debugLog('Summary generated', { summary: summaryResult.summary });
+
+      // Step 2: Prepare conversation file (like chatMachine savingConversation.preparingFile)
+      debugLog('Preparing conversation file');
+      setState('saving');
+
+      const { ConversationFileManager } = await import('@/terminal-xstate/services/conversationFileManager');
+      const fileManager = new ConversationFileManager();
+
+      const fileResult = await fileManager.manageConversationFile(
+        sessionContext.agentId,
+        sessionContext.agentName,
+        summaryResult.summary
+      );
+
+      setSaveData(prev => ({ ...prev, fileData: fileResult }));
+      debugLog('File prepared', { fileName: fileResult.fileName });
+
+      // Step 3: Upload to 0G storage (like chatMachine savingConversation.uploadingToStorage)
+      debugLog('Uploading to 0G storage');
+
+      const { uploadToStorage } = await import('@/terminal-xstate/services/xstateStorage');
+
+      const uploadResult = await uploadToStorage(
+        fileResult.fileContent,
+        fileResult.fileName,
+        (status) => debugLog('Upload status', { status })
+      );
+
+      setSaveData(prev => ({ ...prev, rootHash: uploadResult.rootHash }));
+      debugLog('Upload complete', { rootHash: uploadResult.rootHash });
+
+      // Step 4: Update contract (like chatMachine savingConversation.updatingContract)
+      debugLog('Updating blockchain contract');
+
+      const { ConversationContractUpdater } = await import('@/terminal-xstate/services/conversationContractUpdater');
+      const contractUpdater = new ConversationContractUpdater();
+
+      const contractResult = await contractUpdater.updateConversationContract(
+        sessionContext.agentId,
+        uploadResult.rootHash,
+        summaryResult.summary?.type || 'general_chat'
+      );
+
+      setSaveData(prev => ({ ...prev, txHash: contractResult.txHash }));
+      debugLog('Contract updated', { txHash: contractResult.txHash });
+
+      // Complete
+      setState('completed');
+      debugLog('Save workflow complete');
+
+      // Reset after brief delay
+      setTimeout(() => {
+        resetSession();
+        setSaveData({ summary: null, fileData: null, rootHash: null, txHash: null });
+      }, 2000);
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save conversation';
+      setError(errorMessage);
+      setState('error');
+      debugLog('Save workflow failed', { error: errorMessage });
+    }
+  }, [sessionContext, messages, resetSession]);
+
   return {
     state,
     messages,
     error,
     sessionContext,
+    saveData,
     initializeSession,
     initializeSessionWithFallback,
     sendMessage,
+    endSession,
+    confirmSave,
     resetSession,
     cancelRequest
   };

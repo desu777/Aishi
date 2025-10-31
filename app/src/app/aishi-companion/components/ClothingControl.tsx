@@ -50,7 +50,7 @@ export const ClothingControl: React.FC<ClothingControlProps> = ({ modelRef }) =>
   };
 
   return (
-    <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 60 }}>
+    <div style={{ position: 'fixed', top: '100px', right: '20px', zIndex: 60 }}>
       {/* Toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}

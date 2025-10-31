@@ -7,6 +7,7 @@ import { FaArrowLeft } from 'react-icons/fa';
 import { Live2DModel } from '@/components/live2d/Live2DModel';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 import { SessionStartDialog } from './components/SessionStartDialog';
+import { SaveConfirmationDialog } from './components/SaveConfirmationDialog';
 import { ChatInput } from './components/ChatInput';
 import { MessageBubble } from './components/MessageBubble';
 import { ClothingControl } from './components/ClothingControl';
@@ -52,7 +53,16 @@ export default function AishiCompanion() {
 
   // Hooks
   const { currentValues, isAnimating, processAIResponse } = useAIParameterControl(modelRef);
-  const { state: sessionState, messages, initializeSession, initializeSessionWithFallback, sendMessage } = useAIChatSession(modelRef, currentValues);
+  const {
+    state: sessionState,
+    messages,
+    saveData,
+    initializeSession,
+    initializeSessionWithFallback,
+    sendMessage,
+    endSession,
+    confirmSave
+  } = useAIChatSession(modelRef, currentValues);
   const { startLipSync, stopLipSync } = useLipSync(modelRef);
 
   // Handle window resize
@@ -320,28 +330,61 @@ export default function AishiCompanion() {
           Aishi Companion
         </h1>
 
-        {/* Status */}
-        <div
-          style={{
-            padding: '8px 16px',
-            backgroundColor: sessionState === 'ready'
-              ? 'rgba(34, 197, 94, 0.2)'
-              : 'rgba(139, 92, 246, 0.2)',
-            border: `1px solid ${sessionState === 'ready' ? '#22C55E' : '#8B5CF6'}`,
-            borderRadius: '8px',
-            color: sessionState === 'ready' ? '#22C55E' : '#8B5CF6',
-            fontSize: '12px',
-            fontFamily: "'JetBrains Mono', monospace",
-            fontWeight: '500',
-          }}
-        >
-          {sessionState === 'ready' && 'Online'}
-          {sessionState === 'thinking' && 'Thinking...'}
-          {sessionState === 'animating' && 'Animating...'}
-          {sessionState === 'speaking' && 'Speaking...'}
-          {sessionState === 'initializing' && 'Loading...'}
-          {sessionState === 'idle' && 'Idle'}
-          {sessionState === 'error' && 'Error'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Status */}
+          <div
+            style={{
+              padding: '8px 16px',
+              backgroundColor: sessionState === 'ready'
+                ? 'rgba(34, 197, 94, 0.2)'
+                : 'rgba(139, 92, 246, 0.2)',
+              border: `1px solid ${sessionState === 'ready' ? '#22C55E' : '#8B5CF6'}`,
+              borderRadius: '8px',
+              color: sessionState === 'ready' ? '#22C55E' : '#8B5CF6',
+              fontSize: '12px',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontWeight: '500',
+            }}
+          >
+            {sessionState === 'ready' && 'Online'}
+            {sessionState === 'thinking' && 'Thinking...'}
+            {sessionState === 'animating' && 'Animating...'}
+            {sessionState === 'speaking' && 'Speaking...'}
+            {sessionState === 'initializing' && 'Loading...'}
+            {sessionState === 'confirmingSave' && 'Confirm Save'}
+            {sessionState === 'summarizing' && 'Summarizing...'}
+            {sessionState === 'saving' && 'Saving...'}
+            {sessionState === 'completed' && 'Completed'}
+            {sessionState === 'idle' && 'Idle'}
+            {sessionState === 'error' && 'Error'}
+          </div>
+
+          {/* END SESSION button */}
+          {sessionState === 'ready' && (
+            <button
+              onClick={endSession}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid #EF4444',
+                borderRadius: '8px',
+                color: '#EF4444',
+                fontSize: '12px',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+              }}
+            >
+              End Session
+            </button>
+          )}
         </div>
       </div>
 
@@ -406,6 +449,14 @@ export default function AishiCompanion() {
         onStart={handleStartSession}
         onCancel={handleCancelSession}
         agentName="Aishi"
+      />
+
+      {/* Save Confirmation Dialog */}
+      <SaveConfirmationDialog
+        isOpen={sessionState === 'confirmingSave'}
+        agentName="Aishi"
+        onConfirm={() => confirmSave(true)}
+        onCancel={() => confirmSave(false)}
       />
 
       {/* Loading overlay */}
