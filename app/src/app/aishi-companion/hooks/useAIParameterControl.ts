@@ -25,6 +25,7 @@ const debugLog = (message: string, data?: any) => {
  */
 export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>) => {
   const animatorRef = useRef(new ParameterAnimator());
+  const expressionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [currentValues, setCurrentValues] = useState<Map<string, number>>(
     getDefaultParameterValues()
@@ -81,6 +82,19 @@ export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>)
           debugLog(`Failed to set expression: ${expr}`, { error: String(error) });
         }
       });
+
+      // Clear existing expression timeout
+      if (expressionTimeoutRef.current) {
+        clearTimeout(expressionTimeoutRef.current);
+      }
+
+      // Auto-reset expressions after 15 seconds
+      expressionTimeoutRef.current = setTimeout(() => {
+        if (modelRef.current) {
+          modelRef.current.resetExpression();
+          debugLog('Auto-reset expressions after 15 seconds');
+        }
+      }, 15000);
     }
 
     // Animate parameters if any

@@ -35,6 +35,28 @@ interface SessionContext {
 }
 
 /**
+ * Default Aishi personality for fallback when no agent NFT exists
+ */
+const DEFAULT_AISHI_PERSONALITY = {
+  agentData: {
+    intelligenceLevel: 1,
+    dreamCount: 0,
+    conversationCount: 0
+  },
+  personality: {
+    creativity: 75,
+    analytical: 60,
+    empathy: 85,
+    intuition: 70,
+    resilience: 65,
+    curiosity: 80,
+    dominantMood: 'cheerful'
+  },
+  uniqueFeatures: [],
+  memory: {}
+};
+
+/**
  * Hook for managing AI chat session with Live2D integration
  * Reuses terminal-xstate chat services for consistency
  */
@@ -63,15 +85,19 @@ export const useAIChatSession = (
       // Fetch context (reuse terminal chat service)
       const contextData = await fetchChatContext(agentId, false);
 
+      // Extract agent name from contract data or use fallback
+      const contractAgentName = contextData.agentContext?.agentData?.agentName || agentName;
+
       setSessionContext({
         agentId,
-        agentName,
+        agentName: contractAgentName,
         agentContext: contextData.agentContext,
         historicalData: contextData.historicalData
       });
 
       setState('ready');
       debugLog('Session initialized successfully', {
+        agentName: contractAgentName,
         hasAgentContext: !!contextData.agentContext,
         hasHistoricalData: !!contextData.historicalData
       });
@@ -155,6 +181,27 @@ export const useAIChatSession = (
   }, [sessionContext, messages, currentParameters]);
 
   /**
+   * Initialize session with fallback personality (no blockchain)
+   * Used when user has no agent NFT or wallet not connected
+   */
+  const initializeSessionWithFallback = useCallback(async (agentName: string = 'Aishi') => {
+    debugLog('Initializing session with fallback personality (no blockchain)');
+
+    setState('initializing');
+    setError(null);
+
+    setSessionContext({
+      agentId: 0,
+      agentName,
+      agentContext: DEFAULT_AISHI_PERSONALITY,
+      historicalData: null
+    });
+
+    setState('ready');
+    debugLog('Fallback session initialized successfully');
+  }, []);
+
+  /**
    * Reset session
    */
   const resetSession = useCallback(() => {
@@ -183,6 +230,7 @@ export const useAIChatSession = (
     error,
     sessionContext,
     initializeSession,
+    initializeSessionWithFallback,
     sendMessage,
     resetSession,
     cancelRequest

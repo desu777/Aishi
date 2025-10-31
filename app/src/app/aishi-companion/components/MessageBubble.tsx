@@ -11,13 +11,13 @@ interface MessageBubbleProps {
 }
 
 /**
- * Message bubble that fades in, displays for 5s, then fades out
+ * Message bubble that fades in, displays for 15s, then fades out
  */
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   text,
   agentName,
   onComplete,
-  displayDuration = 5000
+  displayDuration = 15000
 }) => {
   const [isVisible, setIsVisible] = useState(true);
 

@@ -47,18 +47,18 @@ export interface ParameterUpdate {
 }
 
 /**
- * AI-Controllable Parameters (15 total)
- * Ordered by importance for natural body language
+ * AI-Controllable Parameters (13 total)
+ * MouthOpen and MouthForm excluded - used only by lip sync system
  */
 export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
-  // HEAD MOVEMENT
+  // HEAD MOVEMENT (affects whole body through physics)
   {
     id: 'ParamAngleX',
     name: 'HeadX',
     min: -30,
     max: 30,
     default: 0,
-    description: 'Head horizontal rotation: -30=full left, +30=full right, 0=center'
+    description: 'Head turn left/right: -30=fully left, 0=facing forward, +30=fully right. Entire body follows (chest, skirt, hair sway with turn)'
   },
   {
     id: 'ParamAngleY',
@@ -66,7 +66,7 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: -30,
     max: 30,
     default: 0,
-    description: 'Head vertical tilt: -30=down, +30=up, 0=level'
+    description: 'Head tilt up/down: -30=looking at ground, 0=eye level, +30=looking at sky. Body moves with head (chest rises/falls, clothing flows). Use for jump: rapid 0→15→0 or 0→20→-10→0'
   },
   {
     id: 'ParamAngleZ',
@@ -74,7 +74,7 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: -10,
     max: 10,
     default: 0,
-    description: 'Head side lean: -10=lean left, +10=lean right, 0=straight'
+    description: 'Head lean sideways: -10=leaning left, 0=upright, +10=leaning right. Body tilts with head'
   },
 
   // EYE CONTROL
@@ -84,7 +84,7 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: -1,
     max: 1,
     default: 0,
-    description: 'Eye gaze horizontal: -1=left, +1=right, 0=center'
+    description: 'Eye gaze horizontal: -1=looking far left, -0.5=slight left, 0=looking at user, +0.5=slight right, +1=far right'
   },
   {
     id: 'ParamEyeBallY',
@@ -92,7 +92,7 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: -1,
     max: 1,
     default: 0,
-    description: 'Eye gaze vertical: -1=down, +1=up, 0=level'
+    description: 'Eye gaze vertical: -1=looking down, -0.3=slight down (shy), 0=straight ahead, +0.5=looking up, +1=far up'
   },
   {
     id: 'ParamEyeLOpen',
@@ -100,7 +100,7 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: 0,
     max: 1.9,
     default: 1,
-    description: 'Left eye openness: 0=closed, 1=normal, 1.5+=wide open'
+    description: 'Left eye openness: 0=fully closed, 0.5=half-closed (sleepy), 1=normal, 1.5=wide (surprised), 1.9=maximum'
   },
   {
     id: 'ParamEyeROpen',
@@ -108,7 +108,7 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: 0,
     max: 1.9,
     default: 1,
-    description: 'Right eye openness: 0=closed, 1=normal, 1.5+=wide open'
+    description: 'Right eye openness: 0=fully closed, 0.5=half-closed (sleepy), 1=normal, 1.5=wide (surprised), 1.9=maximum'
   },
 
   // EYEBROWS
@@ -118,7 +118,7 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: -1,
     max: 1,
     default: 0,
-    description: 'Left eyebrow height: -1=down/angry, +1=up/surprised, 0=neutral'
+    description: 'Left eyebrow vertical: -1=down (angry/sad), -0.5=slightly down, 0=neutral, +0.5=slightly up, +1=high (very surprised)'
   },
   {
     id: 'ParamBrowRY',
@@ -126,25 +126,17 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: -1,
     max: 1,
     default: 0,
-    description: 'Right eyebrow height: -1=down/angry, +1=up/surprised, 0=neutral'
+    description: 'Right eyebrow vertical: -1=down (angry/sad), -0.5=slightly down, 0=neutral, +0.5=slightly up, +1=high (very surprised)'
   },
 
-  // MOUTH
+  // FACIAL DETAILS
   {
-    id: 'ParamMouthOpenY',
-    name: 'MouthOpen',
+    id: 'Param58',
+    name: 'CheekPuff',
     min: 0,
-    max: 2.1,
-    default: 0,
-    description: 'Mouth opening: 0=closed, 0.3-0.6=talking, 1.5+=shocked'
-  },
-  {
-    id: 'ParamMouthForm',
-    name: 'MouthForm',
-    min: -1,
     max: 1,
     default: 0,
-    description: 'Mouth shape: -1=frown, 0=neutral, +1=smile'
+    description: 'Cheek inflation: 0=normal, 0.3=slight puff (happy), 0.7=puffed, 1=fully inflated'
   },
   {
     id: 'Param59',
@@ -152,15 +144,7 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: -1,
     max: 1,
     default: 0,
-    description: 'Mouth horizontal shift: -1=left, +1=right, 0=center'
-  },
-  {
-    id: 'Param58',
-    name: 'CheekPuff',
-    min: 0,
-    max: 1,
-    default: 0,
-    description: 'Cheek inflation: 0=normal, 1=puffed'
+    description: 'Mouth horizontal asymmetry: -1=shifted left (smirk left), 0=centered, +1=shifted right (smirk right)'
   },
   {
     id: 'Param31',
@@ -168,7 +152,7 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: 0,
     max: 1,
     default: 0,
-    description: 'Lip pucker/pout: 0=normal, 1=full pucker'
+    description: 'Lip pucker/pout: 0=normal lips, 0.4=slight pout, 0.7=pouty, 1=full duck face'
   },
   {
     id: 'Param76',
@@ -176,7 +160,7 @@ export const CONTROLLABLE_PARAMETERS: Live2DParameter[] = [
     min: 0,
     max: 1,
     default: 0,
-    description: 'Jaw position: 0=normal, 1=lowered'
+    description: 'Jaw/chin drop: 0=normal position, 0.5=slightly open, 1=jaw dropped (shock)'
   }
 ];
 

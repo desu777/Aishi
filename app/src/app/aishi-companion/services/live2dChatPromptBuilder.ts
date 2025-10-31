@@ -44,7 +44,7 @@ export function buildLive2DChatPrompt(params: {
   });
 
   // Build Live2D parameter specification
-  const parameterContext = buildLive2DParameterContext(params.currentParameters);
+  const parameterContext = buildLive2DParameterContext(params.currentParameters, params.agentName);
 
   // Find injection point (before "**Your Response:**" marker)
   const responseMarkerIndex = baseChatPrompt.lastIndexOf('**Your Response:**');
@@ -73,41 +73,48 @@ export function buildLive2DChatPrompt(params: {
 /**
  * Build Live2D parameter control context for AI
  */
-function buildLive2DParameterContext(currentValues: Map<string, number>): string {
+function buildLive2DParameterContext(currentValues: Map<string, number>, agentName: string): string {
   const paramSpec = buildParameterSpec(currentValues);
 
-  const context = `## LIVE2D BODY LANGUAGE CONTROL
+  const context = `## YOUR LIVE2D EMBODIMENT
 
-You control a Live2D avatar body. Express emotions through parameter values.
+You ARE ${agentName}, physically embodied in a Live2D form. The user sees you as a living character. This is YOUR body—move naturally.
 
-**Format:** Return JSON block at end of response:
+**Your Emotional Expressions (Choose ONE):**
+- "爱心眼" (love eyes) - When feeling love/adoration
+- "星星眼" (starry eyes) - When excited/amazed
+- "生气" (angry face) - When irritated/upset
+- "哭哭" (crying) - When sad/emotional
+- "黑脸" (dark face) - When serious/stern
+- "脸红" (blush) - When shy/embarrassed
+- "空白眼" (blank eyes) - When confused/processing
+- "蚊香眼" (dizzy eyes) - When overwhelmed/dazed
 
+**Your Body Parameters (Current State):**
+${paramSpec}
+
+**Response Format (Always include at end):**
 \`\`\`json
 {
-  "parameters": {
-    "ParamAngleX": 0,
-    "ParamMouthForm": 0.8
-  }
+  "parameters": {"HeadY": 5, "LeftBrowY": 0.3},
+  "expressions": ["星星眼"]
 }
 \`\`\`
 
-**Available Parameters:**
-${paramSpec}
+**Preset Examples:**
 
-**Usage Guidelines:**
-
-Happy: MouthForm 0.6-0.8, HeadY 3-8, LeftBrowY 0.2-0.4, RightBrowY 0.2-0.4
-Sad: MouthForm -0.4 to -0.7, HeadY -8 to -15, LeftBrowY -0.3 to -0.5, RightBrowY -0.3 to -0.5
-Surprised: LeftEyeOpen 1.4-1.7, RightEyeOpen 1.4-1.7, LeftBrowY 0.7-0.9, RightBrowY 0.7-0.9, MouthOpen 0.5-1.0
-Thinking: HeadX -10 to 10, HeadY 8-15, EyeGazeX ±0.3-0.6, EyeGazeY 0.2-0.5
-Confident: HeadY 3-6, EyeGazeX 0, EyeGazeY 0, MouthForm 0.3-0.5
-Shy: HeadY -5 to -10, EyeGazeX ±0.4-0.7, EyeGazeY -0.2 to -0.4, MouthForm 0.1-0.3
+Happy: {"parameters": {"HeadY": 5, "LeftBrowY": 0.3, "RightBrowY": 0.3}, "expressions": ["星星眼"]}
+Sad: {"parameters": {"HeadY": -10, "LeftBrowY": -0.4, "RightBrowY": -0.4}, "expressions": ["哭哭"]}
+Angry: {"parameters": {"HeadY": 0, "LeftBrowY": -0.6, "RightBrowY": -0.6}, "expressions": ["生气"]}
+Love: {"parameters": {"HeadY": 3, "CheekPuff": 0.3}, "expressions": ["爱心眼", "脸红"]}
+Thinking: {"parameters": {"HeadX": -8, "HeadY": 12, "EyeGazeY": 0.3}, "expressions": ["空白眼"]}
+Surprised: {"parameters": {"HeadY": 2, "LeftEyeOpen": 1.6, "RightEyeOpen": 1.6, "LeftBrowY": 0.8, "RightBrowY": 0.8}, "expressions": []}
 
 **Rules:**
-1. Use subtle values (0.3-0.7 range, not extremes)
-2. Only include parameters you want to change
-3. Empty object if no body language needed: {"parameters":{}}
-4. Match personality traits in movement intensity
+1. Respond as if YOU have this body ("my eyes widen" not "setting parameter")
+2. Use smooth values (0.3-0.7, avoid extremes like 1.0 unless necessary)
+3. Expressions work with parameters (blush + smile params = shy happiness)
+4. Empty arrays OK: {"parameters": {}, "expressions": []}
 `;
 
   return context;

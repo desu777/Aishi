@@ -20,7 +20,7 @@ doors.md
 
 # Claude Code documentation
 CLAUDE.md
-
+AGENTS.md
 # Contract deployment files (contain sensitive info)
 contracts/frontend-contracts.json
 contracts/deployment-addresses.json

@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
 import { FaArrowLeft } from 'react-icons/fa';
 import { Live2DModel } from '@/components/live2d/Live2DModel';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
@@ -13,6 +14,7 @@ import { useAIParameterControl } from './hooks/useAIParameterControl';
 import { useAIChatSession } from './hooks/useAIChatSession';
 import { useLipSync } from './hooks/useLipSync';
 import { PHYSICS_DEFAULTS } from './services/aiParameterService';
+import { useReadAishiAgentOwnerToTokenId } from '@/generated';
 import { Toaster } from 'react-hot-toast';
 
 // Debug logging
@@ -26,16 +28,31 @@ export default function AishiCompanion() {
   const router = useRouter();
   const modelRef = useRef<Live2DModelRef>(null);
 
+  // Wagmi hooks
+  const { address, isConnected } = useAccount();
+  const { data: tokenId } = useReadAishiAgentOwnerToTokenId({
+    args: address ? [address] : undefined,
+    query: { enabled: !!address }
+  });
+
   // State
   const [windowSize, setWindowSize] = useState({ width: 1920, height: 1080 });
   const [isModelReady, setIsModelReady] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
   const [showSessionDialog, setShowSessionDialog] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<string | null>(null);
+  const [hasAgent, setHasAgent] = useState(false);
+  const [agentId, setAgentId] = useState<number | null>(null);
+
+  // Drag & Zoom state
+  const [currentScale, setCurrentScale] = useState(0.4);
+  const [modelPosition, setModelPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number; modelX: number; modelY: number } | null>(null);
 
   // Hooks
   const { currentValues, isAnimating, processAIResponse } = useAIParameterControl(modelRef);
-  const { state: sessionState, messages, initializeSession, sendMessage } = useAIChatSession(modelRef, currentValues);
+  const { state: sessionState, messages, initializeSession, initializeSessionWithFallback, sendMessage } = useAIChatSession(modelRef, currentValues);
   const { startLipSync, stopLipSync } = useLipSync(modelRef);
 
   // Handle window resize
@@ -51,6 +68,38 @@ export default function AishiCompanion() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Agent check effect (after model loads)
+  useEffect(() => {
+    if (!isModelReady) return;
+
+    debugLog('Checking for agent', { isConnected, address, tokenId });
+
+    if (!isConnected || !address) {
+      // No wallet connected - use fallback
+      debugLog('No wallet connected, will use fallback personality');
+      setHasAgent(false);
+      setAgentId(null);
+      setShowSessionDialog(true);
+      return;
+    }
+
+    const agentTokenId = tokenId ? Number(tokenId) : 0;
+
+    if (agentTokenId === 0) {
+      // Wallet connected but no agent NFT
+      debugLog('Wallet connected but no agent NFT, will use fallback');
+      setHasAgent(false);
+      setAgentId(null);
+      setShowSessionDialog(true);
+    } else {
+      // User has agent NFT
+      debugLog('Agent found', { tokenId: agentTokenId });
+      setHasAgent(true);
+      setAgentId(agentTokenId);
+      setShowSessionDialog(true);
+    }
+  }, [isModelReady, isConnected, address, tokenId]);
 
   // Model load handler
   const handleModelLoad = useCallback(() => {
@@ -80,10 +129,9 @@ export default function AishiCompanion() {
 
       debugLog('Physics defaults applied', PHYSICS_DEFAULTS);
 
-      // Show session start dialog after model loads
-      setTimeout(() => {
-        setShowSessionDialog(true);
-      }, 500);
+      // Initialize model position (will be set after agent check)
+      const initialPos = modelRef.current.getPosition();
+      setModelPosition(initialPos);
 
     } catch (error) {
       debugLog('Error in model initialization', { error: String(error) });
@@ -96,13 +144,75 @@ export default function AishiCompanion() {
     debugLog('Model load error', { error });
   }, []);
 
+  // Drag handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!modelRef.current) return;
+
+    setIsDragging(true);
+    const pos = modelRef.current.getPosition();
+
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      modelX: pos.x,
+      modelY: pos.y
+    };
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging || !dragStartRef.current || !modelRef.current) return;
+
+    const deltaX = e.clientX - dragStartRef.current.x;
+    const deltaY = e.clientY - dragStartRef.current.y;
+
+    const newX = dragStartRef.current.modelX + deltaX;
+    const newY = dragStartRef.current.modelY + deltaY;
+
+    setModelPosition({ x: newX, y: newY });
+    modelRef.current.updatePosition(newX, newY);
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    dragStartRef.current = null;
+  }, []);
+
+  // Zoom handler
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (!modelRef.current) return;
+    e.preventDefault();
+
+    const delta = e.deltaY > 0 ? -0.02 : 0.02;
+    const newScale = Math.max(0.1, Math.min(2.0, currentScale + delta));
+
+    setCurrentScale(newScale);
+    modelRef.current.updateScale(newScale);
+  }, [currentScale]);
+
+  // Attach wheel listener
+  useEffect(() => {
+    const container = document.querySelector('.live2d-stage');
+    if (!container) return;
+
+    const wheelHandler = (e: WheelEvent) => handleWheel(e);
+    container.addEventListener('wheel', wheelHandler, { passive: false });
+
+    return () => container.removeEventListener('wheel', wheelHandler);
+  }, [handleWheel]);
+
   // Start session handler
   const handleStartSession = useCallback(async () => {
     setShowSessionDialog(false);
-    debugLog('Starting chat session');
+    debugLog('Starting chat session', { hasAgent, agentId });
 
-    await initializeSession(1, 'Aishi');
-  }, [initializeSession]);
+    if (hasAgent && agentId) {
+      // Load from blockchain
+      await initializeSession(agentId, 'Agent');
+    } else {
+      // Use fallback personality
+      await initializeSessionWithFallback('Aishi');
+    }
+  }, [hasAgent, agentId, initializeSession, initializeSessionWithFallback]);
 
   // Cancel session handler
   const handleCancelSession = useCallback(() => {
@@ -237,6 +347,11 @@ export default function AishiCompanion() {
 
       {/* Live2D Model */}
       <div
+        className="live2d-stage"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
         style={{
           position: 'fixed',
           top: '60px',
@@ -246,7 +361,8 @@ export default function AishiCompanion() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          pointerEvents: 'none',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          pointerEvents: 'auto',
         }}
       >
         <Live2DModel
@@ -271,7 +387,7 @@ export default function AishiCompanion() {
           text={currentMessage}
           agentName="Aishi"
           onComplete={handleMessageComplete}
-          displayDuration={5000}
+          displayDuration={15000}
         />
       )}
 

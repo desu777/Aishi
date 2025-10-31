@@ -84,17 +84,17 @@ export const useLive2D = (options: UseLive2DOptions) => {
     if (!model || model.destroyed) return;
 
     model.scale.set(newScale);
+
+    // Only update position if explicitly provided
     if (typeof x === 'number') {
       model.x = x;
-    } else {
-      model.x = targetDimensionsRef.current.width / 2;
     }
+    // Don't reset x if not provided - preserve current position
 
     if (typeof y === 'number') {
       model.y = y;
-    } else {
-      model.y = targetDimensionsRef.current.height * 0.5;  // Center positioning (was 0.75)
     }
+    // Don't reset y if not provided - preserve current position
   }, []);
 
   const [isLoading, setIsLoading] = useState(true);
