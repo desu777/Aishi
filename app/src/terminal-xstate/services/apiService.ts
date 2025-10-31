@@ -437,7 +437,7 @@ export async function sendDreamToAI(
  */
 export async function sendToAI(
   prompt: string,
-  modelId: string = 'gemini-2.0-flash-exp',
+  modelId: string = 'gemini-2.5-flash',
   walletAddress?: string
 ): Promise<string> {
   debugLog('=== Sending chat message to AI ===', {
