@@ -89,7 +89,7 @@ export default function AishiMintPage() {
               margin: '0 auto',
             }}>
               <Image
-                src="/logo.png"
+                src="/logo_clean.png"
                 alt="Aishi Logo"
                 fill
                 style={{

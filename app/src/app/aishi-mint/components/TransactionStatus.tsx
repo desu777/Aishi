@@ -80,7 +80,7 @@ export default function TransactionStatus({
         
         <div className="shimmer-border-success">
           <div className="shimmer-content-success">
-            <div style={{
+            <div aria-live="polite" style={{
               textAlign: 'center',
               animation: 'fadeIn 0.5s ease',
             }}>
@@ -260,7 +260,7 @@ export default function TransactionStatus({
         
         <div className="shimmer-border">
           <div className="shimmer-content">
-            <div style={{
+            <div aria-live="polite" style={{
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
@@ -308,7 +308,7 @@ export default function TransactionStatus({
   if (writeError || txError) {
     const error = writeError || txError;
     return (
-      <div style={{
+      <div role="alert" style={{
         padding: theme.spacing.md,
         backgroundColor: `${theme.accent.error}22`,
         border: `1px solid ${theme.accent.error}66`,

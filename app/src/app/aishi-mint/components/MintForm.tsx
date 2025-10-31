@@ -76,18 +76,19 @@ export default function MintForm({
 
       {/* Name Input */}
       <div>
-        <label style={{
+        <label htmlFor="agentName" style={{
           display: 'block',
           color: theme.text.secondary,
           fontSize: theme.typography.fontSizes.sm,
           marginBottom: theme.spacing.xs,
           fontWeight: theme.typography.fontWeights.medium,
         }}>
-          Give Name For Your Agent
+          Agent name
         </label>
         
         <div style={{ position: 'relative' }}>
           <input
+            id="agentName"
             type="text"
             value={agentName}
             onChange={(e) => setAgentName(e.target.value)}
@@ -107,6 +108,8 @@ export default function MintForm({
               fontFamily: theme.typography.fontFamilies.primary,
               touchAction: 'manipulation',
             }}
+            aria-invalid={Boolean(nameError)}
+            aria-describedby={agentName ? 'agent-name-status' : undefined}
             onFocus={(e) => {
               e.currentTarget.style.borderColor = theme.accent.primary;
               e.currentTarget.style.boxShadow = `0 0 0 3px ${theme.accent.primary}22`;
@@ -133,7 +136,7 @@ export default function MintForm({
         
         {/* Name validation feedback (no underline/error decoration) */}
         {agentName && (
-          <div style={{
+          <div id="agent-name-status" aria-live="polite" style={{
             marginTop: theme.spacing.xs,
             fontSize: theme.typography.fontSizes.xs,
             color: nameError ? theme.text.secondary : theme.accent.success,
@@ -257,7 +260,7 @@ export default function MintForm({
         ) : (
           <>
             <FiZap />
-            Create Agent
+            Mint Agent
           </>
         )}
       </button>

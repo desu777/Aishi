@@ -8,6 +8,7 @@ import { Live2DModel } from '@/components/live2d/Live2DModel';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 import { SessionStartDialog } from './components/SessionStartDialog';
 import { SaveConfirmationDialog } from './components/SaveConfirmationDialog';
+import { SaveRetryDialog } from './components/SaveRetryDialog';
 import { ChatInput } from './components/ChatInput';
 import { MessageBubble } from './components/MessageBubble';
 import { ClothingControl } from './components/ClothingControl';
@@ -57,11 +58,17 @@ export default function AishiCompanion() {
     state: sessionState,
     messages,
     saveData,
+    retryCount,
+    retryError,
+    retryStep,
+    maxRetries,
     initializeSession,
     initializeSessionWithFallback,
     sendMessage,
     endSession,
-    confirmSave
+    confirmSave,
+    retryOperation,
+    abortRetry
   } = useAIChatSession(modelRef, currentValues);
   const { startLipSync, stopLipSync } = useLipSync(modelRef);
 
@@ -354,6 +361,8 @@ export default function AishiCompanion() {
             {sessionState === 'confirmingSave' && 'Confirm Save'}
             {sessionState === 'summarizing' && 'Summarizing...'}
             {sessionState === 'saving' && 'Saving...'}
+            {sessionState === 'uploadRetryPrompt' && `Upload Retry ${retryCount}/${maxRetries}`}
+            {sessionState === 'contractRetryPrompt' && `Contract Retry ${retryCount}/${maxRetries}`}
             {sessionState === 'completed' && 'Completed'}
             {sessionState === 'idle' && 'Idle'}
             {sessionState === 'error' && 'Error'}
@@ -457,6 +466,17 @@ export default function AishiCompanion() {
         agentName="Aishi"
         onConfirm={() => confirmSave(true)}
         onCancel={() => confirmSave(false)}
+      />
+
+      {/* Save Retry Dialog */}
+      <SaveRetryDialog
+        isOpen={sessionState === 'uploadRetryPrompt' || sessionState === 'contractRetryPrompt'}
+        errorMessage={retryError}
+        retryCount={retryCount}
+        maxRetries={maxRetries}
+        stepName={retryStep === 'upload' ? '0G Storage Upload' : 'Blockchain Contract Update'}
+        onRetry={retryOperation}
+        onAbort={abortRetry}
       />
 
       {/* Loading overlay */}

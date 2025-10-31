@@ -130,7 +130,7 @@ export default function WalletConnection({
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              Go to Terminal
+              Open Terminal
             </button>
             {supplyInfo}
           </div>

@@ -1,8 +1,10 @@
 'use client';
 
-import { formatEther, parseEther } from 'viem';
+import { formatEther } from 'viem';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { FiTrendingUp, FiUsers } from 'react-icons/fi';
+import { useReadContract } from 'wagmi';
+import { getContractConfig } from '../config/contractConfig';
 
 interface PriceDisplayProps {
   currentMintPrice: bigint;
@@ -15,19 +17,38 @@ export default function PriceDisplay({
   currentMintPrice,
   totalAgents,
   maxSupply,
-  remainingSupply
+  remainingSupply,
 }: PriceDisplayProps) {
   const { theme } = useTheme();
+  const contract = getContractConfig();
+
+  // Read on-chain pricing parameters (fallback to contract constants if not yet loaded)
+  const { data: priceStepRaw } = useReadContract({
+    address: contract.address,
+    abi: contract.abi,
+    functionName: 'PRICE_STEP',
+  });
+  const { data: priceStepIntervalRaw } = useReadContract({
+    address: contract.address,
+    abi: contract.abi,
+    functionName: 'PRICE_STEP_INTERVAL',
+  });
+
+  const priceStep: bigint = (priceStepRaw as bigint) ?? BigInt(0.01e18);
+  const priceStepInterval: number = priceStepIntervalRaw ? Number(priceStepIntervalRaw as bigint) : 10;
 
   // Calculate current tier and next tier info
-  const PRICE_STEP_INTERVAL = 10;
-  const PRICE_STEP = parseEther('0.01');
-
-  const currentTier = Math.floor(totalAgents / PRICE_STEP_INTERVAL);
-  const nextTierAgents = Math.min((currentTier + 1) * PRICE_STEP_INTERVAL, maxSupply);
-  const nextTierPrice = currentMintPrice + PRICE_STEP;
+  const currentTier = priceStepInterval > 0 ? Math.floor(totalAgents / priceStepInterval) : 0;
+  const nextTierAgents = Math.min((currentTier + 1) * priceStepInterval, maxSupply);
+  const nextTierPrice = currentMintPrice + priceStep;
   const mintedShare = Math.min(totalAgents, maxSupply);
   const isSoldOut = remainingSupply <= 0;
+
+  // Progress calculations
+  const supplyProgressPct = maxSupply > 0 ? Math.min(100, (mintedShare / maxSupply) * 100) : 0;
+  const tierProgress = priceStepInterval > 0 ? (totalAgents % priceStepInterval) : 0;
+  const tierRemaining = priceStepInterval > 0 ? priceStepInterval - tierProgress : 0;
+  const tierProgressPct = priceStepInterval > 0 ? Math.min(100, (tierProgress / priceStepInterval) * 100) : 0;
 
   // Format prices for display
   const currentPriceFormatted = formatEther(currentMintPrice);
@@ -86,6 +107,24 @@ export default function PriceDisplay({
             </span>
           </div>
 
+          {/* Supply progress bar */}
+          <div style={{
+            width: '100%',
+            maxWidth: '420px',
+            height: '8px',
+            backgroundColor: `${theme.bg.panel}`,
+            borderRadius: theme.radius.full,
+            overflow: 'hidden',
+            border: `1px solid ${theme.accent.primary}22`,
+          }}>
+            <div style={{
+              width: `${supplyProgressPct}%`,
+              height: '100%',
+              background: theme.gradients.primary,
+              transition: theme.effects.transitions.normal,
+            }} />
+          </div>
+
           {isSoldOut ? (
             <div style={{
               fontSize: `clamp(10px, 2.5vw, 11px)`,
@@ -119,7 +158,34 @@ export default function PriceDisplay({
                 color: theme.text.tertiary,
                 marginTop: theme.spacing.xs,
               }}>
-                +0.01 OG every 10 mints
+                +{formatEther(priceStep)} OG every {priceStepInterval} mints
+              </div>
+
+              {/* Tier progress bar */}
+              <div style={{
+                width: '100%',
+                maxWidth: '420px',
+                height: '6px',
+                backgroundColor: `${theme.bg.panel}`,
+                borderRadius: theme.radius.full,
+                overflow: 'hidden',
+                border: `1px solid ${theme.accent.primary}22`,
+                marginTop: theme.spacing.xs,
+              }}>
+                <div style={{
+                  width: `${tierProgressPct}%`,
+                  height: '100%',
+                  backgroundColor: theme.accent.primary,
+                  transition: theme.effects.transitions.normal,
+                }} />
+              </div>
+
+              <div style={{
+                fontSize: `clamp(9px, 2vw, 10px)`,
+                color: theme.text.secondary,
+                marginTop: '6px',
+              }}>
+                {tierRemaining} mint{tierRemaining === 1 ? '' : 's'} until price increases
               </div>
             </>
           )}

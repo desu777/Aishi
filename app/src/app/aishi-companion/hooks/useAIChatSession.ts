@@ -28,6 +28,8 @@ export type SessionState =
   | 'confirmingSave'
   | 'summarizing'
   | 'saving'
+  | 'uploadRetryPrompt'
+  | 'contractRetryPrompt'
   | 'completed'
   | 'error';
 
@@ -78,6 +80,12 @@ export const useAIChatSession = (
     rootHash: string | null;
     txHash: string | null;
   }>({ summary: null, fileData: null, rootHash: null, txHash: null });
+
+  // Retry state (like chatMachine)
+  const [retryCount, setRetryCount] = useState(0);
+  const [retryError, setRetryError] = useState<string | null>(null);
+  const [retryStep, setRetryStep] = useState<'upload' | 'contract' | null>(null);
+  const MAX_RETRIES = 3;
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -243,6 +251,97 @@ export const useAIChatSession = (
   }, []);
 
   /**
+   * Retry failed operation (upload or contract)
+   */
+  const retryOperation = useCallback(async () => {
+    if (!retryStep || !saveData) {
+      debugLog('No retry step defined');
+      return;
+    }
+
+    debugLog('User chose to retry', { step: retryStep, attempt: retryCount });
+
+    // Reset retry state for new attempt
+    setRetryCount(0);
+    setRetryError(null);
+    setState('saving');
+
+    try {
+      if (retryStep === 'upload') {
+        // Retry upload from saved fileData
+        const { uploadToStorage } = await import('@/terminal-xstate/services/xstateStorage');
+
+        const uploadResult = await uploadToStorage(
+          saveData.fileData.fileContent,
+          saveData.fileData.fileName,
+          (status) => debugLog('Upload status', { status })
+        );
+
+        setSaveData(prev => ({ ...prev, rootHash: uploadResult.rootHash }));
+        debugLog('Retry upload successful', { rootHash: uploadResult.rootHash });
+
+        // Continue to contract update
+        const { ConversationContractUpdater } = await import('@/terminal-xstate/services/conversationContractUpdater');
+        const contractUpdater = new ConversationContractUpdater();
+
+        const contractResult = await contractUpdater.updateConversationContract(
+          sessionContext!.agentId,
+          uploadResult.rootHash,
+          saveData.summary?.type || 'general_chat'
+        );
+
+        setSaveData(prev => ({ ...prev, txHash: contractResult.txHash }));
+        debugLog('Contract updated after upload retry', { txHash: contractResult.txHash });
+
+      } else if (retryStep === 'contract') {
+        // Retry contract update from saved rootHash
+        const { ConversationContractUpdater } = await import('@/terminal-xstate/services/conversationContractUpdater');
+        const contractUpdater = new ConversationContractUpdater();
+
+        const contractResult = await contractUpdater.updateConversationContract(
+          sessionContext!.agentId,
+          saveData.rootHash!,
+          saveData.summary?.type || 'general_chat'
+        );
+
+        setSaveData(prev => ({ ...prev, txHash: contractResult.txHash }));
+        debugLog('Retry contract update successful', { txHash: contractResult.txHash });
+      }
+
+      // Success - complete
+      setState('completed');
+      setRetryStep(null);
+
+      setTimeout(() => {
+        resetSession();
+        setSaveData({ summary: null, fileData: null, rootHash: null, txHash: null });
+      }, 2000);
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Retry failed';
+      setError(errorMessage);
+      setState('error');
+      debugLog('Retry operation failed', { error: errorMessage });
+    }
+  }, [retryStep, retryCount, saveData, sessionContext, resetSession]);
+
+  /**
+   * Abort retry - complete session without saving
+   */
+  const abortRetry = useCallback(() => {
+    debugLog('User aborted retry, completing without save');
+    setState('completed');
+    setRetryCount(0);
+    setRetryError(null);
+    setRetryStep(null);
+
+    setTimeout(() => {
+      resetSession();
+      setSaveData({ summary: null, fileData: null, rootHash: null, txHash: null });
+    }, 500);
+  }, [resetSession]);
+
+  /**
    * Confirm save - execute full save workflow (1:1 from chatMachine)
    */
   const confirmSave = useCallback(async (shouldSave: boolean) => {
@@ -301,34 +400,94 @@ export const useAIChatSession = (
       setSaveData(prev => ({ ...prev, fileData: fileResult }));
       debugLog('File prepared', { fileName: fileResult.fileName });
 
-      // Step 3: Upload to 0G storage (like chatMachine savingConversation.uploadingToStorage)
+      // Step 3: Upload to 0G storage with retry logic (like chatMachine storageUploadFailed)
       debugLog('Uploading to 0G storage');
 
       const { uploadToStorage } = await import('@/terminal-xstate/services/xstateStorage');
 
-      const uploadResult = await uploadToStorage(
-        fileResult.fileContent,
-        fileResult.fileName,
-        (status) => debugLog('Upload status', { status })
-      );
+      let uploadResult = null;
+      let uploadAttempt = 0;
+
+      while (uploadAttempt < MAX_RETRIES) {
+        try {
+          uploadResult = await uploadToStorage(
+            fileResult.fileContent,
+            fileResult.fileName,
+            (status) => debugLog('Upload status', { status })
+          );
+
+          debugLog('Upload complete', { rootHash: uploadResult.rootHash });
+          break; // Success
+
+        } catch (uploadErr) {
+          uploadAttempt++;
+          const uploadErrorMsg = uploadErr instanceof Error ? uploadErr.message : 'Upload failed';
+
+          if (uploadAttempt >= MAX_RETRIES) {
+            // Max retries reached - ask user
+            debugLog(`Upload failed after ${MAX_RETRIES} attempts`, { error: uploadErrorMsg });
+            setRetryCount(uploadAttempt);
+            setRetryError(uploadErrorMsg);
+            setRetryStep('upload');
+            setState('uploadRetryPrompt');
+            return; // Wait for user decision via retryOperation()
+          }
+
+          debugLog(`Upload attempt ${uploadAttempt} failed, retrying in 2s...`, { error: uploadErrorMsg });
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      if (!uploadResult) {
+        throw new Error('Upload failed after all retries');
+      }
 
       setSaveData(prev => ({ ...prev, rootHash: uploadResult.rootHash }));
-      debugLog('Upload complete', { rootHash: uploadResult.rootHash });
 
-      // Step 4: Update contract (like chatMachine savingConversation.updatingContract)
+      // Step 4: Update contract with retry logic (like chatMachine)
       debugLog('Updating blockchain contract');
 
       const { ConversationContractUpdater } = await import('@/terminal-xstate/services/conversationContractUpdater');
       const contractUpdater = new ConversationContractUpdater();
 
-      const contractResult = await contractUpdater.updateConversationContract(
-        sessionContext.agentId,
-        uploadResult.rootHash,
-        summaryResult.summary?.type || 'general_chat'
-      );
+      let contractResult = null;
+      let contractAttempt = 0;
+
+      while (contractAttempt < MAX_RETRIES) {
+        try {
+          contractResult = await contractUpdater.updateConversationContract(
+            sessionContext.agentId,
+            uploadResult.rootHash,
+            summaryResult.summary?.type || 'general_chat'
+          );
+
+          debugLog('Contract updated', { txHash: contractResult.txHash });
+          break; // Success
+
+        } catch (contractErr) {
+          contractAttempt++;
+          const contractErrorMsg = contractErr instanceof Error ? contractErr.message : 'Contract update failed';
+
+          if (contractAttempt >= MAX_RETRIES) {
+            // Max retries reached - ask user
+            debugLog(`Contract update failed after ${MAX_RETRIES} attempts`, { error: contractErrorMsg });
+            setRetryCount(contractAttempt);
+            setRetryError(contractErrorMsg);
+            setRetryStep('contract');
+            setState('contractRetryPrompt');
+            return; // Wait for user decision via retryOperation()
+          }
+
+          debugLog(`Contract attempt ${contractAttempt} failed, retrying in 2s...`, { error: contractErrorMsg });
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      if (!contractResult) {
+        throw new Error('Contract update failed after all retries');
+      }
 
       setSaveData(prev => ({ ...prev, txHash: contractResult.txHash }));
-      debugLog('Contract updated', { txHash: contractResult.txHash });
 
       // Complete
       setState('completed');
@@ -354,11 +513,17 @@ export const useAIChatSession = (
     error,
     sessionContext,
     saveData,
+    retryCount,
+    retryError,
+    retryStep,
+    maxRetries: MAX_RETRIES,
     initializeSession,
     initializeSessionWithFallback,
     sendMessage,
     endSession,
     confirmSave,
+    retryOperation,
+    abortRetry,
     resetSession,
     cancelRequest
   };
