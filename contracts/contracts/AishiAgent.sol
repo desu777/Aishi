@@ -53,7 +53,7 @@ contract AishiAgent is
     // Demand-based pricing params
     // Every PRICE_STEP_INTERVAL minted agents, price increases by PRICE_STEP
     uint256 public constant PRICE_STEP_INTERVAL = 10;       // mints per tier
-    uint256 public constant PRICE_STEP          = 0.01 ether; // increment per tier
+    uint256 public constant PRICE_STEP          = 0.1 ether; // increment per tier
 
     // Maximum number of iNFTs that can ever be minted
     uint256 public constant MAX_SUPPLY = 1888;

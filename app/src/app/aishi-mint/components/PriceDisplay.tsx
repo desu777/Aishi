@@ -35,7 +35,7 @@ export default function PriceDisplay({
     functionName: 'PRICE_STEP_INTERVAL',
   });
 
-  const priceStep: bigint = (priceStepRaw as bigint) ?? BigInt(0.01e18);
+  const priceStep: bigint = (priceStepRaw as bigint) ?? BigInt(0.1e18);
   const priceStepInterval: number = priceStepIntervalRaw ? Number(priceStepIntervalRaw as bigint) : 10;
 
   // Calculate current tier and next tier info
