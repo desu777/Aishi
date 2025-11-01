@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { FaPaperPlane, FaMicrophone } from 'react-icons/fa';
+import { FaPaperPlane } from 'react-icons/fa';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -87,29 +87,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             padding: '0',
           }}
         />
-
-        {/* Voice button (optional - placeholder for future) */}
-        <button
-          type="button"
-          disabled={disabled}
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            border: '1px solid rgba(139, 92, 246, 0.3)',
-            color: '#8B5CF6',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            opacity: disabled ? 0.5 : 1,
-          }}
-          title="Voice input (coming soon)"
-        >
-          <FaMicrophone size={16} />
-        </button>
 
         {/* Send button */}
         <button

@@ -9,7 +9,7 @@ import PriceDisplay from './components/PriceDisplay';
 import MintStepper from './components/MintStepper';
 import PricingFooter from './components/PricingFooter';
 import GradientText from '../../components/ui/GradientText';
-import { GiProcessor, GiPadlock, GiGrowth, GiShield } from 'react-icons/gi';
+// Removed feature badges (0G-native, Ownable iNFT, Dynamic pricing, Private by design)
 
 export default function AishiMintPage() {
   const { theme } = useTheme();
@@ -74,39 +74,7 @@ export default function AishiMintPage() {
               Name your sovereign iNFT companion. One agent per wallet. Your memory, your control.
             </p>
 
-            {/* Badges */}
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: theme.spacing.sm,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-              {[
-                { icon: GiProcessor, text: '0G-native' },
-                { icon: GiPadlock, text: 'Ownable iNFT' },
-                { icon: GiGrowth, text: 'Dynamic pricing' },
-                { icon: GiShield, text: 'Private by design' },
-              ].map(({ icon: Icon, text }) => (
-                <div
-                  key={text}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-                    backgroundColor: `${theme.bg.card}cc`,
-                    border: `1px solid ${theme.accent.primary}44`,
-                    borderRadius: theme.radius.full,
-                    fontSize: theme.typography.fontSizes.xs,
-                    color: theme.text.secondary,
-                  }}
-                >
-                  <Icon size={14} color={theme.accent.primary} />
-                  {text}
-                </div>
-              ))}
-            </div>
+            {/* Feature badges intentionally removed */}
           </div>
 
           {/* Stepper Section */}
