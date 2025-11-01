@@ -3,10 +3,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTshirt, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { GiCrosshair } from 'react-icons/gi';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 
 interface ClothingControlProps {
   modelRef: React.RefObject<Live2DModelRef>;
+  enhancedMode?: boolean;
+  onEnhancedModeChange?: (enabled: boolean) => void;
 }
 
 interface ClothingOption {
@@ -27,7 +30,11 @@ const CLOTHING_OPTIONS: ClothingOption[] = [
   { name: 'Gaming', expression: '游戏机', icon: '🎮', description: 'Hold game controller' },
 ];
 
-export const ClothingControl: React.FC<ClothingControlProps> = ({ modelRef }) => {
+export const ClothingControl: React.FC<ClothingControlProps> = ({
+  modelRef,
+  enhancedMode = false,
+  onEnhancedModeChange
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeExpressions, setActiveExpressions] = useState<Set<string>>(new Set());
 
@@ -111,6 +118,75 @@ export const ClothingControl: React.FC<ClothingControlProps> = ({ modelRef }) =>
           >
             {/* Options grid */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* Enhanced Mode Toggle (Special Feature) */}
+              <button
+                onClick={() => onEnhancedModeChange?.(!enhancedMode)}
+                style={{
+                  padding: '14px 16px',
+                  backgroundColor: enhancedMode
+                    ? 'rgba(139, 92, 246, 0.4)'
+                    : 'rgba(255, 255, 255, 0.05)',
+                  border: `2px solid ${enhancedMode ? '#8B5CF6' : 'rgba(255, 255, 255, 0.1)'}`,
+                  borderRadius: '10px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'left',
+                  boxShadow: enhancedMode ? '0 0 16px rgba(139, 92, 246, 0.4)' : 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (!enhancedMode) {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!enhancedMode) {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  }
+                }}
+              >
+                <GiCrosshair
+                  size={20}
+                  color={enhancedMode ? '#A78BFA' : '#fff'}
+                  style={{ flexShrink: 0 }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: '600', marginBottom: '2px', color: enhancedMode ? '#A78BFA' : '#fff' }}>
+                    Enhanced Mode
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.5)' }}>
+                    {enhancedMode ? 'Character follows cursor' : 'Enable cursor following'}
+                  </div>
+                </div>
+                {enhancedMode && (
+                  <div
+                    style={{
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      backgroundColor: '#8B5CF6',
+                      boxShadow: '0 0 12px #8B5CF6',
+                      animation: 'pulse 2s ease-in-out infinite',
+                    }}
+                  />
+                )}
+              </button>
+
+              {/* Divider */}
+              <div
+                style={{
+                  height: '1px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  margin: '4px 0',
+                }}
+              />
+
+              {/* Clothing Items */}
               {CLOTHING_OPTIONS.map(option => {
                 const isActive = activeExpressions.has(option.expression);
 

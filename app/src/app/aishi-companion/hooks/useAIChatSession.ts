@@ -9,6 +9,7 @@ import { sendToAI } from '@/terminal-xstate/services/apiService';
 import { fetchChatContext } from '@/terminal-xstate/machines/chatServices';
 import { buildLive2DChatPrompt } from '../services/live2dChatPromptBuilder';
 import type { ChatMessage } from '@/terminal-xstate/machines/chatMachine';
+import toast from 'react-hot-toast';
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {
@@ -292,6 +293,24 @@ export const useAIChatSession = (
         setSaveData(prev => ({ ...prev, txHash: contractResult.txHash }));
         debugLog('Contract updated after upload retry', { txHash: contractResult.txHash });
 
+        // Show success toast
+        toast.success(
+          `✓ Conversation saved on-chain! TX: ${contractResult.txHash.substring(0, 10)}...${contractResult.txHash.substring(contractResult.txHash.length - 8)}`,
+          {
+            duration: 5000,
+            style: {
+              background: '#fff',
+              color: '#000',
+              borderLeft: '4px solid #22C55E',
+              padding: '16px',
+              maxWidth: '500px',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '14px',
+              fontWeight: '500'
+            }
+          }
+        );
+
       } else if (retryStep === 'contract') {
         // Retry contract update from saved rootHash
         const { updateConversationContract } = await import('@/terminal-xstate/services/conversationContractUpdater');
@@ -304,6 +323,24 @@ export const useAIChatSession = (
 
         setSaveData(prev => ({ ...prev, txHash: contractResult.txHash }));
         debugLog('Retry contract update successful', { txHash: contractResult.txHash });
+
+        // Show success toast
+        toast.success(
+          `✓ Conversation saved on-chain! TX: ${contractResult.txHash.substring(0, 10)}...${contractResult.txHash.substring(contractResult.txHash.length - 8)}`,
+          {
+            duration: 5000,
+            style: {
+              background: '#fff',
+              color: '#000',
+              borderLeft: '4px solid #22C55E',
+              padding: '16px',
+              maxWidth: '500px',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '14px',
+              fontWeight: '500'
+            }
+          }
+        );
       }
 
       // Success - complete
@@ -485,6 +522,24 @@ export const useAIChatSession = (
       }
 
       setSaveData(prev => ({ ...prev, txHash: contractResult.txHash }));
+
+      // Show success toast notification
+      toast.success(
+        `✓ Conversation saved on-chain! TX: ${contractResult.txHash.substring(0, 10)}...${contractResult.txHash.substring(contractResult.txHash.length - 8)}`,
+        {
+          duration: 5000,
+          style: {
+            background: '#fff',
+            color: '#000',
+            borderLeft: '4px solid #22C55E',
+            padding: '16px',
+            maxWidth: '500px',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '14px',
+            fontWeight: '500'
+          }
+        }
+      );
 
       // Complete
       setState('completed');

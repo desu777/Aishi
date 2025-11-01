@@ -52,6 +52,9 @@ export default function AishiCompanion() {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number; modelX: number; modelY: number } | null>(null);
 
+  // Enhanced Mode state (cursor following)
+  const [enhancedMode, setEnhancedMode] = useState(false);
+
   // Hooks
   const { currentValues, isAnimating, processAIResponse } = useAIParameterControl(modelRef);
   const {
@@ -216,6 +219,57 @@ export default function AishiCompanion() {
 
     return () => container.removeEventListener('wheel', wheelHandler);
   }, [handleWheel]);
+
+  // Enhanced Mode - Cursor following with smart toggle
+  useEffect(() => {
+    // Only activate when Enhanced Mode is ON and not during AI animations
+    const shouldTrack = enhancedMode &&
+                       sessionState !== 'thinking' &&
+                       sessionState !== 'animating' &&
+                       !isDragging;
+
+    if (!shouldTrack || !modelRef.current || !isModelReady) return;
+
+    const container = document.querySelector('.live2d-stage') as HTMLElement;
+    if (!container) return;
+
+    const handleCursorTracking = (e: MouseEvent) => {
+      if (!modelRef.current || isDragging) return;
+
+      // Get container bounds for normalized coordinates
+      const rect = container.getBoundingClientRect();
+
+      // Calculate normalized position (-1 to 1)
+      const normalizedX = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      const normalizedY = -((e.clientY - rect.top) / rect.height - 0.5) * 2;
+
+      // Update Head parameters (ParamAngleX/Y range: -30 to +30)
+      modelRef.current.setParameterValue('ParamAngleX', normalizedX * 30);
+      modelRef.current.setParameterValue('ParamAngleY', normalizedY * 30);
+
+      // Update Eye Gaze parameters (ParamEyeBallX/Y range: -1 to +1)
+      modelRef.current.setParameterValue('ParamEyeBallX', normalizedX * 0.8);
+      modelRef.current.setParameterValue('ParamEyeBallY', normalizedY * 0.8);
+    };
+
+    container.addEventListener('mousemove', handleCursorTracking);
+
+    debugLog('Enhanced Mode cursor tracking enabled');
+
+    return () => {
+      container.removeEventListener('mousemove', handleCursorTracking);
+
+      // Reset parameters when Enhanced Mode disabled
+      if (modelRef.current) {
+        modelRef.current.setParameterValue('ParamAngleX', 0);
+        modelRef.current.setParameterValue('ParamAngleY', 0);
+        modelRef.current.setParameterValue('ParamEyeBallX', 0);
+        modelRef.current.setParameterValue('ParamEyeBallY', 0);
+      }
+
+      debugLog('Enhanced Mode cursor tracking disabled');
+    };
+  }, [enhancedMode, sessionState, isDragging, isModelReady]);
 
   // Start session handler
   const handleStartSession = useCallback(async () => {
@@ -415,6 +469,14 @@ export default function AishiCompanion() {
           justifyContent: 'center',
           cursor: isDragging ? 'grabbing' : 'grab',
           pointerEvents: 'auto',
+          // Glowing border when Enhanced Mode is active
+          boxShadow: enhancedMode && sessionState !== 'thinking' && sessionState !== 'animating'
+            ? '0 0 30px 5px rgba(139, 92, 246, 0.6), inset 0 0 20px rgba(139, 92, 246, 0.2)'
+            : 'none',
+          border: enhancedMode && sessionState !== 'thinking' && sessionState !== 'animating'
+            ? '2px solid rgba(139, 92, 246, 0.5)'
+            : 'none',
+          transition: 'box-shadow 0.3s ease, border 0.3s ease',
         }}
       >
         <Live2DModel
@@ -431,7 +493,13 @@ export default function AishiCompanion() {
       </div>
 
       {/* Clothing Control */}
-      {isModelReady && <ClothingControl modelRef={modelRef} />}
+      {isModelReady && (
+        <ClothingControl
+          modelRef={modelRef}
+          enhancedMode={enhancedMode}
+          onEnhancedModeChange={setEnhancedMode}
+        />
+      )}
 
       {/* Message Display */}
       {currentMessage && (
