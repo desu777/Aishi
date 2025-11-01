@@ -41,7 +41,7 @@ export default function PrivacySection() {
             color: theme.text.primary,
             lineHeight: 1.6
           }}>
-            You own the agent and the data. We can't see your dreams or messages. Export/omit anytime.
+            You own the agent. You own the memory. Export or omit anytime. We can't see your data.
           </p>
         </div>
       </div>

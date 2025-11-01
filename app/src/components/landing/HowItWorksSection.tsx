@@ -26,15 +26,8 @@ export default function HowItWorksSection() {
       position: 'relative',
       zIndex: 1
     }}>
-      {/* Blur background overlay */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'rgba(24, 24, 31, 0.3)',
-        backdropFilter: 'blur(10px)',
-        zIndex: -1
-      }} />
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Title */}
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
           <h2 style={{
             fontSize: isSmallMobile ? '1.75rem' : 'clamp(2rem, 4vw, 3rem)',
@@ -58,58 +51,75 @@ export default function HowItWorksSection() {
           </p>
         </div>
 
-        <div style={{ position: 'relative' }}>
-          {/* Timeline line */}
-          <div style={{
-            position: 'absolute',
-            left: isSmallMobile ? '20px' : '32px',
-            top: '32px',
-            bottom: '32px',
-            width: '2px',
-            background: theme.border
-          }} />
+        {/* Horizontal Timeline */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: '24px',
+          position: 'relative',
+          flexDirection: isMobile ? 'column' : 'row'
+        }}>
+          {/* Horizontal Line (desktop only) */}
+          {!isMobile && (
+            <div style={{
+              position: 'absolute',
+              top: '32px',
+              left: '10%',
+              right: '10%',
+              height: '2px',
+              background: theme.border,
+              zIndex: 0
+            }} />
+          )}
 
           {/* Steps */}
           {steps.map((step, i) => (
             <div key={i} style={{
+              flex: 1,
               display: 'flex',
-              gap: isSmallMobile ? '16px' : '24px',
-              marginBottom: '40px',
-              alignItems: 'flex-start'
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              position: 'relative',
+              zIndex: 1
             }}>
+              {/* Number Circle */}
               <div style={{
-                width: isSmallMobile ? '40px' : '64px',
-                height: isSmallMobile ? '40px' : '64px',
+                width: '64px',
+                height: '64px',
                 borderRadius: '50%',
                 background: theme.gradients.primary,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: isSmallMobile ? '1rem' : '1.5rem',
+                fontSize: '1.5rem',
                 fontWeight: 'bold',
                 color: 'white',
-                flexShrink: 0,
-                zIndex: 1
+                marginBottom: '16px',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
               }}>
                 {i + 1}
               </div>
-              <div style={{ paddingTop: '12px' }}>
-                <h3 style={{
-                  fontSize: isSmallMobile ? '1.1rem' : '1.25rem',
-                  fontWeight: '600',
-                  marginBottom: '8px',
-                  color: theme.accent.primary
-                }}>
-                  {step.title}
-                </h3>
-                <p style={{
-                  fontSize: '1rem',
-                  color: theme.text.secondary,
-                  lineHeight: 1.6
-                }}>
-                  {step.desc}
-                </p>
-              </div>
+
+              {/* Title */}
+              <h3 style={{
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '8px',
+                color: theme.accent.primary
+              }}>
+                {step.title}
+              </h3>
+
+              {/* Description */}
+              <p style={{
+                fontSize: '0.95rem',
+                color: theme.text.secondary,
+                lineHeight: 1.6
+              }}>
+                {step.desc}
+              </p>
             </div>
           ))}
         </div>

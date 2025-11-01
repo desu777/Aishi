@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
 import Layout from '../components/layout/Layout';
 import {
   NeuralNetworkCanvas,
-  HeroSection
+  HeroSection,
+  ValuePropsSection,
+  HowItWorksSection,
+  TrustStackSection,
+  PrivacySection,
+  FinalCTASection
 } from '../components/landing';
 
 export default function Home() {
@@ -15,6 +19,21 @@ export default function Home() {
 
       {/* Hero Section */}
       <HeroSection />
+
+      {/* Value Propositions */}
+      <ValuePropsSection />
+
+      {/* How It Works Timeline */}
+      <HowItWorksSection />
+
+      {/* 0G Infrastructure Trust */}
+      <TrustStackSection />
+
+      {/* Privacy Guarantee */}
+      <PrivacySection />
+
+      {/* Final Call to Action */}
+      <FinalCTASection />
     </Layout>
   );
 }

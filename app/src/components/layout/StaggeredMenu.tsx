@@ -72,7 +72,7 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     { label: 'Home', ariaLabel: 'Go to home page', link: '/' },
     { label: 'Mint Aishi', ariaLabel: 'Mint new Aishi agent', link: '/aishi-mint' },
     { label: 'aishiOS', ariaLabel: 'Access aishiOS terminal', link: '/aishiOS' },
-    { label: 'Companion', ariaLabel: 'Your AI companion', link: '/companion' },
+    { label: 'Companion', ariaLabel: 'Your AI companion', link: '/aishi-companion' },
     { label: 'Docs', ariaLabel: 'View documentation', link: docsUrl || '#', external: true },
     ...(isTestMode ? [
       { label: 'Upload', ariaLabel: 'Upload dream test', link: '/upload', testMode: true },

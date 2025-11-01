@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { badges } from './landingData';
 import SplitText from '../ui/SplitText';
 import PillNav from '../ui/PillNav';
+import GradientText from '../ui/GradientText';
+import Image from 'next/image';
+import { ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function HeroSection() {
@@ -25,16 +28,11 @@ export default function HeroSection() {
   }, []);
   
   const rotatingTexts = [
-    'Built 100% on 0G: Compute · Storage · DA · Chain.',
-    'Your dreams and chats become a private memory.',
-    'Auto month-learn and memory-core keeps long-term context.',
-    'You choose what Aishi remembers – always.',
-    'Chat in real time with your Live2D companion.',
-    'Spot hidden patterns and self-defeating loops.',
-    'An ownable self-learning iNFT you name and keep.',
-    'Intelligence and traits evolve with you.',
-    'Encrypted on 0G Storage; we can\'t see your data.',
-    'Operate via AishiOS: type dream, chat, and help to see more available commands.'
+    'Built 100% on 0G — Compute • Storage • DA • Chain.',
+    'Your memories, truly private. You decide what\'s saved.',
+    'Month-learn + memory-core: long-term context that sticks.',
+    'Real-time Live2D chat with a personality that evolves.',
+    'Spot hidden patterns and break self-defeating loops.'
   ];
 
   return (
@@ -51,47 +49,53 @@ export default function HeroSection() {
         width: '100%',
         textAlign: 'center'
       }}>
+        {/* Logo Aishi */}
+        <Image
+          src="/logo_clean.png"
+          alt="Aishi"
+          width={isMobile ? 120 : 180}
+          height={isMobile ? 120 : 180}
+          priority
+          style={{
+            marginBottom: '32px',
+            animation: 'fadeInUp 1s ease-out 0.1s both',
+            display: 'inline-block'
+          }}
+        />
+
         {/* Title */}
         <h1 style={{
           fontSize: 'clamp(2rem, 5vw, 4rem)',
           fontWeight: 'bold',
           marginBottom: '24px',
           lineHeight: 1.2,
-          animation: 'fadeInUp 1s ease-out 0.2s both'
+          animation: 'fadeInUp 1s ease-out 0.2s both',
+          color: theme.text.primary
         }}>
-          <span style={{ color: theme.text.primary }}>
-            Your inner
-            <span style={{
-              position: 'relative',
-              display: 'inline-block',
-              margin: '0 8px'
-            }}>
-              <img
-                src="/AI.png"
-                alt="AI"
-                style={{
-                  display: 'inline-block',
-                  height: isMobile ? '1.5em' : '2em',
-                  verticalAlign: 'middle',
-                  margin: '0 4px'
-                }}
-              />
-              <span style={{
-                position: 'absolute',
-                top: '-10px',
-                right: '-25px',
-                fontSize: '1.5rem',
-                color: theme.accent.primary,
-                opacity: 0.7
-              }}>
-                愛
-              </span>
-            </span>
-            companion
-          </span>
+          AI with a{' '}
+          <GradientText inline showBorder={false}>
+            soul
+          </GradientText>
+          .{' '}
+          <GradientText inline showBorder={false}>
+            Verifiably
+          </GradientText>{' '}
+          yours.
         </h1>
 
-        {/* Subtitle with rotating text */}
+        {/* Subheadline */}
+        <p style={{
+          maxWidth: '800px',
+          margin: '0 auto 32px',
+          fontSize: 'clamp(1.125rem, 2.5vw, 1.5rem)',
+          color: theme.text.secondary,
+          lineHeight: 1.6,
+          animation: 'fadeInUp 1s ease-out 0.3s both'
+        }}>
+          A sovereign iNFT companion that learns from your dreams and chats — and remembers what you choose to remember.
+        </p>
+
+        {/* Rotating USPs */}
         <div style={{
           maxWidth: '800px',
           margin: '0 auto 32px',
@@ -109,7 +113,7 @@ export default function HeroSection() {
             to={{ opacity: 1, y: 0, rotateX: 0 }}
             textAlign="center"
             rotationDelay={6500}
-            style={{ 
+            style={{
               color: theme.text.secondary,
               fontSize: 'clamp(1rem, 2.5vw, 1.25rem)',
               lineHeight: 1.6,
@@ -166,13 +170,19 @@ export default function HeroSection() {
                 ariaLabel: 'Mint Your Agent'
               },
               {
+                label: 'Companion',
+                href: '/aishi-companion',
+                ariaLabel: 'Meet your AI companion'
+              },
+              {
                 label: 'Learn More',
                 onClick: () => {
                   const docsUrl = process.env.NEXT_PUBLIC_DOCS_AISHI_URL;
                   if (docsUrl && docsUrl.trim()) {
                     window.open(docsUrl, '_blank', 'noopener,noreferrer');
                   } else {
-                    console.warn('NEXT_PUBLIC_DOCS_AISHI_URL not configured');
+                    // Fallback to /introduction route
+                    router.push('/introduction');
                   }
                 },
                 ariaLabel: 'Learn more about Aishi'
@@ -182,6 +192,42 @@ export default function HeroSection() {
         </div>
 
       </div>
+
+      {/* Scroll Indicator - Bottom Right */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '40px',
+          right: '40px',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'bounce 2s infinite',
+          cursor: 'pointer',
+          transition: 'opacity 0.3s ease'
+        }}
+        onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+      >
+        <span style={{
+          fontSize: '0.875rem',
+          color: theme.text.secondary,
+          fontWeight: '500',
+          letterSpacing: '0.05em'
+        }}>
+          SCROLL
+        </span>
+        <ChevronDown size={24} style={{ color: theme.accent.primary }} />
+      </div>
+
+      {/* CSS Animation */}
+      <style jsx>{`
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+      `}</style>
     </section>
   );
 }
