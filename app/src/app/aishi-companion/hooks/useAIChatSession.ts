@@ -281,10 +281,9 @@ export const useAIChatSession = (
         debugLog('Retry upload successful', { rootHash: uploadResult.rootHash });
 
         // Continue to contract update
-        const { ConversationContractUpdater } = await import('@/terminal-xstate/services/conversationContractUpdater');
-        const contractUpdater = new ConversationContractUpdater();
+        const { updateConversationContract } = await import('@/terminal-xstate/services/conversationContractUpdater');
 
-        const contractResult = await contractUpdater.updateConversationContract(
+        const contractResult = await updateConversationContract(
           sessionContext!.agentId,
           uploadResult.rootHash,
           saveData.summary?.type || 'general_chat'
@@ -295,10 +294,9 @@ export const useAIChatSession = (
 
       } else if (retryStep === 'contract') {
         // Retry contract update from saved rootHash
-        const { ConversationContractUpdater } = await import('@/terminal-xstate/services/conversationContractUpdater');
-        const contractUpdater = new ConversationContractUpdater();
+        const { updateConversationContract } = await import('@/terminal-xstate/services/conversationContractUpdater');
 
-        const contractResult = await contractUpdater.updateConversationContract(
+        const contractResult = await updateConversationContract(
           sessionContext!.agentId,
           saveData.rootHash!,
           saveData.summary?.type || 'general_chat'
@@ -447,15 +445,14 @@ export const useAIChatSession = (
       // Step 4: Update contract with retry logic (like chatMachine)
       debugLog('Updating blockchain contract');
 
-      const { ConversationContractUpdater } = await import('@/terminal-xstate/services/conversationContractUpdater');
-      const contractUpdater = new ConversationContractUpdater();
+      const { updateConversationContract } = await import('@/terminal-xstate/services/conversationContractUpdater');
 
       let contractResult = null;
       let contractAttempt = 0;
 
       while (contractAttempt < MAX_RETRIES) {
         try {
-          contractResult = await contractUpdater.updateConversationContract(
+          contractResult = await updateConversationContract(
             sessionContext.agentId,
             uploadResult.rootHash,
             summaryResult.summary?.type || 'general_chat'
