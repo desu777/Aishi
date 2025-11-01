@@ -222,6 +222,7 @@ export default function MintStatus(props: MintStatusProps) {
           isCheckingName={props.isCheckingName}
           canMint={props.canMint}
           isProcessing={props.isProcessing}
+          isConnected={isConnected}
           maxNameLength={props.maxNameLength}
           currentMintPrice={props.currentMintPrice}
           onMint={props.handleMint}
@@ -256,6 +257,7 @@ export default function MintStatus(props: MintStatusProps) {
         isCheckingName={props.isCheckingName}
         canMint={props.canMint}
         isProcessing={props.isProcessing}
+        isConnected={isConnected}
         maxNameLength={props.maxNameLength}
         currentMintPrice={props.currentMintPrice}
         onMint={props.handleMint}

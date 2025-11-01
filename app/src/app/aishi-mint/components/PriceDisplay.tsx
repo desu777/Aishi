@@ -2,9 +2,10 @@
 
 import { formatEther } from 'viem';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { FiTrendingUp, FiUsers } from 'react-icons/fi';
+import { FiTrendingUp, FiUsers, FiLock, FiExternalLink } from 'react-icons/fi';
 import { useReadContract } from 'wagmi';
 import { getContractConfig } from '../config/contractConfig';
+import { getContractExplorerUrl } from '../../../config/chains';
 
 interface PriceDisplayProps {
   currentMintPrice: bigint;

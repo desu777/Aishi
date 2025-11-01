@@ -193,33 +193,35 @@ export default function HeroSection() {
 
       </div>
 
-      {/* Scroll Indicator - Bottom Right */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '40px',
-          right: '40px',
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '8px',
-          animation: 'bounce 2s infinite',
-          cursor: 'pointer',
-          transition: 'opacity 0.3s ease'
-        }}
-        onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
-      >
-        <span style={{
-          fontSize: '0.875rem',
-          color: theme.text.secondary,
-          fontWeight: '500',
-          letterSpacing: '0.05em'
-        }}>
-          SCROLL
-        </span>
-        <ChevronDown size={24} style={{ color: theme.accent.primary }} />
-      </div>
+      {/* Scroll Indicator - Bottom Right (hidden on mobile) */}
+      {!isMobile && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '40px',
+            right: '40px',
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px',
+            animation: 'bounce 2s infinite',
+            cursor: 'pointer',
+            transition: 'opacity 0.3s ease'
+          }}
+          onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+        >
+          <span style={{
+            fontSize: '0.875rem',
+            color: theme.text.secondary,
+            fontWeight: '500',
+            letterSpacing: '0.05em'
+          }}>
+            SCROLL
+          </span>
+          <ChevronDown size={24} style={{ color: theme.accent.primary }} />
+        </div>
+      )}
 
       {/* CSS Animation */}
       <style jsx>{`

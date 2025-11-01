@@ -46,7 +46,7 @@ export default function TransactionStatus({
               width: 100%;
             }
           }
-          
+
           @keyframes shimmer {
             0% {
               background-position: -200% center;
@@ -55,7 +55,12 @@ export default function TransactionStatus({
               background-position: 200% center;
             }
           }
-          
+
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+
           .shimmer-border-success {
             position: relative;
             padding: 2px;
@@ -69,12 +74,26 @@ export default function TransactionStatus({
             background-size: 200% 100%;
             animation: shimmer ${theme.shimmer.duration} infinite;
           }
-          
+
           .shimmer-content-success {
             background: ${theme.bg.card};
             border-radius: ${theme.radius.xl};
             backdrop-filter: ${theme.effects.blur.md};
             padding: ${theme.spacing.xxl} ${theme.spacing.xl};
+          }
+
+          /* Accessibility: Disable animations for users with motion sensitivity */
+          @media (prefers-reduced-motion: reduce) {
+            .shimmer-border-success {
+              animation: none !important;
+              background: ${theme.accent.primary}44;
+            }
+
+            * {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+            }
           }
         `}</style>
         
@@ -235,7 +254,7 @@ export default function TransactionStatus({
               background-position: 200% center;
             }
           }
-          
+
           .shimmer-border {
             position: relative;
             padding: 2px;
@@ -249,12 +268,26 @@ export default function TransactionStatus({
             background-size: 200% 100%;
             animation: shimmer ${theme.shimmer.duration} infinite;
           }
-          
+
           .shimmer-content {
             background: ${theme.bg.card};
             border-radius: ${theme.radius.xl};
             backdrop-filter: ${theme.effects.blur.md};
             padding: ${theme.spacing.xxl};
+          }
+
+          /* Accessibility: Disable animations for users with motion sensitivity */
+          @media (prefers-reduced-motion: reduce) {
+            .shimmer-border {
+              animation: none !important;
+              background: ${theme.accent.primary}44;
+            }
+
+            * {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+            }
           }
         `}</style>
         

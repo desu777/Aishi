@@ -96,4 +96,15 @@ export const getTxExplorerUrl = (txHash: string): string => {
   const activeChain = getActiveChain();
   const explorerUrl = activeChain.blockExplorers?.default?.url || 'https://chainscan-galileo.0g.ai';
   return `${explorerUrl}/tx/${txHash}`;
+};
+
+/**
+ * Get block explorer contract URL for active chain
+ * @param contractAddress - Contract address (0x...)
+ * @returns Full URL to contract in block explorer
+ */
+export const getContractExplorerUrl = (contractAddress: string): string => {
+  const activeChain = getActiveChain();
+  const explorerUrl = activeChain.blockExplorers?.default?.url || 'https://chainscan-galileo.0g.ai';
+  return `${explorerUrl}/address/${contractAddress}`;
 }; 

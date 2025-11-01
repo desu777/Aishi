@@ -54,8 +54,8 @@ export default function HowItWorksSection() {
         {/* Horizontal Timeline */}
         <div style={{
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
+          justifyContent: isMobile ? 'center' : 'space-between',
+          alignItems: isMobile ? 'center' : 'flex-start',
           gap: '24px',
           position: 'relative',
           flexDirection: isMobile ? 'column' : 'row'

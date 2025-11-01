@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { FiCheck, FiX, FiLoader, FiZap } from 'react-icons/fi';
+import { GiCheckMark, GiCancel, GiHourglass, GiFireSpellCast, GiWallet, GiQuillInk, GiConfirmed, GiSparkles } from 'react-icons/gi';
 import { formatEther } from 'viem';
 
 interface MintFormProps {
@@ -12,6 +12,7 @@ interface MintFormProps {
   isCheckingName: boolean;
   canMint: boolean;
   isProcessing: boolean;
+  isConnected: boolean;
   maxNameLength: number;
   currentMintPrice: bigint;
   onMint: () => void;
@@ -27,6 +28,7 @@ export default function MintForm({
   isCheckingName,
   canMint,
   isProcessing,
+  isConnected,
   maxNameLength,
   currentMintPrice,
   onMint,
@@ -53,9 +55,9 @@ export default function MintForm({
           fontFamily: theme.typography.fontFamilies.primary,
           letterSpacing: '0.5px',
         }}>
-          Are you ready to train your digital soul?
+          A unique name becomes its identity.
         </p>
-        
+
         <h1 style={{
           fontSize: `clamp(${theme.typography.fontSizes.lg}, 5vw, ${theme.typography.fontSizes.xl})`,
           fontWeight: theme.typography.fontWeights.bold,
@@ -63,7 +65,7 @@ export default function MintForm({
           marginBottom: theme.spacing.xs,
           fontFamily: theme.typography.fontFamilies.primary,
         }}>
-          Birth Your Digital Companion
+          Name your Aishi
         </h1>
         
         <p style={{
@@ -84,6 +86,17 @@ export default function MintForm({
           fontWeight: theme.typography.fontWeights.medium,
         }}>
           Agent name
+
+          {/* Help text */}
+          <span style={{
+            display: 'block',
+            fontSize: theme.typography.fontSizes.xs,
+            fontWeight: theme.typography.fontWeights.normal,
+            color: theme.text.tertiary,
+            marginTop: '2px',
+          }}>
+            Max 32 chars. Letters, numbers, hyphens. Name is permanent.
+          </span>
         </label>
         
         <div style={{ position: 'relative' }}>
@@ -146,17 +159,17 @@ export default function MintForm({
           }}>
             {isCheckingName ? (
               <>
-                <FiLoader style={{ animation: 'spin 1s linear infinite' }} />
+                <GiHourglass style={{ animation: 'spin 1s linear infinite' }} />
                 Checking availability...
               </>
             ) : nameError ? (
               <>
-                <FiX />
+                <GiCancel />
                 {nameError}
               </>
             ) : (
               <>
-                <FiCheck />
+                <GiCheckMark />
                 Name available!
               </>
             )}
@@ -249,17 +262,17 @@ export default function MintForm({
       >
         {isProcessing ? (
           <>
-            <FiLoader style={{ animation: 'spin 1s linear infinite' }} />
+            <GiHourglass style={{ animation: 'spin 1s linear infinite' }} />
             Processing...
           </>
         ) : isSoldOut ? (
           <>
-            <FiX />
+            <GiCancel />
             Mint Closed
           </>
         ) : (
           <>
-            <FiZap />
+            <GiFireSpellCast />
             Mint Agent
           </>
         )}
@@ -289,6 +302,28 @@ export default function MintForm({
           }}
         />
       </div>
+
+      {/* Animations */}
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        /* Accessibility: Disable animations for users with motion sensitivity */
+        @media (prefers-reduced-motion: reduce) {
+          * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+
+          button:hover {
+            transform: none !important;
+            box-shadow: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
