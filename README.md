@@ -45,14 +45,15 @@ Your Aishi is a digital soul (an iNFT) whose memory is built on a systematic ana
 
 ## Architecture Overview
 
-The project is structured as a monorepo with four main components working in concert to deliver a seamless, decentralized AI experience.
+The project is structured as a monorepo with five main components working in concert to deliver a seamless, decentralized AI experience.
 
 -   **`contracts/`**: The heart of the project, containing the `AishiAgent.sol` smart contract that governs the iNFT's existence, memory, and evolution on the 0G blockchain.
 -   **`0g-compute/`**: A powerful backend service acting as a bridge to the 0G Network and Google's Vertex AI. It manages virtual user wallets, processes AI jobs, and ensures data integrity.
 -   **`app/`**: A modern web application built with Next.js 15 that provides the `aishiOS`—an immersive terminal-like interface for interacting with your Aishi agent.
 -   **`aishi-docs/`**: The project's documentation, philosophy, and user guides.
+-   **`consolidation_schema/`**: Example memory consolidation schemas demonstrating the hierarchical memory system—daily interactions, monthly pattern analysis, and yearly wisdom crystallization.
 
-The entire system is a symphony of decentralized components, where user data flows from the frontend (`aishiOS`) to the on-chain soul (`iNFT on 0G Chain`), processed by the AI brain (`0G Compute`), and stored in a vast, private memory (`0G Storage`), all with its integrity guaranteed by `0G's Data Availability layer`.
+The entire system is a symphony of decentralized components, where user data flows from the frontend (`aishiOS`) to the on-chain soul (`iNFT on 0G Chain`), processed by the AI brain (`0G Compute`), and stored in a vast, private memory (`0G Storage`), all with its integrity guaranteed by `0G's Data Availability layer`. The memory system implements a three-tier hierarchical consolidation: daily interactions compress into monthly pattern analysis, which crystallizes into yearly wisdom cores—transforming hundreds of entries into essential personality evolution insights while achieving 99.7% data compression.
 
 <p align="center">
   <strong>The Symphony of Life: Data Flow</strong><br>
