@@ -10,6 +10,7 @@
     "generate-abi": "wagmi generate"
   },
   "dependencies": {
+    "@wagmi/core": "^2.14.16",
     "@0glabs/0g-ts-sdk": "0.3.0",
     "@rainbow-me/rainbowkit": "^2.2.4",
     "@tabler/icons-react": "^3.34.0",

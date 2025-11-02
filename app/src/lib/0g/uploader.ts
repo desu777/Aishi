@@ -6,7 +6,7 @@
 
 import { Indexer, Blob, ZgFile } from '@0glabs/0g-ts-sdk';
 import { Contract } from 'ethers';
-import { getEthersSignerForZeroG, getEthersProviderForZeroG } from './adapter/viemAdapter';
+import { getEthersSignerForZeroG } from './adapter/viemAdapter';
 import { logger } from '@/lib/logger';
 
 const log = logger.child({ component: 'Upload0G' });
@@ -143,14 +143,14 @@ export async function createZgFileFromPath(filePath: string): Promise<[ZgFile | 
  * @param file The file to upload
  * @param l1Rpc The L1 RPC URL
  * @param storageRpc The storage RPC URL
- * @param signer Optional ethers signer (deprecated, will be ignored)
+ * @param signer Optional ethers signer to be used for the upload
  * @returns Upload result with root hash and transaction info
  */
 export async function uploadFileComplete(
   file: File,
   storageRpc: string,
   l1Rpc: string,
-  signer?: any // Deprecated parameter for backward compatibility
+  signer?: any
 ): Promise<{
   success: boolean;
   rootHash?: string;
@@ -187,13 +187,10 @@ export async function uploadFileComplete(
     const uniqueTag = rootHashHex; // Already includes 0x prefix
     log.debug('Root hash generated', { rootHash: uniqueTag });
 
-    // 3. Get signer using adapter (ignore deprecated parameter)
-    log.debug('Getting signer via adapter');
-    if (signer) {
-      log.warn('Signer parameter is deprecated and will be ignored');
-    }
-    const adapterSigner = await getEthersSignerForZeroG();
-    log.debug('Signer obtained');
+    // 3. Get signer using adapter (prefer provided signer)
+    log.debug('Resolving signer for upload');
+    const adapterSigner = signer ?? (await getEthersSignerForZeroG());
+    log.debug('Signer resolved');
 
     // 4. Upload to 0G storage
     const [uploadResult, uploadErr] = await uploadToStorage(

@@ -1,27 +1,17 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import {
-  getDefaultConfig,
-  RainbowKitProvider,
-  darkTheme,
-  AvatarComponent,
-} from '@rainbow-me/rainbowkit';
+import { RainbowKitProvider, darkTheme, AvatarComponent } from '@rainbow-me/rainbowkit';
 import { WagmiProvider } from 'wagmi';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { useTheme } from '../contexts/ThemeContext';
-import { getSupportedChains, getActiveChain } from '../config/chains';
+import { getActiveChain } from '../config/chains';
+import wagmiConfig from '../config/wagmiClient';
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient();
 
-// Configure chains and providers for wagmi with dynamic chain selection
-const config = getDefaultConfig({
-  appName: 'Aishi – Your inner AI companion',
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '34121ad34d9bc22e1afc6f45f72b3fdd',
-  chains: getSupportedChains() as any,
-  ssr: false,
-});
+// wagmi config is centralized in config/wagmiClient
 
 // Custom avatar component for dream theme
 interface CustomAvatarProps {
@@ -59,7 +49,7 @@ interface WalletProviderProps {
 
 export const WalletProvider = ({ children }: WalletProviderProps) => {
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProviderWrapper>
           {children}

@@ -5,14 +5,11 @@
  */
 
 import { ethers } from 'ethers';
-import type { WalletClient, PublicClient, Account, Chain, Transport } from 'viem';
-import { 
-  createWalletClient, 
-  createPublicClient, 
-  custom, 
-  http,
-  type Hex
-} from 'viem';
+import type { WalletClient, PublicClient } from 'viem';
+import { type Hex } from 'viem';
+import { getAccount, getWalletClient } from '@wagmi/core';
+import wagmiConfig from '../../../config/wagmiClient';
+import { getActiveChain } from '../../../config/chains';
 
 /**
  * Converts viem WalletClient to ethers Signer for 0G SDK compatibility
@@ -122,17 +119,28 @@ export function ethersBigNumberToViemBigInt(value: ethers.BigNumberish): bigint 
  * @returns Ethers signer ready for 0G SDK
  */
 export async function getEthersSignerForZeroG(chainId?: number): Promise<ethers.Signer> {
+  // Prefer the connected RainbowKit/wagmi wallet client
+  try {
+    const activeChain = getActiveChain();
+    const account = getAccount(wagmiConfig);
+    if (account?.isConnected) {
+      const walletClient = await getWalletClient(wagmiConfig, { chainId: chainId ?? activeChain.id });
+      if (walletClient) {
+        return await walletClientToEthersSigner(walletClient);
+      }
+    }
+  } catch (e) {
+    // Fall through to window.ethereum fallback
+  }
+
+  // Fallback to the injected provider for backward compatibility
   if (!window.ethereum) {
     throw new Error('No ethereum provider found');
   }
 
   const provider = new ethers.BrowserProvider(window.ethereum);
-  
-  // Request account access if needed
-  await provider.send("eth_requestAccounts", []);
-  
   const signer = await provider.getSigner();
-  
+
   // Switch chain if needed
   if (chainId) {
     const network = await provider.getNetwork();
@@ -143,7 +151,7 @@ export async function getEthersSignerForZeroG(chainId?: number): Promise<ethers.
       });
     }
   }
-  
+
   return signer;
 }
 

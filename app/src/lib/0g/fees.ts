@@ -6,21 +6,20 @@
 
 import {
   createPublicClient,
-  createWalletClient,
   http,
-  custom,
   parseEther,
   formatEther,
   parseUnits,
   type PublicClient,
   type WalletClient,
   type Address,
-  type Account
 } from 'viem';
+import { getAccount, getWalletClient } from '@wagmi/core';
 import { getActiveChain } from '../../config/chains';
 import { getEthersProviderForZeroG, getEthersSignerForZeroG } from './adapter/viemAdapter';
 import { ethers } from 'ethers';
 import { logger } from '@/lib/logger';
+import wagmiConfig from '../../config/wagmiClient';
 
 const log = logger.child({ component: 'Fees0G' });
 
@@ -49,20 +48,15 @@ export async function getViemProvider(): Promise<[PublicClient | null, Error | n
  */
 export async function getViemSigner(): Promise<[WalletClient | null, Error | null]> {
   try {
-    if (typeof window === 'undefined' || !window.ethereum) {
-      throw new Error('No wallet connection available');
+    const activeChain = getActiveChain();
+    const account = getAccount(wagmiConfig);
+    if (!account?.isConnected) {
+      return [null, new Error('No wallet connection available')];
     }
 
-    const activeChain = getActiveChain();
-    const walletClient = createWalletClient({
-      chain: activeChain,
-      transport: custom(window.ethereum)
-    });
-
-    // Request account access if needed
-    const accounts = await walletClient.requestAddresses();
-    if (!accounts || accounts.length === 0) {
-      return [null, new Error('No accounts available')];
+    const walletClient = await getWalletClient(wagmiConfig, { chainId: activeChain.id });
+    if (!walletClient) {
+      return [null, new Error('Failed to obtain wallet client')];
     }
 
     return [walletClient, null];
