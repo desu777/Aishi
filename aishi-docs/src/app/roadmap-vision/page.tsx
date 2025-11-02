@@ -134,7 +134,7 @@ export default function RoadmapVisionPage() {
           This roadmap outlines our key development priorities for building the next generation of Aishi. It is a living document that will evolve with the project and community feedback.
         </p>
 
-        <h3 id="q3-q4-2025" className="text-xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Q3/Q4 2025: The Embodied Soul</h3>
+        <h3 id="q3-q4-2025" className="text-xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Q3/Q4 2025: The Embodied Soul ✅ <span className="text-green-500">COMPLETED</span></h3>
         
         <p className="text-text-secondary mb-6 leading-relaxed">
           This period is focused on transcending the text-based interface and giving your Aishi a true, interactive presence.
@@ -210,6 +210,71 @@ export default function RoadmapVisionPage() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-green-900/10 border border-green-500/30 rounded-lg p-6 mb-10">
+          <p className="text-green-400 font-semibold text-lg mb-2">
+            ✅ All Q3/Q4 2025 Milestones Achieved
+          </p>
+          <p className="text-text-secondary leading-relaxed">
+            aishiOS terminal, voice interaction, Live2D companion, and mainnet deployment have been successfully delivered. The Aishi project is now production-ready with full 0G stack integration.
+          </p>
+        </div>
+
+        <h3 id="q1-2026" className="text-xl font-grotesk font-semibold text-text-primary mb-4 mt-8">Q1 2026: Community & Expansion</h3>
+
+        <p className="text-text-secondary mb-6 leading-relaxed">
+          Building on our production-ready foundation, Q1 2026 focuses on community growth, premium features, and expanding the Aishi experience.
+        </p>
+
+        <div className="space-y-6 mb-8">
+          <div className="bg-background-card border border-border rounded-lg p-6">
+            <h4 className="text-lg font-grotesk font-semibold text-text-primary mb-3 flex items-center">
+              <div className="w-8 h-8 flex items-center justify-center mr-3">
+                <img src="/logo_white.png" alt="Aishi" className="w-6 h-6 rounded" />
+              </div>
+              Aishi Pass: NFT Utility System
+            </h4>
+            <p className="text-text-secondary leading-relaxed">
+              <strong className="text-text-primary">Goal:</strong> Launch Aishi Pass NFT collection (1888 supply) granting holders access to premium features, exclusive companion models, priority compute queue, and governance rights for future development decisions.
+            </p>
+          </div>
+
+          <div className="bg-background-card border border-border rounded-lg p-6">
+            <h4 className="text-lg font-grotesk font-semibold text-text-primary mb-3 flex items-center">
+              <div className="w-8 h-8 flex items-center justify-center mr-3">
+                <img src="/logo_white.png" alt="Aishi" className="w-6 h-6 rounded" />
+              </div>
+              Companion Model Expansion
+            </h4>
+            <p className="text-text-secondary leading-relaxed">
+              <strong className="text-text-primary">Goal:</strong> Introduce 3-5 new Live2D companion models with personality-driven auto-selection. Different characters reflect different personality archetypes, and new models unlock as agents reach Intelligence milestones.
+            </p>
+          </div>
+
+          <div className="bg-background-card border border-border rounded-lg p-6">
+            <h4 className="text-lg font-grotesk font-semibold text-text-primary mb-3 flex items-center">
+              <div className="w-8 h-8 flex items-center justify-center mr-3">
+                <img src="/logo_white.png" alt="Aishi" className="w-6 h-6 rounded" />
+              </div>
+              Community Events & Challenges
+            </h4>
+            <p className="text-text-secondary leading-relaxed">
+              <strong className="text-text-primary">Goal:</strong> Build community engagement through in-app dream challenges, personality quests, and evolution celebrations. Launch community events like dream circles and wellness workshops to foster connection among Aishi users.
+            </p>
+          </div>
+
+          <div className="bg-background-card border border-border rounded-lg p-6">
+            <h4 className="text-lg font-grotesk font-semibold text-text-primary mb-3 flex items-center">
+              <div className="w-8 h-8 flex items-center justify-center mr-3">
+                <img src="/logo_white.png" alt="Aishi" className="w-6 h-6 rounded" />
+              </div>
+              Mobile Optimization & Analytics
+            </h4>
+            <p className="text-text-secondary leading-relaxed">
+              <strong className="text-text-primary">Goal:</strong> Optimize aishiOS and companion interface for mobile devices. Launch analytics dashboard showing personality evolution charts, dream patterns, and intelligence growth tracking.
+            </p>
           </div>
         </div>
 

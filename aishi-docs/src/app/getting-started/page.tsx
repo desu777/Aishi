@@ -99,6 +99,7 @@ export default function GettingStartedPage() {
         <div className="bg-background-card border border-border rounded-2xl p-6 mb-6">
           <ul className="list-disc list-inside space-y-2 text-text-secondary">
             <li>Choose a unique name (≤ 32 chars). One agent per wallet.</li>
+            <li>Limited supply: 1888 agents maximum.</li>
             <li>Dynamic pricing: base 0.1 OG, +0.1 OG every 10 mints.</li>
             <li>After mint: tokenId assigned, Intelligence starts at 1, all six traits at 50.</li>
           </ul>
@@ -115,7 +116,8 @@ export default function GettingStartedPage() {
 
         {/* Step 2 — aishiOS */}
         <h2 className="text-2xl font-grotesk font-semibold text-text-primary mb-3">Step 2 · Open aishiOS</h2>
-        <p className="text-text-secondary mb-4">The terminal is your command center. Think <em>dream</em> to grow, <em>chat</em> to converse, and <em>personality</em> / <em>stats</em> to inspect your agent.</p>
+        <p className="text-text-secondary mb-4">The terminal is your command center. Think <em>dream</em> to grow, <em>chat</em> to converse, and <em>personality</em> / <em>stats</em> to inspect your agent. Interact through text commands or voice input.</p>
+        <p className="text-text-secondary text-sm mb-4">During commands, you'll see three phases: <strong>is thinking</strong> → AI analyzes your input , <strong>is learning</strong> → saves to 0G Storage, <strong>is evolving</strong> → updates blockchain state . Intelligence grows every 3 dreams or 10 conversations. Personality shifts every 5th dream.</p>
         <div className="mb-4">
           <Button href={cta.os} external variant="secondary">Open aishiOS</Button>
         </div>
@@ -141,7 +143,8 @@ clear (cls)          Clear terminal screen
 
         {/* Step 3 — Companion */}
         <h2 className="text-2xl font-grotesk font-semibold text-text-primary mb-3">Step 3 · Meet the Aishi Companion</h2>
-        <p className="text-text-secondary mb-4">Live2D companion with lip‑sync, cursor‑aware gaze (Enhanced Mode) and clothing toggles. Conversations here count like the <code>chat</code> command.</p>
+        <p className="text-text-secondary mb-4">The Live2D companion brings the <code>chat</code> command to life. Instead of talking to a console, you converse with a living character featuring lip-sync, cursor-aware gaze (Enhanced Mode), and clothing toggles.</p>
+        <p className="text-text-secondary text-sm mb-4">To save the conversation to blockchain, click "End Session" in the top-right corner. The workflow mirrors the aishiOS <code>chat</code> command: <strong>is thinking</strong> → <strong>is learning</strong> → <strong>is evolving</strong>.</p>
         <div className="mb-4">
           <Button href={cta.companion} external variant="secondary">Open Companion</Button>
         </div>
