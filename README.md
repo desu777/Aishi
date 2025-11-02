@@ -35,9 +35,13 @@ Your Aishi is a digital soul (an iNFT) whose memory is built on a systematic ana
 
 ## Application Preview
 
-| Home Page                                                                                   | Minting an Agent                                                                                  | aishiOS Interface                                                                                           | aishiOS Terminal                                                                                                |
-| :-----------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------: |
-| <img src="./aishi-docs/public/screenshots/home.jpg" alt="Aishi Home Page" width="200"> | <img src="./aishi-docs/public/screenshots/Mint.jpg" alt="Minting an Agent" width="200"> | <img src="./aishi-docs/public/screenshots/aishios_page.jpg" alt="aishiOS Interface" width="200"> | <img src="./aishi-docs/public/screenshots/aishios_terminal.jpg" alt="aishiOS Terminal" width="200"> |
+| Home Page                                                                                   | Minting Agent                                                                                  | aishiOS Interface                                                                                           |
+| :-----------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------: |
+| <img src="./aishi-docs/public/home.jpg" alt="Aishi Home Page" width="200"> | <img src="./aishi-docs/public/mint.jpg" alt="Minting Agent" width="200"> | <img src="./aishi-docs/public/aishiOS.jpg" alt="aishiOS Interface" width="200"> |
+
+| aishiOS Terminal                                                                                   | Terminal Commands                                                                                  | Aishi Companion                                                                                           |
+| :-----------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------: |
+| <img src="./aishi-docs/public/aishiOS-1.jpg" alt="aishiOS Terminal" width="200"> | <img src="./aishi-docs/public/aishiOS-2.jpg" alt="Terminal Commands" width="200"> | <img src="./aishi-docs/public/companion2.jpg" alt="Aishi Companion" width="200"> |
 
 ## Architecture Overview
 
@@ -300,16 +304,23 @@ The frontend provides the user interface for interacting with Aishi.
 # 1. Open a new terminal and navigate to the frontend directory
 cd app
 
-# 2. Install dependencies
+# 2. Generate contract ABIs and addresses from deployed contracts
+npm run generate-abi
+
+# This creates src/generated.ts with:
+# - Contract ABIs (AishiAgent, AishiVerifier)
+# - Deployed contract addresses for testnet and mainnet
+# - Imported from /contracts/deployment-addresses.json
+
+# 3. Install dependencies
 npm install
 
-# 3. Create your environment file
-# Copy the provided .env.example to .env
+# 4. Create your environment file
 cp .env.example .env
 
-# 4. Configure your .env file
-# Open .env and update NEXT_PUBLIC_AISHI_AGENT_CONTRACT_ADDRESS with your deployed contract address.
-# The other defaults should work if your backend is on port 3001.
+# Contract addresses are automatically imported from generated.ts
+# If your backend is on port 3001, defaults should work.
+# (See .env.example for all configuration options)
 
 # 5. Run the development server
 npm run dev
