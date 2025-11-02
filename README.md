@@ -171,40 +171,6 @@ npm run deploy
 #
 # WSL Users: Use `npm run deploy:wsl` to load external environment file
 ```
-
-#### ⚠️ Mainnet Deployment Safety
-
-Deploying to mainnet uses **REAL MONEY** and cannot be undone. The system implements **14 safety mechanisms** to prevent accidental deployment:
-
-**Protection Mechanisms:**
-1. Visual RED warning on network selection menu
-2. 5x higher minimum balance requirement (0.5 0G vs 0.1 0G)
-3. Mandatory TREASURY_ADDRESS environment variable
-4. Full warning screen displaying deployment details
-5. Pre-deployment checklist reminder
-6. Treasury address confirmation display
-7. First confirmation: Must type "yes"
-8. Second confirmation: Must type "0G MAINNET"
-9. 10-second countdown with abort option (press Ctrl+C)
-10. Graceful Ctrl+C handler (abort at any stage)
-11. Separate mainnet-deployments.json audit file (append-only)
-12. 2-block confirmation requirement (vs 0 for testnet)
-13. Extended 60-second timeout (vs 20s default)
-14. Post-deployment success confirmation message
-
-**Before Deploying to Mainnet:**
-- ✓ Test thoroughly on Galileo testnet first
-- ✓ Review all contract code and compilation settings
-- ✓ Verify TREASURY_ADDRESS is correct (minting fees go here)
-- ✓ Ensure wallet has minimum 0.5 0G balance
-- ✓ Configure MAINNET_RPC_URL if using custom RPC
-- ✓ Understand that deployment is permanent and irreversible
-
-**Aborting Deployment:**
-- Press **Ctrl+C** at any time to safely cancel
-- Decline any confirmation prompt (type anything except exact match)
-- System will exit gracefully without deploying
-
 ---
 
 #### Deployment Artifacts & Verification
