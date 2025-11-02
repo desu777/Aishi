@@ -16,7 +16,7 @@ This project is an entry for **0G's WaveHack by AKINDO**.
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
-[![0G Network](https://img.shields.io/badge/0G%20Network-Testnet-orange.svg)](https://0g.ai/)
+[![0G Network](https://img.shields.io/badge/0G%20Network-Mainnet-orange.svg)](https://0g.ai/)
 [![Hardhat](https://img.shields.io/badge/Hardhat-2.22-blue.svg)](https://hardhat.org/)
 
 ## The Philosophy: Your Digital Soul
@@ -88,24 +88,176 @@ cd contracts
 npm install
 
 # 3. Create your environment file
-# Create a .env file and add your private key and treasury address.
-# See contracts/actual_envexample.md for details.
-# Required variables: WALLET_PRIVATE_KEY, TREASURY_ADDRESS
+# Copy the example file to get started with all required variables:
+cp .env.example .env
 
-# 4. Compile the contracts (supports auto-detection for WSL/Windows)
+# Then edit .env and fill in your values:
+# - WALLET_PRIVATE_KEY: Your wallet's private key (64 hex characters, no 0x prefix)
+# - WALLET_PUBLIC_KEY: Your wallet's public address (Ethereum address)
+# - TREASURY_ADDRESS: Treasury wallet address for the contract
+
+# OPTIONAL: For mainnet deployments, also configure:
+# - MAINNET_RPC_URL, MAINNET_CHAIN_ID, MAINNET_BLOCK_EXPLORER
+# (See .env.example for all available configuration options)
+
+# 4. Compile the contracts (Interactive)
 npm run compile
 
-# 5. Deploy to the 0G Galileo Testnet
+# You'll see an interactive menu:
+#
+#   CONTRACT COMPILATION MODULE
+#
+#   Select compilation target:
+#     1. Testnet (Galileo) - Balanced optimization (200 runs)
+#     2. Mainnet (0G Network) - Maximum size reduction (1 run)
+#     3. Local Development - Fast compilation, no optimization
+#
+#   Your choice [1-3]: _
+#
+# Select the appropriate target for your deployment needs.
+# The system will analyze contracts, optimize bytecode, and generate a compilation report.
+#
+# Optimizer Settings by Target:
+# - Testnet: 200 runs (balanced for testing)
+# - Mainnet: 1 run (maximum bytecode compression for 24KB limit)
+# - Local: No optimization (fastest compilation for development)
+#
+# WSL Users: Use `npm run compile:wsl` to load external environment file
+
+# 5. Deploy Contracts (Interactive)
 npm run deploy
 
-# After deployment, note the contract address for frontend configuration.
-
-# MAINNET SUPPORT:
-# The deployment scripts support both 0G Galileo Testnet (Chain ID: 16602) and
-# 0G Mainnet (Chain ID: 16661). For production deployments on mainnet, ensure your
-# wallet is funded with sufficient 0G tokens and TREASURY_ADDRESS is configured.
-# Use the interactive deployer to select your target network.
+# You'll see a network selection menu:
+#
+#   CONTRACT DEPLOYMENT MODULE
+#
+#   Select deployment network:
+#     1. Galileo Testnet (16602)
+#     2. 0G Mainnet (16661) ⚠️ REAL MONEY
+#     3. Local Hardhat (31337)
+#
+#   Your choice [1-3]: _
+#
+# Network Comparison:
+#
+#   Galileo Testnet (recommended for testing):
+#   - Chain ID: 16602
+#   - RPC: https://evmrpc-testnet.0g.ai
+#   - Explorer: https://chainscan-galileo.0g.ai
+#   - Min Balance: 0.1 0G (get from faucet)
+#   - Safety: Simple confirmation
+#
+#   0G Mainnet (production - REAL MONEY):
+#   - Chain ID: 16661
+#   - RPC: http://evmrpc.0g.ai (configurable via MAINNET_RPC_URL)
+#   - Explorer: https://chainscan.0g.ai
+#   - Min Balance: 0.5 0G (5x testnet requirement!)
+#   - Safety: 3 confirmations + 10-second countdown + 14 protection mechanisms
+#   - Required: TREASURY_ADDRESS environment variable
+#   - Creates permanent audit trail in mainnet-deployments.json
+#
+#   Local Hardhat (development only):
+#   - Chain ID: 31337
+#   - RPC: http://localhost:8545
+#   - No explorer
+#   - Uses local test accounts
+#
+# After deployment, the system will:
+# 1. Deploy AishiVerifier contract
+# 2. Deploy AishiAgent contract (linked to verifier)
+# 3. Save addresses to deployment-addresses.json
+# 4. Export ABIs to /app/src/abi/ for frontend use
+# 5. Display contract addresses and explorer links
+#
+# WSL Users: Use `npm run deploy:wsl` to load external environment file
 ```
+
+#### ⚠️ Mainnet Deployment Safety
+
+Deploying to mainnet uses **REAL MONEY** and cannot be undone. The system implements **14 safety mechanisms** to prevent accidental deployment:
+
+**Protection Mechanisms:**
+1. Visual RED warning on network selection menu
+2. 5x higher minimum balance requirement (0.5 0G vs 0.1 0G)
+3. Mandatory TREASURY_ADDRESS environment variable
+4. Full warning screen displaying deployment details
+5. Pre-deployment checklist reminder
+6. Treasury address confirmation display
+7. First confirmation: Must type "yes"
+8. Second confirmation: Must type "0G MAINNET"
+9. 10-second countdown with abort option (press Ctrl+C)
+10. Graceful Ctrl+C handler (abort at any stage)
+11. Separate mainnet-deployments.json audit file (append-only)
+12. 2-block confirmation requirement (vs 0 for testnet)
+13. Extended 60-second timeout (vs 20s default)
+14. Post-deployment success confirmation message
+
+**Before Deploying to Mainnet:**
+- ✓ Test thoroughly on Galileo testnet first
+- ✓ Review all contract code and compilation settings
+- ✓ Verify TREASURY_ADDRESS is correct (minting fees go here)
+- ✓ Ensure wallet has minimum 0.5 0G balance
+- ✓ Configure MAINNET_RPC_URL if using custom RPC
+- ✓ Understand that deployment is permanent and irreversible
+
+**Aborting Deployment:**
+- Press **Ctrl+C** at any time to safely cancel
+- Decline any confirmation prompt (type anything except exact match)
+- System will exit gracefully without deploying
+
+---
+
+#### Deployment Artifacts & Verification
+
+After successful deployment, the system generates several output files:
+
+**Primary Deployment Record** (`deployment-addresses.json`):
+```json
+{
+  "0g-mainnet": {
+    "AishiVerifier": {
+      "address": "0xD36e1AdFB81D8231fB2be005C2b0AeBFA8C892B9",
+      "deployedAt": "2025-11-02T10:46:06.675Z"
+    },
+    "AishiAgent": {
+      "address": "0x67aC6AE80039AbB81F155313cB2002124Ac77A28",
+      "symbol": "AISHI",
+      "treasury": "0xebbD6B3746d7e40DD6291566821f3a8159773836"
+    }
+  }
+}
+```
+
+**Mainnet Audit Trail** (`mainnet-deployments.json` - mainnet only):
+- Permanent history of all mainnet deployments
+- Never overwritten (append-only)
+- Includes deployer address, gas costs, timestamps
+- Used for auditing and compliance
+
+**Frontend ABIs** (`/app/src/abi/`):
+- `AishiAgentABI.json` - Full ABI with contract address and chainId
+- `AishiVerifierABI.json` - Verifier contract ABI
+- Ready for import into React frontend
+
+**Finding Contract Addresses for Frontend:**
+```javascript
+// Method 1: Use exported ABI files
+const agentABI = require('./app/src/abi/AishiAgentABI.json');
+const address = agentABI.address;  // "0x67aC6AE..."
+const chainId = agentABI.chainId;  // 16661
+
+// Method 2: Read deployment addresses directly
+const deployments = require('./contracts/deployment-addresses.json');
+const agentAddress = deployments['0g-mainnet'].AishiAgent.address;
+```
+
+**Verifying Deployment Success:**
+1. Check terminal output for `[SUCCESS] DEPLOYMENT COMPLETED` message
+2. Verify files exist: `deployment-addresses.json`, ABI files in `/app/src/abi/`
+3. Visit block explorer links shown in terminal output
+4. For mainnet: Check `mainnet-deployments.json` contains new entry
+
+---
 
 ### 2. Backend Setup (`0g-compute/`)
 
