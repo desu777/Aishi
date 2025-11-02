@@ -35,8 +35,8 @@ const envVars = {
   'ENV_FILE_PATH': process.env.ENV_FILE_PATH || 'Not set',
   'WALLET_PRIVATE_KEY': process.env.WALLET_PRIVATE_KEY ? '[HIDDEN]' : 'Not set',
   'TREASURY_ADDRESS': process.env.TREASURY_ADDRESS || 'Not set',
-  'MAINET_RPC_URL': process.env.MAINET_RPC_URL || 'Not set',
-  'MAINET_CHAIN_ID': process.env.MAINET_CHAIN_ID || 'Not set'
+  'MAINNET_RPC_URL': process.env.MAINNET_RPC_URL || 'Not set',
+  'MAINNET_CHAIN_ID': process.env.MAINNET_CHAIN_ID || 'Not set'
 };
 
 Object.entries(envVars).forEach(([key, value]) => {

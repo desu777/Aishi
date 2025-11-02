@@ -9,6 +9,9 @@ import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
 import '../config/envLoader';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('Database');
 
 export interface UserBroker {
   id?: number;
@@ -44,9 +47,9 @@ class DatabaseService {
 
     this.db = new Database(databaseFilePath);
     this.initializeTables();
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log('💾 Database initialized at:', databaseFilePath);
+      log.info('Database initialized', { path: databaseFilePath });
     }
   }
 
@@ -69,9 +72,10 @@ class DatabaseService {
           SET consolidation_date = datetime('now') 
           WHERE consolidation_date IS NULL
         `);
-        
+
+
         if (process.env.TEST_ENV === 'true') {
-          console.log('✅ Added consolidation_date column to user_brokers');
+          log.info('Added consolidation_date column to user_brokers');
         }
       }
       
@@ -86,9 +90,10 @@ class DatabaseService {
           SET month_learn = 'noneed' 
           WHERE month_learn IS NULL
         `);
-        
+
+
         if (process.env.TEST_ENV === 'true') {
-          console.log('✅ Added month_learn column to user_brokers');
+          log.info('Added month_learn column to user_brokers');
         }
       }
       
@@ -103,14 +108,15 @@ class DatabaseService {
           SET year_learn = 'noneed' 
           WHERE year_learn IS NULL
         `);
-        
+
+
         if (process.env.TEST_ENV === 'true') {
-          console.log('✅ Added year_learn column to user_brokers');
+          log.info('Added year_learn column to user_brokers');
         }
       }
     } catch (error) {
       if (process.env.TEST_ENV === 'true') {
-        console.error('❌ Error adding consolidation columns:', error);
+        log.error('Error adding consolidation columns', { error });
       }
     }
   }
@@ -153,12 +159,12 @@ class DatabaseService {
     `);
     
     this.db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_transactions_wallet 
+      CREATE INDEX IF NOT EXISTS idx_transactions_wallet
       ON transactions(walletAddress)
     `);
 
     if (process.env.TEST_ENV === 'true') {
-      console.log('✅ Database tables initialized');
+      log.info('Database tables initialized');
     }
   }
 
@@ -171,11 +177,11 @@ class DatabaseService {
     
     try {
       const result = stmt.run(walletAddress);
-      
+
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🆕 Created broker for wallet: ${walletAddress}`);
+        log.info('Created broker for wallet', { walletAddress });
       }
-      
+
       return this.getBroker(walletAddress)!;
     } catch (error: any) {
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -205,9 +211,9 @@ class DatabaseService {
     if (result.changes === 0) {
       throw new Error(`No broker found for wallet: ${walletAddress}`);
     }
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`💰 Updated balance for ${walletAddress}: ${newBalance.toFixed(8)} OG`);
+      log.info('Updated balance', { walletAddress, balance: newBalance.toFixed(8) });
     }
   }
 
@@ -259,11 +265,11 @@ class DatabaseService {
       ...transaction,
       createdAt: new Date().toISOString()
     };
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`📝 Added transaction: ${transaction.type} ${transaction.amount.toFixed(8)} OG for ${transaction.walletAddress}`);
+      log.info('Added transaction', { type: transaction.type, amount: transaction.amount.toFixed(8), wallet: transaction.walletAddress });
     }
-    
+
     return newTransaction;
   }
 
@@ -309,9 +315,9 @@ class DatabaseService {
     if (result.changes === 0) {
       throw new Error(`No broker found for wallet: ${walletAddress}`);
     }
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`📅 Updated consolidation status for ${walletAddress}: month=${monthLearn}, year=${yearLearn}`);
+      log.info('Updated consolidation status', { walletAddress, month: monthLearn, year: yearLearn });
     }
   }
 

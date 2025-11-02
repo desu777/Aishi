@@ -63,7 +63,7 @@ The entire system is a symphony of decentralized components, where user data flo
 | **Frontend**     | Next.js 15, React 19, TypeScript, Tailwind CSS, XState, Framer Motion, Pixi.js (for Live2D)                   |
 | **Backend**      | Node.js, Express, TypeScript, SQLite, Winston (Logger)                                                      |
 | **Web3**         | RainbowKit, wagmi, viem, ethers.js                                                                          |
-| **AI & Infra**   | 0G Stack (Chain, Compute, Storage, DA), Google Vertex AI (Gemini 2.5), 0G Serving Broker, 0G TypeScript SDK |
+| **AI & Infra**   | 0G Stack (Chain - Testnet & Mainnet, Compute, Storage, DA), Google Vertex AI (Gemini 2.5), 0G Serving Broker, 0G TypeScript SDK |
 
 ## Getting Started
 
@@ -74,7 +74,7 @@ Follow these steps to set up and run the Aishi project locally.
 -   [Node.js](https://nodejs.org/) (v20.x or later recommended)
 -   [npm](https://www.npmjs.com/) (v10.x or later)
 -   Access to Google Cloud with Vertex AI enabled.
--   A Web3 wallet (e.g., MetaMask) funded with 0G Galileo Testnet tokens.
+-   A Web3 wallet (e.g., MetaMask) funded with 0G tokens (Testnet for experiments, Mainnet for production).
 
 ### 1. Smart Contracts Setup (`contracts/`)
 
@@ -99,6 +99,12 @@ npm run compile
 npm run deploy
 
 # After deployment, note the contract address for frontend configuration.
+
+# MAINNET SUPPORT:
+# The deployment scripts support both 0G Galileo Testnet (Chain ID: 16602) and
+# 0G Mainnet (Chain ID: 16661). For production deployments on mainnet, ensure your
+# wallet is funded with sufficient 0G tokens and TREASURY_ADDRESS is configured.
+# Use the interactive deployer to select your target network.
 ```
 
 ### 2. Backend Setup (`0g-compute/`)

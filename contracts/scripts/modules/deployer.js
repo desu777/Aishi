@@ -53,8 +53,8 @@ const NETWORKS = {
   mainnet: {
     name: '0G Mainnet',
     chainId: 16661,
-    rpcUrl: process.env.MAINET_RPC_URL || 'http://evmrpc.0g.ai',
-    explorer: process.env.MAINET_BLOCK_EXPLORER || 'https://chainscan.0g.ai',
+    rpcUrl: process.env.MAINNET_RPC_URL || 'http://evmrpc.0g.ai',
+    explorer: process.env.MAINNET_BLOCK_EXPLORER || 'https://chainscan.0g.ai',
     symbol: '0G',
     networkName: '0g-mainnet',
     isMainnet: true

@@ -5,11 +5,14 @@
  */
 
 import geminiService from './geminiService';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('GeminiAudioService');
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {
   if (process.env.TEST_ENV === 'true') {
-    console.log(`[GeminiAudioService] ${message}`, data || '');
+    log.debug(message, data || {});
   }
 };
 

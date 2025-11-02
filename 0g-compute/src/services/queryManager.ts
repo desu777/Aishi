@@ -3,6 +3,9 @@ import aiService from './aiService';
 import virtualBrokers from './virtualBrokers';
 import masterWallet from './masterWallet';
 import database from '../database/database';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('QueryManager');
 
 interface QueryTask {
   id: string;
@@ -23,9 +26,9 @@ export class QueryManagerService {
   constructor() {
     // Start queue processor
     this.startQueueProcessor();
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎯 Query Manager initialized with max ${this.maxConcurrent} concurrent queries`);
+      log.info('Query Manager initialized', { maxConcurrent: this.maxConcurrent });
     }
   }
 
@@ -50,8 +53,7 @@ export class QueryManagerService {
       this.queue.push(task);
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`📥 Added query ${task.id} to queue. Queue length: ${this.queue.length}`);
-        console.log(`🎯 Model requested: ${task.model}`);
+        log.info('Added query to queue', { queryId: task.id, queueLength: this.queue.length, model: task.model });
       }
     });
   }
@@ -69,7 +71,7 @@ export class QueryManagerService {
         this.activeQueries++;
 
         if (process.env.TEST_ENV === 'true') {
-          console.log(`🔄 Processing query ${task.id}. Active: ${this.activeQueries}/${this.maxConcurrent}`);
+          log.info('Processing query', { queryId: task.id, active: this.activeQueries, max: this.maxConcurrent });
         }
 
         // Process query atomically (async, don't wait)
@@ -82,9 +84,9 @@ export class QueryManagerService {
           })
           .finally(() => {
             this.activeQueries--;
-            
+
             if (process.env.TEST_ENV === 'true') {
-              console.log(`✅ Completed query ${task.id}. Active: ${this.activeQueries}/${this.maxConcurrent}`);
+              log.info('Completed query', { queryId: task.id, active: this.activeQueries, max: this.maxConcurrent });
             }
           });
       }
@@ -110,26 +112,27 @@ export class QueryManagerService {
       // Enhanced debug logging for troubleshooting
       if (process.env.TEST_ENV === 'true') {
         const normalizedAddress = task.userWalletAddress.toLowerCase();
-        console.log(`🔍 [Query ${task.id}] Processing for wallet: ${task.userWalletAddress}`);
-        console.log(`🔍 [Query ${task.id}] Normalized address: ${normalizedAddress}`);
+        log.debug('Processing for wallet', { queryId: task.id, wallet: task.userWalletAddress, normalized: normalizedAddress });
 
         // Check if broker exists in database
         const broker = database.getBroker(normalizedAddress);
-        console.log(`🔍 [Query ${task.id}] Broker exists: ${!!broker}`);
+        log.debug('Broker exists check', { queryId: task.id, exists: !!broker });
 
         if (broker) {
           const estimatedCost = virtualBrokers.estimateQueryCost(task.query, task.model);
-          console.log(`🔍 [Query ${task.id}] Broker balance: ${broker.balance.toFixed(8)} OG`);
-          console.log(`🔍 [Query ${task.id}] Estimated cost: ${estimatedCost.toFixed(8)} OG`);
-          console.log(`🔍 [Query ${task.id}] Sufficient balance: ${broker.balance >= estimatedCost ? 'YES ✅' : 'NO ❌'}`);
+          log.debug('Broker details', {
+            queryId: task.id,
+            balance: broker.balance.toFixed(8),
+            estimatedCost: estimatedCost.toFixed(8),
+            sufficientBalance: broker.balance >= estimatedCost
+          });
         } else {
-          console.log(`🔍 [Query ${task.id}] ❌ Virtual broker NOT found in database!`);
-          console.log(`🔍 [Query ${task.id}] User must create broker first: POST /api/create-broker`);
+          log.debug('Virtual broker NOT found in database', { queryId: task.id, message: 'User must create broker first: POST /api/create-broker' });
         }
       }
 
       // Log selected model
-      console.log(`🎯 Selected Model: ${task.model} (Query ID: ${task.id})`);
+      log.info('Selected model', { model: task.model, queryId: task.id });
 
       // ✅ Resolve model to provider address using cache (eliminuje hardcoded fallback)
       let providerAddress: string;
@@ -140,9 +143,9 @@ export class QueryManagerService {
       if (cachedProviderAddress) {
         providerAddress = cachedProviderAddress;
         modelName = task.model;
-        
+
         if (process.env.TEST_ENV === 'true') {
-          console.log(`✅ Model resolved from cache: ${task.model} → ${providerAddress}`);
+          log.info('Model resolved from cache', { model: task.model, provider: providerAddress });
         }
       } else {
         // If not in cache, get all available models for error message
@@ -175,9 +178,9 @@ export class QueryManagerService {
       const result = await this.executeAIQueryWithTracking(task, providerAddress, estimatedCost);
 
       const responseTime = Date.now() - startTime;
-      
+
       if (process.env.TEST_ENV === 'true') {
-        console.log(`✅ Query ${task.id} completed atomically in ${responseTime}ms`);
+        log.info('Query completed atomically', { queryId: task.id, responseTime });
       }
 
       return {
@@ -188,9 +191,9 @@ export class QueryManagerService {
 
     } catch (error: any) {
       const responseTime = Date.now() - startTime;
-      
-      console.error(`❌ Query ${task.id} failed:`, error.message);
-      
+
+      log.error('Query failed', { queryId: task.id, error: error.message });
+
       // Release any reserved balance on error
       await this.releaseReservedBalance(task.userWalletAddress, task.id);
       
@@ -232,16 +235,16 @@ export class QueryManagerService {
         });
 
         if (process.env.TEST_ENV === 'true') {
-          console.log(`💰 Reserved ${amount.toFixed(8)} OG for query ${queryId}. New balance: ${newBalance.toFixed(8)} OG`);
+          log.info('Reserved balance for query', { queryId, amount: amount.toFixed(8), newBalance: newBalance.toFixed(8) });
         }
 
         return true;
       } catch (updateError: any) {
-        console.error(`❌ Failed to update balance for query ${queryId}:`, updateError.message);
+        log.error('Failed to update balance for query', { queryId, error: updateError.message });
         return false;
       }
     } catch (error: any) {
-      console.error(`❌ Failed to reserve balance for query ${queryId}:`, error.message);
+      log.error('Failed to reserve balance for query', { queryId, error: error.message });
       return false;
     }
   }
@@ -252,9 +255,9 @@ export class QueryManagerService {
   private async executeAIQueryWithTracking(task: QueryTask, providerAddress: string, estimatedCost: number): Promise<any> {
     // Get initial Master Wallet balance
     const initialBalance = await masterWallet.getLedgerBalance();
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`💰 Initial Master Wallet balance: ${initialBalance.toFixed(8)} OG (Query: ${task.id})`);
+      log.info('Initial Master Wallet balance', { balance: initialBalance.toFixed(8), queryId: task.id });
     }
 
     // Get service metadata
@@ -282,8 +285,7 @@ export class QueryManagerService {
 
     // Send query to AI service
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🤖 Sending AI query ${task.id}: ${task.query.substring(0, 100)}...`);
-      console.log(`⏳ Using model: ${actualModel}`);
+      log.info('Sending AI query', { queryId: task.id, queryPreview: task.query.substring(0, 100), model: actualModel });
     }
 
     const completion = await openai.chat.completions.create({
@@ -306,10 +308,13 @@ export class QueryManagerService {
     // Get final Master Wallet balance and calculate real cost
     const finalBalance = await masterWallet.getLedgerBalance();
     const realCost = Math.max(0, initialBalance - finalBalance);
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`💰 Final Master Wallet balance: ${finalBalance.toFixed(8)} OG (Query: ${task.id})`);
-      console.log(`💸 Real cost calculated: ${realCost.toFixed(8)} OG (Query: ${task.id})`);
+      log.info('Final Master Wallet balance and cost', {
+        queryId: task.id,
+        finalBalance: finalBalance.toFixed(8),
+        realCost: realCost.toFixed(8)
+      });
     }
 
     // Adjust user balance based on real cost vs estimated cost
@@ -333,7 +338,7 @@ export class QueryManagerService {
     if (Math.abs(difference) < 0.000001) {
       // Costs are essentially the same, no adjustment needed
       if (process.env.TEST_ENV === 'true') {
-        console.log(`💱 No balance adjustment needed for query ${queryId}`);
+        log.info('No balance adjustment needed', { queryId });
       }
       return;
     }
@@ -346,9 +351,9 @@ export class QueryManagerService {
           difference,
           `Additional cost for query ${queryId}: ${difference} OG`
         );
-        
+
         if (process.env.TEST_ENV === 'true') {
-          console.log(`💸 Deducted additional ${difference.toFixed(8)} OG for query ${queryId}`);
+          log.info('Deducted additional cost', { queryId, amount: difference.toFixed(8) });
         }
       } else {
         // Real cost was lower - refund difference
@@ -361,13 +366,13 @@ export class QueryManagerService {
           description: `Refund for query ${queryId}: ${Math.abs(difference)} OG`,
           txHash: undefined
         });
-        
+
         if (process.env.TEST_ENV === 'true') {
-          console.log(`💰 Refunded ${Math.abs(difference).toFixed(8)} OG for query ${queryId}`);
+          log.info('Refunded excess cost', { queryId, amount: Math.abs(difference).toFixed(8) });
         }
       }
     } catch (error: any) {
-      console.error(`❌ Failed to adjust balance for query ${queryId}:`, error.message);
+      log.error('Failed to adjust balance for query', { queryId, error: error.message });
     }
   }
 
@@ -379,10 +384,10 @@ export class QueryManagerService {
       // This would require additional tracking of reservations
       // For now, we'll just log the intent
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🔓 Releasing reserved balance for failed query ${queryId}`);
+        log.info('Releasing reserved balance for failed query', { queryId });
       }
     } catch (error: any) {
-      console.error(`❌ Failed to release reserved balance for query ${queryId}:`, error.message);
+      log.error('Failed to release reserved balance', { queryId, error: error.message });
     }
   }
 

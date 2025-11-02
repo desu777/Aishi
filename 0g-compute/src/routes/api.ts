@@ -16,15 +16,17 @@ import {
   fundingLimiter,
   strictLimiter
 } from '../middleware/rateLimiter';
+import { createLogger } from '../lib/logger';
 
+const log = createLogger('API');
 const router = express.Router();
 
 // Helper function for error responses
 const handleError = (res: express.Response, error: any, defaultMessage: string) => {
   const message = error.message || defaultMessage;
   const statusCode = error.statusCode || 500;
-  
-  console.error('API Error:', message);
+
+  log.error('API Error', { message });
   res.status(statusCode).json({
     success: false,
     error: message,
@@ -60,9 +62,9 @@ router.post('/create-broker', brokerCreationLimiter, async (req, res) => {
     }
 
     const broker = await virtualBrokers.createBroker(walletAddress);
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🆕 API: Created broker for ${walletAddress}`);
+      log.info('Created broker', { walletAddress });
     }
 
     handleSuccess(res, broker, 'Virtual broker created successfully');
@@ -93,9 +95,9 @@ router.post('/fund', fundingLimiter, async (req, res) => {
       amount: parseFloat(amount),
       txHash
     });
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`💰 API: Funded broker ${walletAddress} with ${amount} OG`);
+      log.info('Funded broker', { walletAddress, amount });
     }
 
     handleSuccess(res, broker, 'Broker funded successfully');
@@ -121,9 +123,9 @@ router.get('/balance/:walletAddress', async (req, res) => {
     }
 
     const balance = await virtualBrokers.checkBalance(walletAddress);
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`📊 API: Balance check for ${walletAddress}: ${balance.balance} OG`);
+      log.info('Balance check', { walletAddress, balance: balance.balance });
     }
 
     handleSuccess(res, balance, 'Balance retrieved successfully');
@@ -152,8 +154,8 @@ router.post('/0g-compute', aiQueryLimiter, async (req, res) => {
 
     // Validate not zero address (indicates frontend bug - wallet not connected/synced)
     if (walletAddress === '0x0000000000000000000000000000000000000000') {
-      console.error('❌ Zero address detected in 0G compute request!');
-      console.error('   This indicates wallet not connected or agent not synced in frontend');
+      log.error('Zero address detected in 0G compute request');
+      log.error('This indicates wallet not connected or agent not synced in frontend');
       return res.status(400).json({
         success: false,
         error: 'Invalid wallet address (zero address). Please ensure wallet is connected and agent is synced before using 0G Network models.',
@@ -163,9 +165,9 @@ router.post('/0g-compute', aiQueryLimiter, async (req, res) => {
 
     // Use modelId from frontend if provided, fallback to env variable
     const selectedModel = modelId || process.env.MODEL_PICKED || 'llama-3.3-70b-instruct';
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎯 API: Model selection - requested: ${modelId}, using: ${selectedModel}`);
+      log.info('Model selection', { requested: modelId, using: selectedModel });
     }
     
     const result = await queryManager.processQuery(
@@ -175,7 +177,7 @@ router.post('/0g-compute', aiQueryLimiter, async (req, res) => {
     );
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🤖 API: AI analysis completed for ${walletAddress} using model: ${selectedModel}`);
+      log.info('AI analysis completed', { walletAddress, model: selectedModel });
     }
 
     // Unified response format (consistent with Gemini endpoint)
@@ -213,9 +215,9 @@ router.post('/0g-compute', aiQueryLimiter, async (req, res) => {
 router.get('/models', async (req, res) => {
   try {
     const models = await aiService.getAvailableModels();
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🔍 API: Retrieved ${models.models.length} available models`);
+      log.info('Retrieved available models', { count: models.models.length });
     }
 
     handleSuccess(res, models, 'Available models retrieved successfully');
@@ -286,15 +288,15 @@ router.get('/models/discover', async (req, res) => {
         badge: 'Adaptive'
       }
     ];
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🔍 API: Discovered ${discoveredServices.length} decentralized models + Gemini`);
+      log.info('Models discovered', { decentralizedCount: discoveredServices.length });
     }
 
     handleSuccess(res, { models }, 'Models discovered successfully');
   } catch (error: any) {
     // On error, still return Gemini as fallback
-    console.error('Failed to discover 0G models, returning Gemini only:', error.message);
+    log.error('Failed to discover 0G models, returning Gemini only', { error: error.message });
     
     const fallbackModels = [
       {
@@ -367,7 +369,7 @@ router.get('/status', async (req, res) => {
     };
 
     if (process.env.TEST_ENV === 'true') {
-      console.log('📋 API: Service status retrieved');
+      log.info('Service status retrieved');
     }
 
     handleSuccess(res, status, 'Service status retrieved successfully');
@@ -383,9 +385,9 @@ router.get('/status', async (req, res) => {
 router.get('/master-wallet-address', async (req, res) => {
   try {
     const address = masterWallet.getWalletAddress();
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🔑 API: Master wallet address requested: ${address}`);
+      log.info('Master wallet address requested', { address });
     }
 
     handleSuccess(res, { address }, 'Master wallet address retrieved successfully');
@@ -414,9 +416,9 @@ router.post('/estimate-cost', costEstimationLimiter, async (req, res) => {
     // Backend zawsze używa MODEL_PICKED z .env
     const selectedModel = process.env.MODEL_PICKED || 'llama-3.3-70b-instruct';
     const cost = virtualBrokers.estimateQueryCost(query, selectedModel);
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`💰 API: Cost estimation for query: ${cost} OG (model: ${selectedModel})`);
+      log.info('Cost estimation', { cost, model: selectedModel });
     }
 
     handleSuccess(res, { 
@@ -448,9 +450,9 @@ router.get('/transactions/:walletAddress', async (req, res) => {
     }
 
     const balance = await virtualBrokers.checkBalance(walletAddress);
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`📜 API: Transaction history for ${walletAddress}`);
+      log.info('Transaction history', { walletAddress });
     }
 
     handleSuccess(res, {
@@ -469,9 +471,9 @@ router.get('/transactions/:walletAddress', async (req, res) => {
 router.get('/queue-status', (req, res) => {
   try {
     const queueStatus = queryManager.getQueueStatus();
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log('📋 API: Queue status retrieved');
+      log.info('Queue status retrieved');
     }
 
     handleSuccess(res, queueStatus, 'Queue status retrieved successfully');
@@ -497,7 +499,7 @@ router.get('/consolidation/:walletAddress', async (req, res) => {
     }
 
     const consolidationStatus = DatabaseService.getConsolidationStatus(walletAddress);
-    
+
     if (!consolidationStatus) {
       return res.status(404).json({
         success: false,
@@ -507,7 +509,7 @@ router.get('/consolidation/:walletAddress', async (req, res) => {
     }
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`📅 API: Consolidation status for ${walletAddress}`);
+      log.info('Consolidation status', { walletAddress });
     }
 
     handleSuccess(res, consolidationStatus, 'Consolidation status retrieved successfully');
@@ -533,7 +535,7 @@ router.post('/consolidation/check', async (req, res) => {
     };
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🔍 API: Manual consolidation check completed - ${summary.monthUpdates} month, ${summary.yearUpdates} year updates`);
+      log.info('Manual consolidation check completed', { monthUpdates: summary.monthUpdates, yearUpdates: summary.yearUpdates });
     }
 
     handleSuccess(res, summary, 'Consolidation check completed successfully');
@@ -549,9 +551,9 @@ router.post('/consolidation/check', async (req, res) => {
 router.get('/consolidation/status', (req, res) => {
   try {
     const status = consolidationChecker.getStatus();
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log('📋 API: Consolidation checker status retrieved');
+      log.info('Consolidation checker status retrieved');
     }
 
     handleSuccess(res, status, 'Consolidation checker status retrieved successfully');
@@ -571,9 +573,9 @@ router.post('/consolidation/start', strictLimiter, (req, res) => {
     const interval = intervalMinutes ? parseInt(intervalMinutes) : 60;
     
     consolidationChecker.startChecker(interval);
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`▶️  API: Consolidation checker started with ${interval} minute interval`);
+      log.info('Consolidation checker started', { intervalMinutes: interval });
     }
 
     handleSuccess(res, { 
@@ -593,9 +595,9 @@ router.post('/consolidation/start', strictLimiter, (req, res) => {
 router.post('/consolidation/stop', strictLimiter, (req, res) => {
   try {
     consolidationChecker.stopChecker();
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log('⏹️  API: Consolidation checker stopped');
+      log.info('Consolidation checker stopped');
     }
 
     handleSuccess(res, { isRunning: false }, 'Consolidation checker stopped successfully');
@@ -640,10 +642,12 @@ router.post('/gemini', aiQueryLimiter, async (req, res) => {
     }
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🤖 API: Gemini request received`);
-      console.log(`   Prompt length: ${prompt.length}`);
-      console.log(`   Profile: ${selectedProfile} ${modelId ? `(extracted from ${modelId})` : '(explicit/default)'}`);
-      console.log(`   Temperature: ${temperature || 'default'}`);
+      log.info('Gemini request received', {
+        promptLength: prompt.length,
+        profile: selectedProfile,
+        source: modelId ? `extracted from ${modelId}` : 'explicit/default',
+        temperature: temperature || 'default'
+      });
     }
 
     // Forward request to modern Gemini service with profile
@@ -657,12 +661,12 @@ router.post('/gemini', aiQueryLimiter, async (req, res) => {
     );
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`✅ API: Gemini response received in ${result.metadata.responseTime}ms`);
-      console.log(`   Profile used: ${result.metadata.profile}`);
-      console.log(`   Thinking enabled: ${result.metadata.thinkingEnabled}`);
-      if (result.metadata.thinkingBudget !== undefined) {
-        console.log(`   Thinking budget: ${result.metadata.thinkingBudget}`);
-      }
+      log.info('Gemini response received', {
+        responseTime: result.metadata.responseTime,
+        profile: result.metadata.profile,
+        thinkingEnabled: result.metadata.thinkingEnabled,
+        thinkingBudget: result.metadata.thinkingBudget
+      });
     }
 
     // Return enhanced response with profile metadata
@@ -689,9 +693,9 @@ router.post('/gemini', aiQueryLimiter, async (req, res) => {
 router.get('/gemini/profiles', (req, res) => {
   try {
     const profiles = geminiService.getAvailableProfiles();
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log('📋 API: Gemini profiles requested');
+      log.info('Gemini profiles requested');
     }
 
     handleSuccess(res, { 
@@ -711,9 +715,9 @@ router.get('/gemini/profiles', (req, res) => {
 router.get('/gemini/status', (req, res) => {
   try {
     const status = geminiService.getStatus();
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log('📋 API: Gemini service status retrieved');
+      log.info('Gemini service status retrieved');
     }
 
     handleSuccess(res, status, 'Gemini service status retrieved successfully');
@@ -741,7 +745,7 @@ router.get('/voice/status', (req, res) => {
     };
 
     if (process.env.TEST_ENV === 'true') {
-      console.log('🎤 API: Voice service status retrieved');
+      log.info('Voice service status retrieved');
     }
 
     handleSuccess(res, status, 'Voice service status retrieved successfully');
@@ -776,7 +780,7 @@ router.post('/voice/transcribe', aiQueryLimiter, async (req, res) => {
     }
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎤 API: STT request - Format: ${inputFormat}, Size: ${audioBuffer.length}`);
+      log.info('STT request', { format: inputFormat, size: audioBuffer.length });
     }
 
     const sttResult = await speechToTextService.transcribeAudio({
@@ -785,7 +789,7 @@ router.post('/voice/transcribe', aiQueryLimiter, async (req, res) => {
     });
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎤 API: STT completed - Language: ${sttResult.detectedLanguage}, Confidence: ${sttResult.confidence}`);
+      log.info('STT completed', { language: sttResult.detectedLanguage, confidence: sttResult.confidence });
     }
 
     handleSuccess(res, sttResult, 'Audio transcribed successfully');
@@ -803,7 +807,7 @@ router.post('/voice/synthesize', aiQueryLimiter, async (req, res) => {
   try {
     const { text, voiceId, detectedLanguage, languageCode, emotionalTone, speed } = req.body;
 
-    console.log('[API /voice/synthesize] Request received:', {
+    log.info('TTS request received', {
       voiceId,
       textLength: text?.length,
       detectedLanguage,
@@ -813,7 +817,7 @@ router.post('/voice/synthesize', aiQueryLimiter, async (req, res) => {
     });
 
     if (!text) {
-      console.log('[API /voice/synthesize] ERROR: No text provided');
+      log.error('No text provided for TTS');
       return res.status(400).json({
         success: false,
         error: 'text is required',
@@ -824,14 +828,14 @@ router.post('/voice/synthesize', aiQueryLimiter, async (req, res) => {
     const selectedVoice = voiceId || 'aoede'; // DEFAULT TO NEW VOICE!
     const availableVoices = textToSpeechService.getAvailableVoices().map(v => v.id);
 
-    console.log('[API /voice/synthesize] Voice validation:', {
+    log.info('Voice validation', {
       selectedVoice,
       availableVoices,
       isValid: availableVoices.includes(selectedVoice)
     });
 
     if (!availableVoices.includes(selectedVoice)) {
-      console.log('[API /voice/synthesize] ERROR: Unsupported voice');
+      log.error('Unsupported voice');
       return res.status(400).json({
         success: false,
         error: `Unsupported voice: ${selectedVoice}. Available: ${availableVoices.join(', ')}`,
@@ -840,7 +844,7 @@ router.post('/voice/synthesize', aiQueryLimiter, async (req, res) => {
     }
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎵 API: TTS request - Voice: ${selectedVoice}, Text length: ${text.length}, Language: ${detectedLanguage || 'auto'}`);
+      log.info('TTS request processing', { voice: selectedVoice, textLength: text.length, language: detectedLanguage || 'auto' });
     }
 
     const ttsResult = await textToSpeechService.synthesizeSpeech({
@@ -853,7 +857,7 @@ router.post('/voice/synthesize', aiQueryLimiter, async (req, res) => {
     });
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎵 API: TTS completed - Voice: ${ttsResult.voiceUsed}, Audio size: ${ttsResult.audioBuffer.length}`);
+      log.info('TTS completed', { voice: ttsResult.voiceUsed, audioSize: ttsResult.audioBuffer.length });
     }
 
     // Return audio as base64 encoded string
@@ -890,7 +894,7 @@ router.post('/voice/interact', strictLimiter, async (req, res) => {
     }
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎙️ API: Voice to text conversion - Format: ${inputFormat}`);
+      log.info('Voice to text conversion', { format: inputFormat });
     }
 
     // Simple STT conversion
@@ -901,7 +905,7 @@ router.post('/voice/interact', strictLimiter, async (req, res) => {
     });
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎙️ API: Voice converted - Language: ${sttResult.detectedLanguage}, Time: ${sttResult.totalProcessingTime}ms`);
+      log.info('Voice converted', { language: sttResult.detectedLanguage, time: sttResult.totalProcessingTime });
     }
 
     handleSuccess(res, sttResult, 'Voice converted to text successfully');
@@ -919,7 +923,7 @@ router.get('/voice/voices', (req, res) => {
     const voices = textToSpeechService.getAvailableVoices();
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🎵 API: Voice profiles requested - Available: ${voices.length}`);
+      log.info('Voice profiles requested', { available: voices.length });
     }
 
     handleSuccess(res, {

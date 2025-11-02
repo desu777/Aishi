@@ -1,5 +1,8 @@
 import database, { UserBroker, Transaction } from '../database/database';
 import masterWallet from './masterWallet';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('VirtualBrokers');
 
 export interface BrokerInfo {
   walletAddress: string;
@@ -55,7 +58,7 @@ export class VirtualBrokersService {
       });
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🆕 Virtual broker created for: ${walletAddress}`);
+        log.info('Virtual broker created', { walletAddress });
       }
 
       return {
@@ -66,7 +69,7 @@ export class VirtualBrokersService {
         updatedAt: broker.updatedAt
       };
     } catch (error: any) {
-      console.error('❌ Error creating virtual broker:', error.message);
+      log.error('Error creating virtual broker', { error: error.message });
       throw error;
     }
   }
@@ -94,9 +97,9 @@ export class VirtualBrokersService {
       if (!broker) {
         // Auto-create broker if it doesn't exist
         broker = database.createBroker(normalizedAddress);
-        
+
         if (process.env.TEST_ENV === 'true') {
-          console.log(`🆕 Auto-created virtual broker for: ${walletAddress}`);
+          log.info('Auto-created virtual broker', { walletAddress });
         }
       }
 
@@ -113,7 +116,7 @@ export class VirtualBrokersService {
       });
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`💰 Funded broker ${walletAddress}: +${amount.toFixed(8)} OG = ${newBalance.toFixed(8)} OG`);
+        log.info('Funded broker', { walletAddress, amount: amount.toFixed(8), newBalance: newBalance.toFixed(8) });
       }
 
       // Get updated broker info
@@ -127,7 +130,7 @@ export class VirtualBrokersService {
         updatedAt: updatedBroker.updatedAt
       };
     } catch (error: any) {
-      console.error('❌ Error funding virtual broker:', error.message);
+      log.error('Error funding virtual broker', { error: error.message });
       throw error;
     }
   }
@@ -154,7 +157,7 @@ export class VirtualBrokersService {
       const transactions = database.getTransactions(normalizedAddress, 20);
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`📊 Balance check for ${walletAddress}: ${broker.balance.toFixed(8)} OG`);
+        log.info('Balance check', { walletAddress, balance: broker.balance.toFixed(8) });
       }
 
       return {
@@ -164,7 +167,7 @@ export class VirtualBrokersService {
         transactions: transactions
       };
     } catch (error: any) {
-      console.error('❌ Error checking balance:', error.message);
+      log.error('Error checking balance', { error: error.message });
       throw error;
     }
   }
@@ -195,12 +198,12 @@ export class VirtualBrokersService {
       });
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`💸 Deducted ${amount.toFixed(8)} OG from ${walletAddress}: ${newBalance.toFixed(8)} OG remaining`);
+        log.info('Deducted funds', { walletAddress, amount: amount.toFixed(8), newBalance: newBalance.toFixed(8) });
       }
 
       return newBalance;
     } catch (error: any) {
-      console.error('❌ Error deducting funds:', error.message);
+      log.error('Error deducting funds', { error: error.message });
       throw error;
     }
   }
@@ -219,7 +222,7 @@ export class VirtualBrokersService {
 
       return broker.balance >= requiredAmount;
     } catch (error: any) {
-      console.error('❌ Error checking balance:', error.message);
+      log.error('Error checking balance', { error: error.message });
       return false;
     }
   }
@@ -242,7 +245,7 @@ export class VirtualBrokersService {
         masterWalletAddress: masterWallet.getWalletAddress()
       };
     } catch (error: any) {
-      console.error('❌ Error getting brokers summary:', error.message);
+      log.error('Error getting brokers summary', { error: error.message });
       throw error;
     }
   }
@@ -262,10 +265,10 @@ export class VirtualBrokersService {
       });
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`✅ Auto-funded broker ${fromAddress} with ${amount} OG from transaction ${txHash}`);
+        log.info('Auto-funded broker', { fromAddress, amount, txHash });
       }
     } catch (error: any) {
-      console.error(`❌ Error processing funding transaction from ${fromAddress}:`, error.message);
+      log.error('Error processing funding transaction', { fromAddress, error: error.message });
       throw error;
     }
   }
@@ -289,11 +292,11 @@ export class VirtualBrokersService {
     const lengthMultiplier = Math.max(1, query.length / 10000); // 100x less sensitive to length
     
     const estimatedCost = baseCost * lengthMultiplier;
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`💰 Cost estimation: ${estimatedCost.toFixed(8)} OG (model: ${selectedModel}, length: ${query.length})`);
+      log.info('Cost estimation', { cost: estimatedCost.toFixed(8), model: selectedModel, queryLength: query.length });
     }
-    
+
     return estimatedCost;
   }
 }

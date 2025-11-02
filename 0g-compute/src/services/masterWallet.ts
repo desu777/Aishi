@@ -2,6 +2,9 @@ import { ethers } from 'ethers';
 import { createZGComputeNetworkBroker } from '@0glabs/0g-serving-broker';
 import type { ZGComputeNetworkBroker } from '@0glabs/0g-serving-broker';
 import '../config/envLoader';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('MasterWallet');
 
 export class MasterWalletService {
   private provider: ethers.JsonRpcProvider;
@@ -26,7 +29,7 @@ export class MasterWalletService {
     this.wallet = new ethers.Wallet(privateKey, this.provider);
 
     if (process.env.TEST_ENV === 'true') {
-      console.log('🔑 Master Wallet initialized:', this.wallet.address);
+      log.debug('Master Wallet initialized', { address: this.wallet.address });
     }
   }
 
@@ -37,12 +40,12 @@ export class MasterWalletService {
 
     try {
       if (process.env.TEST_ENV === 'true') {
-        console.log('🔄 Initializing Master Wallet broker...');
+        log.debug('Initializing Master Wallet broker');
       }
 
       // Create 0G Compute broker
       this.broker = await createZGComputeNetworkBroker(this.wallet);
-      
+
       // Ensure ledger exists
       await this.ensureLedgerExists();
 
@@ -52,37 +55,38 @@ export class MasterWalletService {
         this.getLedgerBalance()
       ]);
 
-      console.log('💰 Master Wallet Info:');
-      console.log(`   Address: ${this.wallet.address}`);
-      console.log(`   ETH Balance: ${ethBalance.toFixed(8)} OG`);
-      console.log(`   Ledger Balance: ${ledgerBalance.toFixed(8)} OG`);
+      log.info('Master Wallet Info', {
+        address: this.wallet.address,
+        ethBalance: `${ethBalance.toFixed(8)} OG`,
+        ledgerBalance: `${ledgerBalance.toFixed(8)} OG`
+      });
 
       // SDK 0.4.4 balance warnings
       if (ledgerBalance < 1.0) {
-        console.warn('\n⚠️ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.warn('⚠️  LEDGER BALANCE TOO LOW FOR 0G PROVIDERS');
-        console.warn('⚠️ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.warn(`⚠️  Current ledger: ${ledgerBalance.toFixed(4)} OG`);
-        console.warn('⚠️  Minimum for testing: 1.1 OG');
-        console.warn('⚠️  Cheapest provider: ~1.0 OG (phala/gpt-oss-120b)');
+        log.warn('LEDGER BALANCE TOO LOW FOR 0G PROVIDERS', {
+          currentLedger: `${ledgerBalance.toFixed(4)} OG`,
+          minimum: '1.1 OG',
+          cheapestProvider: '~1.0 OG (phala/gpt-oss-120b)'
+        });
 
         if (ethBalance >= 1.5) {
-          console.warn(`⚠️  Your ETH balance: ${ethBalance.toFixed(4)} OG ✅`);
-          console.warn('⚠️  SOLUTION: Run funding script');
-          console.warn('⚠️  → npm run fund-ledger:wsl');
-          console.warn('⚠️  → Enter amount: 1.5');
+          log.warn('ETH balance sufficient - run funding script', {
+            ethBalance: `${ethBalance.toFixed(4)} OG`,
+            solution: 'npm run fund-ledger:wsl',
+            amount: '1.5'
+          });
         } else {
-          console.warn(`⚠️  Your ETH balance: ${ethBalance.toFixed(4)} OG ❌`);
-          console.warn('⚠️  SOLUTION: Send OG to Master Wallet');
-          console.warn(`⚠️  → To: ${this.wallet.address}`);
-          console.warn('⚠️  → Amount: 2 OG (recommended)');
-          console.warn('⚠️  → Then: npm run fund-ledger:wsl');
+          log.warn('ETH balance too low - send OG to Master Wallet', {
+            ethBalance: `${ethBalance.toFixed(4)} OG`,
+            to: this.wallet.address,
+            recommendedAmount: '2 OG',
+            thenRun: 'npm run fund-ledger:wsl'
+          });
         }
-        console.warn('⚠️ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       } else if (ledgerBalance >= 1.0 && ledgerBalance < 5.0) {
-        console.log(`ℹ️  Ledger sufficient for testing (1 provider) ✅\n`);
+        log.info('Ledger sufficient for testing (1 provider)');
       } else {
-        console.log(`ℹ️  Ledger sufficient for multiple providers ✅\n`);
+        log.info('Ledger sufficient for multiple providers');
       }
 
       // Check and refill if needed
@@ -91,10 +95,10 @@ export class MasterWalletService {
       this.isInitialized = true;
 
       if (process.env.TEST_ENV === 'true') {
-        console.log('✅ Master Wallet broker initialized successfully');
+        log.info('Master Wallet broker initialized successfully');
       }
     } catch (error: any) {
-      console.error('❌ Failed to initialize Master Wallet:', error.message);
+      log.error('Failed to initialize Master Wallet', { error: error.message });
       throw error;
     }
   }
@@ -107,34 +111,34 @@ export class MasterWalletService {
     try {
       const ledgerInfo = await this.broker.ledger.getLedger();
       const balance = parseFloat(ethers.formatEther(ledgerInfo.totalBalance));
-      
+
       if (process.env.TEST_ENV === 'true') {
-        console.log(`💰 Master Wallet ledger balance: ${balance.toFixed(8)} OG`);
+        log.debug('Master Wallet ledger balance', { balance: `${balance.toFixed(8)} OG` });
       }
     } catch (error: any) {
       if (error.message.includes('Account does not exist')) {
         // NOWA WERSJA 0.3.1: Account nie istnieje
         if (process.env.TEST_ENV === 'true') {
-          console.log('🆕 Creating Master Wallet account (v0.3.1)...');
+          log.debug('Creating Master Wallet account (v0.3.1)');
         }
-        
+
         const initialAmount = parseFloat(process.env.MASTER_WALLET_INITIAL_DEPOSIT || '0.15');
         await this.broker.ledger.addLedger(initialAmount);
-        
+
         if (process.env.TEST_ENV === 'true') {
-          console.log(`✅ Master Wallet account created with ${initialAmount} OG`);
+          log.info('Master Wallet account created', { amount: `${initialAmount} OG` });
         }
       } else if (error.message.includes('LedgerNotExists')) {
         // STARA WERSJA: Backward compatibility
         if (process.env.TEST_ENV === 'true') {
-          console.log('🆕 Creating Master Wallet ledger (v0.2.x)...');
+          log.debug('Creating Master Wallet ledger (v0.2.x)');
         }
-        
+
         const initialAmount = parseFloat(process.env.MASTER_WALLET_INITIAL_DEPOSIT || '0.15');
         await this.broker.ledger.addLedger(initialAmount);
-        
+
         if (process.env.TEST_ENV === 'true') {
-          console.log(`✅ Master Wallet ledger created with ${initialAmount} OG`);
+          log.info('Master Wallet ledger created', { amount: `${initialAmount} OG` });
         }
       } else {
         throw error;
@@ -155,27 +159,30 @@ export class MasterWalletService {
 
       if (balance < threshold) {
         if (process.env.TEST_ENV === 'true') {
-          console.log(`⚠️  Master Wallet balance low: ${balance.toFixed(8)} OG < ${threshold.toFixed(8)} OG`);
-          console.log(`🔄 Auto-refilling with ${refillAmount.toFixed(8)} OG...`);
+          log.warn('Master Wallet balance low', {
+            balance: `${balance.toFixed(8)} OG`,
+            threshold: `${threshold.toFixed(8)} OG`,
+            refillAmount: `${refillAmount.toFixed(8)} OG`
+          });
         }
 
         this.isRefilling = true;
-        
+
         try {
           await this.broker.ledger.depositFund(refillAmount);
-          
+
           const newLedgerInfo = await this.broker.ledger.getLedger();
           const newBalance = parseFloat(ethers.formatEther(newLedgerInfo.totalBalance));
-          
+
           if (process.env.TEST_ENV === 'true') {
-            console.log(`✅ Master Wallet refilled. New balance: ${newBalance.toFixed(8)} OG`);
+            log.info('Master Wallet refilled', { newBalance: `${newBalance.toFixed(8)} OG` });
           }
         } finally {
           this.isRefilling = false;
         }
       }
     } catch (error: any) {
-      console.error('❌ Failed to check/refill Master Wallet:', error.message);
+      log.error('Failed to check/refill Master Wallet', { error: error.message });
       this.isRefilling = false;
     }
   }
@@ -225,7 +232,7 @@ export class MasterWalletService {
   // Monitor incoming transactions to Master Wallet
   async startTransactionMonitor(onTransaction: (from: string, amount: number, txHash: string) => void): Promise<void> {
     if (process.env.TEST_ENV === 'true') {
-      console.log('👁️  Starting transaction monitor for Master Wallet...');
+      log.debug('Starting transaction monitor for Master Wallet');
     }
 
     this.provider.on('block', async (blockNumber) => {
@@ -245,23 +252,26 @@ export class MasterWalletService {
             const txHash = transaction.hash;
 
             if (process.env.TEST_ENV === 'true') {
-              console.log(`💰 Incoming transaction detected: ${amount.toFixed(8)} OG from ${from}`);
+              log.info('Incoming transaction detected', {
+                amount: `${amount.toFixed(8)} OG`,
+                from
+              });
             }
 
             onTransaction(from, amount, txHash);
           }
         }
       } catch (error: any) {
-        console.error('❌ Error monitoring transactions:', error.message);
+        log.error('Error monitoring transactions', { error: error.message });
       }
     });
   }
 
   async stopTransactionMonitor(): Promise<void> {
     this.provider.removeAllListeners('block');
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log('🛑 Transaction monitor stopped');
+      log.debug('Transaction monitor stopped');
     }
   }
 

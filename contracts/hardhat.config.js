@@ -46,9 +46,9 @@ module.exports = {
       tags: ["testnet"]
     },
     "0g-mainnet": {
-      url: process.env.MAINET_RPC_URL || "http://evmrpc.0g.ai",
+      url: process.env.MAINNET_RPC_URL || "http://evmrpc.0g.ai",
       accounts: [process.env.WALLET_PRIVATE_KEY || ""],
-      chainId: parseInt(process.env.MAINET_CHAIN_ID) || 16661,
+      chainId: parseInt(process.env.MAINNET_CHAIN_ID) || 16661,
       live: true,
       saveDeployments: true,
       tags: ["mainnet"],

@@ -7,6 +7,9 @@
 
 import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('RateLimiter');
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -21,7 +24,7 @@ export const generalLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   handler: (req: Request, res: Response) => {
-    console.warn(`🚫 Rate limit exceeded for IP: ${req.ip} on ${req.path}`);
+    log.warn('Rate limit exceeded', { ip: req.ip, path: req.path });
     res.status(429).json({
       success: false,
       error: 'Too many requests. Please try again in 15 minutes.',
@@ -45,7 +48,7 @@ export const aiQueryLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false,
   handler: (req: Request, res: Response) => {
-    console.warn(`🤖 AI query rate limit exceeded for IP: ${req.ip} on ${req.path}`);
+    log.warn('AI query rate limit exceeded', { ip: req.ip, path: req.path });
     res.status(429).json({
       success: false,
       error: 'Too many AI requests. AI processing is limited to 20 requests per minute.',
@@ -68,7 +71,7 @@ export const brokerCreationLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   handler: (req: Request, res: Response) => {
-    console.warn(`👤 Broker creation rate limit exceeded for IP: ${req.ip}`);
+    log.warn('Broker creation rate limit exceeded', { ip: req.ip });
     res.status(429).json({
       success: false,
       error: 'Too many broker creation attempts. Limited to 3 per hour.',
@@ -91,7 +94,7 @@ export const costEstimationLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   handler: (req: Request, res: Response) => {
-    console.warn(`💰 Cost estimation rate limit exceeded for IP: ${req.ip}`);
+    log.warn('Cost estimation rate limit exceeded', { ip: req.ip });
     res.status(429).json({
       success: false,
       error: 'Too many cost estimation requests. Limited to 20 per 5 minutes.',
@@ -114,7 +117,7 @@ export const fundingLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   handler: (req: Request, res: Response) => {
-    console.warn(`💸 Funding rate limit exceeded for IP: ${req.ip}`);
+    log.warn('Funding rate limit exceeded', { ip: req.ip });
     res.status(429).json({
       success: false,
       error: 'Too many funding requests. Limited to 5 per 10 minutes.',
@@ -137,7 +140,7 @@ export const strictLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   handler: (req: Request, res: Response) => {
-    console.warn(`🔐 Strict rate limit exceeded for IP: ${req.ip} on sensitive endpoint: ${req.path}`);
+    log.warn('Strict rate limit exceeded', { ip: req.ip, endpoint: req.path });
     res.status(429).json({
       success: false,
       error: 'Rate limit exceeded for sensitive endpoint. Limited to 5 requests per 15 minutes.',

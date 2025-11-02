@@ -5,11 +5,14 @@
 
 import speechToTextService, { STTResult } from './speechToTextService';
 import textToSpeechService, { TTSResult } from './textToSpeechService';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('VoiceService');
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {
   if (process.env.TEST_ENV === 'true') {
-    console.log(`[VoiceService] ${message}`, data || '');
+    log.debug(message, data || {});
   }
 };
 

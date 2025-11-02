@@ -16,6 +16,9 @@ import virtualBrokers from './services/virtualBrokers';
 import queryManager from './services/queryManager';
 import consolidationChecker from './services/consolidationChecker';
 import geminiService from './services/geminiService';
+import { createLogger } from './lib/logger';
+
+const log = createLogger('Server');
 
 const expressApplication = express();
 const SERVER_PORT = process.env.PORT || 3001;
@@ -37,7 +40,7 @@ expressApplication.use(express.urlencoded({ extended: true }));
 
 expressApplication.use((request, response, next) => {
   if (process.env.TEST_ENV === 'true') {
-    console.log(`${new Date().toISOString()} - ${request.method} ${request.path}`);
+    log.debug(`${request.method} ${request.path}`);
   }
   next();
 });
@@ -87,8 +90,8 @@ expressApplication.use('*', (request, response) => {
 });
 
 expressApplication.use((errorObject: any, request: express.Request, response: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', errorObject);
-  
+  log.error('Unhandled error', { error: errorObject });
+
   response.status(500).json({
     success: false,
     error: 'Internal server error',
@@ -102,61 +105,65 @@ expressApplication.use((errorObject: any, request: express.Request, response: ex
  * @returns {Promise<void>}
  */
 async function initializeAllBackendServices() {
-  console.log('🚀 Initializing Dreamscape 0G Compute Backend (Parallel Mode)...');
+  log.info('Initializing Dreamscape 0G Compute Backend (Parallel Mode)');
 
   try {
-    console.log('🌟 Starting Gemini AI Service (Priority 1)...');
-    console.log('🤖 Starting 0G Network Services (Background)...');
+    log.info('Starting Gemini AI Service (Priority 1)');
+    log.info('Starting 0G Network Services (Background)');
 
     // Parallel initialization - Gemini has priority, 0G in background
     const [geminiResult, aiResult] = await Promise.allSettled([
-      geminiService.initialize(),           // ✅ Always fast (~2s)
-      aiService.initializeWithTimeout(10000) // ⚠️ May timeout, that's OK
+      geminiService.initialize(),           // Always fast (~2s)
+      aiService.initializeWithTimeout(10000) // May timeout, that's OK
     ]);
 
     // Check results
     if (geminiResult.status === 'fulfilled') {
-      console.log('✅ Gemini AI Service ready');
+      log.info('Gemini AI Service ready');
     } else {
-      console.error('❌ Gemini initialization failed:', geminiResult.reason?.message);
+      log.error('Gemini initialization failed', { error: geminiResult.reason?.message });
       throw new Error('Critical service (Gemini) failed to initialize');
     }
 
     if (aiResult.status === 'fulfilled') {
-      console.log('✅ 0G Network Services ready');
+      log.info('0G Network Services ready');
     } else {
-      console.warn('⚠️ 0G Network Services unavailable (using Gemini only):', aiResult.reason?.message);
+      log.warn('0G Network Services unavailable (using Gemini only)', { error: aiResult.reason?.message });
     }
-    
-    console.log('👁️  Starting transaction monitor...');
+
+    log.info('Starting transaction monitor');
     await masterWallet.startTransactionMonitor(async (senderAddress, transactionAmount, transactionHash) => {
       try {
         await virtualBrokers.processFundingTransaction(senderAddress, transactionAmount, transactionHash);
-        console.log(`✅ Auto-funded broker ${senderAddress} with ${transactionAmount} OG`);
+        log.info(`Auto-funded broker ${senderAddress} with ${transactionAmount} OG`);
       } catch (error: any) {
-        console.error(`❌ Failed to auto-fund broker ${senderAddress}:`, error.message);
+        log.error(`Failed to auto-fund broker ${senderAddress}`, { error: error.message });
       }
     });
-    
-    console.log('✅ All services initialized successfully');
-    
-    console.log('\n📋 Configuration:');
-    console.log(`   Master Wallet: ${masterWallet.getWalletAddress()}`);
-    console.log(`   RPC URL: ${process.env.RPC_URL || 'https://evmrpc-testnet.0g.ai'}`);
-    console.log(`   Database: ${process.env.DATABASE_PATH || './data/brokers.db'}`);
-    console.log(`   Port: ${SERVER_PORT}`);
-    console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`   Max Concurrent Queries: ${process.env.MAX_CONCURRENT_QUERIES || '5'}`);
-    
+
+    log.info('All services initialized successfully');
+
+    log.info('Configuration:', {
+      masterWallet: masterWallet.getWalletAddress(),
+      rpcUrl: process.env.RPC_URL || 'https://evmrpc-testnet.0g.ai',
+      database: process.env.DATABASE_PATH || './data/brokers.db',
+      port: SERVER_PORT,
+      environment: process.env.NODE_ENV || 'development',
+      maxConcurrentQueries: process.env.MAX_CONCURRENT_QUERIES || '5'
+    });
+
     const currentQueueStatus = queryManager.getQueueStatus();
-    console.log(`   Query Manager: Ready (Queue: ${currentQueueStatus.queueLength}, Active: ${currentQueueStatus.activeQueries}/${currentQueueStatus.maxConcurrent}`);
-    
+    log.info('Query Manager ready', {
+      queueLength: currentQueueStatus.queueLength,
+      activeQueries: `${currentQueueStatus.activeQueries}/${currentQueueStatus.maxConcurrent}`
+    });
+
     const consolidationCheckIntervalMinutes = parseInt(process.env.CONSOLIDATION_CHECK_INTERVAL_MINUTES || '60');
     consolidationChecker.startChecker(consolidationCheckIntervalMinutes);
-    console.log(`   Consolidation Checker: Started (interval: ${consolidationCheckIntervalMinutes} minutes)`);
-    
+    log.info('Consolidation Checker started', { intervalMinutes: consolidationCheckIntervalMinutes });
+
   } catch (error: any) {
-    console.error('❌ Failed to initialize services:', error.message);
+    log.error('Failed to initialize services', { error: error.message });
     process.exit(1);
   }
 }
@@ -169,23 +176,23 @@ process.on('SIGINT', performGracefulShutdown);
  * @returns {Promise<void>}
  */
 async function performGracefulShutdown() {
-  console.log('\n🛑 Graceful shutdown initiated...');
-  
+  log.info('Graceful shutdown initiated');
+
   try {
-    console.log('🛑 Stopping Consolidation Checker...');
+    log.info('Stopping Consolidation Checker');
     consolidationChecker.stopChecker();
-    
-    console.log('🛑 Cleaning up Query Manager...');
+
+    log.info('Cleaning up Query Manager');
     /* QueryManager cleanup would happen here if needed */
-    
+
     await aiService.cleanup();
     await geminiService.cleanup();
     await masterWallet.cleanup();
-    
-    console.log('✅ Services cleaned up successfully');
+
+    log.info('Services cleaned up successfully');
     process.exit(0);
   } catch (error: any) {
-    console.error('❌ Error during shutdown:', error.message);
+    log.error('Error during shutdown', { error: error.message });
     process.exit(1);
   }
 }
@@ -197,33 +204,33 @@ async function performGracefulShutdown() {
 async function startExpressServer() {
   try {
     await initializeAllBackendServices();
-    
+
     expressApplication.listen(SERVER_PORT, () => {
-      console.log(`\n🎯 Dreamscape 0G Compute Backend running on port ${SERVER_PORT}`);
-      console.log(`🌐 API available at: http://localhost:${SERVER_PORT}`);
-      console.log(`📊 Health check: http://localhost:${SERVER_PORT}/api/health`);
-      console.log(`📋 Status: http://localhost:${SERVER_PORT}/api/status`);
-      
+      log.info(`Dreamscape 0G Compute Backend running on port ${SERVER_PORT}`);
+      log.info(`API available at: http://localhost:${SERVER_PORT}`);
+      log.info(`Health check: http://localhost:${SERVER_PORT}/api/health`);
+      log.info(`Status: http://localhost:${SERVER_PORT}/api/status`);
+
       if (process.env.TEST_ENV === 'true') {
-        console.log('🔧 Debug mode enabled (TEST_ENV=true)');
+        log.debug('Debug mode enabled (TEST_ENV=true)');
       }
-      
-      console.log('\n🎉 Ready to serve AI dream analysis requests!');
+
+      log.info('Ready to serve AI dream analysis requests');
     });
-    
+
   } catch (error: any) {
-    console.error('❌ Failed to start server:', error.message);
+    log.error('Failed to start server', { error: error.message });
     process.exit(1);
   }
 }
 
 process.on('uncaughtException', (uncaughtError) => {
-  console.error('❌ Uncaught Exception:', uncaughtError);
+  log.error('Uncaught Exception', { error: uncaughtError });
   process.exit(1);
 });
 
 process.on('unhandledRejection', (rejectionReason, rejectedPromise) => {
-  console.error('❌ Unhandled Rejection at:', rejectedPromise, 'reason:', rejectionReason);
+  log.error('Unhandled Rejection', { reason: rejectionReason, promise: rejectedPromise });
   process.exit(1);
 });
 

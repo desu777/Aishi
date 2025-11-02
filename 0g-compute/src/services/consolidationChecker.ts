@@ -5,6 +5,9 @@
  */
 
 import DatabaseService from '../database/database';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('ConsolidationChecker');
 
 interface ConsolidationCheck {
   walletAddress: string;
@@ -27,7 +30,7 @@ class ConsolidationCheckerService {
   public startChecker(intervalMinutes: number = 60): void {
     if (this.isRunning) {
       if (process.env.TEST_ENV === 'true') {
-        console.log('⚠️  Consolidation checker is already running');
+        log.warn('Consolidation checker is already running');
       }
       return;
     }
@@ -42,7 +45,7 @@ class ConsolidationCheckerService {
     }, intervalMilliseconds);
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`📅 Consolidation checker started (interval: ${intervalMinutes} minutes)`);
+      log.info('Consolidation checker started', { intervalMinutes });
     }
   }
 
@@ -57,7 +60,7 @@ class ConsolidationCheckerService {
     this.isRunning = false;
 
     if (process.env.TEST_ENV === 'true') {
-      console.log('🛑 Consolidation checker stopped');
+      log.info('Consolidation checker stopped');
     }
   }
 
@@ -75,7 +78,7 @@ class ConsolidationCheckerService {
       const currentYearString = String(currentDate.getFullYear());
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🔍 Checking consolidation for ${allBrokers.length} brokers (current: ${currentMonthString}, year: ${currentYearString}`);
+        log.info('Checking consolidation', { brokerCount: allBrokers.length, currentMonth: currentMonthString, currentYear: currentYearString });
       }
 
       for (const brokerRecord of allBrokers) {
@@ -97,7 +100,7 @@ class ConsolidationCheckerService {
           );
 
           if (process.env.TEST_ENV === 'true') {
-            console.log(`📅 Updated consolidation for ${brokerRecord.walletAddress}: month=${monthlyStatus || brokerRecord.month_learn}, year=${yearlyStatus || brokerRecord.year_learn}`);
+            log.info('Updated consolidation', { wallet: brokerRecord.walletAddress, month: monthlyStatus || brokerRecord.month_learn, year: yearlyStatus || brokerRecord.year_learn });
           }
         }
 
@@ -115,13 +118,13 @@ class ConsolidationCheckerService {
       if (process.env.TEST_ENV === 'true') {
         const monthlyUpdateCount = consolidationResults.filter(result => result.needsMonthLearning).length;
         const yearlyUpdateCount = consolidationResults.filter(result => result.needsYearLearning).length;
-        console.log(`✅ Consolidation check completed: ${monthlyUpdateCount} month updates, ${yearlyUpdateCount} year updates`);
+        log.info('Consolidation check completed', { monthUpdates: monthlyUpdateCount, yearUpdates: yearlyUpdateCount });
       }
 
       return consolidationResults;
     } catch (error) {
       if (process.env.TEST_ENV === 'true') {
-        console.error('❌ Error during consolidation check:', error);
+        log.error('Error during consolidation check', { error });
       }
       throw error;
     }
@@ -155,11 +158,11 @@ class ConsolidationCheckerService {
       updateStatement.run(walletAddress);
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🔄 Reset consolidation date for ${walletAddress}`);
+        log.info('Reset consolidation date', { walletAddress });
       }
     } catch (error) {
       if (process.env.TEST_ENV === 'true') {
-        console.error(`❌ Error resetting consolidation for ${walletAddress}:`, error);
+        log.error('Error resetting consolidation', { walletAddress, error });
       }
       throw error;
     }

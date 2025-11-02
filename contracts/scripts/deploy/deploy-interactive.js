@@ -69,11 +69,11 @@ const NETWORKS = {
     name: "0G Mainnet",
     networkName: "0g-mainnet",
     chainId: 16661,
-    rpcUrl: process.env.MAINET_RPC_URL || "http://evmrpc.0g.ai",
-    explorer: process.env.MAINET_BLOCK_EXPLORER || "https://chainscan.0g.ai",
-    symbol: process.env.MAINET_TOKEN_SYMBOL || "0G",
+    rpcUrl: process.env.MAINNET_RPC_URL || "http://evmrpc.0g.ai",
+    explorer: process.env.MAINNET_BLOCK_EXPLORER || "https://chainscan.0g.ai",
+    symbol: process.env.MAINNET_TOKEN_SYMBOL || "0G",
     isMainnet: true,
-    envCheck: ["MAINET_RPC_URL", "WALLET_PRIVATE_KEY", "TREASURY_ADDRESS"]
+    envCheck: ["MAINNET_RPC_URL", "WALLET_PRIVATE_KEY", "TREASURY_ADDRESS"]
   },
   3: {
     name: "Local Hardhat",

@@ -9,10 +9,13 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { execSync } from 'child_process';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('EnvLoader');
 
 type Environment = 'wsl' | 'windows' | 'linux' | 'unknown';
 
-export class EnvLoader {
+export class EnvLoader{
   private static isLoaded = false;
   private static loadedPath: string | null = null;
   private static detectedEnvironment: Environment | null = null;
@@ -54,7 +57,7 @@ export class EnvLoader {
       }
     } catch (error) {
       if (process.env.TEST_ENV === 'true') {
-        console.warn('⚠️  Environment detection failed:', error);
+        log.warn('Environment detection failed', { error });
       }
     }
 
@@ -107,7 +110,7 @@ export class EnvLoader {
       }
     } catch (error) {
       if (process.env.TEST_ENV === 'true') {
-        console.warn('⚠️  Path conversion failed:', error);
+        log.warn('Path conversion failed', { error });
       }
     }
 
@@ -157,11 +160,11 @@ export class EnvLoader {
 
     const currentEnv = this.detectEnvironment();
     const externalEnvPath = process.env.ENV_FILE_PATH;
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🔍 Detected environment: ${currentEnv}`);
+      log.info('Detected environment', { environment: currentEnv });
       if (externalEnvPath) {
-        console.log(`📁 ENV_FILE_PATH provided: ${externalEnvPath}`);
+        log.info('ENV_FILE_PATH provided', { path: externalEnvPath });
       }
     }
 
@@ -172,11 +175,11 @@ export class EnvLoader {
       // Try external path with cross-platform conversion
       pathsToTry = this.tryMultiplePaths(externalEnvPath);
       pathSource = 'external';
-      
+
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🔄 Path variants to try:`, pathsToTry);
+        log.info('Path variants to try', { paths: pathsToTry });
       }
-    } else {
+    } else{
       // Fallback to local .env file
       pathsToTry = [path.resolve(process.cwd(), '.env')];
       pathSource = 'local';
@@ -194,19 +197,19 @@ export class EnvLoader {
           this.loadedPath = resolvedPath;
           this.isLoaded = true;
           loadedSuccessfully = true;
-          
+
           if (process.env.TEST_ENV === 'true') {
-            console.log(`✅ Environment loaded from ${pathSource} path: ${resolvedPath}`);
+            log.info('Environment loaded', { source: pathSource, path: resolvedPath });
           }
           break;
         } else {
           if (process.env.TEST_ENV === 'true') {
-            console.log(`⏭️  Path does not exist: ${resolvedPath}`);
+            log.info('Path does not exist', { path: resolvedPath });
           }
         }
       } catch (error) {
         if (process.env.TEST_ENV === 'true') {
-          console.warn(`⚠️  Failed to load from ${envPath}:`, error);
+          log.warn('Failed to load', { path: envPath, error });
         }
         continue;
       }
@@ -222,25 +225,25 @@ export class EnvLoader {
           this.loadedPath = localPath;
           this.isLoaded = true;
           loadedSuccessfully = true;
-          
+
           if (process.env.TEST_ENV === 'true') {
-            console.log(`⚠️  External paths failed, using local fallback: ${localPath}`);
+            log.warn('External paths failed, using local fallback', { path: localPath });
           }
         }
       } catch (error) {
         if (process.env.TEST_ENV === 'true') {
-          console.error('❌ Local fallback also failed:', error);
+          log.error('Local fallback also failed', { error });
         }
       }
     }
 
     // Final error reporting
     if (!loadedSuccessfully) {
-      const message = pathSource === 'external' 
-        ? `❌ No environment file found at any of the tried paths: ${pathsToTry.join(', ')}`
-        : `❌ Environment file not found at ${pathsToTry[0]}`;
-      
-      console.warn(message);
+      const message = pathSource === 'external'
+        ? `No environment file found at any of the tried paths: ${pathsToTry.join(', ')}`
+        : `Environment file not found at ${pathsToTry[0]}`;
+
+      log.warn(message);
     }
   }
 
@@ -310,12 +313,12 @@ export class EnvLoader {
     }
     
     process.env.ENV_FILE_PATH = convertedPath;
-    
+
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🔧 ENV_FILE_PATH set to: ${convertedPath}`);
-      if (convertedPath !== envPath) {
-        console.log(`   (converted from: ${envPath})`);
-      }
+      log.info('ENV_FILE_PATH set', {
+        path: convertedPath,
+        converted: convertedPath !== envPath ? `from ${envPath}` : undefined
+      });
     }
   }
 }

@@ -8,6 +8,7 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Button from '@/components/ui/Button'
+import StaticCarousel from '@/components/ui/StaticCarousel'
 import { AISHI_URL } from '@/lib/env'
 import { X } from 'lucide-react'
 
@@ -63,23 +64,28 @@ export default function GettingStartedPage() {
     companion: `${AISHI_URL}/aishi-companion`,
   }
 
+  const mintShots = [
+    { src: '/mint.jpg', alt: 'Mint dashboard with dynamic pricing' },
+    { src: '/mint2.jpg', alt: 'Mint success state with token details' },
+  ]
+
   const aishiOSShots = [
-    { src: '/aishiOS-1.jpg', caption: 'Home — connected state' },
-    { src: '/aishiOS-2.jpg', caption: 'help — commands and aliases' },
-    { src: '/aishiOS-3.jpg', caption: 'personality — six traits' },
-    { src: '/aishiOS-4.jpg', caption: 'stats — growth counters' },
-    { src: '/aishiOS-5.jpg', caption: 'unique-features — emergent abilities' },
-    { src: '/aishiOS-6.jpg', caption: 'memory — hierarchical storage' },
-    { src: '/aishiOS-7.jpg', caption: 'dream — analysis in progress' },
-    { src: '/aishiOS-8.jpg', caption: 'confirm — learning' },
-    { src: '/aishiOS-9.jpg', caption: 'saved — on-chain confirmation' },
-    { src: '/aishiOS-10.jpg', caption: 'memory — daily hash + download' },
+    { src: '/aishiOS-1.jpg', alt: 'Home — connected state' },
+    { src: '/aishiOS-2.jpg', alt: 'help — commands and aliases' },
+    { src: '/aishiOS-3.jpg', alt: 'personality — six traits' },
+    { src: '/aishiOS-4.jpg', alt: 'stats — growth counters' },
+    { src: '/aishiOS-5.jpg', alt: 'unique-features — emergent abilities' },
+    { src: '/aishiOS-6.jpg', alt: 'memory — hierarchical storage' },
+    { src: '/aishiOS-7.jpg', alt: 'dream — analysis in progress' },
+    { src: '/aishiOS-8.jpg', alt: 'confirm — learning' },
+    { src: '/aishiOS-9.jpg', alt: 'saved — on-chain confirmation' },
+    { src: '/aishiOS-10.jpg', alt: 'memory — daily hash + download' },
   ]
 
   const companionShots = [
-    { src: '/companion.jpg', caption: 'Clothing & Enhanced Mode' },
-    { src: '/companion2.jpg', caption: 'User message' },
-    { src: '/companion3.jpg', caption: 'Aishi response (lip-sync)' },
+    { src: '/companion.jpg', alt: 'Clothing & Enhanced Mode' },
+    { src: '/companion2.jpg', alt: 'User message' },
+    { src: '/companion3.jpg', alt: 'Aishi response (lip-sync)' },
   ]
 
   return (
@@ -90,24 +96,21 @@ export default function GettingStartedPage() {
 
         {/* Step 1 — Mint */}
         <h2 className="text-2xl font-grotesk font-semibold text-text-primary mb-3">Step 1 · Mint your Aishi</h2>
-        <div className="bg-background-card border border-border rounded-lg p-6 mb-6">
+        <div className="bg-background-card border border-border rounded-2xl p-6 mb-6">
           <ul className="list-disc list-inside space-y-2 text-text-secondary">
             <li>Choose a unique name (≤ 32 chars). One agent per wallet.</li>
             <li>Dynamic pricing: base 0.1 OG, +0.1 OG every 10 mints.</li>
             <li>After mint: tokenId assigned, Intelligence starts at 1, all six traits at 50.</li>
           </ul>
           <div className="mt-4">
-            <Button href={cta.mint} external variant="primary">Open Mint</Button>
+            <Button href={cta.mint} external variant="outline" className="shadow-lg shadow-accent-primary/20 hover:shadow-accent-primary/40">
+              Open Mint
+            </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-          <div className="overflow-hidden rounded-xl border border-border cursor-pointer hover:border-accent-primary" onClick={() => open('/mint.jpg')}>
-            <Image src="/mint.jpg" alt="Mint screen" width={900} height={600} className="w-full object-cover" />
-          </div>
-          <div className="overflow-hidden rounded-xl border border-border cursor-pointer hover:border-accent-primary" onClick={() => open('/mint2.jpg')}>
-            <Image src="/mint2.jpg" alt="Mint success" width={900} height={600} className="w-full object-cover" />
-          </div>
+        <div className="mb-10">
+          <StaticCarousel items={mintShots} onSelect={(src) => open(src)} />
         </div>
 
         {/* Step 2 — aishiOS */}
@@ -117,13 +120,8 @@ export default function GettingStartedPage() {
           <Button href={cta.os} external variant="secondary">Open aishiOS</Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-          {aishiOSShots.map((s) => (
-            <figure key={s.src} className="overflow-hidden rounded-xl border border-border cursor-pointer hover:border-accent-primary" onClick={() => open(s.src)}>
-              <Image src={s.src} alt={s.caption} width={900} height={600} className="w-full object-cover" />
-              <figcaption className="px-3 py-2 text-sm text-text-secondary">{s.caption}</figcaption>
-            </figure>
-          ))}
+        <div className="mb-10">
+          <StaticCarousel items={aishiOSShots} onSelect={(src) => open(src)} />
         </div>
 
         {/* Commands quick ref */}
@@ -148,13 +146,8 @@ clear (cls)          Clear terminal screen
           <Button href={cta.companion} external variant="secondary">Open Companion</Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
-          {companionShots.map((s) => (
-            <figure key={s.src} className="overflow-hidden rounded-xl border border-border cursor-pointer hover:border-accent-primary" onClick={() => open(s.src)}>
-              <Image src={s.src} alt={s.caption} width={900} height={600} className="w-full object-cover" />
-              <figcaption className="px-3 py-2 text-sm text-text-secondary">{s.caption}</figcaption>
-            </figure>
-          ))}
+        <div className="mb-12">
+          <StaticCarousel items={companionShots} onSelect={(src) => open(src)} />
         </div>
 
         {/* Growth rules */}

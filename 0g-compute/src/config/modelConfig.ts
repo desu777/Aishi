@@ -1,4 +1,7 @@
 import './envLoader';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('ModelConfig');
 
 // Mapping of simple model names to full model names
 export const MODEL_MAPPING = {
@@ -28,15 +31,15 @@ export function getSelectedModel(): FullModelType {
   
   if (!modelPicked || !MODEL_MAPPING[modelPicked]) {
     if (process.env.TEST_ENV === 'true') {
-      console.log(`⚠️  MODEL_PICKED not set or invalid (${modelPicked}), using default: llama`);
+      log.warn('MODEL_PICKED not set or invalid, using default', { modelPicked, default: 'llama' });
     }
     return MODEL_MAPPING.llama;
   }
-  
+
   if (process.env.TEST_ENV === 'true') {
-    console.log(`🤖 Selected model: ${modelPicked} -> ${MODEL_MAPPING[modelPicked]}`);
+    log.info('Selected model', { picked: modelPicked, full: MODEL_MAPPING[modelPicked] });
   }
-  
+
   return MODEL_MAPPING[modelPicked];
 }
 
@@ -61,7 +64,7 @@ export function getSelectedProvider(): string {
 export function getSelectedModelCost(): number {
   // This is now a placeholder - real costs must be fetched from broker
   // See aiService.ts for dynamic pricing implementation
-  console.warn('⚠️  getSelectedModelCost() is deprecated - use dynamic pricing from broker');
+  log.warn('getSelectedModelCost() is deprecated - use dynamic pricing from broker');
   return 0.001; // Fallback only
 }
 

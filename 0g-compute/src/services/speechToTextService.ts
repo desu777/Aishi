@@ -4,11 +4,14 @@
  */
 
 import geminiAudioService from './geminiAudioService';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('SpeechToTextService');
 
 // Debug logging
 const debugLog = (message: string, data?: any) => {
   if (process.env.TEST_ENV === 'true') {
-    console.log(`[SpeechToTextService] ${message}`, data || '');
+    log.debug(message, data || {});
   }
 };
 

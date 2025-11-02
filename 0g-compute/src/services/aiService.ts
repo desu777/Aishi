@@ -8,6 +8,9 @@ import OpenAI from 'openai';
 import '../config/envLoader';
 import masterWallet from './masterWallet';
 import virtualBrokers from './virtualBrokers';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('AIService');
 
 const DEFAULT_MODEL = process.env.MODEL_PICKED || "llama-3.3-70b-instruct";
 const PROVIDER_TIMEOUT = 30000;
@@ -55,18 +58,18 @@ export class AIService {
 
   async initialize(): Promise<void> {
     try {
-      console.log(`🎯 Default Model Configuration: ${DEFAULT_MODEL}`);
+      log.info('Default Model Configuration', { defaultModel: DEFAULT_MODEL });
 
       await masterWallet.initialize();
 
       await this.discoverAndCacheServices();
 
       if (process.env.TEST_ENV === 'true') {
-        console.log('🤖 AI Service initialized successfully');
-        console.log(`📋 Discovered ${this.discoveredServices.size} models from 0G Network`);
+        log.info('AI Service initialized successfully');
+        log.info('Discovered models from 0G Network', { count: this.discoveredServices.size });
       }
     } catch (error: any) {
-      console.error('❌ Failed to initialize AI Service:', error.message);
+      log.error('Failed to initialize AI Service', { error: error.message });
       throw error;
     }
   }
@@ -86,10 +89,10 @@ export class AIService {
       ]);
     } catch (error: any) {
       if (error.message.includes('timeout')) {
-        console.warn('⚠️ AI Service initialization timeout - 0G Network may be unavailable');
+        log.warn('AI Service initialization timeout - 0G Network may be unavailable');
         // Initialize minimal state for fallback mode
         await masterWallet.initialize();
-        console.log('✅ Master Wallet ready (Gemini fallback mode)');
+        log.info('Master Wallet ready (Gemini fallback mode)');
       } else {
         throw error;
       }
@@ -104,7 +107,7 @@ export class AIService {
     const currentTimestamp = Date.now();
     if (this.lastDiscoveryTime && (currentTimestamp - this.lastDiscoveryTime) < SERVICE_CACHE_TTL) {
       if (process.env.TEST_ENV === 'true') {
-        console.log('🔄 Using cached service discovery');
+        log.debug('Using cached service discovery');
       }
       return;
     }
@@ -114,11 +117,11 @@ export class AIService {
       const availableServices = await masterBroker.inference.listService();
       
       this.discoveredServices.clear();
-      
+
       if (process.env.TEST_ENV === 'true') {
         const uniqueServiceTypes = availableServices.map(service => service.serviceType).filter((value, index, array) => array.indexOf(value) === index);
-        console.log(`🔍 Discovered service types: ${uniqueServiceTypes.join(', ')}`);
-        console.log(`📊 Total services found: ${availableServices.length}`);
+        log.debug('Discovered service types', { types: uniqueServiceTypes.join(', ') });
+        log.debug('Total services found', { count: availableServices.length });
       }
       
       /* Filter AI models - support both 'inference' (legacy) and 'chatbot' (new API) */
@@ -146,28 +149,35 @@ export class AIService {
             const costPer1KTokens = (totalPricePerToken * 1000 / 1e18);
             const initialDeposit = (totalPricePerToken * 2000000 / 1e18); // SDK topUpTargetThreshold = 2M
 
-            console.log(`💰 Provider Price - ${serviceItem.model}:`);
-            console.log(`   Address: ${serviceItem.provider}`);
-            console.log(`   Input: ${(Number(serviceItem.inputPrice) / 1e18).toFixed(12)} OG/token`);
-            console.log(`   Output: ${(Number(serviceItem.outputPrice) / 1e18).toFixed(12)} OG/token`);
-            console.log(`   Cost/1K tokens: ~${costPer1KTokens.toFixed(10)} OG`);
-            console.log(`   Required sub-account deposit: ~${initialDeposit.toFixed(4)} OG`);
-            console.log(`   Verifiability: ${serviceItem.verifiability || 'none'}`);
+            log.debug('Provider Price', {
+              model: serviceItem.model,
+              address: serviceItem.provider,
+              inputPrice: `${(Number(serviceItem.inputPrice) / 1e18).toFixed(12)} OG/token`,
+              outputPrice: `${(Number(serviceItem.outputPrice) / 1e18).toFixed(12)} OG/token`,
+              costPer1KTokens: `~${costPer1KTokens.toFixed(10)} OG`,
+              requiredDeposit: `~${initialDeposit.toFixed(4)} OG`,
+              verifiability: serviceItem.verifiability || 'none'
+            });
           }
 
           await this.acknowledgeProvider(serviceItem.provider, serviceItem.model);
         }
       }
-      
+
       this.availableServices = availableServices;
       this.lastDiscoveryTime = currentTimestamp;
-      
+
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🔍 Discovered ${this.discoveredServices.size} inference models from ${availableServices.length} total services`);
-        console.log(`📋 Available models: ${Array.from(this.discoveredServices.keys()).join(', ')}`);
+        log.debug('Discovered inference models', {
+          inferenceModels: this.discoveredServices.size,
+          totalServices: availableServices.length
+        });
+        log.debug('Available models', {
+          models: Array.from(this.discoveredServices.keys()).join(', ')
+        });
       }
     } catch (error: any) {
-      console.error('❌ Failed to discover AI services:', error.message);
+      log.error('Failed to discover AI services', { error: error.message });
       /* Don't throw - we can still use Gemini as fallback */
     }
   }
@@ -195,19 +205,19 @@ export class AIService {
       this.acknowledgedProviders.add(providerAddress);
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`✅ Acknowledged provider for ${modelName}: ${providerAddress}`);
+        log.debug('Acknowledged provider', { model: modelName, provider: providerAddress });
       }
     } catch (error: any) {
       if (error.message.includes('already acknowledged')) {
         this.acknowledgedProviders.add(providerAddress);
         if (process.env.TEST_ENV === 'true') {
-          console.log(`✅ Provider already acknowledged: ${modelName}`);
+          log.debug('Provider already acknowledged', { model: modelName });
         }
       } else if (error.message.includes('timeout')) {
-        console.warn(`⚠️ Provider acknowledgment timeout for ${modelName} - skipping`);
+        log.warn('Provider acknowledgment timeout - skipping', { model: modelName });
         this.addToFailedProviders(providerAddress, modelName);
       } else {
-        console.warn(`⚠️ Failed to acknowledge provider ${modelName}: ${error.message} - skipping`);
+        log.warn('Failed to acknowledge provider - skipping', { model: modelName, error: error.message });
         this.addToFailedProviders(providerAddress, modelName);
       }
     }
@@ -237,10 +247,12 @@ export class AIService {
       const providerAddress = discoveredService.provider;
 
       // Log selected model
-      console.log(`🎯 Selected Model: ${model} (Provider: ${providerAddress})`);
+      log.info('Selected Model', { model, provider: providerAddress });
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🔑 Service URL: ${discoveredService.url}`);
-        console.log(`💰 Input Price: ${discoveredService.inputPrice.toString()}`);
+        log.debug('Service details', {
+          url: discoveredService.url,
+          inputPrice: discoveredService.inputPrice.toString()
+        });
       }
 
       // Estimate cost for pre-check (user needs some minimum balance)
@@ -258,10 +270,10 @@ export class AIService {
 
       // Get initial Master Wallet balance for dynamic cost calculation
       const initialBalance = await masterWallet.getLedgerBalance();
-      
+
       if (process.env.TEST_ENV === 'true') {
-        console.log(`💰 Initial Master Wallet balance: ${initialBalance} OG`);
-        console.log(`📊 Estimated cost: ${estimatedCost} OG`);
+        log.debug('Initial Master Wallet balance', { balance: `${initialBalance} OG` });
+        log.debug('Estimated cost', { cost: `${estimatedCost} OG` });
       }
 
       // Get service metadata
@@ -289,9 +301,12 @@ export class AIService {
 
       // Send query to AI service
       if (process.env.TEST_ENV === 'true') {
-        console.log(`🤖 Sending AI query for ${userWalletAddress}: ${query.substring(0, 100)}...`);
-        console.log(`⏳ Using model: ${actualModel}`);
-        console.log(`⏳ Endpoint: ${endpoint}`);
+        log.debug('Sending AI query', {
+          wallet: userWalletAddress,
+          queryPreview: query.substring(0, 100) + '...',
+          model: actualModel,
+          endpoint
+        });
       }
 
       const completion = await openai.chat.completions.create({
@@ -306,9 +321,11 @@ export class AIService {
       const responseTime = Date.now() - queryStartTime;
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`✅ AI query completed in ${responseTime}ms`);
-        console.log(`🆔 Chat ID: ${chatId}`);
-        console.log(`🤖 AI Response: ${aiResponse.substring(0, 200)}...`);
+        log.debug('AI query completed', {
+          responseTime: `${responseTime}ms`,
+          chatId,
+          responsePreview: aiResponse.substring(0, 200) + '...'
+        });
       }
 
       // Process response and verify
@@ -321,11 +338,13 @@ export class AIService {
       // Get final Master Wallet balance for dynamic cost calculation
       const finalBalance = await masterWallet.getLedgerBalance();
       const realCost = Math.max(0, initialBalance - finalBalance); // Ensure non-negative
-      
+
       if (process.env.TEST_ENV === 'true') {
-        console.log(`💰 Final Master Wallet balance: ${finalBalance} OG`);
-        console.log(`💸 Real cost calculated: ${realCost} OG`);
-        console.log(`🔒 Verification Status: ${isValid ? 'Valid ✅' : 'Invalid ❌'}`);
+        log.debug('Query cost calculation', {
+          finalBalance: `${finalBalance} OG`,
+          realCost: `${realCost} OG`,
+          verificationStatus: isValid ? 'Valid' : 'Invalid'
+        });
       }
 
       // Deduct real cost from user balance (we already checked they have estimated cost)
@@ -348,13 +367,20 @@ export class AIService {
             `AI Query: ${model} - "${query.substring(0, 50)}..." (Partial payment: ${deductedAmount}/${realCost} OG)`
           );
         }
-        
-        console.warn(`⚠️  User ${userWalletAddress} had insufficient balance for real cost: ${realCost} OG. Deducted: ${deductedAmount} OG`);
+
+        log.warn('User had insufficient balance for real cost', {
+          wallet: userWalletAddress,
+          realCost: `${realCost} OG`,
+          deducted: `${deductedAmount} OG`
+        });
       }
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`✅ AI query completed for ${userWalletAddress} in ${responseTime}ms`);
-        console.log(`💸 Real cost deducted: ${realCost} OG`);
+        log.debug('AI query completed', {
+          wallet: userWalletAddress,
+          responseTime: `${responseTime}ms`,
+          realCost: `${realCost} OG`
+        });
       }
 
       return {
@@ -368,13 +394,13 @@ export class AIService {
 
     } catch (error: any) {
       const responseTime = Date.now() - queryStartTime;
-      
-      console.error(`❌ AI query failed for ${userWalletAddress}:`, error.message);
-      
+
+      log.error('AI query failed', { wallet: userWalletAddress, error: error.message });
+
       if (process.env.TEST_ENV === 'true') {
-        console.error(`🔧 Error details:`, error.stack);
+        log.error('Error details', { stack: error.stack });
       }
-      
+
       throw {
         error: error.message,
         responseTime: responseTime,
@@ -497,7 +523,7 @@ export class AIService {
         isRecoveryActive: !!this.recoveryIntervalId
       };
     } catch (error: any) {
-      console.error('❌ Failed to get service status:', error.message);
+      log.error('Failed to get service status', { error: error.message });
       throw error;
     }
   }
@@ -529,7 +555,7 @@ export class AIService {
       return; // Already running
     }
 
-    console.log('🔄 Starting background provider recovery (5min intervals)');
+    log.info('Starting background provider recovery (5min intervals)');
 
     this.recoveryIntervalId = setInterval(async () => {
       await this.retryFailedProviders();
@@ -545,7 +571,7 @@ export class AIService {
     }
 
     if (process.env.TEST_ENV === 'true') {
-      console.log(`🔄 Retrying ${this.failedProviders.size} failed providers...`);
+      log.debug('Retrying failed providers', { count: this.failedProviders.size });
     }
 
     const currentTime = Date.now();
@@ -560,7 +586,7 @@ export class AIService {
       // Skip if too many attempts (max 3)
       if (info.attempts >= 3) {
         if (process.env.TEST_ENV === 'true') {
-          console.log(`⚠️ Giving up on provider ${info.modelName} after 3 attempts`);
+          log.warn('Giving up on provider after 3 attempts', { model: info.modelName });
         }
         this.failedProviders.delete(providerAddress);
         continue;
@@ -580,7 +606,7 @@ export class AIService {
         this.failedProviders.delete(providerAddress);
 
         if (process.env.TEST_ENV === 'true') {
-          console.log(`✅ Recovered provider ${info.modelName}: ${providerAddress}`);
+          log.info('Recovered provider', { model: info.modelName, provider: providerAddress });
         }
       } catch (error) {
         // Update attempt info
@@ -591,7 +617,10 @@ export class AIService {
         });
 
         if (process.env.TEST_ENV === 'true') {
-          console.log(`⚠️ Provider ${info.modelName} still unavailable (attempt ${info.attempts + 1}/3)`);
+          log.debug('Provider still unavailable', {
+            model: info.modelName,
+            attempt: `${info.attempts + 1}/3`
+          });
         }
       }
     }
@@ -600,7 +629,7 @@ export class AIService {
     if (this.failedProviders.size === 0 && this.recoveryIntervalId) {
       clearInterval(this.recoveryIntervalId);
       this.recoveryIntervalId = null;
-      console.log('✅ All providers recovered - stopping background recovery');
+      log.info('All providers recovered - stopping background recovery');
     }
   }
 
@@ -617,9 +646,6 @@ export class AIService {
     await masterWallet.cleanup();
   }
 
-  private log(message: string, data?: any) {
-    console.log(`[AI SERVICE] ${message}`, data || "");
-  }
 
   async getBalance(walletAddress: string): Promise<any> {
     const balance = await masterWallet.getWalletInfo();

@@ -5,6 +5,9 @@
 
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 import geminiAudioService from './geminiAudioService';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('TextToSpeechService');
 
 // Initialize Google Cloud Text-to-Speech client with Gemini support
 const ttsClient = new TextToSpeechClient();
@@ -12,7 +15,7 @@ const ttsClient = new TextToSpeechClient();
 // Debug logging
 const debugLog = (message: string, data?: any) => {
   if (process.env.TEST_ENV === 'true') {
-    console.log(`[TextToSpeechService] ${message}`, data || '');
+    log.debug(message, data || {});
   }
 };
 
@@ -261,7 +264,7 @@ Return ONLY valid JSON (no markdown):
     });
 
     // Log the voice configuration
-    console.log('[TTS-CHUNK] Building request:', {
+    log.debug('Building request', {
       voiceName: fullVoiceName || voiceProfile.name,
       languageCode,
       modelName: ttsModel,
@@ -363,13 +366,11 @@ Return ONLY valid JSON (no markdown):
     const startTime = Date.now();
 
     // ENHANCED LOGGING - Check environment variables
-    console.log('[TTS] ====== STARTING TTS SYNTHESIS ======');
-    console.log('[TTS] Environment variables:', {
+    log.info('Starting TTS synthesis', {
       TTS_MODEL: process.env.TTS_MODEL,
       GOOGLE_APPLICATION_CREDENTIALS: process.env.GOOGLE_APPLICATION_CREDENTIALS,
       VERTEX_AI_PROJECT: process.env.VERTEX_AI_PROJECT,
-      VERTEX_AI_LOCATION: process.env.VERTEX_AI_LOCATION,
-      TEST_ENV: process.env.TEST_ENV
+      VERTEX_AI_LOCATION: process.env.VERTEX_AI_LOCATION
     });
 
     debugLog('Starting Gemini 2.5 Pro Preview TTS synthesis', {
@@ -378,7 +379,7 @@ Return ONLY valid JSON (no markdown):
       providedLanguage: params.detectedLanguage || params.languageCode
     });
 
-    console.log('[TTS] Input params:', {
+    log.info('Input params', {
       voiceId: params.voiceId,
       textPreview: params.text.substring(0, 100),
       hasEmotionalTags: params.text.includes('[')
@@ -420,7 +421,7 @@ Return ONLY valid JSON (no markdown):
         ? processedText.split('[CHUNK]').map(c => c.trim()).filter(c => c.length > 0)
         : [processedText];
 
-      console.log('[TTS] Text chunking:', {
+      log.info('Text chunking', {
         totalChunks: chunks.length,
         chunkSizes: chunks.map(c => Buffer.byteLength(c, 'utf8')),
         needsChunking: chunks.length > 1
@@ -435,7 +436,7 @@ Return ONLY valid JSON (no markdown):
 
       if (chunks.length === 1) {
         // Single chunk - process normally
-        console.log('[TTS] Processing as single chunk');
+        log.info('Processing as single chunk');
         audioBuffer = await this.synthesizeChunk(
           chunks[0],
           voiceProfile,
@@ -447,11 +448,11 @@ Return ONLY valid JSON (no markdown):
         estimatedDuration = this.estimateAudioDuration(chunks[0], normalizedSpeed);
       } else {
         // Multiple chunks - process sequentially and combine
-        console.log('[TTS] Processing multiple chunks sequentially');
+        log.info('Processing multiple chunks sequentially');
         const audioBuffers: Buffer[] = [];
 
         for (let i = 0; i < chunks.length; i++) {
-          console.log(`[TTS] Processing chunk ${i + 1}/${chunks.length}, size: ${Buffer.byteLength(chunks[i], 'utf8')} bytes`);
+          log.info('Processing chunk', { chunk: i + 1, total: chunks.length, size: Buffer.byteLength(chunks[i], 'utf8') });
 
           try {
             const chunkAudio = await this.synthesizeChunk(
@@ -469,10 +470,10 @@ Return ONLY valid JSON (no markdown):
               chunkText: chunks[i].substring(0, 50)
             });
           } catch (chunkError: any) {
-            console.error(`[TTS] Failed to synthesize chunk ${i + 1}:`, chunkError.message);
+            log.error('Failed to synthesize chunk', { chunk: i + 1, error: chunkError.message });
             // Continue with other chunks even if one fails
             if (chunkError.message?.includes('900 bytes')) {
-              console.error('[TTS] Chunk still exceeds limit after splitting. Consider more aggressive chunking.');
+              log.error('Chunk still exceeds limit after splitting. Consider more aggressive chunking');
             }
           }
         }
@@ -482,7 +483,7 @@ Return ONLY valid JSON (no markdown):
         }
 
         // Combine all audio buffers
-        console.log('[TTS] Combining audio chunks');
+        log.info('Combining audio chunks');
         audioBuffer = this.combineAudioBuffers(audioBuffers);
 
         // Estimate total duration
@@ -515,12 +516,11 @@ Return ONLY valid JSON (no markdown):
       };
 
     } catch (error: any) {
-      console.error('[TTS] ❌ ERROR in TTS synthesis:', {
+      log.error('ERROR in TTS synthesis', {
         errorMessage: error.message,
         errorStack: error.stack,
         errorDetails: error.details || 'No additional details',
-        errorCode: error.code,
-        fullError: error
+        errorCode: error.code
       });
 
       debugLog('Gemini 2.5 Pro Preview TTS synthesis failed', { error: String(error) });

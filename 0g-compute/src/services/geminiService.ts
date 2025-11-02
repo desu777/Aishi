@@ -1,4 +1,7 @@
 import '../config/envLoader';
+import { createLogger } from '../lib/logger';
+
+const log = createLogger('GeminiService');
 
 /**
  * Modern Gemini AI Service with Dynamic Profile Selection
@@ -111,14 +114,14 @@ export class GeminiService {
       });
       
       this.isInitialized = true;
-      console.log('✅ Modern Gemini AI Service initialized successfully');
-      console.log(`   Project: ${process.env.VERTEX_AI_PROJECT}`);
-      console.log(`   Location: ${process.env.VERTEX_AI_LOCATION}`);
-      console.log(`   Model: ${this.modelName}`);
-      console.log(`   Available Profiles: ${Object.keys(GEMINI_PROFILES).join(', ')}`);
-      console.log('   🆕 Dynamic profile selection enabled (no .env dependency)');
+      log.info('Modern Gemini AI Service initialized successfully', {
+        project: process.env.VERTEX_AI_PROJECT,
+        location: process.env.VERTEX_AI_LOCATION,
+        model: this.modelName,
+        availableProfiles: Object.keys(GEMINI_PROFILES).join(', ')
+      });
     } catch (error: any) {
-      console.error('❌ Failed to initialize Modern Gemini AI Service:', error.message);
+      log.error('Failed to initialize Modern Gemini AI Service', { error: error.message });
       throw error;
     }
   }
@@ -142,7 +145,7 @@ export class GeminiService {
     // Validate profile
     const profile = GEMINI_PROFILES[profileId];
     if (!profile) {
-      console.warn(`⚠️ Invalid profile '${profileId}', falling back to 'auto'`);
+      log.warn('Invalid profile, falling back to auto', { profileId });
       profileId = 'auto';
     }
 
@@ -164,12 +167,12 @@ export class GeminiService {
       };
 
       if (process.env.TEST_ENV === 'true') {
-        const budgetDisplay = activeProfile.thinking.budget === -1 
-          ? 'AUTO' 
+        const budgetDisplay = activeProfile.thinking.budget === -1
+          ? 'AUTO'
           : activeProfile.thinking.budget === 0
           ? '0 (disabled in practice)'
           : activeProfile.thinking.budget.toString();
-        console.log(`🧠 Profile '${profileId}': Thinking enabled (budget: ${budgetDisplay})`);
+        log.info('Profile thinking enabled', { profile: profileId, budget: budgetDisplay });
       }
 
       // Log request details in test mode
@@ -178,16 +181,14 @@ export class GeminiService {
           ? prompt.length
           : JSON.stringify(prompt).length;
 
-        console.log(`🤖 Gemini Request:`, {
+        log.info('Gemini Request', {
           model: this.modelName,
           profile: `${profileId} (${activeProfile.name})`,
           promptLength,
           promptType: typeof prompt === 'string' ? 'text' : 'multimedia',
           temperature,
           thinkingEnabled: activeProfile.thinking.enabled,
-          ...(activeProfile.thinking.enabled && {
-            thinkingBudget: activeProfile.thinking.budget
-          })
+          thinkingBudget: activeProfile.thinking.enabled ? activeProfile.thinking.budget : undefined
         });
       }
 
@@ -204,8 +205,12 @@ export class GeminiService {
       const responseText = response.text;
 
       if (process.env.TEST_ENV === 'true') {
-        console.log(`✅ Gemini Response received in ${responseTime}ms using profile '${profileId}'`);
-        console.log(`📊 Tokens: prompt=${response.usageMetadata?.promptTokenCount || 0}, response=${response.usageMetadata?.candidatesTokenCount || 0}`);
+        log.info('Gemini Response received', {
+          profile: profileId,
+          responseTime,
+          promptTokens: response.usageMetadata?.promptTokenCount || 0,
+          responseTokens: response.usageMetadata?.candidatesTokenCount || 0
+        });
       }
 
       return {
@@ -226,8 +231,8 @@ export class GeminiService {
       };
 
     } catch (error: any) {
-      console.error(`❌ Gemini generation error with profile '${profileId}':`, error.message);
-      
+      log.error('Gemini generation error', { profile: profileId, error: error.message });
+
       // Handle specific error types
       if (error.message?.includes('PERMISSION_DENIED')) {
         throw new Error('Authentication failed. Please check your service account credentials.');
@@ -325,7 +330,7 @@ export class GeminiService {
     this.genAI = null;
     this.GoogleGenAI = null;
     this.isInitialized = false;
-    console.log('🛑 Modern Gemini AI Service cleaned up');
+    log.info('Modern Gemini AI Service cleaned up');
   }
 }
 
