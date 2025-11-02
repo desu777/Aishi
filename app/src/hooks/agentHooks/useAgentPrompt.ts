@@ -1,24 +1,21 @@
 'use client';
 
 import { DreamContext } from './services/dreamContextBuilder';
-import { 
+import {
   buildDreamAnalysisPrompt as buildDreamAnalysisPromptFromFile,
-  DreamAnalysisPrompt 
+  DreamAnalysisPrompt
 } from '../../prompts/dreamAnalysisPrompt';
+import { logger } from '@/lib/logger';
 
 // Re-export type for compatibility
 export type { DreamAnalysisPrompt };
 
 export function useAgentPrompt() {
-  
-  // Debug logs dla development
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[useAgentPrompt] ${message}`, data || '');
-    }
-  };
 
-  debugLog('useAgentPrompt hook initialized');
+  // Logger instance
+  const log = logger.child({ component: 'useAgentPrompt' });
+
+  log.debug('useAgentPrompt hook initialized');
 
   /**
    * Buduje kompletny prompt do analizy snu na podstawie DreamContext

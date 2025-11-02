@@ -6,13 +6,9 @@
 import { assign, sendParent, sendTo, enqueueActions } from 'xstate';
 import type { TerminalLine } from './types';
 import type { DreamMachineContext } from './dreamMachine';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[DreamMachine] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'DreamEvolutionActions' });
 
 /**
  * Actions related to evolution dream detection and handling
@@ -22,7 +18,7 @@ export const evolutionDreamActions = {
    * Send lines to parent with evolution dream awareness
    */
   sendDreamAnalysisWithEvolution: enqueueActions(({ context, enqueue }: any) => {
-    debugLog('[EVOLUTION] sendDreamAnalysisWithEvolution triggered', {
+    log.debug('[EVOLUTION] sendDreamAnalysisWithEvolution triggered', {
       wasVoiceInput: context.wasVoiceInput,
       hasAiResponse: !!context.aiResponse,
       agentName: context.agentName
@@ -81,7 +77,7 @@ export const evolutionDreamActions = {
     }));
 
     // Second action: send TTS request if voice input
-    debugLog('[TTS DECISION] Analyzing TTS trigger conditions', {
+    log.debug('[TTS DECISION] Analyzing TTS trigger conditions', {
       wasVoiceInput: context.wasVoiceInput,
       hasAiResponse: !!context.aiResponse,
       hasFullAnalysis: !!(context.aiResponse?.fullAnalysis),
@@ -91,7 +87,7 @@ export const evolutionDreamActions = {
     });
 
     if (context.wasVoiceInput && context.aiResponse?.fullAnalysis) {
-      debugLog('[EVOLUTION] ✅ TRIGGERING TTS - Voice input detected with AI response', {
+      log.debug('[EVOLUTION] ✅ TRIGGERING TTS - Voice input detected with AI response', {
         textLength: context.aiResponse.fullAnalysis.length,
         textPreview: context.aiResponse.fullAnalysis.substring(0, 100),
         agentName: context.agentName
@@ -111,7 +107,7 @@ export const evolutionDreamActions = {
         };
       }));
     } else {
-      debugLog('[EVOLUTION] ❌ NO TTS TRIGGERED - Conditions not met', {
+      log.debug('[EVOLUTION] ❌ NO TTS TRIGGERED - Conditions not met', {
         wasVoiceInput: context.wasVoiceInput,
         hasAiResponse: !!context.aiResponse,
         hasFullAnalysis: !!(context.aiResponse?.fullAnalysis),
@@ -138,13 +134,13 @@ export const evolutionDreamActions = {
     statusMessage: ({ event }: any) => {
       const output = event.output;
       if (output.isEvolutionDream) {
-        debugLog('========================================');
-        debugLog('[EVOLUTION COMPLETE] Dream workflow finalized');
-        debugLog('========================================');
-        debugLog('Agent personality permanently evolved');
-        debugLog('New traits committed to blockchain');
-        debugLog('View agent stats to observe evolution changes');
-        debugLog('========================================');
+        log.debug('========================================');
+        log.debug('[EVOLUTION COMPLETE] Dream workflow finalized');
+        log.debug('========================================');
+        log.debug('Agent personality permanently evolved');
+        log.debug('New traits committed to blockchain');
+        log.debug('View agent stats to observe evolution changes');
+        log.debug('========================================');
         return 'Evolution dream persisted! Agent has evolved.';
       }
       return 'Dream persisted successfully!';

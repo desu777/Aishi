@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { logger } from '@/lib/logger';
 import { MinimalOutput } from './MinimalOutput';
 import { PremiumCommandBar } from './PremiumCommandBar';
 import { TerminalSystemHeader } from './TerminalSystemHeader';
@@ -37,6 +38,7 @@ const colors = {
 };
 
 export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selectedModel, selectedVoice }) => {
+  const log = logger.child({ component: 'FullscreenTerminal' });
   const router = useRouter();
   const {
     context,
@@ -166,15 +168,13 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
 
   // Handle voice input
   const handleVoiceInput = useCallback((audioBase64: string, audioBlob: Blob) => {
-    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-      console.log('[FullscreenTerminal] handleVoiceInput triggered', {
-        audioBase64Length: audioBase64.length,
-        audioBlobSize: audioBlob.size,
-        hasVoiceRef: !!voiceRef,
-        isDreamActive,
-        isChatActive
-      });
-    }
+    log.debug('handleVoiceInput triggered', {
+      audioBase64Length: audioBase64.length,
+      audioBlobSize: audioBlob.size,
+      hasVoiceRef: !!voiceRef,
+      isDreamActive,
+      isChatActive
+    });
 
     // First, display the voice message in terminal
     send({
@@ -189,11 +189,9 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
       send({ type: 'SET_VOICE_INPUT', value: true });
       // Send audio to STT through voice machine
       voiceRef.send({ type: 'TRANSCRIBE', audioBase64 });
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[FullscreenTerminal] Sent TRANSCRIBE to voice machine');
-      }
+      log.debug('Sent TRANSCRIBE to voice machine');
     }
-  }, [voiceRef, send, isDreamActive, isChatActive]);
+  }, [voiceRef, send, isDreamActive, isChatActive, log]);
 
   // Handle navigation back to aishiOS
   const handleClose = useCallback(() => {
@@ -205,46 +203,38 @@ export const FullscreenTerminal: React.FC<FullscreenTerminalProps> = ({ selected
     if (isConnected && address) {
       // Initialize broker
       if (brokerRef) {
-        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[FullscreenTerminal] Initializing broker', { address });
-        }
+        log.debug('Initializing broker', { address });
         brokerRef.send({ type: 'INITIALIZE', walletAddress: address });
       }
 
       // Sync agent with contract
       if (agentRef && publicClient) {
-        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[FullscreenTerminal] Syncing agent with viem publicClient', {
-            address,
-            chainId: publicClient.chain?.id,
-            chainName: publicClient.chain?.name,
-            transportType: publicClient.transport?.type
-          });
-        }
+        log.debug('Syncing agent with viem publicClient', {
+          address,
+          chainId: publicClient.chain?.id,
+          chainName: publicClient.chain?.name,
+          transportType: publicClient.transport?.type
+        });
         agentRef.send({
           type: 'SYNC',
           walletAddress: address,
           provider: publicClient
         });
       } else {
-        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[FullscreenTerminal] Cannot sync agent', {
-            hasAgentRef: !!agentRef,
-            hasPublicClient: !!publicClient,
-            address
-          });
-        }
+        log.debug('Cannot sync agent', {
+          hasAgentRef: !!agentRef,
+          hasPublicClient: !!publicClient,
+          address
+        });
       }
     }
 
     // Handle wallet disconnect - reset agent state
     if (!isConnected && agentRef) {
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[FullscreenTerminal] Wallet disconnected, resetting agent');
-      }
+      log.debug('Wallet disconnected, resetting agent');
       agentRef.send({ type: 'RESET' });
     }
-  }, [isConnected, address, brokerRef, agentRef, publicClient]);
+  }, [isConnected, address, brokerRef, agentRef, publicClient, log]);
 
   // Update model in terminal when selectedModel changes
   useEffect(() => {

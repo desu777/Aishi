@@ -4,6 +4,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { FaSave, FaTrash, FaDownload, FaPlay } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'PhysicsPresetsLibrary' });
 
 export interface PhysicsPreset {
   name: string;
@@ -231,7 +234,7 @@ export const PhysicsPresetsLibrary: React.FC<PhysicsPresetsLibraryProps> = ({
         const loaded = JSON.parse(saved);
         setCustomPresets(loaded);
       } catch (error) {
-        console.error('Failed to load custom presets:', error);
+        log.error('Failed to load custom presets', { error });
       }
     }
   }, []);

@@ -4,13 +4,9 @@
  */
 
 import { setup, assign, fromPromise } from 'xstate';
+import { logger } from '@/lib/logger';
 
-// Debug logging function
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log(`[BrokerMachine] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'BrokerMachine' });
 
 interface BrokerContext {
   status: 'uninitialized' | 'not_initialized' | 'initialized' | 'loading' | 'error';
@@ -39,7 +35,7 @@ type BrokerEvent =
 const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress: string } }) => {
   const API_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
   
-  debugLog('Fetching broker status', { walletAddress: input.walletAddress, API_URL });
+  log.debug('Fetching broker status', { walletAddress: input.walletAddress, API_URL });
   
   try {
     const response = await fetch(`${API_URL}/balance/${input.walletAddress}`, {
@@ -47,7 +43,7 @@ const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress
       headers: { 'Content-Type': 'application/json' }
     });
     
-    debugLog('Balance API response', { 
+    log.debug('Balance API response', { 
       status: response.status, 
       ok: response.ok,
       statusText: response.statusText 
@@ -55,13 +51,13 @@ const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress
     
     // Handle 404 - broker doesn't exist
     if (response.status === 404) {
-      debugLog('Broker not found (404), returning exists: false');
+      log.debug('Broker not found (404), returning exists: false');
       // Try to get error message from response
       try {
         const errorData = await response.json();
-        debugLog('404 error data', errorData);
+        log.debug('404 error data', errorData);
       } catch (e) {
-        debugLog('Could not parse 404 response body');
+        log.debug('Could not parse 404 response body');
       }
       return { exists: false, balance: 0 };
     }
@@ -70,11 +66,11 @@ const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress
     if (response.status === 500) {
       try {
         const errorData = await response.json();
-        debugLog('500 error response', errorData);
+        log.debug('500 error response', errorData);
         
         // Check if this is a "broker not found" error from backend
         if (errorData.error && errorData.error.includes('No virtual broker found')) {
-          debugLog('Broker not found (500 with specific message), returning exists: false');
+          log.debug('Broker not found (500 with specific message), returning exists: false');
           return { exists: false, balance: 0 };
         }
         
@@ -83,11 +79,11 @@ const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress
       } catch (parseError) {
         // If we can't parse the JSON, try text
         const errorText = await response.text();
-        debugLog('Could not parse 500 response as JSON', { errorText });
+        log.debug('Could not parse 500 response as JSON', { errorText });
         
         // Check if text contains the broker not found message
         if (errorText.includes('No virtual broker found')) {
-          debugLog('Broker not found (500 with text message), returning exists: false');
+          log.debug('Broker not found (500 with text message), returning exists: false');
           return { exists: false, balance: 0 };
         }
         
@@ -98,13 +94,13 @@ const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress
     // Handle other non-OK responses
     if (!response.ok) {
       const errorText = await response.text();
-      debugLog('API error response', { status: response.status, errorText });
+      log.debug('API error response', { status: response.status, errorText });
       throw new Error(`Failed to fetch broker status: ${response.status} ${response.statusText}`);
     }
     
     // Parse successful response
     const data = await response.json();
-    debugLog('Balance data received', data);
+    log.debug('Balance data received', data);
     
     // Check if broker exists based on response
     if (data.success && data.data) {
@@ -113,11 +109,11 @@ const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress
         balance: data.data.balance || 0
       };
     } else {
-      debugLog('Unexpected response format, assuming broker does not exist', data);
+      log.debug('Unexpected response format, assuming broker does not exist', data);
       return { exists: false, balance: 0 };
     }
   } catch (error: any) {
-    debugLog('Error fetching broker status', { 
+    log.debug('Error fetching broker status', { 
       message: error.message,
       stack: error.stack 
     });
@@ -128,7 +124,7 @@ const fetchBrokerStatus = fromPromise(async ({ input }: { input: { walletAddress
 const createBroker = fromPromise(async ({ input }: { input: { walletAddress: string } }) => {
   const API_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
   
-  debugLog('Creating broker', { 
+  log.debug('Creating broker', { 
     walletAddress: input.walletAddress,
     API_URL,
     endpoint: `${API_URL}/create-broker`
@@ -141,7 +137,7 @@ const createBroker = fromPromise(async ({ input }: { input: { walletAddress: str
       body: JSON.stringify({ walletAddress: input.walletAddress })
     });
     
-    debugLog('Create broker response', { 
+    log.debug('Create broker response', { 
       status: response.status, 
       ok: response.ok,
       statusText: response.statusText
@@ -149,7 +145,7 @@ const createBroker = fromPromise(async ({ input }: { input: { walletAddress: str
     
     if (!response.ok) {
       const errorText = await response.text();
-      debugLog('Create broker error response', { 
+      log.debug('Create broker error response', { 
         status: response.status,
         errorText 
       });
@@ -157,13 +153,13 @@ const createBroker = fromPromise(async ({ input }: { input: { walletAddress: str
     }
     
     const data = await response.json();
-    debugLog('Broker created successfully', data);
+    log.debug('Broker created successfully', data);
     
     return {
       balance: data.data?.balance || 0
     };
   } catch (error: any) {
-    debugLog('Error creating broker', {
+    log.debug('Error creating broker', {
       message: error.message,
       stack: error.stack
     });
@@ -174,7 +170,7 @@ const createBroker = fromPromise(async ({ input }: { input: { walletAddress: str
 const fundBroker = fromPromise(async ({ input }: { input: { walletAddress: string; amount: number } }) => {
   const API_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
   
-  debugLog('Funding broker', { walletAddress: input.walletAddress, amount: input.amount });
+  log.debug('Funding broker', { walletAddress: input.walletAddress, amount: input.amount });
   
   const response = await fetch(`${API_URL}/fund`, {
     method: 'POST',
@@ -186,16 +182,16 @@ const fundBroker = fromPromise(async ({ input }: { input: { walletAddress: strin
     })
   });
   
-  debugLog('Fund broker response', { status: response.status, ok: response.ok });
+  log.debug('Fund broker response', { status: response.status, ok: response.ok });
   
   if (!response.ok) {
     const errorText = await response.text();
-    debugLog('Fund broker error', errorText);
+    log.debug('Fund broker error', errorText);
     throw new Error(`Failed to fund broker: ${response.statusText}`);
   }
   
   const data = await response.json();
-  debugLog('Broker funded', data);
+  log.debug('Broker funded', data);
   
   return {
     balance: data.data?.balance || 0
@@ -252,7 +248,7 @@ export const brokerMachine = setup({
             event.type === 'xstate.error.actor.createBroker' ||
             event.type === 'xstate.error.actor.fundBroker') {
           const errorMsg = event.error?.message || 'Unknown error occurred';
-          debugLog('Setting error', { 
+          log.debug('Setting error', { 
             eventType: event.type,
             error: errorMsg,
             fullError: event.error 
@@ -327,12 +323,12 @@ export const brokerMachine = setup({
     not_initialized: {
       entry: [
         assign({ status: 'not_initialized' as const }),
-        () => debugLog('Entered not_initialized state - broker does not exist')
+        () => log.debug('Entered not_initialized state - broker does not exist')
       ],
       on: {
         CREATE: {
           target: 'creating',
-          actions: () => debugLog('CREATE event received, transitioning to creating state')
+          actions: () => log.debug('CREATE event received, transitioning to creating state')
         },
         REFRESH: {
           target: 'checking',

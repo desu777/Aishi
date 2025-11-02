@@ -67,10 +67,12 @@ export default function DreamAnalysisSection({
   const [promptFormat, setPromptFormat] = useState<any>(null);
   
   // Debug logs function
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[DreamAnalysis] ${message}`, data || '');
-    }
+  import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'DreamAnalysis' });
+
+const debugLog = (message: string, data?: any) => {
+    log.debug(message, data || {});
   };
 
   // Log component load

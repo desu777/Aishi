@@ -9,6 +9,9 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Mic, MicOff, Loader2, Square } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAudioRecorder } from '../voice/useAudioRecorder';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'MicrophoneButton' });
 
 interface MicrophoneButtonProps {
   onRecordingComplete: (audioBase64: string, audioBlob: Blob) => void;
@@ -79,12 +82,10 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
 
   // Handle recording toggle
   const handleToggleRecording = useCallback(async () => {
-    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-      console.log('[MicrophoneButton] handleToggleRecording called', {
-        isRecording,
-        action: isRecording ? 'stopping' : 'starting'
-      });
-    }
+    log.debug('handleToggleRecording called', {
+      isRecording,
+      action: isRecording ? 'stopping' : 'starting'
+    });
     if (isRecording) {
       await handleStopRecording();
     } else {
@@ -94,21 +95,17 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
 
   const handleStartRecording = useCallback(async () => {
     try {
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[MicrophoneButton] Starting recording', { maxDuration });
-      }
+      log.debug('Starting recording', { maxDuration });
       setRecordingDuration(0);
       await startRecording();
     } catch (error) {
-      console.error('[MicrophoneButton] Failed to start recording:', error);
+      log.error('Failed to start recording', { error });
       alert('Failed to access microphone. Please check permissions.');
     }
   }, [startRecording, maxDuration]);
 
   const handleStopRecording = useCallback(async () => {
-    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-      console.log('[MicrophoneButton] handleStopRecording called');
-    }
+    log.debug('handleStopRecording called');
     try {
       setIsProcessing(true);
 
@@ -120,31 +117,25 @@ export const MicrophoneButton: React.FC<MicrophoneButtonProps> = ({
         const base64 = await getBase64(audioBlob);
 
         if (base64) {
-          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-            console.log('[MicrophoneButton] Recording stopped', {
-              audioBlobSize: audioBlob.size,
-              base64Length: base64.length,
-              recordingDuration: recordingDuration
-            });
-          }
+          log.debug('Recording stopped', {
+            audioBlobSize: audioBlob.size,
+            base64Length: base64.length,
+            recordingDuration: recordingDuration
+          });
           // Notify parent component
           onRecordingComplete(base64, audioBlob);
         } else {
-          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-            console.log('[MicrophoneButton] Failed to convert audio to base64');
-          }
+          log.debug('Failed to convert audio to base64');
         }
       } else {
-        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[MicrophoneButton] No audio blob received from stopRecording');
-        }
+        log.debug('No audio blob received from stopRecording');
       }
 
       // Don't clear recording here - let VoiceInputMessage use the blob
       // clearRecording() should only be called when user deletes the voice message
       setRecordingDuration(0);
     } catch (error) {
-      console.error('Failed to stop recording:', error);
+      log.error('Failed to stop recording', { error });
     } finally {
       setIsProcessing(false);
     }

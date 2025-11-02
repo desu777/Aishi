@@ -6,13 +6,9 @@
 import { useAccount, useReadContract } from 'wagmi';
 import { getContractConfig, ContractFunctions } from '../services/contractService';
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 
-// Debug function for XState terminal
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log(`[useTerminalAgent] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'useTerminalAgent' });
 
 export interface AgentData {
   name: string;
@@ -61,7 +57,7 @@ export function useTerminalAgent() {
       // Use type assertion to access properties
       const rawData = agentRawData as any;
       
-      debugLog('Raw agent data from contract', {
+      log.debug('Raw agent data from contract', {
         rawData,
         dataType: typeof rawData,
         hasAgentName: rawData.agentName !== undefined,
@@ -94,7 +90,7 @@ export function useTerminalAgent() {
         conversationCount: Number(conversationCount)
       });
       
-      debugLog('Parsed agent data', {
+      log.debug('Parsed agent data', {
         name: agentName,
         tokenId,
         intelligenceLevel: Number(intelligenceLevel),

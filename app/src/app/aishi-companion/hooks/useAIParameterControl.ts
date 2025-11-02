@@ -13,12 +13,9 @@ import {
 } from '../services/aiParameterService';
 import { ParameterAnimator } from '../services/parameterAnimator';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_AISHI_COMPANION_DEBUG === 'true') {
-    console.log(`[useAIParameterControl] ${message}`, data || '');
-  }
-};
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'useAIParameterControl' });
 
 /**
  * Hook for managing AI-controlled Live2D parameters
@@ -38,7 +35,7 @@ export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>)
    */
   const updateParameter = useCallback((paramId: string, value: number) => {
     if (!modelRef.current) {
-      debugLog('Cannot update parameter - model ref is null');
+      log.debug('Cannot update parameter - model ref is null');
       return;
     }
 
@@ -49,7 +46,7 @@ export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>)
       return updated;
     });
 
-    debugLog(`Parameter updated: ${paramId} = ${value}`);
+    log.debug(`Parameter updated: ${paramId} = ${value}`);
   }, [modelRef]);
 
   /**
@@ -57,14 +54,14 @@ export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>)
    * Returns clean text without JSON blocks
    */
   const processAIResponse = useCallback(async (aiResponse: string): Promise<string> => {
-    debugLog('Processing AI response for parameters', {
+    log.debug('Processing AI response for parameters', {
       responseLength: aiResponse.length
     });
 
     // Parse AI response
     const parsed = parseAIResponse(aiResponse, currentValues);
 
-    debugLog('AI response parsed', {
+    log.debug('AI response parsed', {
       hasParameters: parsed.hasParameters,
       hasExpressions: parsed.hasExpressions,
       parameterCount: Object.keys(parsed.parameters).length,
@@ -73,13 +70,13 @@ export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>)
 
     // Apply expressions (immediate, not animated)
     if (parsed.hasExpressions && modelRef.current) {
-      debugLog('Applying expressions', { expressions: parsed.expressions });
+      log.debug('Applying expressions', { expressions: parsed.expressions });
 
       parsed.expressions.forEach(expr => {
         try {
           modelRef.current!.setExpression(expr);
         } catch (error) {
-          debugLog(`Failed to set expression: ${expr}`, { error: String(error) });
+          log.debug(`Failed to set expression: ${expr}`, { error: String(error) });
         }
       });
 
@@ -92,7 +89,7 @@ export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>)
       expressionTimeoutRef.current = setTimeout(() => {
         if (modelRef.current) {
           modelRef.current.resetExpression();
-          debugLog('Auto-reset expressions after 15 seconds');
+          log.debug('Auto-reset expressions after 15 seconds');
         }
       }, 15000);
     }
@@ -108,7 +105,7 @@ export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>)
         // Create animation sequences
         const sequences = animatorRef.current.queueAnimations(updates);
 
-        debugLog('Executing parameter animations', {
+        log.debug('Executing parameter animations', {
           sequenceCount: sequences.length,
           parameters: sequences.map(s => s.name)
         });
@@ -125,7 +122,7 @@ export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>)
           return updated;
         });
 
-        debugLog('Animations complete, state updated');
+        log.debug('Animations complete, state updated');
       }
 
       setIsAnimating(false);
@@ -147,7 +144,7 @@ export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>)
     });
 
     setCurrentValues(defaults);
-    debugLog('All parameters reset to defaults');
+    log.debug('All parameters reset to defaults');
   }, [modelRef]);
 
   /**
@@ -163,7 +160,7 @@ export const useAIParameterControl = (modelRef: React.RefObject<Live2DModelRef>)
   const cancelAnimations = useCallback(() => {
     animatorRef.current.cancelAll();
     setIsAnimating(false);
-    debugLog('Animations cancelled');
+    log.debug('Animations cancelled');
   }, []);
 
   return {

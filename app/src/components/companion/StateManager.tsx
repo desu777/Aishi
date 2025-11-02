@@ -5,6 +5,9 @@ import { FaDownload, FaUpload, FaCopy, FaSave, FaTrash, FaRedo } from 'react-ico
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { getModifiedParameterCount, PARAMETER_DEFINITIONS } from './ParameterDefinitions';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'StateManager' });
 
 export interface CompanionState {
   version: string;
@@ -94,7 +97,7 @@ export const StateManager: React.FC<StateManagerProps> = ({
       toast.success('State copied to clipboard!');
     } catch (error) {
       toast.error('Failed to copy to clipboard');
-      console.error('Clipboard error:', error);
+      log.error('Clipboard error', { error });
     }
   }, [getCurrentState]);
 
@@ -128,7 +131,7 @@ export const StateManager: React.FC<StateManagerProps> = ({
           toast.success('State imported successfully!');
         } catch (error) {
           toast.error('Failed to import state file');
-          console.error('Import error:', error);
+          log.error('Import error', { error });
         }
       };
 

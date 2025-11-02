@@ -9,13 +9,9 @@ import type { PublicClient, WalletClient } from 'viem';
 import { getContractConfig } from './contractService';
 import { EvolutionFields, clampToContractRanges } from './dreamDataValidator';
 import { formatErrorForTerminal } from '../utils/viemErrorParser';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[DreamContractUpdater] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'DreamContractUpdater' });
 
 /**
  * Contract update result interface
@@ -53,7 +49,7 @@ async function waitForReceiptWithRetry(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      debugLog(`Waiting for receipt (attempt ${attempt + 1}/${maxRetries + 1})`, {
+      log.debug(`Waiting for receipt (attempt ${attempt + 1}/${maxRetries + 1})`, {
         txHash: txHash.substring(0, 10) + '...'
       });
 
@@ -64,7 +60,7 @@ async function waitForReceiptWithRetry(
         pollingInterval: 2_000 // Check every 2s (faster than 4s default)
       });
 
-      debugLog('Receipt received successfully', {
+      log.debug('Receipt received successfully', {
         blockNumber: receipt.blockNumber,
         status: receipt.status,
         attempt: attempt + 1
@@ -74,14 +70,14 @@ async function waitForReceiptWithRetry(
 
     } catch (error) {
       lastError = error;
-      debugLog(`Receipt wait attempt ${attempt + 1} failed`, {
+      log.debug(`Receipt wait attempt ${attempt + 1} failed`, {
         error: String(error).substring(0, 200)
       });
 
       // On last attempt, try to manually fetch transaction
       if (attempt === maxRetries) {
         try {
-          debugLog('Attempting fallback transaction verification...');
+          log.debug('Attempting fallback transaction verification...');
 
           // Fallback: manually check if transaction exists
           const tx = await publicClient.getTransaction({
@@ -89,7 +85,7 @@ async function waitForReceiptWithRetry(
           });
 
           if (tx && tx.blockNumber) {
-            debugLog('⚠️ Transaction found in block but receipt timeout - fetching manually', {
+            log.debug('⚠️ Transaction found in block but receipt timeout - fetching manually', {
               blockNumber: tx.blockNumber
             });
 
@@ -99,12 +95,12 @@ async function waitForReceiptWithRetry(
             });
 
             if (receipt) {
-              debugLog('✅ Receipt retrieved via fallback method');
+              log.debug('✅ Receipt retrieved via fallback method');
               return receipt;
             }
           }
         } catch (fallbackError) {
-          debugLog('Fallback transaction check failed', {
+          log.debug('Fallback transaction check failed', {
             error: String(fallbackError).substring(0, 200)
           });
         }
@@ -113,14 +109,14 @@ async function waitForReceiptWithRetry(
       // Wait before retry (exponential backoff)
       if (attempt < maxRetries) {
         const delay = Math.min(2000 * Math.pow(2, attempt), 10000);
-        debugLog(`Waiting ${delay}ms before retry...`);
+        log.debug(`Waiting ${delay}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
 
   // All retries failed
-  debugLog('All receipt retrieval attempts failed', {
+  log.debug('All receipt retrieval attempts failed', {
     txHash: txHash.substring(0, 10) + '...',
     attempts: maxRetries + 1
   });
@@ -140,7 +136,7 @@ export async function updateDreamContract(
   const updateStartTime = Date.now();
   const isEvolutionDream = !!personalityImpact;
 
-  debugLog('Starting contract update', {
+  log.debug('Starting contract update', {
     tokenId,
     dreamHash: dreamHash.substring(0, 10) + '...',
     isEvolutionDream,
@@ -150,14 +146,14 @@ export async function updateDreamContract(
 
   // Special logging for evolution dreams
   if (isEvolutionDream) {
-    debugLog('🎯 ========================================');
-    debugLog('🎯 PROCESSING EVOLUTION DREAM CONTRACT UPDATE!');
-    debugLog('🎯 ========================================');
-    debugLog('🎯 Token ID: ' + tokenId);
-    debugLog('🎯 Dream Count: ' + dreamCount + ' -> Next: ' + (dreamCount + 1));
-    debugLog('🎯 This is dream #' + (dreamCount + 1) + ' (Evolution milestone!)');
-    debugLog('🎯 Personality will be permanently evolved on-chain!');
-    debugLog('🎯 ========================================');
+    log.debug('🎯 ========================================');
+    log.debug('🎯 PROCESSING EVOLUTION DREAM CONTRACT UPDATE!');
+    log.debug('🎯 ========================================');
+    log.debug('🎯 Token ID: ' + tokenId);
+    log.debug('🎯 Dream Count: ' + dreamCount + ' -> Next: ' + (dreamCount + 1));
+    log.debug('🎯 This is dream #' + (dreamCount + 1) + ' (Evolution milestone!)');
+    log.debug('🎯 Personality will be permanently evolved on-chain!');
+    log.debug('🎯 ========================================');
   }
 
   try {
@@ -184,7 +180,7 @@ export async function updateDreamContract(
     // Prepare personality impact data
     const contractImpact = preparePersonalityImpact(personalityImpact, isEvolutionDream);
 
-    debugLog('Prepared contract data', {
+    log.debug('Prepared contract data', {
       contractAddress: contractConfig.address,
       impactData: {
         moodShift: contractImpact.moodShift,
@@ -206,7 +202,7 @@ export async function updateDreamContract(
 
     const totalTime = Date.now() - updateStartTime;
 
-    debugLog('Contract update completed successfully', {
+    log.debug('Contract update completed successfully', {
       txHash: txResult.txHash?.substring(0, 10) + '...',
       gasUsed: txResult.gasUsed,
       blockNumber: txResult.blockNumber,
@@ -215,15 +211,15 @@ export async function updateDreamContract(
     });
 
     if (isEvolutionDream) {
-      debugLog('✨ ========================================');
-      debugLog('✨ EVOLUTION DREAM SUCCESSFULLY PROCESSED!');
-      debugLog('✨ ========================================');
-      debugLog('✨ Transaction hash: ' + txResult.txHash?.substring(0, 10) + '...');
-      debugLog('✨ Block number: ' + txResult.blockNumber);
-      debugLog('✨ Gas used: ' + txResult.gasUsed);
-      debugLog('✨ Total processing time: ' + totalTime + 'ms');
-      debugLog('✨ AGENT PERSONALITY HAS EVOLVED ON-CHAIN!');
-      debugLog('✨ ========================================');
+      log.debug('✨ ========================================');
+      log.debug('✨ EVOLUTION DREAM SUCCESSFULLY PROCESSED!');
+      log.debug('✨ ========================================');
+      log.debug('✨ Transaction hash: ' + txResult.txHash?.substring(0, 10) + '...');
+      log.debug('✨ Block number: ' + txResult.blockNumber);
+      log.debug('✨ Gas used: ' + txResult.gasUsed);
+      log.debug('✨ Total processing time: ' + totalTime + 'ms');
+      log.debug('✨ AGENT PERSONALITY HAS EVOLVED ON-CHAIN!');
+      log.debug('✨ ========================================');
     }
 
     return {
@@ -244,7 +240,7 @@ export async function updateDreamContract(
     const errorMessage = formatErrorForTerminal(error);
     const totalTime = Date.now() - updateStartTime;
 
-    debugLog('Contract update failed', {
+    log.debug('Contract update failed', {
       error: errorMessage,
       totalTime,
       tokenId,
@@ -284,7 +280,7 @@ async function executeContractTransaction(
 }> {
   const transactionStartTime = Date.now();
 
-  debugLog('Executing processDailyDream transaction', {
+  log.debug('Executing processDailyDream transaction', {
     tokenId,
     dreamHash: dreamHash.substring(0, 10) + '...',
     isEvolutionDream
@@ -299,7 +295,7 @@ async function executeContractTransaction(
   }
 
   // Simulate the transaction first
-  debugLog('Simulating transaction...');
+  log.debug('Simulating transaction...');
   const { request } = await publicClient.simulateContract({
     address: contractConfig.address,
     abi: contractConfig.abi,
@@ -309,7 +305,7 @@ async function executeContractTransaction(
     chain: getActiveChain()
   });
 
-  debugLog('Simulation successful, executing transaction...');
+  log.debug('Simulation successful, executing transaction...');
 
   // Execute the transaction with explicit chain and account
   const txHash = await walletClient.writeContract({
@@ -318,7 +314,7 @@ async function executeContractTransaction(
     account: account
   });
 
-  debugLog('Transaction sent, waiting for confirmation', {
+  log.debug('Transaction sent, waiting for confirmation', {
     txHash: txHash.substring(0, 10) + '...'
   });
 
@@ -326,7 +322,7 @@ async function executeContractTransaction(
   const receipt = await waitForReceiptWithRetry(publicClient, txHash);
   const confirmationTime = Date.now() - transactionStartTime;
 
-  debugLog('Transaction confirmed', {
+  log.debug('Transaction confirmed', {
     txHash: txHash.substring(0, 10) + '...',
     blockNumber: Number(receipt.blockNumber),
     gasUsed: receipt.gasUsed?.toString(),
@@ -351,25 +347,25 @@ function preparePersonalityImpact(
   const currentTimestamp = Math.floor(Date.now() / 1000);
 
   if (isEvolutionDream && personalityImpact) {
-    debugLog('Preparing evolution dream personality impact');
-    debugLog('🔧 ========================================');
-    debugLog('🔧 PREPARING PERSONALITY EVOLUTION DATA');
-    debugLog('🔧 ========================================');
+    log.debug('Preparing evolution dream personality impact');
+    log.debug('🔧 ========================================');
+    log.debug('🔧 PREPARING PERSONALITY EVOLUTION DATA');
+    log.debug('🔧 ========================================');
     
     // Clamp values to contract ranges and validate
     const clampedImpact = clampToContractRanges(personalityImpact);
     
-    debugLog('🔧 Raw trait changes:');
-    debugLog('🔧   Creativity: ' + personalityImpact.creativityChange + ' -> ' + clampedImpact.creativityChange);
-    debugLog('🔧   Analytical: ' + personalityImpact.analyticalChange + ' -> ' + clampedImpact.analyticalChange);
-    debugLog('🔧   Empathy: ' + personalityImpact.empathyChange + ' -> ' + clampedImpact.empathyChange);
-    debugLog('🔧   Intuition: ' + personalityImpact.intuitionChange + ' -> ' + clampedImpact.intuitionChange);
-    debugLog('🔧   Resilience: ' + personalityImpact.resilienceChange + ' -> ' + clampedImpact.resilienceChange);
-    debugLog('🔧   Curiosity: ' + personalityImpact.curiosityChange + ' -> ' + clampedImpact.curiosityChange);
-    debugLog('🔧 Mood shift: ' + clampedImpact.moodShift);
-    debugLog('🔧 Evolution weight: ' + clampedImpact.evolutionWeight + ' (1-100 scale)');
-    debugLog('🔧 New features to add: ' + clampedImpact.newFeatures.length);
-    debugLog('🔧 ========================================');
+    log.debug('🔧 Raw trait changes:');
+    log.debug('🔧   Creativity: ' + personalityImpact.creativityChange + ' -> ' + clampedImpact.creativityChange);
+    log.debug('🔧   Analytical: ' + personalityImpact.analyticalChange + ' -> ' + clampedImpact.analyticalChange);
+    log.debug('🔧   Empathy: ' + personalityImpact.empathyChange + ' -> ' + clampedImpact.empathyChange);
+    log.debug('🔧   Intuition: ' + personalityImpact.intuitionChange + ' -> ' + clampedImpact.intuitionChange);
+    log.debug('🔧   Resilience: ' + personalityImpact.resilienceChange + ' -> ' + clampedImpact.resilienceChange);
+    log.debug('🔧   Curiosity: ' + personalityImpact.curiosityChange + ' -> ' + clampedImpact.curiosityChange);
+    log.debug('🔧 Mood shift: ' + clampedImpact.moodShift);
+    log.debug('🔧 Evolution weight: ' + clampedImpact.evolutionWeight + ' (1-100 scale)');
+    log.debug('🔧 New features to add: ' + clampedImpact.newFeatures.length);
+    log.debug('🔧 ========================================');
     
     // Add timestamps to new features
     const featuresWithTimestamp = clampedImpact.newFeatures.map(feature => ({
@@ -391,7 +387,7 @@ function preparePersonalityImpact(
       newFeatures: featuresWithTimestamp
     };
   } else {
-    debugLog('Preparing standard dream minimal personality impact');
+    log.debug('Preparing standard dream minimal personality impact');
     
     // Create minimal impact for standard dreams
     return {
@@ -459,7 +455,7 @@ export async function canProcessDreamToday(tokenId: number): Promise<{
   error?: string;
   cooldownRemaining?: number;
 }> {
-  debugLog('Checking if agent can process dream today', { tokenId });
+  log.debug('Checking if agent can process dream today', { tokenId });
 
   try {
     const [publicClient, err] = await getViemProvider();
@@ -477,13 +473,13 @@ export async function canProcessDreamToday(tokenId: number): Promise<{
       args: [BigInt(tokenId)]
     });
     
-    debugLog('Dream processing check completed', { tokenId, canProcess });
+    log.debug('Dream processing check completed', { tokenId, canProcess });
     
     return { canProcess: canProcess as boolean };
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Dream processing check failed', { error: errorMessage });
+    log.debug('Dream processing check failed', { error: errorMessage });
     
     // If the check fails, we assume processing is allowed (fail-safe)
     return { 
@@ -501,7 +497,7 @@ export async function getAgentMemory(tokenId: number): Promise<{
   memory?: any;
   error?: string;
 }> {
-  debugLog('Getting agent memory', { tokenId });
+  log.debug('Getting agent memory', { tokenId });
 
   try {
     const [publicClient, err] = await getViemProvider();
@@ -519,7 +515,7 @@ export async function getAgentMemory(tokenId: number): Promise<{
       args: [BigInt(tokenId)]
     }) as any;
     
-    debugLog('Agent memory retrieved', { 
+    log.debug('Agent memory retrieved', { 
       tokenId,
       hasMemoryCore: memory.memoryCoreHash !== '0x0000000000000000000000000000000000000000000000000000000000000000',
       hasDailyDreams: memory.currentDreamDailyHash !== '0x0000000000000000000000000000000000000000000000000000000000000000'
@@ -541,7 +537,7 @@ export async function getAgentMemory(tokenId: number): Promise<{
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Failed to get agent memory', { error: errorMessage });
+    log.debug('Failed to get agent memory', { error: errorMessage });
     
     return { 
       success: false, 
@@ -562,7 +558,7 @@ export async function estimateGasForDreamUpdate(
   gasEstimate?: string;
   error?: string;
 }> {
-  debugLog('Estimating gas for dream update', { tokenId, isEvolution: !!personalityImpact });
+  log.debug('Estimating gas for dream update', { tokenId, isEvolution: !!personalityImpact });
 
   try {
     const [publicClient, err] = await getViemProvider();
@@ -582,7 +578,7 @@ export async function estimateGasForDreamUpdate(
       args: [BigInt(tokenId), `0x${dreamHash.replace('0x', '')}` as `0x${string}`, contractImpact]
     });
     
-    debugLog('Gas estimation completed', { 
+    log.debug('Gas estimation completed', { 
       gasEstimate: gasEstimate.toString(),
       isEvolution: !!personalityImpact
     });
@@ -594,7 +590,7 @@ export async function estimateGasForDreamUpdate(
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Gas estimation failed', { error: errorMessage });
+    log.debug('Gas estimation failed', { error: errorMessage });
     
     return { 
       success: false, 

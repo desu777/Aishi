@@ -49,10 +49,12 @@ export default function AgentStatsSection({ tokenId }: AgentStatsSectionProps) {
   } = useAgentStats(tokenId);
 
   // Debug logging
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[AgentStatsSection] ${message}`, data || '');
-    }
+  import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'AgentStatsSection' });
+
+const debugLog = (message: string, data?: any) => {
+    log.debug(message, data || {});
   };
 
   // Toggle section expansion

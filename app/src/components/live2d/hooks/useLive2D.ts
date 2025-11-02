@@ -2,16 +2,17 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as PIXI from 'pixi.js';
 import { Live2DModel, type Cubism4InternalModel, type Cubism4ModelSettings, MotionPreloadStrategy } from 'pixi-live2d-display-lipsyncpatch/cubism4';
-import { 
-  createPixiApp, 
-  loadLive2DModel, 
-  cleanupPixiApp, 
+import {
+  createPixiApp,
+  loadLive2DModel,
+  cleanupPixiApp,
   cleanupLive2DModel,
   createPerformanceMonitor,
 } from '../utils/live2d-loader';
 import type { Live2DModelRef, Live2DPerformanceMetrics } from '../utils/live2d-types';
 import { ExpressionCategoryManager } from '../utils/ExpressionCategoryManager';
 import { EXPRESSION_PRESETS } from '../utils/expression-categories';
+import { logger } from '@/lib/logger/logger';
 
 interface UseLive2DOptions {
   modelPath: string;
@@ -41,15 +42,15 @@ export const useLive2D = (options: UseLive2DOptions) => {
     onMotionFinish,
     onHit,
   } = options;
-  
+
+  const log = logger.child({ component: 'useLive2D' });
+
   // Debug log AI mode on hook initialization
   const isAIMode = process.env.NEXT_PUBLIC_LIVE2MODEL_AI === 'true';
-  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log('[useLive2D] Hook initialized with AI Mode:', {
-      isAIMode,
-      NEXT_PUBLIC_LIVE2MODEL_AI: process.env.NEXT_PUBLIC_LIVE2MODEL_AI
-    });
-  }
+  log.debug('Hook initialized with AI Mode', {
+    isAIMode,
+    NEXT_PUBLIC_LIVE2MODEL_AI: process.env.NEXT_PUBLIC_LIVE2MODEL_AI
+  });
 
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<PIXI.Application | null>(null);
@@ -110,7 +111,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
   // Model control methods
   const playMotion = useCallback(async (group: string, index?: number, priority: number = 2): Promise<void> => {
     if (!modelRef.current) {
-      console.warn('Model not loaded');
+      log.warn('Model not loaded');
       return;
     }
 
@@ -119,7 +120,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
       const actualIndex = index ?? 0;
       await modelRef.current.motion(group, actualIndex, priority);
     } catch (error) {
-      console.error('Failed to play motion:', error);
+      log.error('Failed to play motion:', error);
     }
   }, []);
 
@@ -139,7 +140,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
         modelRef.current.expression(expressionId);
       }
     } catch (error) {
-      console.warn('Failed to set expression:', error);
+      log.warn('Failed to set expression:', error);
     }
   }, []);
 
@@ -148,7 +149,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
     try {
       expressionManagerRef.current.reset();
     } catch (error) {
-      console.warn('Failed to reset expression:', error);
+      log.warn('Failed to reset expression:', error);
     }
   }, []);
 
@@ -177,7 +178,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
     try {
       (modelRef.current.internalModel as Cubism4InternalModel).coreModel.setParameterValueById('ParamMouthOpenY', audioLevel);
     } catch (error) {
-      console.warn('Failed to start lip sync:', error);
+      log.warn('Failed to start lip sync:', error);
     }
   }, []);
 
@@ -187,7 +188,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
     try {
       (modelRef.current.internalModel as Cubism4InternalModel).coreModel.setParameterValueById('ParamMouthOpenY', clampedValue);
     } catch (error) {
-      console.warn('Failed to set lip sync value:', error);
+      log.warn('Failed to set lip sync value:', error);
     }
   }, []);
 
@@ -215,7 +216,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
     
     // Debug logging for expression manager structure
     if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
-      console.log('[DEBUG] ExpressionManager structure:', {
+      log.debug('[DEBUG] ExpressionManager structure:', {
         motionManager: !!modelRef.current.internalModel.motionManager,
         expressionManager: !!modelRef.current.internalModel.motionManager.expressionManager,
         expressions: modelRef.current.internalModel.motionManager.expressionManager?.expressions,
@@ -232,13 +233,13 @@ export const useLive2D = (options: UseLive2DOptions) => {
           const names = expressionManager.expressions.map((exp: any) => exp.name || exp.Name || exp);
           if (names.length > 0) {
             if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
-              console.log('[DEBUG] Got expressions from expressionManager.expressions:', names);
+              log.debug('[DEBUG] Got expressions from expressionManager.expressions:', names);
             }
             return names.filter(name => name && typeof name === 'string');
           }
         }
       } catch (error) {
-        console.warn('[DEBUG] Failed to get expressions from expressionManager.expressions:', error);
+        log.warn('[DEBUG] Failed to get expressions from expressionManager.expressions:', error);
       }
     }
     
@@ -249,12 +250,12 @@ export const useLive2D = (options: UseLive2DOptions) => {
         const names = settings.expressions.map((exp: any) => exp.Name || exp.name || exp);
         if (names.length > 0) {
           if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
-            console.log('[DEBUG] Got expressions from settings.expressions:', names);
+            log.debug('[DEBUG] Got expressions from settings.expressions:', names);
           }
           return names.filter(name => name && typeof name === 'string');
         }
       } catch (error) {
-        console.warn('[DEBUG] Failed to get expressions from settings.expressions:', error);
+        log.warn('[DEBUG] Failed to get expressions from settings.expressions:', error);
       }
     }
     
@@ -266,12 +267,12 @@ export const useLive2D = (options: UseLive2DOptions) => {
         );
         if (names.length > 0) {
           if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
-            console.log('[DEBUG] Got expressions from definitions:', names);
+            log.debug('[DEBUG] Got expressions from definitions:', names);
           }
           return names.filter(name => name && typeof name === 'string');
         }
       } catch (error) {
-        console.warn('[DEBUG] Failed to get expressions from definitions:', error);
+        log.warn('[DEBUG] Failed to get expressions from definitions:', error);
       }
     }
     
@@ -283,7 +284,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
         for (const prop of possibleProps) {
           if (expressionManager[prop]) {
             if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
-              console.log(`[DEBUG] Found expressions in ${prop}:`, expressionManager[prop]);
+              log.debug(`[DEBUG] Found expressions in ${prop}:`, expressionManager[prop]);
             }
             if (Array.isArray(expressionManager[prop])) {
               return expressionManager[prop];
@@ -293,12 +294,12 @@ export const useLive2D = (options: UseLive2DOptions) => {
           }
         }
       } catch (error) {
-        console.warn('[DEBUG] Failed to get expressions from expressionManager methods:', error);
+        log.warn('[DEBUG] Failed to get expressions from expressionManager methods:', error);
       }
     }
     
     if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
-      console.warn('[DEBUG] No expressions found through any method');
+      log.warn('[DEBUG] No expressions found through any method');
     }
     
     return [];
@@ -327,7 +328,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
       // Use setParameterValueById for Cubism 4 models
       (modelRef.current.internalModel as Cubism4InternalModel).coreModel.setParameterValueById(id, value, weight);
     } catch (error) {
-      console.warn(`Failed to set parameter ${id}:`, error);
+      log.warn(`Failed to set parameter ${id}:`, error);
     }
   }, []);
 
@@ -337,7 +338,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
       // Use getParameterValueById for Cubism 4 models
       return (modelRef.current.internalModel as Cubism4InternalModel).coreModel.getParameterValueById(id) || 0;
     } catch (error) {
-      console.warn(`Failed to get parameter ${id}:`, error);
+      log.warn(`Failed to get parameter ${id}:`, error);
       return 0;
     }
   }, []);
@@ -475,7 +476,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
 
           model.scale.set(optimalScale);
 
-          console.log('[useLive2D] Auto-fit scaling:', {
+          log.debug('[useLive2D] Auto-fit scaling:', {
             modelBounds: { width: modelBounds.width, height: modelBounds.height },
             viewport: { width, height },
             requestedScale: scale,
@@ -485,7 +486,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
         } catch (error) {
           // Fallback to user-provided scale if bounds calculation fails
           model.scale.set(scale);
-          console.warn('[useLive2D] Failed to calculate optimal scale, using provided scale:', scale);
+          log.warn('[useLive2D] Failed to calculate optimal scale, using provided scale:', scale);
         }
 
         // Add event listeners
@@ -521,7 +522,7 @@ export const useLive2D = (options: UseLive2DOptions) => {
 
         // Debug expression manager after model load
         if (process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
-          console.log('[DEBUG] Model loaded, checking expression structure:', {
+          log.debug('[DEBUG] Model loaded, checking expression structure:', {
             hasMotionManager: !!model.internalModel.motionManager,
             hasExpressionManager: !!model.internalModel.motionManager.expressionManager,
             settingsExpressions: (model.internalModel.settings as Cubism4ModelSettings)?.expressions?.length || 0,
@@ -561,11 +562,11 @@ export const useLive2D = (options: UseLive2DOptions) => {
             }
             
             if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-              console.log('[AI MODE] ✓ Cursor tracking disabled, neutral position set');
-              console.log('[AI MODE] ✓ Eye blink enabled:', !!(model.internalModel as Cubism4InternalModel).eyeBlink);
+              log.debug('[AI MODE] ✓ Cursor tracking disabled, neutral position set');
+              log.debug('[AI MODE] ✓ Eye blink enabled:', !!(model.internalModel as Cubism4InternalModel).eyeBlink);
             }
           } catch (error) {
-            console.warn('[AI MODE] Failed to set neutral position:', error);
+            log.warn('[AI MODE] Failed to set neutral position:', error);
           }
         } else {
           // Normal mode - ensure blinking is also enabled
@@ -575,10 +576,10 @@ export const useLive2D = (options: UseLive2DOptions) => {
             }
             
             if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-              console.log('[NORMAL MODE] ✓ Cursor tracking enabled, eye blink enabled:', !!(model.internalModel as Cubism4InternalModel).eyeBlink);
+              log.debug('[NORMAL MODE] ✓ Cursor tracking enabled, eye blink enabled:', !!(model.internalModel as Cubism4InternalModel).eyeBlink);
             }
           } catch (error) {
-            console.warn('[NORMAL MODE] Failed to configure blinking:', error);
+            log.warn('[NORMAL MODE] Failed to configure blinking:', error);
           }
         }
 

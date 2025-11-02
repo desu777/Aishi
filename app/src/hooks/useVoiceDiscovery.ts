@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
 
@@ -104,6 +105,7 @@ const DEFAULT_VOICES: VoiceProfile[] = [
 ];
 
 export const useVoiceDiscovery = () => {
+  const log = logger.child({ component: 'useVoiceDiscovery' });
   const [voices, setVoices] = useState<VoiceProfile[]>(DEFAULT_VOICES);
   const [selectedVoice, setSelectedVoice] = useState<string>(() => {
     // Load saved voice from localStorage or select random
@@ -164,7 +166,7 @@ export const useVoiceDiscovery = () => {
         setVoices(DEFAULT_VOICES);
       }
     } catch (error) {
-      console.error('Failed to discover voices:', error);
+      log.error('Failed to discover voices', { error });
       setError(error instanceof Error ? error.message : 'Failed to discover voices');
       // Fallback to default voices
       setVoices(DEFAULT_VOICES);
@@ -175,13 +177,7 @@ export const useVoiceDiscovery = () => {
 
   // Test a voice by synthesizing sample text
   const testVoice = useCallback(async (voiceId: string) => {
-    const debugLog = (msg: string, data?: any) => {
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log(`[VoiceTest] ${msg}`, data || '');
-      }
-    };
-
-    debugLog('Starting voice test', { voiceId });
+    log.debug('Starting voice test', { voiceId });
     setIsTesting(true);
     setError(null);
 
@@ -194,7 +190,7 @@ export const useVoiceDiscovery = () => {
       const sampleText = voice.sampleText || `Hello! This is a test of the ${voice.name} voice.`;
 
       // Request TTS synthesis
-      debugLog('Sending TTS request', { sampleText, voiceId, url: `${BACKEND_URL}/voice/synthesize` });
+      log.debug('Sending TTS request', { sampleText, voiceId, url: `${BACKEND_URL}/voice/synthesize` });
 
       const response = await fetch(`${BACKEND_URL}/voice/synthesize`, {
         method: 'POST',
@@ -210,7 +206,7 @@ export const useVoiceDiscovery = () => {
         }),
       });
 
-      debugLog('TTS response received', {
+      log.debug('TTS response received', {
         ok: response.ok,
         status: response.status,
         statusText: response.statusText
@@ -225,13 +221,13 @@ export const useVoiceDiscovery = () => {
       // Handle API response structure { success: true, data: { audioData, format, ... } }
       const data = responseData.data || responseData;
 
-      debugLog('TTS response structure', {
+      log.debug('TTS response structure', {
         hasSuccess: 'success' in responseData,
         hasData: 'data' in responseData,
         topLevelKeys: Object.keys(responseData)
       });
 
-      debugLog('TTS response data', {
+      log.debug('TTS response data', {
         hasAudioData: !!data.audioData,
         audioDataLength: data.audioData?.length,
         format: data.format,
@@ -242,23 +238,23 @@ export const useVoiceDiscovery = () => {
       if (data.audioData) {
         // Check WAV header (first few bytes)
         const headerBytes = data.audioData.substring(0, 8);
-        debugLog('Audio header (base64)', { headerBytes });
+        log.debug('Audio header (base64)', { headerBytes });
 
         // Create audio element and play
         const dataUri = `data:audio/wav;base64,${data.audioData}`;
-        debugLog('Creating audio element', { dataUriLength: dataUri.length });
+        log.debug('Creating audio element', { dataUriLength: dataUri.length });
 
         const audio = new Audio(dataUri);
         audio.volume = 0.8;
 
         // Add debug event listeners
-        audio.addEventListener('loadstart', () => debugLog('Audio event: loadstart'));
-        audio.addEventListener('loadeddata', () => debugLog('Audio event: loadeddata'));
-        audio.addEventListener('canplay', () => debugLog('Audio event: canplay'));
-        audio.addEventListener('play', () => debugLog('Audio event: play'));
-        audio.addEventListener('playing', () => debugLog('Audio event: playing'));
+        audio.addEventListener('loadstart', () => log.debug('Audio event: loadstart'));
+        audio.addEventListener('loadeddata', () => log.debug('Audio event: loadeddata'));
+        audio.addEventListener('canplay', () => log.debug('Audio event: canplay'));
+        audio.addEventListener('play', () => log.debug('Audio event: play'));
+        audio.addEventListener('playing', () => log.debug('Audio event: playing'));
         audio.addEventListener('error', (e) => {
-          debugLog('Audio event: error', {
+          log.debug('Audio event: error', {
             error: e,
             audioError: audio.error,
             errorCode: audio.error?.code,
@@ -267,7 +263,7 @@ export const useVoiceDiscovery = () => {
         });
 
         // Play the audio
-        debugLog('Attempting to play audio', {
+        log.debug('Attempting to play audio', {
           readyState: audio.readyState,
           networkState: audio.networkState,
           duration: audio.duration
@@ -275,11 +271,11 @@ export const useVoiceDiscovery = () => {
 
         try {
           const playPromise = audio.play();
-          debugLog('Play promise created');
+          log.debug('Play promise created');
           await playPromise;
-          debugLog('Audio playback started successfully');
+          log.debug('Audio playback started successfully');
         } catch (playError) {
-          debugLog('Play promise rejected', {
+          log.debug('Play promise rejected', {
             error: playError,
             errorMessage: (playError as Error).message
           });
@@ -289,13 +285,13 @@ export const useVoiceDiscovery = () => {
         // Wait for playback to complete
         return new Promise((resolve) => {
           audio.addEventListener('ended', () => {
-            debugLog('Audio playback ended');
+            log.debug('Audio playback ended');
             resolve(true);
           });
 
           // Error handler already added above, but add resolution
           const errorHandler = (e: Event) => {
-            debugLog('Audio playback error in promise', { event: e });
+            log.debug('Audio playback error in promise', { event: e });
             resolve(false);
           };
 
@@ -306,13 +302,13 @@ export const useVoiceDiscovery = () => {
         });
       }
     } catch (error) {
-      console.error('Failed to test voice:', error);
+      log.error('Failed to test voice', { error });
       setError(error instanceof Error ? error.message : 'Failed to test voice');
       return false;
     } finally {
       setIsTesting(false);
     }
-  }, [voices]);
+  }, [voices, log]);
 
   // Test current selected voice
   const testSelectedVoice = useCallback(async () => {

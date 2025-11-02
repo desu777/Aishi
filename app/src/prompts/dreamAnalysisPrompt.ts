@@ -1,6 +1,9 @@
 'use client';
 
+import { logger } from '@/lib/logger/logger';
 import { DreamContext } from '../hooks/agentHooks/services/dreamContextBuilder';
+
+const log = logger.child({ component: 'dreamAnalysisPrompt' });
 
 export interface DreamAnalysisPrompt {
   prompt: string;
@@ -18,7 +21,7 @@ export const buildDreamAnalysisPrompt = (context: DreamContext): DreamAnalysisPr
   // Debug logs dla development
   const debugLog = (message: string, data?: any) => {
     if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[buildDreamAnalysisPrompt] ${message}`, data || '');
+      log.debug(`[buildDreamAnalysisPrompt] ${message}`, data ? { data } : undefined);
     }
   };
 
@@ -124,7 +127,7 @@ export function buildMemorySection(context: DreamContext): string {
   // Debug log dla development
   const debugLog = (message: string, data?: any) => {
     if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[buildMemorySection] ${message}`, data || '');
+      log.debug(`[buildMemorySection] ${message}`, data ? { data } : undefined);
     }
   };
 

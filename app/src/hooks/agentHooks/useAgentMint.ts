@@ -6,6 +6,7 @@ import { parseEther, decodeEventLog } from 'viem';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getActiveChain } from '../../config/chains';
 import { getContractConfig } from './config/contractConfig';
+import { logger } from '@/lib/logger';
 
 // Error parsing utility for viem errors
 const parseViemError = (error: any): string => {
@@ -108,8 +109,12 @@ interface MintState {
  * Integrates with wallet validation and provides comprehensive state management
  */
 export function useAgentMint() {
-  const { debugLog } = useTheme();
+  // Remove debugLog from useTheme, use our own logger
+  const theme = useTheme();
   const { address, isConnected } = useAccount();
+
+  // Logger instance
+  const log = logger.child({ component: 'useAgentMint' });
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
   const { data: balance } = useBalance({
@@ -172,7 +177,7 @@ export function useAgentMint() {
             error: ''
           }));
           
-          debugLog('Agent minted successfully', { 
+          log.debug('Agent minted successfully', { 
             tokenId: tokenId.toString(), 
             txHash: state.txHash 
           });
@@ -186,7 +191,7 @@ export function useAgentMint() {
         }
       } catch (error: any) {
         const errorMessage = parseViemError(error);
-        debugLog('Error parsing receipt', { 
+        log.debug('Error parsing receipt', { 
           error: errorMessage, 
           originalError: error.message,
           errorType: error.name || 'Unknown'
@@ -205,7 +210,7 @@ export function useAgentMint() {
   useEffect(() => {
     if (receiptError) {
       const errorMessage = parseViemError(receiptError);
-      debugLog('Receipt error', { 
+      log.debug('Receipt error', { 
         error: errorMessage, 
         originalError: receiptError.message,
         errorType: receiptError.name || 'Unknown'
@@ -228,7 +233,7 @@ export function useAgentMint() {
       txHash: '',
       isWaitingForReceipt: false
     });
-    debugLog('Mint state reset');
+    log.debug('Mint state reset');
   };
 
   // Main mint function
@@ -269,7 +274,7 @@ export function useAgentMint() {
     }));
 
     try {
-      debugLog('Starting agent mint', { agentName, address });
+      log.debug('Starting agent mint', { agentName, address });
 
       // Call mintAgent function on contract
       const txHash = await writeContractAsync({
@@ -286,7 +291,7 @@ export function useAgentMint() {
         ]
       });
 
-      debugLog('Mint transaction sent, waiting for receipt...', { txHash, agentName });
+      log.debug('Mint transaction sent, waiting for receipt...', { txHash, agentName });
 
       setState(prev => ({
         ...prev,
@@ -310,7 +315,7 @@ export function useAgentMint() {
         error: errorMessage
       }));
 
-      debugLog('Mint transaction failed', { 
+      log.debug('Mint transaction failed', { 
         error: errorMessage, 
         originalError: error?.message || error,
         errorType: error?.name || 'Unknown'

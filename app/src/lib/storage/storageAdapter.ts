@@ -4,13 +4,9 @@
  */
 
 import { keccak256, toHex } from 'viem';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true' || process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log(`[StorageAdapter] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'StorageAdapter' });
 
 /**
  * Check if we should use local AISHI storage instead of 0G
@@ -47,13 +43,13 @@ export async function uploadFileAdapter(
   alreadyExists?: boolean;
 }> {
   if (useLocalStorage()) {
-    debugLog('Using AISHI local storage for upload', {
+    log.debug('Using AISHI local storage for upload', {
       fileName: file.name,
       fileSize: file.size
     });
     return uploadToAishiStorage(file);
   } else {
-    debugLog('Using 0G network storage for upload', {
+    log.debug('Using 0G network storage for upload', {
       fileName: file.name,
       fileSize: file.size,
       storageRpc
@@ -72,12 +68,12 @@ export async function downloadFileAdapter(
   storageRpc?: string
 ): Promise<[ArrayBuffer | null, Error | null]> {
   if (useLocalStorage()) {
-    debugLog('Using AISHI local storage for download', {
+    log.debug('Using AISHI local storage for download', {
       rootHash: rootHash.substring(0, 10) + '...'
     });
     return downloadFromAishiStorage(rootHash);
   } else {
-    debugLog('Using 0G network storage for download', {
+    log.debug('Using 0G network storage for download', {
       rootHash: rootHash.substring(0, 10) + '...',
       storageRpc
     });
@@ -99,7 +95,7 @@ async function uploadToAishiStorage(file: File): Promise<{
 }> {
   try {
     const endpoint = getStorageEndpoint();
-    debugLog('Uploading to AISHI storage', {
+    log.debug('Uploading to AISHI storage', {
       endpoint,
       fileName: file.name,
       fileSize: file.size
@@ -123,7 +119,7 @@ async function uploadToAishiStorage(file: File): Promise<{
 
     const result = await response.json();
 
-    debugLog('AISHI upload successful', {
+    log.info('AISHI upload successful', {
       rootHash: result.rootHash?.substring(0, 10) + '...',
       alreadyExists: result.alreadyExists
     });
@@ -137,7 +133,7 @@ async function uploadToAishiStorage(file: File): Promise<{
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('AISHI upload failed', { error: errorMessage });
+    log.error('AISHI upload failed', { error: errorMessage });
     return {
       success: false,
       error: errorMessage
@@ -151,7 +147,7 @@ async function uploadToAishiStorage(file: File): Promise<{
 async function downloadFromAishiStorage(rootHash: string): Promise<[ArrayBuffer | null, Error | null]> {
   try {
     const endpoint = getStorageEndpoint();
-    debugLog('Downloading from AISHI storage', {
+    log.debug('Downloading from AISHI storage', {
       endpoint,
       rootHash: rootHash.substring(0, 10) + '...'
     });
@@ -173,7 +169,7 @@ async function downloadFromAishiStorage(rootHash: string): Promise<[ArrayBuffer 
       throw new Error('Downloaded file is empty');
     }
 
-    debugLog('AISHI download successful', {
+    log.info('AISHI download successful', {
       rootHash: rootHash.substring(0, 10) + '...',
       dataSize: fileData.byteLength
     });
@@ -182,7 +178,7 @@ async function downloadFromAishiStorage(rootHash: string): Promise<[ArrayBuffer 
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error : new Error(String(error));
-    debugLog('AISHI download failed', { error: errorMessage.message });
+    log.error('AISHI download failed', { error: errorMessage.message });
     return [null, errorMessage];
   }
 }
@@ -210,7 +206,7 @@ export async function generateRootHash(file: File): Promise<string> {
     // Generate hash using viem's keccak256
     const hash = keccak256(combined);
 
-    debugLog('Generated root hash', {
+    log.debug('Generated root hash', {
       fileName: file.name,
       fileSize: file.size,
       hash: hash.substring(0, 10) + '...'
@@ -218,7 +214,7 @@ export async function generateRootHash(file: File): Promise<string> {
 
     return hash;
   } catch (error) {
-    debugLog('Failed to generate root hash', { error: String(error) });
+    log.error('Failed to generate root hash', { error: String(error) });
     throw error;
   }
 }

@@ -1,6 +1,9 @@
 'use client';
 
 import React, { Component, ReactNode } from 'react';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'FaultyTerminalErrorBoundary' });
 
 interface Props {
   children: ReactNode;
@@ -26,7 +29,7 @@ export class FaultyTerminalErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log the error to console in development
     if (process.env.NODE_ENV === 'development') {
-      console.error('FaultyTerminal WebGL Error:', error, errorInfo);
+      log.error('FaultyTerminal WebGL Error', { error, errorInfo });
     }
   }
 

@@ -7,6 +7,9 @@ import {
   applyPreset,
   EXPRESSION_PRESETS
 } from './expression-categories';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'ExpressionCategoryManager' });
 
 export class ExpressionCategoryManager {
   private model: Live2DModel | null = null;
@@ -39,7 +42,7 @@ export class ExpressionCategoryManager {
           this.expressionParameters.set(expr.name, data.Parameters);
         }
       } catch (error) {
-        console.warn(`Failed to load expression parameters for ${expr.name}:`, error);
+        log.warn(`Failed to load expression parameters for ${expr.name}`, { error });
       }
     }
   }
@@ -68,7 +71,7 @@ export class ExpressionCategoryManager {
   // Apply an expression with category logic
   applyExpression(expressionName: string): void {
     if (!this.model) {
-      console.warn('No model set for ExpressionCategoryManager');
+      log.warn('No model set for ExpressionCategoryManager');
       return;
     }
 
@@ -213,7 +216,7 @@ export class ExpressionCategoryManager {
   // Debug logging
   private debugLog(message: string): void {
     if (this.debugMode && process.env.NEXT_PUBLIC_LIVE2MODEL_TEST === 'true') {
-      console.log(`[ExpressionCategoryManager] ${message}`);
+      log.debug(message);
     }
   }
 }

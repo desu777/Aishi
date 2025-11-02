@@ -3,6 +3,9 @@ import { downloadByRootHashAPI } from '../../../../lib/0g/downloader';
 import { createPublicClient, http } from 'viem';
 import { getActiveChain } from '../../../../config/chains';
 import { getContractConfig, STORAGE_CONFIG } from '../../config/contractConfig';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'APIDreamsDownload' });
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,16 +56,16 @@ export async function GET(request: NextRequest) {
       }, { status: 404 });
     }
 
-    console.log(`[API] Downloading dreams file for tokenId ${tokenId} with hash ${currentDreamDailyHash}`);
+    log.debug('Downloading dreams file', { tokenId, hash: currentDreamDailyHash });
 
     // Download file from 0G Storage
     const [fileData, downloadError] = await downloadByRootHashAPI(
-      currentDreamDailyHash, 
+      currentDreamDailyHash,
       STORAGE_CONFIG.storageRpc
     );
 
     if (downloadError) {
-      console.error(`[API] Download error:`, downloadError);
+      log.error('Download error', { error: downloadError });
       return NextResponse.json({ 
         success: false, 
         error: `Failed to download dreams file: ${downloadError.message}` 
@@ -82,14 +85,14 @@ export async function GET(request: NextRequest) {
       const jsonString = new TextDecoder().decode(fileData);
       content = JSON.parse(jsonString);
     } catch (parseError) {
-      console.error(`[API] JSON parse error:`, parseError);
+      log.error('JSON parse error', { error: parseError });
       return NextResponse.json({ 
         success: false, 
         error: 'Failed to parse dreams file content' 
       }, { status: 500 });
     }
 
-    console.log(`[API] Successfully downloaded dreams file: ${fileData.byteLength} bytes`);
+    log.debug('Successfully downloaded dreams file', { size: fileData.byteLength });
 
     return NextResponse.json({
       success: true,
@@ -100,7 +103,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[API] Dreams download error:', error);
+    log.error('Dreams download error', { error });
     return NextResponse.json({ 
       success: false, 
       error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}` 

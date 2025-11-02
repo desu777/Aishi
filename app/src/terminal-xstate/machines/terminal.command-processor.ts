@@ -6,6 +6,9 @@
 import { assign } from 'xstate';
 import { parseCommand, validateCommandArgs } from '../services/commandParser';
 import type { TerminalContext, TerminalLine } from './types';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'TerminalCommandProcessor' });
 
 /**
  * Process and validate command input
@@ -71,14 +74,6 @@ export const processCommand = (context: TerminalContext): TerminalLine[] | null 
   }
 };
 
-/**
- * Debug logging helper
- */
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log(`[Terminal] ${message}`, data || '');
-  }
-};
 
 /**
  * Command processor action that adds input line and processes command
@@ -120,10 +115,10 @@ export const submitCommandAction = assign({
   },
   lastParsedCommand: ({ context }: { context: TerminalContext }) => {
     const parsed = parseCommand(context.currentInput);
-    debugLog('Parsing command', { 
-      input: context.currentInput, 
+    log.debug('Parsing command', {
+      input: context.currentInput,
       parsed: parsed,
-      command: parsed.command 
+      command: parsed.command
     });
     return parsed.isValid ? parsed.command : null;
   },
@@ -143,16 +138,14 @@ export const getAgentData = (context: TerminalContext) => {
   };
 
   // Enhanced debug logging for wallet address tracking
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log('[getAgentData] Retrieved agent data:', {
-      ...data,
-      agentStatus: agentState?.context?.status,
-      hasAgentRef: !!context.agentRef,
-      walletAddressType: typeof data.walletAddress,
-      walletAddressValue: data.walletAddress || 'null/undefined',
-      isZeroAddress: data.walletAddress === '0x0000000000000000000000000000000000000000'
-    });
-  }
+  log.debug('Retrieved agent data', {
+    ...data,
+    agentStatus: agentState?.context?.status,
+    hasAgentRef: !!context.agentRef,
+    walletAddressType: typeof data.walletAddress,
+    walletAddressValue: data.walletAddress || 'null/undefined',
+    isZeroAddress: data.walletAddress === '0x0000000000000000000000000000000000000000'
+  });
 
   return data;
 };
@@ -179,7 +172,7 @@ export const workflowActions = {
       const { selectedModel } = getModelData(context);
       const { walletAddress, tokenId, agentName } = getAgentData(context);
 
-      debugLog('[workflowActions] Starting dream workflow', {
+      log.debug('[workflowActions] Starting dream workflow', {
         tokenId,
         agentName,
         wasVoiceInput: context.wasVoiceInput,
@@ -191,10 +184,11 @@ export const workflowActions = {
       // Validate wallet address for 0G Network models
       const isGeminiModel = selectedModel.startsWith('gemini-');
       if (!isGeminiModel && !walletAddress) {
-        console.error('[startDreamWorkflow] ❌ Cannot start 0G model without wallet address!');
-        console.error('   Model:', selectedModel);
-        console.error('   WalletAddress:', walletAddress || 'undefined');
-        console.error('   Agent status:', context.agentRef?.getSnapshot()?.context?.status);
+        log.error('Cannot start 0G model without wallet address', {
+          model: selectedModel,
+          walletAddress: walletAddress || 'undefined',
+          agentStatus: context.agentRef?.getSnapshot()?.context?.status
+        });
 
         // Send error to terminal
         enqueue({
@@ -227,7 +221,7 @@ export const workflowActions = {
       const { walletAddress, tokenId, agentName } = getAgentData(context);
       const { selectedModel } = getModelData(context);
 
-      debugLog('[workflowActions] Starting chat workflow', {
+      log.debug('[workflowActions] Starting chat workflow', {
         tokenId,
         agentName,
         walletAddress: walletAddress || 'undefined',
@@ -253,9 +247,7 @@ export const workflowActions = {
     const input = (context.currentInput || '').trim().toLowerCase();
     if (context.dreamRef) {
       // Log voice input status
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[sendDreamInput] Sending to dream with wasVoiceInput:', context.wasVoiceInput);
-      }
+      log.debug('Sending to dream with wasVoiceInput', { wasVoiceInput: context.wasVoiceInput });
 
       if (input === 'y' || input === 'yes') {
         context.dreamRef.send({ type: 'CONFIRM_SAVE' });
@@ -283,9 +275,7 @@ export const workflowActions = {
       const isAwaitingConfirmation = chatState?.context?.awaitingConfirmation;
 
       // Log voice input status for debugging
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[sendChatInput] Sending to chat with wasVoiceInput:', context.wasVoiceInput);
-      }
+      log.debug('Sending to chat with wasVoiceInput', { wasVoiceInput: context.wasVoiceInput });
 
       // Handle confirmation responses
       if (isAwaitingConfirmation && (input === 'y' || input === 'yes')) {
@@ -311,7 +301,7 @@ export const workflowActions = {
       const { walletAddress, tokenId, agentName } = getAgentData(context);
       const { selectedModel } = getModelData(context);
 
-      debugLog('[workflowActions] Starting month-learn workflow', {
+      log.debug('[workflowActions] Starting month-learn workflow', {
         tokenId,
         agentName,
         walletAddress: walletAddress || 'undefined',
@@ -336,7 +326,7 @@ export const workflowActions = {
       const { walletAddress, tokenId, agentName } = getAgentData(context);
       const { selectedModel } = getModelData(context);
 
-      debugLog('[workflowActions] Starting memory-core workflow', {
+      log.debug('[workflowActions] Starting memory-core workflow', {
         tokenId,
         agentName,
         walletAddress: walletAddress || 'undefined',

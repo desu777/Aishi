@@ -5,15 +5,12 @@
 
 import { parseCommand } from '../services/commandParser';
 import type { TerminalContext } from './types';
+import { logger } from '@/lib/logger';
 
 /**
- * Debug logging helper
+ * Logger instance
  */
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log(`[Terminal Guards] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'TerminalGuards' });
 
 /**
  * Terminal machine guards for conditional transitions
@@ -44,7 +41,7 @@ export const terminalGuards = {
 
   isHelpCommand: ({ context }: { context: TerminalContext }) => {
     const result = context.lastParsedCommand === 'help';
-    debugLog('isHelpCommand', { 
+    log.debug('isHelpCommand', { 
       lastParsedCommand: context.lastParsedCommand, 
       result 
     });

@@ -77,6 +77,28 @@
         "AishiVerifier": "0x8f317C6162c097f22b4d87E5f659Af4368Ef2e5E",
         "AishiAgent": "0xBbDA343398Ba0e27eDf69C16088e4b460AB5E003"
       }
+    },
+    {
+      "id": "1762079641944",
+      "timestamp": "2025-11-02T10:34:01.944Z",
+      "network": "0G Mainnet",
+      "chainId": 16661,
+      "deployer": "0x39ED0Fe39Cad2E9200f4cB1c765C83396A50218c",
+      "contracts": {
+        "AishiVerifier": "0xc08BeFb6278467173CAAfaC9ecE83b44aEB2C316",
+        "AishiAgent": "0xe0E21A851D47776094BEAF724D5442e9DBe017F9"
+      }
+    },
+    {
+      "id": "1762080379205",
+      "timestamp": "2025-11-02T10:46:19.205Z",
+      "network": "0G Mainnet",
+      "chainId": 16661,
+      "deployer": "0x39ED0Fe39Cad2E9200f4cB1c765C83396A50218c",
+      "contracts": {
+        "AishiVerifier": "0xD36e1AdFB81D8231fB2be005C2b0AeBFA8C892B9",
+        "AishiAgent": "0x67aC6AE80039AbB81F155313cB2002124Ac77A28"
+      }
     }
   ]
 }

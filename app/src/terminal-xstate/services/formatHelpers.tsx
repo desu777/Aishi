@@ -6,6 +6,9 @@
 import React from 'react';
 import { TerminalLine } from '../machines/types';
 import { CompleteAgentData } from './contractReader';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'FormatHelpers' });
 
 // Theme colors matching ThemeContext
 const colors = {
@@ -41,12 +44,10 @@ function createColoredProgressBar(value: number, isHighest: boolean = false, max
  * Formats personality traits for terminal display
  */
 export function formatPersonalityOutput(agentData: CompleteAgentData | null): TerminalLine[] {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log('[formatPersonalityOutput] Called with data:', !!agentData);
-    if (agentData) {
-      console.log('[formatPersonalityOutput] Personality data:', agentData.personality);
-    }
-  }
+  log.debug('formatPersonalityOutput called', {
+    hasData: !!agentData,
+    personality: agentData?.personality
+  });
   
   const timestamp = Date.now();
   
@@ -155,10 +156,10 @@ export function formatPersonalityOutput(agentData: CompleteAgentData | null): Te
     timestamp: timestamp + 9
   });
 
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log('[formatPersonalityOutput] Returning lines:', lines.length);
-    console.log('[formatPersonalityOutput] First line:', lines[0]);
-  }
+  log.debug('formatPersonalityOutput returning lines', {
+    lineCount: lines.length,
+    firstLine: lines[0]
+  });
 
   return lines;
 }
@@ -531,12 +532,10 @@ export function formatStatsOutput(agentData: CompleteAgentData | null): Terminal
  * Formats memory data for terminal display with download functionality
  */
 export function formatMemoryOutput(agentData: CompleteAgentData | null): TerminalLine[] {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log('[formatMemoryOutput] Called with data:', !!agentData);
-    if (agentData?.memory) {
-      console.log('[formatMemoryOutput] Memory data:', agentData.memory);
-    }
-  }
+  log.debug('formatMemoryOutput called', {
+    hasData: !!agentData,
+    memory: agentData?.memory
+  });
   
   const timestamp = Date.now();
   

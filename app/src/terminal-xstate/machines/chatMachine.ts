@@ -12,13 +12,10 @@ import { storageActions } from './shared/storage.actions';
 import { storageGuards } from './shared/storage.guards';
 import { contextualTerminalActions } from './shared/terminal.actions';
 import { chatActions, chatGuards } from './chat.actions';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[ChatMachine] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'ChatMachine' });
 
 // Chat-specific types
 export interface ChatMessage {
@@ -134,7 +131,7 @@ export const chatMachine = setup({
   actors: {
     // Load full agent context
     loadContext: fromPromise(async ({ input }: { input: { agentId: number; continueWithoutMemory?: boolean } }) => {
-      debugLog('Loading full agent context', { 
+      log.debug('Loading full agent context', { 
         agentId: input.agentId,
         continueWithoutMemory: input.continueWithoutMemory || false
       });
@@ -143,7 +140,7 @@ export const chatMachine = setup({
       const { fetchChatContext } = await import('./chatServices');
       const contextData = await fetchChatContext(input.agentId, input.continueWithoutMemory);
       
-      debugLog('Context loaded successfully', {
+      log.debug('Context loaded successfully', {
         hasAgentData: !!contextData.agentContext,
         hasHistoricalData: !!contextData.historicalData
       });
@@ -163,7 +160,7 @@ export const chatMachine = setup({
         walletAddress?: string;
       }
     }) => {
-      debugLog('Processing user message', {
+      log.debug('Processing user message', {
         messageLength: input.message?.length,
         isFirstMessage: input.messages.length === 1,
         modelId: input.modelId,
@@ -182,7 +179,7 @@ export const chatMachine = setup({
         input.walletAddress
       );
 
-      debugLog('AI response received', {
+      log.debug('AI response received', {
         hasResponse: !!response,
         hasResponseText: !!response?.response,
         responseLength: response?.response?.length || 0
@@ -190,7 +187,7 @@ export const chatMachine = setup({
 
       // Validate response format before returning
       if (!response || typeof response.response !== 'string') {
-        debugLog('Invalid response format', { response });
+        log.debug('Invalid response format', { response });
         throw new Error('Invalid response format from AI service');
       }
 
@@ -206,7 +203,7 @@ export const chatMachine = setup({
         modelId: string;
       }
     }) => {
-      debugLog('Generating conversation summary', {
+      log.debug('Generating conversation summary', {
         messageCount: input.messages.length,
         transcriptLength: input.currentTranscript.length,
         modelId: input.modelId
@@ -221,7 +218,7 @@ export const chatMachine = setup({
         input.modelId
       );
 
-      debugLog('Summary generated', {
+      log.debug('Summary generated', {
         hasSummary: !!summary.summary
       });
 
@@ -236,7 +233,7 @@ export const chatMachine = setup({
         conversationSummary: any;
       }
     }) => {
-      debugLog('Preparing conversation file', {
+      log.debug('Preparing conversation file', {
         agentId: input.agentId,
         hasSummary: !!input.conversationSummary
       });
@@ -251,7 +248,7 @@ export const chatMachine = setup({
         input.conversationSummary
       );
 
-      debugLog('Conversation file prepared', {
+      log.debug('Conversation file prepared', {
         fileName: fileResult.fileName,
         isNewFile: fileResult.isNewFile,
         totalConversations: fileResult.totalConversations
@@ -270,7 +267,7 @@ export const chatMachine = setup({
         onStatus?: (message: string) => void;
       }
     }) => {
-      debugLog('Uploading conversation to storage', {
+      log.debug('Uploading conversation to storage', {
         fileName: input.fileData.fileName,
         contentLength: input.fileData.fileContent?.length
       });
@@ -283,7 +280,7 @@ export const chatMachine = setup({
         input.onStatus
       );
 
-      debugLog('Upload result', {
+      log.debug('Upload result', {
         success: uploadResult.success,
         rootHash: uploadResult.rootHash
       });
@@ -306,7 +303,7 @@ export const chatMachine = setup({
         conversationType: string;
       }
     }) => {
-      debugLog('Updating contract with conversation', {
+      log.debug('Updating contract with conversation', {
         agentId: input.agentId,
         rootHash: input.rootHash,
         conversationType: input.conversationType
@@ -320,7 +317,7 @@ export const chatMachine = setup({
         input.conversationType
       );
 
-      debugLog('Contract updated', {
+      log.debug('Contract updated', {
         txHash: contractResult.txHash
       });
 

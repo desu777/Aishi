@@ -5,13 +5,9 @@
 
 import { setup, assign, fromPromise } from 'xstate';
 import { getContractConfig, ContractFunctions } from '../services/contractService';
+import { logger } from '@/lib/logger';
 
-// Debug logging function
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log(`[AgentMachine] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'AgentMachine' });
 
 interface AgentContext {
   status: 'uninitialized' | 'syncing' | 'connected' | 'no_agent' | 'error';
@@ -41,7 +37,7 @@ const fetchAgentData = fromPromise(async ({
 }) => {
   const contractConfig = getContractConfig();
   
-  debugLog('Starting agent sync with viem', { 
+  log.debug('Starting agent sync with viem', { 
     walletAddress: input.walletAddress,
     contractAddress: contractConfig.address,
     providerType: input.provider ? 'publicClient' : 'undefined',
@@ -56,14 +52,14 @@ const fetchAgentData = fromPromise(async ({
       throw new Error('No publicClient provided');
     }
     
-    debugLog('PublicClient details', {
+    log.debug('PublicClient details', {
       chain: publicClient.chain?.name,
       chainId: publicClient.chain?.id,
       transport: publicClient.transport?.type
     });
     
     // Step 1: Get token ID for wallet using viem
-    debugLog('Fetching token ID for wallet via viem readContract');
+    log.debug('Fetching token ID for wallet via viem readContract');
     const tokenId = await publicClient.readContract({
       address: contractConfig.address,
       abi: contractConfig.abi,
@@ -72,11 +68,11 @@ const fetchAgentData = fromPromise(async ({
     });
     const tokenIdNumber = Number(tokenId);
     
-    debugLog('Token ID retrieved', { tokenId: tokenIdNumber });
+    log.debug('Token ID retrieved', { tokenId: tokenIdNumber });
     
     // If no token ID (user has no agent)
     if (tokenIdNumber === 0) {
-      debugLog('No agent found for wallet');
+      log.debug('No agent found for wallet');
       return {
         hasAgent: false,
         tokenId: 0,
@@ -88,7 +84,7 @@ const fetchAgentData = fromPromise(async ({
     }
     
     // Step 2: Get agent data using token ID with viem
-    debugLog('Fetching agent data for token via viem', { tokenId: tokenIdNumber });
+    log.debug('Fetching agent data for token via viem', { tokenId: tokenIdNumber });
     const agentData = await publicClient.readContract({
       address: contractConfig.address,
       abi: contractConfig.abi,
@@ -97,7 +93,7 @@ const fetchAgentData = fromPromise(async ({
     });
     
     // Debug raw data structure from viem
-    debugLog('Raw agent data from viem readContract', {
+    log.debug('Raw agent data from viem readContract', {
       dataType: typeof agentData,
       isArray: Array.isArray(agentData),
       hasAgentName: agentData?.agentName !== undefined,
@@ -114,11 +110,11 @@ const fetchAgentData = fromPromise(async ({
     
     // Viem should return object with named properties
     if (agentData && typeof agentData === 'object') {
-      debugLog('Processing viem struct data');
+      log.debug('Processing viem struct data');
       
       // Try named properties first (expected from viem)
       if ('agentName' in agentData) {
-        debugLog('Using named properties from viem');
+        log.debug('Using named properties from viem');
         agentName = agentData.agentName as string;
         intelligenceLevel = Number(agentData.intelligenceLevel || 0);
         dreamCount = Number(agentData.dreamCount || 0);
@@ -126,7 +122,7 @@ const fetchAgentData = fromPromise(async ({
       }
       // Fallback to array access if needed
       else if (Array.isArray(agentData)) {
-        debugLog('Using array access (unexpected from viem)');
+        log.debug('Using array access (unexpected from viem)');
         agentName = agentData[1] as string;
         intelligenceLevel = Number(agentData[4] || 0);
         dreamCount = Number(agentData[5] || 0);
@@ -134,7 +130,7 @@ const fetchAgentData = fromPromise(async ({
       }
       // Type assertion as last resort
       else {
-        debugLog('Using type assertion for unknown structure');
+        log.debug('Using type assertion for unknown structure');
         const data = agentData as any;
         agentName = data.agentName || data[1] || 'Unknown Agent';
         intelligenceLevel = Number(data.intelligenceLevel || data[4] || 0);
@@ -145,7 +141,7 @@ const fetchAgentData = fromPromise(async ({
       throw new Error('Invalid agent data structure from contract');
     }
     
-    debugLog('Agent data parsed successfully', {
+    log.debug('Agent data parsed successfully', {
       agentName,
       intelligenceLevel,
       dreamCount,
@@ -161,7 +157,7 @@ const fetchAgentData = fromPromise(async ({
       conversationCount
     };
   } catch (error: any) {
-    debugLog('Error fetching agent data with viem', {
+    log.debug('Error fetching agent data with viem', {
       message: error.message,
       stack: error.stack,
       errorType: error.constructor?.name,
@@ -256,7 +252,7 @@ export const agentMachine = setup({
       errorMessage: ({ event }) => {
         if (event.type === 'xstate.error.actor.fetchAgentData') {
           const errorMsg = event.error?.message || 'Failed to sync with contract';
-          debugLog('Setting error', { error: errorMsg });
+          log.debug('Setting error', { error: errorMsg });
           return errorMsg;
         }
         return null;
@@ -297,13 +293,13 @@ export const agentMachine = setup({
   
   states: {
     uninitialized: {
-      entry: () => debugLog('Agent machine initialized, waiting for SYNC event'),
+      entry: () => log.debug('Agent machine initialized, waiting for SYNC event'),
       on: {
         SYNC: {
           target: 'syncing',
           actions: [
             'setWalletAddress',
-            () => debugLog('SYNC event received, transitioning to syncing')
+            () => log.debug('SYNC event received, transitioning to syncing')
           ]
         }
       }
@@ -312,7 +308,7 @@ export const agentMachine = setup({
     syncing: {
       entry: [
         'setSyncingStatus',
-        () => debugLog('Entering syncing state, fetching agent data from contract')
+        () => log.debug('Entering syncing state, fetching agent data from contract')
       ],
       invoke: {
         id: 'fetchAgentData',
@@ -322,7 +318,7 @@ export const agentMachine = setup({
             walletAddress: event.type === 'SYNC' ? event.walletAddress : context.walletAddress!,
             provider: event.type === 'SYNC' ? event.provider : null
           };
-          debugLog('Invoking fetchAgentData with input', input);
+          log.debug('Invoking fetchAgentData with input', input);
           return input;
         },
         onDone: [
@@ -345,7 +341,7 @@ export const agentMachine = setup({
     
     connected: {
       entry: ({ context }) => {
-        debugLog('Agent connected successfully', {
+        log.debug('Agent connected successfully', {
           agentName: context.agentName,
           tokenId: context.tokenId,
           intelligenceLevel: context.intelligenceLevel
@@ -362,7 +358,7 @@ export const agentMachine = setup({
     
     no_agent: {
       entry: ({ context }) => {
-        debugLog('No agent detected for wallet', {
+        log.debug('No agent detected for wallet', {
           walletAddress: context.walletAddress
         });
       },
@@ -377,7 +373,7 @@ export const agentMachine = setup({
     
     error: {
       entry: ({ context }) => {
-        debugLog('Agent machine in error state', {
+        log.debug('Agent machine in error state', {
           error: context.errorMessage,
           walletAddress: context.walletAddress
         });
@@ -385,7 +381,7 @@ export const agentMachine = setup({
       on: {
         RETRY: {
           target: 'syncing',
-          actions: ['clearError', () => debugLog('Retrying agent sync')]
+          actions: ['clearError', () => log.debug('Retrying agent sync')]
         },
         RESET: {
           target: 'uninitialized',

@@ -5,13 +5,9 @@
 
 import { useRef, useCallback } from 'react';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_AISHI_COMPANION_DEBUG === 'true') {
-    console.log(`[useLipSync] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'useLipSync' });
 
 /**
  * Lip sync configuration
@@ -63,12 +59,12 @@ export const useLipSync = (modelRef: React.RefObject<Live2DModelRef>) => {
    */
   const startLipSync = useCallback(async (text: string) => {
     if (!modelRef.current) {
-      debugLog('Cannot start lip sync - model ref is null');
+      log.debug('Cannot start lip sync - model ref is null');
       return;
     }
 
     if (isActiveRef.current) {
-      debugLog('Lip sync already active, stopping previous');
+      log.debug('Lip sync already active, stopping previous');
       stopLipSync();
     }
 
@@ -79,7 +75,7 @@ export const useLipSync = (modelRef: React.RefObject<Live2DModelRef>) => {
     const estimatedDuration = text.length * LIP_SYNC_CONFIG.characterDuration;
     const cycles = Math.floor(estimatedDuration / LIP_SYNC_CONFIG.cycleTime);
 
-    debugLog('Starting lip sync', {
+    log.debug('Starting lip sync', {
       textLength: text.length,
       estimatedDuration,
       cycles
@@ -91,7 +87,7 @@ export const useLipSync = (modelRef: React.RefObject<Live2DModelRef>) => {
     // Execute cycles
     for (let i = 0; i < cycles; i++) {
       if (cancelTokenRef.current) {
-        debugLog('Lip sync cancelled mid-execution');
+        log.debug('Lip sync cancelled mid-execution');
         break;
       }
 
@@ -104,7 +100,7 @@ export const useLipSync = (modelRef: React.RefObject<Live2DModelRef>) => {
     }
 
     isActiveRef.current = false;
-    debugLog('Lip sync complete');
+    log.debug('Lip sync complete');
   }, [modelRef, mouthCycle]);
 
   /**
@@ -121,7 +117,7 @@ export const useLipSync = (modelRef: React.RefObject<Live2DModelRef>) => {
       modelRef.current.setParameterValue('ParamMouthOpenY', 0);
     }
 
-    debugLog('Lip sync stopped');
+    log.debug('Lip sync stopped');
   }, [modelRef]);
 
   /**
@@ -133,7 +129,7 @@ export const useLipSync = (modelRef: React.RefObject<Live2DModelRef>) => {
     const currentLeft = modelRef.current.getParameterValue('ParamEyeLOpen');
     const currentRight = modelRef.current.getParameterValue('ParamEyeROpen');
 
-    debugLog('Performing blink', {
+    log.debug('Performing blink', {
       currentLeft,
       currentRight
     });
@@ -157,7 +153,7 @@ export const useLipSync = (modelRef: React.RefObject<Live2DModelRef>) => {
       await new Promise(resolve => setTimeout(resolve, openDuration / 10));
     }
 
-    debugLog('Blink complete');
+    log.debug('Blink complete');
   }, [modelRef]);
 
   return {

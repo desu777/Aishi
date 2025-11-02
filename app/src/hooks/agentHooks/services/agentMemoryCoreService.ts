@@ -8,6 +8,7 @@ import { getEthersSignerForZeroG } from '../../../lib/0g/adapter/viemAdapter';
 import { getNetworkConfig } from '../../../lib/0g/network';
 import type { PublicClient, WalletClient } from 'viem';
 import type { MonthlyDreamConsolidation, MonthlyConversationConsolidation } from './agentConsolidationService';
+import { logger } from '@/lib/logger';
 
 // Schemat JSON dla rocznej esencji (memory core) - UNIFIED
 export interface YearlyMemoryCore {
@@ -77,12 +78,8 @@ export interface YearlyMemoryCore {
 // Network-aware storage configuration
 const NETWORK = getNetworkConfig('turbo');
 
-// Debug log helper
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[MemoryCoreService] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'MemoryCoreService' });
 
 /**
  * Tworzy prompt do LLM dla rocznej konsolidacji (memory core)
@@ -235,7 +232,7 @@ export const consolidateYearWithLLM = async (
   walletAddress: string
 ): Promise<{ success: boolean; data?: YearlyMemoryCore; error?: string }> => {
   try {
-    debugLog('Starting yearly consolidation with LLM', { 
+    log.debug('Starting yearly consolidation with LLM', { 
       dreamMonthsCount: monthlyDreamConsolidations.length,
       conversationMonthsCount: monthlyConversationConsolidations.length,
       year 
@@ -275,7 +272,7 @@ export const consolidateYearWithLLM = async (
     }
 
     const aiResponseText = apiResult.data.response;
-    debugLog('LLM response received', { responseLength: aiResponseText.length });
+    log.debug('LLM response received', { responseLength: aiResponseText.length });
 
     // Parse JSON response
     const jsonMatch = aiResponseText.match(/```json\s*([\s\S]*?)\s*```/);
@@ -285,7 +282,7 @@ export const consolidateYearWithLLM = async (
 
     const memoryCoreData = JSON.parse(jsonMatch[1]) as YearlyMemoryCore;
     
-    debugLog('Yearly consolidation completed', {
+    log.debug('Yearly consolidation completed', {
       year: memoryCoreData.year,
       totalDreams: memoryCoreData.yearly_overview.total_dreams,
       totalConversations: memoryCoreData.yearly_overview.total_conversations,
@@ -298,7 +295,7 @@ export const consolidateYearWithLLM = async (
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Yearly consolidation failed', { error: errorMessage });
+    log.debug('Yearly consolidation failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
 };
@@ -313,7 +310,7 @@ export const saveMemoryCoreToStorage = async (
   downloadFile: (hash: string) => Promise<{ success: boolean; data?: ArrayBuffer; error?: string }>
 ): Promise<{ success: boolean; memoryCoreHash?: string; error?: string }> => {
   try {
-    debugLog('Saving memory core to storage using APPEND pattern', {
+    log.debug('Saving memory core to storage using APPEND pattern', {
       tokenId,
       year: memoryCoreData.year
     });
@@ -345,7 +342,7 @@ export const saveMemoryCoreToStorage = async (
     const currentYearlyHash = agentMemory.memoryCoreHash;
     const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
-    debugLog('Current yearly hash from contract', { 
+    log.debug('Current yearly hash from contract', { 
       yearlyHash: currentYearlyHash 
     });
 
@@ -353,7 +350,7 @@ export const saveMemoryCoreToStorage = async (
     let existingMemoryCores: YearlyMemoryCore[] = [];
     
     if (currentYearlyHash && currentYearlyHash !== emptyHash) {
-      debugLog('Downloading existing yearly memory cores', { hash: currentYearlyHash });
+      log.debug('Downloading existing yearly memory cores', { hash: currentYearlyHash });
       const downloadResult = await downloadFile(currentYearlyHash);
       
       if (downloadResult.success && downloadResult.data) {
@@ -362,28 +359,28 @@ export const saveMemoryCoreToStorage = async (
           const jsonText = textDecoder.decode(downloadResult.data);
           const parsedData = JSON.parse(jsonText);
           existingMemoryCores = Array.isArray(parsedData) ? parsedData : [];
-          debugLog('Existing yearly memory cores loaded', { count: existingMemoryCores.length });
+          log.debug('Existing yearly memory cores loaded', { count: existingMemoryCores.length });
         } catch (parseError) {
-          debugLog('Failed to parse existing memory cores, starting fresh', parseError);
+          log.debug('Failed to parse existing memory cores, starting fresh', parseError);
           existingMemoryCores = [];
         }
       } else {
-        debugLog('Failed to download existing memory cores, starting fresh', downloadResult.error);
+        log.debug('Failed to download existing memory cores, starting fresh', downloadResult.error);
       }
     } else {
-      debugLog('No existing yearly memory cores, starting fresh array');
+      log.debug('No existing yearly memory cores, starting fresh array');
     }
 
     // Append new memory core to TOP of array (newest first)
     const updatedMemoryCores = [memoryCoreData, ...existingMemoryCores];
-    debugLog('Updated memory cores array created', { totalCount: updatedMemoryCores.length });
+    log.debug('Updated memory cores array created', { totalCount: updatedMemoryCores.length });
 
     // 2. CREATE AND UPLOAD FILE
     const memoryCoreFileName = `memory_cores_yearly_${new Date().getFullYear()}.json`;
     const memoryCoreContent = JSON.stringify(updatedMemoryCores, null, 2);
     const memoryCoreFile = new File([memoryCoreContent], memoryCoreFileName, { type: 'application/json' });
 
-    debugLog('Created new memory core file', {
+    log.debug('Created new memory core file', {
       fileName: memoryCoreFileName,
       fileSize: memoryCoreFile.size,
       totalYears: updatedMemoryCores.length
@@ -405,7 +402,7 @@ export const saveMemoryCoreToStorage = async (
       throw new Error(`Memory core upload failed: ${uploadResult.error}`);
     }
 
-    debugLog('Memory core APPEND completed successfully', {
+    log.debug('Memory core APPEND completed successfully', {
       memoryCoreHash: uploadResult.rootHash,
       totalYearlyMemoryCores: updatedMemoryCores.length,
       newYear: memoryCoreData.year
@@ -418,7 +415,7 @@ export const saveMemoryCoreToStorage = async (
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Memory core storage failed', { error: errorMessage });
+    log.debug('Memory core storage failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
 };
@@ -431,7 +428,7 @@ export const callUpdateMemoryCore = async (
   memoryCoreHash: string
 ): Promise<{ success: boolean; txHash?: string; error?: string }> => {
   try {
-    debugLog('Calling updateMemoryCore contract function', {
+    log.debug('Calling updateMemoryCore contract function', {
       tokenId, 
       memoryCoreHash
     });
@@ -461,13 +458,13 @@ export const callUpdateMemoryCore = async (
       args: [BigInt(tokenId), memoryCoreHash as `0x${string}`]
     });
 
-    debugLog('UpdateMemoryCore transaction sent', { txHash });
+    log.debug('UpdateMemoryCore transaction sent', { txHash });
 
     // Wait for confirmation
     const [publicClient] = await getViemProvider();
     const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
     
-    debugLog('UpdateMemoryCore transaction confirmed', { 
+    log.debug('UpdateMemoryCore transaction confirmed', { 
       txHash, 
       blockNumber: receipt.blockNumber 
     });
@@ -476,7 +473,7 @@ export const callUpdateMemoryCore = async (
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('UpdateMemoryCore contract call failed', { error: errorMessage });
+    log.debug('UpdateMemoryCore contract call failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
 }; 

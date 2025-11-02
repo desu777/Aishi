@@ -5,6 +5,7 @@ import { useWallet } from '../useWallet';
 import { uploadFileComplete } from '../../lib/0g/uploader';
 import { calculateBasicStorageFee, FeeInfo, getProvider, getSigner } from '../../lib/0g/fees';
 import { getNetworkConfig, getDefaultNetworkType, NetworkType } from '../../lib/0g/network';
+import { logger } from '@/lib/logger';
 
 interface UploadResult {
   success: boolean;
@@ -37,18 +38,19 @@ interface UseStorageUploadReturn {
 }
 
 export function useStorageUpload(): UseStorageUploadReturn {
+  const log = logger.child({ component: 'useStorageUpload' });
   const { isConnected, address } = useWallet();
-  
+
   // Upload state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [progress, setProgress] = useState(0);
   const [rootHash, setRootHash] = useState<string | null>(null);
-  
+
   // Fee state
   const [feeInfo, setFeeInfo] = useState<FeeInfo | null>(null);
-  
+
   // Network state
   const [networkType] = useState<NetworkType>(getDefaultNetworkType());
 
@@ -57,14 +59,12 @@ export function useStorageUpload(): UseStorageUploadReturn {
       setError(null);
       const fees = calculateBasicStorageFee(file.size);
       setFeeInfo(fees);
-      
-      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log('[useStorageUpload] Calculated fees:', fees);
-      }
+
+      log.debug('Calculated fees', { fees });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       setError(`Fee calculation failed: ${errorMsg}`);
-      console.error('[useStorageUpload] Fee calculation error:', error);
+      log.error('Fee calculation error', { error });
     }
   }, []);
 
@@ -89,15 +89,13 @@ export function useStorageUpload(): UseStorageUploadReturn {
       
       setStatus('Uploading to 0G Storage...');
       setProgress(30);
-      
-      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log('[useStorageUpload] Starting upload:', {
-          fileName: file.name,
-          fileSize: file.size,
-          networkType,
-          storageRpc: networkConfig.storageRpc
-        });
-      }
+
+      log.debug('Starting upload', {
+        fileName: file.name,
+        fileSize: file.size,
+        networkType,
+        storageRpc: networkConfig.storageRpc
+      });
 
       // Get provider and signer
       const [provider, providerErr] = await getProvider();
@@ -124,14 +122,12 @@ export function useStorageUpload(): UseStorageUploadReturn {
         setStatus('Upload completed successfully!');
         setProgress(100);
         setRootHash(result.rootHash || null);
-        
-        if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-          console.log('[useStorageUpload] Upload successful:', {
-            rootHash: result.rootHash,
-            txHash: result.txHash,
-            alreadyExists: result.alreadyExists
-          });
-        }
+
+        log.debug('Upload successful', {
+          rootHash: result.rootHash,
+          txHash: result.txHash,
+          alreadyExists: result.alreadyExists
+        });
 
         return {
           success: true,
@@ -148,9 +144,9 @@ export function useStorageUpload(): UseStorageUploadReturn {
       setError(errorMsg);
       setStatus(`Upload failed: ${errorMsg}`);
       setProgress(0);
-      
-      console.error('[useStorageUpload] Upload error:', error);
-      
+
+      log.error('Upload error', { error });
+
       return { success: false, error: errorMsg };
     } finally {
       setIsLoading(false);

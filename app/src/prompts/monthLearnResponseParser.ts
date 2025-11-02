@@ -3,6 +3,10 @@
  * Extracts dreams and conversations consolidations from AI response using section markers
  */
 
+import { logger } from '@/lib/logger/logger';
+
+const log = logger.child({ component: 'monthLearnResponseParser' });
+
 export interface MonthLearnParseResult {
   dreamConsolidation: any | null;
   conversationConsolidation: any | null;
@@ -24,7 +28,7 @@ export function parseMonthLearnResponse(aiResponse: string): MonthLearnParseResu
       try {
         dreamConsolidation = JSON.parse(dreamsMatch[1].trim());
       } catch (error) {
-        console.error('Failed to parse dreams consolidation JSON:', error);
+        log.error('Failed to parse dreams consolidation JSON:', { error });
         return {
           dreamConsolidation: null,
           conversationConsolidation: null,
@@ -42,7 +46,7 @@ export function parseMonthLearnResponse(aiResponse: string): MonthLearnParseResu
       try {
         conversationConsolidation = JSON.parse(conversationsMatch[1].trim());
       } catch (error) {
-        console.error('Failed to parse conversations consolidation JSON:', error);
+        log.error('Failed to parse conversations consolidation JSON:', { error });
         return {
           dreamConsolidation,
           conversationConsolidation: null,

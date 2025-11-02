@@ -6,13 +6,9 @@
 import { buildChatPrompt } from '@/terminal-xstate/services/chatPromptBuilder';
 import type { ChatMessage } from '@/terminal-xstate/machines/chatMachine';
 import { buildParameterSpec, CONTROLLABLE_PARAMETERS } from './aiParameterService';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_AISHI_COMPANION_DEBUG === 'true') {
-    console.log(`[Live2DChatPromptBuilder] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'Live2DChatPromptBuilder' });
 
 /**
  * Build Live2D-enhanced chat prompt
@@ -27,7 +23,7 @@ export function buildLive2DChatPrompt(params: {
   isFirstMessage: boolean;
   currentParameters: Map<string, number>;
 }): string {
-  debugLog('Building Live2D-enhanced chat prompt', {
+  log.debug('Building Live2D-enhanced chat prompt', {
     isFirstMessage: params.isFirstMessage,
     messageCount: params.messages.length,
     parameterCount: params.currentParameters.size
@@ -51,7 +47,7 @@ export function buildLive2DChatPrompt(params: {
 
   if (responseMarkerIndex === -1) {
     // Fallback: append at end
-    debugLog('Response marker not found, appending Live2D context at end');
+    log.debug('Response marker not found, appending Live2D context at end');
     return baseChatPrompt + '\n\n' + parameterContext;
   }
 
@@ -61,7 +57,7 @@ export function buildLive2DChatPrompt(params: {
 
   const enhancedPrompt = beforeResponse + parameterContext + '\n\n' + afterResponse;
 
-  debugLog('Live2D prompt built successfully', {
+  log.debug('Live2D prompt built successfully', {
     originalLength: baseChatPrompt.length,
     enhancedLength: enhancedPrompt.length,
     addedLength: parameterContext.length

@@ -11,13 +11,9 @@ import { DreamContext, AIResponse, defaultAgentData } from '../types/contextType
 import { convertBigIntToString } from '../utils/jsonSerializer';
 import { XStateStorageService } from '../services/xstateStorage';
 import { buildMockDreamContext, sendMockDreamAnalysis } from '../mocks/dreamMocks';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[DreamMachine] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'DreamServices' });
 
 // Helper function for retry logic
 const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data'): Promise<T | undefined> => {
@@ -33,7 +29,7 @@ const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data
           const hasArrayData = Array.isArray(result) && (result as any)[1] !== undefined;
           
           if (hasNamedProps || hasArrayData) {
-            debugLog(`[SUCCESS] ${name} fetched successfully on attempt ${i + 1}`, {
+            log.debug(`[SUCCESS] ${name} fetched successfully on attempt ${i + 1}`, {
               hasNamedProps,
               hasArrayData,
               agentName: hasNamedProps ? (result as any).agentName : (result as any)[1]
@@ -42,7 +38,7 @@ const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data
           }
         } else {
           // For other data types, just check if not undefined
-          debugLog(`[SUCCESS] ${name} fetched successfully on attempt ${i + 1}`);
+          log.debug(`[SUCCESS] ${name} fetched successfully on attempt ${i + 1}`);
           return result;
         }
       }
@@ -50,27 +46,27 @@ const fetchWithRetry = async <T>(fn: () => Promise<T>, retries = 3, name = 'data
       // If undefined or incomplete, retry
       if (i < retries - 1) {
         const delay = 1000 * (i + 1); // Progressive delay: 1000ms, 2000ms, 3000ms
-        debugLog(`[WARNING] Attempt ${i + 1} for ${name} returned incomplete data, retrying in ${delay}ms...`);
+        log.debug(`[WARNING] Attempt ${i + 1} for ${name} returned incomplete data, retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     } catch (error) {
       if (i === retries - 1) {
-        debugLog(`[ERROR] Failed to fetch ${name} after ${retries} attempts`, { error: String(error) });
+        log.debug(`[ERROR] Failed to fetch ${name} after ${retries} attempts`, { error: String(error) });
         throw error;
       }
       const delay = 1000 * (i + 1);
-      debugLog(`[WARNING] Attempt ${i + 1} for ${name} failed, retrying in ${delay}ms...`, { error: String(error) });
+      log.debug(`[WARNING] Attempt ${i + 1} for ${name} failed, retrying in ${delay}ms...`, { error: String(error) });
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
   
-  debugLog(`[WARNING] Returning undefined for ${name} after ${retries} attempts`);
+  log.debug(`[WARNING] Returning undefined for ${name} after ${retries} attempts`);
   return undefined;
 };
 
 // Service: Fetch dream context from blockchain
 export const fetchContextService = fromPromise(async ({ input }: { input: { dreamText: string; tokenId?: number; agentName?: string; continueWithoutMemory?: boolean } }) => {
-  debugLog('=== BANDYCKA JAZDA: Fetching REAL dream context ===', { 
+  log.debug('=== BANDYCKA JAZDA: Fetching REAL dream context ===', { 
     dreamLength: input.dreamText.length,
     tokenId: input.tokenId || defaultAgentData.tokenId,
     agentName: input.agentName || 'Unknown',
@@ -90,7 +86,7 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
       transport: http()
     });
 
-    debugLog('Created viem PublicClient', {
+    log.debug('Created viem PublicClient', {
       chainId: activeChain.id,
       rpcUrl: activeChain.rpcUrls.default.http[0],
       contractAddress: contractConfig.address
@@ -110,9 +106,9 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
     
     // Handle undefined memory data
     if (!memoryData) {
-      debugLog('[WARNING] Memory data undefined after retries, using empty hashes');
+      log.debug('[WARNING] Memory data undefined after retries, using empty hashes');
     } else {
-      debugLog('[DATA] Contract memory data fetched', {
+      log.debug('[DATA] Contract memory data fetched', {
         memoryCoreHash: memoryData.memoryCoreHash,
         currentDreamDailyHash: memoryData.currentDreamDailyHash,
         currentConvDailyHash: memoryData.currentConvDailyHash,
@@ -175,13 +171,13 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
         };
       }
       
-      debugLog('[AGENT] Agent data parsed', {
+      log.debug('[AGENT] Agent data parsed', {
         agentName: parsedAgentData.agentName,
         intelligenceLevel: parsedAgentData.intelligenceLevel?.toString(),
         dreamCount: parsedAgentData.dreamCount?.toString()
       });
     } else {
-      debugLog('[WARNING] Agent data undefined, using defaults');
+      log.debug('[WARNING] Agent data undefined, using defaults');
     }
     
     // 4. Fetch personality traits
@@ -196,7 +192,7 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
       'PersonalityTraits'
     );
     
-    debugLog('[PERSONALITY] Personality traits fetched', {
+    log.debug('[PERSONALITY] Personality traits fetched', {
       traits: convertBigIntToString(personalityTraits)
     });
     
@@ -212,7 +208,7 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
       'UniqueFeatures'
     );
     
-    debugLog('[FEATURES] Unique features fetched', {
+    log.debug('[FEATURES] Unique features fetched', {
       featuresCount: Array.isArray(uniqueFeatures) ? uniqueFeatures.length : 0
     });
     
@@ -228,10 +224,10 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
     
     // Download current daily dreams if hash exists (unless skipping memory)
     if (input.continueWithoutMemory) {
-      debugLog('[INFO] Skipping memory download (continuing without memory)');
+      log.debug('[INFO] Skipping memory download (continuing without memory)');
       historicalData.dailyDreams = [];
     } else if (memoryData?.currentDreamDailyHash && memoryData.currentDreamDailyHash !== emptyHash) {
-      debugLog('[DOWNLOAD] Downloading daily dreams from storage', { 
+      log.debug('[DOWNLOAD] Downloading daily dreams from storage', { 
         hash: memoryData.currentDreamDailyHash 
       });
       
@@ -239,7 +235,7 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
         const result = await storageService.downloadJson(memoryData.currentDreamDailyHash);
         if (result.success && result.data) {
           historicalData.dailyDreams = Array.isArray(result.data) ? result.data : [];
-          debugLog('[SUCCESS] Daily dreams downloaded successfully', {
+          log.debug('[SUCCESS] Daily dreams downloaded successfully', {
             count: historicalData.dailyDreams.length,
             preview: historicalData.dailyDreams.slice(0, 2).map(d => ({
               id: d.id,
@@ -248,22 +244,22 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
             }))
           });
         } else {
-          debugLog('[WARNING] Failed to download daily dreams', { error: result.error });
+          log.debug('[WARNING] Failed to download daily dreams', { error: result.error });
           // Throw error to trigger memoryDownloadFailed state
           throw new Error(`Failed to download daily dreams: ${result.error || 'File not found'}`);
         }
       } catch (error) {
-        debugLog('[ERROR] Error downloading daily dreams', { error: String(error) });
+        log.debug('[ERROR] Error downloading daily dreams', { error: String(error) });
         // Re-throw to trigger the error state
         throw error;
       }
     } else {
-      debugLog('[INFO] No daily dreams hash available');
+      log.debug('[INFO] No daily dreams hash available');
     }
     
     // Download monthly consolidations if hash exists
     if (!input.continueWithoutMemory && memoryData?.lastDreamMonthlyHash && memoryData.lastDreamMonthlyHash !== emptyHash) {
-      debugLog('[DOWNLOAD] Downloading monthly consolidations from storage', { 
+      log.debug('[DOWNLOAD] Downloading monthly consolidations from storage', { 
         hash: memoryData.lastDreamMonthlyHash 
       });
       
@@ -271,22 +267,22 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
         const result = await storageService.downloadJson(memoryData.lastDreamMonthlyHash);
         if (result.success && result.data) {
           historicalData.monthlyConsolidations = Array.isArray(result.data) ? result.data : [result.data];
-          debugLog('[SUCCESS] Monthly consolidations downloaded', {
+          log.debug('[SUCCESS] Monthly consolidations downloaded', {
             count: historicalData.monthlyConsolidations.length
           });
         } else {
-          debugLog('[WARNING] Failed to download monthly consolidations', { error: result.error });
+          log.debug('[WARNING] Failed to download monthly consolidations', { error: result.error });
         }
       } catch (error) {
-        debugLog('[ERROR] Error downloading monthly consolidations', { error: String(error) });
+        log.debug('[ERROR] Error downloading monthly consolidations', { error: String(error) });
       }
     } else {
-      debugLog('[INFO] No monthly consolidation hash available');
+      log.debug('[INFO] No monthly consolidation hash available');
     }
     
     // Download memory core if hash exists
     if (!input.continueWithoutMemory && memoryData?.memoryCoreHash && memoryData.memoryCoreHash !== emptyHash) {
-      debugLog('[DOWNLOAD] Downloading memory core from storage', { 
+      log.debug('[DOWNLOAD] Downloading memory core from storage', { 
         hash: memoryData.memoryCoreHash 
       });
       
@@ -294,15 +290,15 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
         const result = await storageService.downloadJson(memoryData.memoryCoreHash);
         if (result.success && result.data) {
           historicalData.yearlyCore = result.data;
-          debugLog('[SUCCESS] Memory core downloaded');
+          log.debug('[SUCCESS] Memory core downloaded');
         } else {
-          debugLog('[WARNING] Failed to download memory core', { error: result.error });
+          log.debug('[WARNING] Failed to download memory core', { error: result.error });
         }
       } catch (error) {
-        debugLog('[ERROR] Error downloading memory core', { error: String(error) });
+        log.debug('[ERROR] Error downloading memory core', { error: String(error) });
       }
     } else {
-      debugLog('[INFO] No memory core hash available');
+      log.debug('[INFO] No memory core hash available');
     }
     
     // 7. Calculate memory access based on intelligence level
@@ -369,7 +365,7 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
       } : undefined
     };
     
-    debugLog('[COMPLETE] REAL context built successfully', {
+    log.debug('[COMPLETE] REAL context built successfully', {
       agentName: dreamContext.agentProfile.name,
       dreamCount: dreamContext.agentProfile.dreamCount,
       intelligenceLevel: dreamContext.agentProfile.intelligenceLevel,
@@ -384,14 +380,14 @@ export const fetchContextService = fromPromise(async ({ input }: { input: { drea
     return dreamContext;
     
   } catch (error) {
-    debugLog('[ERROR] Failed to fetch dream context', { error: String(error) });
+    log.debug('[ERROR] Failed to fetch dream context', { error: String(error) });
     throw error;
   }
 });
 
 // Service: Build dream prompt
 export const buildPromptService = fromPromise(async ({ input }: { input: { context: DreamContext } }) => {
-  debugLog('Building advanced dream prompt with full consciousness');
+  log.debug('Building advanced dream prompt with full consciousness');
   
   try {
     // Dynamic import to prevent circular dependencies
@@ -402,7 +398,7 @@ export const buildPromptService = fromPromise(async ({ input }: { input: { conte
     // Combine system and user prompts into a single string for AI service
     const fullPrompt = `${promptResult.systemPrompt}\n\n${promptResult.userPrompt}`;
     
-    debugLog('[DATA] Advanced prompt built', {
+    log.debug('[DATA] Advanced prompt built', {
       promptLength: fullPrompt.length,
       hasHistoricalContext: input.context.historicalData?.dailyDreams?.length > 0,
       intelligenceLevel: input.context.agentProfile.intelligenceLevel,
@@ -412,7 +408,7 @@ export const buildPromptService = fromPromise(async ({ input }: { input: { conte
     
     return fullPrompt;
   } catch (error) {
-    debugLog('[ERROR] Failed to build prompt', { error: String(error) });
+    log.debug('[ERROR] Failed to build prompt', { error: String(error) });
     throw error;
   }
 });
@@ -424,8 +420,8 @@ export const aiAnalysisService = fromPromise(async ({ input }: { input: {
   modelId?: string;
   walletAddress?: string;
 } }) => {
-  debugLog('Sending to AI for analysis');
-  debugLog('[INFO] Dream analysis parameters', {
+  log.debug('Sending to AI for analysis');
+  log.debug('[INFO] Dream analysis parameters', {
     modelId: input.modelId || 'default',
     dreamCount: input.dreamCount,
     promptLength: input.prompt.length
@@ -433,9 +429,9 @@ export const aiAnalysisService = fromPromise(async ({ input }: { input: {
   
   // Log full prompt for verification (only in test mode)
   if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    debugLog('[FULL PROMPT FOR VERIFICATION - START]');
-    debugLog('Full prompt: ' + input.prompt);
-    debugLog('[FULL PROMPT FOR VERIFICATION - END]');
+    log.debug('[FULL PROMPT FOR VERIFICATION - START]');
+    log.debug('Full prompt: ' + input.prompt);
+    log.debug('[FULL PROMPT FOR VERIFICATION - END]');
   }
   
   try {
@@ -448,16 +444,16 @@ export const aiAnalysisService = fromPromise(async ({ input }: { input: {
     
     // Special logging for evolution dreams
     if (isEvolutionDream) {
-      debugLog('========================================');
-      debugLog('[EVOLUTION DREAM] Sequence activated');
-      debugLog('========================================');
-      debugLog('Dream #' + nextDreamId + ' - Personality evolution triggered');
-      debugLog('Current dream count: ' + input.dreamCount);
-      debugLog('Agent trait evolution in progress');
-      debugLog('========================================');
+      log.debug('========================================');
+      log.debug('[EVOLUTION DREAM] Sequence activated');
+      log.debug('========================================');
+      log.debug('Dream #' + nextDreamId + ' - Personality evolution triggered');
+      log.debug('Current dream count: ' + input.dreamCount);
+      log.debug('Agent trait evolution in progress');
+      log.debug('========================================');
     }
     
-    debugLog('[API] Calling real AI backend', { 
+    log.debug('[API] Calling real AI backend', { 
       modelId: input.modelId,
       promptLength: input.prompt.length,
       isEvolutionDream,
@@ -473,7 +469,7 @@ export const aiAnalysisService = fromPromise(async ({ input }: { input: {
       input.dreamCount
     );
     
-    debugLog('[SUCCESS] AI analysis complete', {
+    log.debug('[SUCCESS] AI analysis complete', {
       hasFullAnalysis: !!aiResponse.fullAnalysis,
       hasDreamData: !!aiResponse.dreamData,
       personalityImpact: aiResponse.personalityImpact
@@ -481,29 +477,29 @@ export const aiAnalysisService = fromPromise(async ({ input }: { input: {
     
     // Log personality evolution details if present
     if (aiResponse.personalityImpact) {
-      debugLog('🧬 ========================================');
-      debugLog('🧬 PERSONALITY EVOLUTION DATA RECEIVED!');
-      debugLog('🧬 ========================================');
-      debugLog('🧬 Creativity change: ' + (aiResponse.personalityImpact.creativityChange > 0 ? '+' : '') + aiResponse.personalityImpact.creativityChange);
-      debugLog('🧬 Analytical change: ' + (aiResponse.personalityImpact.analyticalChange > 0 ? '+' : '') + aiResponse.personalityImpact.analyticalChange);
-      debugLog('🧬 Empathy change: ' + (aiResponse.personalityImpact.empathyChange > 0 ? '+' : '') + aiResponse.personalityImpact.empathyChange);
-      debugLog('🧬 Intuition change: ' + (aiResponse.personalityImpact.intuitionChange > 0 ? '+' : '') + aiResponse.personalityImpact.intuitionChange);
-      debugLog('🧬 Resilience change: ' + (aiResponse.personalityImpact.resilienceChange > 0 ? '+' : '') + aiResponse.personalityImpact.resilienceChange);
-      debugLog('🧬 Curiosity change: ' + (aiResponse.personalityImpact.curiosityChange > 0 ? '+' : '') + aiResponse.personalityImpact.curiosityChange);
-      debugLog('🧬 Mood shift: ' + aiResponse.personalityImpact.moodShift);
-      debugLog('🧬 Evolution weight: ' + aiResponse.personalityImpact.evolutionWeight);
+      log.debug('🧬 ========================================');
+      log.debug('🧬 PERSONALITY EVOLUTION DATA RECEIVED!');
+      log.debug('🧬 ========================================');
+      log.debug('🧬 Creativity change: ' + (aiResponse.personalityImpact.creativityChange > 0 ? '+' : '') + aiResponse.personalityImpact.creativityChange);
+      log.debug('🧬 Analytical change: ' + (aiResponse.personalityImpact.analyticalChange > 0 ? '+' : '') + aiResponse.personalityImpact.analyticalChange);
+      log.debug('🧬 Empathy change: ' + (aiResponse.personalityImpact.empathyChange > 0 ? '+' : '') + aiResponse.personalityImpact.empathyChange);
+      log.debug('🧬 Intuition change: ' + (aiResponse.personalityImpact.intuitionChange > 0 ? '+' : '') + aiResponse.personalityImpact.intuitionChange);
+      log.debug('🧬 Resilience change: ' + (aiResponse.personalityImpact.resilienceChange > 0 ? '+' : '') + aiResponse.personalityImpact.resilienceChange);
+      log.debug('🧬 Curiosity change: ' + (aiResponse.personalityImpact.curiosityChange > 0 ? '+' : '') + aiResponse.personalityImpact.curiosityChange);
+      log.debug('🧬 Mood shift: ' + aiResponse.personalityImpact.moodShift);
+      log.debug('🧬 Evolution weight: ' + aiResponse.personalityImpact.evolutionWeight);
       if (aiResponse.personalityImpact.newFeatures && aiResponse.personalityImpact.newFeatures.length > 0) {
-        debugLog('🧬 New features gained: ' + aiResponse.personalityImpact.newFeatures.length);
+        log.debug('🧬 New features gained: ' + aiResponse.personalityImpact.newFeatures.length);
         aiResponse.personalityImpact.newFeatures.forEach(feature => {
-          debugLog('🧬   - ' + feature.name + ' (Intensity: ' + feature.intensity + '%)');
+          log.debug('🧬   - ' + feature.name + ' (Intensity: ' + feature.intensity + '%)');
         });
       }
-      debugLog('🧬 ========================================');
+      log.debug('🧬 ========================================');
     }
     
     return aiResponse;
   } catch (error) {
-    debugLog('[ERROR] AI analysis failed', { error: String(error) });
+    log.debug('[ERROR] AI analysis failed', { error: String(error) });
     throw error;
   }
 });

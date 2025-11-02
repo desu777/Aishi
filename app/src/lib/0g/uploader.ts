@@ -7,6 +7,9 @@
 import { Indexer, Blob, ZgFile } from '@0glabs/0g-ts-sdk';
 import { Contract } from 'ethers';
 import { getEthersSignerForZeroG, getEthersProviderForZeroG } from './adapter/viemAdapter';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'Upload0G' });
 
 /**
  * Submits a transaction to the flow contract
@@ -46,12 +49,11 @@ export async function uploadToStorage(
   uniqueTag?: string
 ): Promise<[{ success: boolean; txHash?: string; alreadyExists: boolean } | null, Error | null]> {
   try {
-    console.log('[uploadToStorage] Starting upload to 0G storage...');
-    console.log('[uploadToStorage] Storage RPC:', storageRpc);
-    console.log('[uploadToStorage] Unique tag:', uniqueTag);
-    
+    log.debug('Starting upload to 0G storage');
+    log.debug('Storage configuration', { storageRpc, uniqueTag });
+
     const indexer = new Indexer(storageRpc);
-    
+
     const uploadOptions = {
       taskSize: 10,
       expectedReplica: 1,
@@ -60,11 +62,11 @@ export async function uploadToStorage(
       skipTx: true, // Skip transaction like 0gdrive-main
       fee: BigInt(0)
     };
-    
-    console.log('[uploadToStorage] Upload options:', uploadOptions);
-    
+
+    log.debug('Upload options configured', uploadOptions);
+
     const uploadResult = await indexer.upload(blob, l1Rpc, signer, uploadOptions);
-    console.log('[uploadToStorage] Upload result:', uploadResult);
+    log.debug('Upload result received', uploadResult);
     
     // Handle different result formats (like 0gdrive-main)
     if (Array.isArray(uploadResult) && uploadResult.length === 2) {
@@ -73,9 +75,9 @@ export async function uploadToStorage(
       if (error) {
         // Check if it's "Data already exists" error
         if (error.message && error.message.includes('Data already exists')) {
-          console.log('[uploadToStorage] Data already exists - successful upload');
-          return [{ 
-            success: true, 
+          log.info('Data already exists - successful upload');
+          return [{
+            success: true,
             alreadyExists: true,
             message: 'File already exists in storage'
           }, null];
@@ -83,23 +85,23 @@ export async function uploadToStorage(
           return [null, error];
         }
       } else if (result) {
-        return [{ 
-          success: true, 
+        return [{
+          success: true,
           txHash: result,
           alreadyExists: false,
           message: 'File uploaded successfully'
         }, null];
       }
     }
-    
+
     // Default success case
-    return [{ 
-      success: true, 
+    return [{
+      success: true,
       alreadyExists: false,
       message: 'File uploaded successfully'
     }, null];
   } catch (error) {
-    console.error('[uploadToStorage] Upload error:', error);
+    log.error('Upload error', { error });
     return [null, error instanceof Error ? error : new Error(String(error))];
   }
 }
@@ -159,20 +161,19 @@ export async function uploadFileComplete(
   try {
     // Check if we should use local storage adapter
     if (process.env.NEXT_PUBLIC_STORAGE_AS_DATABASE === 'true') {
-      console.log('[uploadFileComplete] Using AISHI Storage Adapter');
+      log.info('Using AISHI Storage Adapter');
       const { uploadFileAdapter } = await import('../storage/storageAdapter');
       return await uploadFileAdapter(file, storageRpc, l1Rpc, signer);
     }
 
-    console.log('[uploadFileComplete] Starting complete upload flow');
-    console.log('[uploadFileComplete] File:', file.name, 'Size:', file.size);
+    log.debug('Starting complete upload flow', { fileName: file.name, fileSize: file.size });
 
     // 1. Create 0G SDK Blob from file
     const [blob, blobErr] = await createBlobFromFile(file);
     if (!blob || blobErr) {
       return { success: false, error: `Failed to create blob: ${blobErr?.message}` };
     }
-    console.log('[uploadFileComplete] 0G SDK Blob created successfully');
+    log.debug('0G SDK Blob created successfully');
 
     // 2. Generate unique tag for upload (like 0gdrive-main)
     const [merkleTree, merkleErr] = await blob.merkleTree();
@@ -184,15 +185,15 @@ export async function uploadFileComplete(
       return { success: false, error: 'Failed to get root hash from merkle tree' };
     }
     const uniqueTag = rootHashHex; // Already includes 0x prefix
-    console.log('[uploadFileComplete] Root hash generated:', uniqueTag);
+    log.debug('Root hash generated', { rootHash: uniqueTag });
 
     // 3. Get signer using adapter (ignore deprecated parameter)
-    console.log('[uploadFileComplete] Getting signer via adapter...');
+    log.debug('Getting signer via adapter');
     if (signer) {
-      console.log('[uploadFileComplete] Warning: signer parameter is deprecated and will be ignored');
+      log.warn('Signer parameter is deprecated and will be ignored');
     }
     const adapterSigner = await getEthersSignerForZeroG();
-    console.log('[uploadFileComplete] Signer obtained');
+    log.debug('Signer obtained');
 
     // 4. Upload to 0G storage
     const [uploadResult, uploadErr] = await uploadToStorage(
@@ -217,9 +218,9 @@ export async function uploadFileComplete(
       txHash: uploadResult.txHash,
       alreadyExists: uploadResult.alreadyExists
     };
-    
+
   } catch (error) {
-    console.error('[uploadFileComplete] Error:', error);
+    log.error('Upload complete flow error', { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error)

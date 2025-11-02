@@ -10,6 +10,7 @@ import { DreamContextBuilder, DreamContext } from './services/dreamContextBuilde
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
 import { getActiveChain } from '../../config/chains';
 import type { PublicClient, WalletClient } from 'viem';
+import { logger } from '@/lib/logger';
 
 // PersonalityImpact type matching contract ABI structure
 interface PersonalityImpact {
@@ -96,18 +97,17 @@ export function useAgentDream() {
   const { uploadFile } = useStorageUpload();
   const { isConnected } = useWallet();
 
-  // Debug logs dla development
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[useAgentDream] ${message}`, data || '');
-    }
-  };
+  // Logger instance
+  const log = logger.child({ component: 'useAgentDream' });
 
-  debugLog('useAgentDream hook initialized');
+  // Wrapper function for services that expect function parameter
+  const logFn = (message: string, data?: any) => log.debug(message, data);
+
+  log.debug('useAgentDream hook initialized');
 
   const setDreamText = (text: string) => {
     setDreamState(prev => ({ ...prev, dreamText: text }));
-    debugLog('Dream text updated', { length: text.length });
+    log.debug('Dream text updated', { length: text.length });
   };
 
   const resetDream = () => {
@@ -124,7 +124,7 @@ export function useAgentDream() {
       isProcessingContract: false,
       contractStatus: ''
     });
-    debugLog('Dream state reset');
+    log.debug('Dream state reset');
   };
 
   /**
@@ -138,7 +138,7 @@ export function useAgentDream() {
     if (!isConnected) {
       const error = 'Wallet not connected';
       setDreamState(prev => ({ ...prev, error }));
-      debugLog('Context building failed - wallet not connected');
+      log.debug('Context building failed - wallet not connected');
       return null;
     }
 
@@ -146,7 +146,7 @@ export function useAgentDream() {
     if (!effectiveDreamText.trim()) {
       const error = 'Dream text is required';
       setDreamState(prev => ({ ...prev, error }));
-      debugLog('Context building failed - no dream text', { 
+      log.debug('Context building failed - no dream text', { 
         dreamTextOverride, 
         dreamStateDreamText: dreamState.dreamText,
         effectiveDreamText 
@@ -162,7 +162,7 @@ export function useAgentDream() {
     }));
 
     try {
-      debugLog('Starting context building', { 
+      log.debug('Starting context building', { 
         tokenId, 
         dreamLength: effectiveDreamText.length,
         hasPreloadedData: !!agentData,
@@ -174,7 +174,7 @@ export function useAgentDream() {
         setDreamState(prev => ({ ...prev, contextStatus: 'Using pre-loaded agent data...' }));
         
         // Create a dummy contract for the context builder (not used when agentData is provided)
-        const contextBuilder = new DreamContextBuilder(null as any, debugLog);
+        const contextBuilder = new DreamContextBuilder(null as any, logFn);
         
         // Build context with pre-loaded data
         const context = await contextBuilder.buildContext(
@@ -191,7 +191,7 @@ export function useAgentDream() {
           builtContext: context
         }));
 
-        debugLog('Context building completed with pre-loaded data', {
+        log.debug('Context building completed with pre-loaded data', {
           agentName: context.agentProfile.name,
           intelligenceLevel: context.agentProfile.intelligenceLevel,
           memoryDepth: context.memoryAccess.memoryDepth,
@@ -210,11 +210,11 @@ export function useAgentDream() {
           throw new Error(`PublicClient error: ${publicErr?.message}`);
         }
 
-        debugLog('PublicClient connected');
+        log.debug('PublicClient connected');
 
         setDreamState(prev => ({ ...prev, contextStatus: 'Building context...' }));
 
-        const contextBuilder = new DreamContextBuilder(publicClient, debugLog);
+        const contextBuilder = new DreamContextBuilder(publicClient, logFn);
 
         const context = await contextBuilder.buildContext(
           tokenId,
@@ -229,7 +229,7 @@ export function useAgentDream() {
           builtContext: context
         }));
 
-        debugLog('Context building completed', {
+        log.debug('Context building completed', {
           agentName: context.agentProfile.name,
           intelligenceLevel: context.agentProfile.intelligenceLevel,
           memoryDepth: context.memoryAccess.memoryDepth,
@@ -248,7 +248,7 @@ export function useAgentDream() {
         error: errorMessage,
         contextStatus: ''
       }));
-      debugLog('Context building failed', { error: errorMessage });
+      log.debug('Context building failed', { error: errorMessage });
       return null;
     }
   };
@@ -264,7 +264,7 @@ export function useAgentDream() {
     if (!isConnected) {
       const error = 'Wallet not connected';
       setDreamState(prev => ({ ...prev, error }));
-      debugLog('Dream storage failed - wallet not connected');
+      log.debug('Dream storage failed - wallet not connected');
       return { success: false, error };
     }
 
@@ -276,7 +276,7 @@ export function useAgentDream() {
     }));
 
     try {
-      debugLog('Starting dream storage', { 
+      log.debug('Starting dream storage', { 
         tokenId, 
         dreamId: dreamStorageData.dreamData.id,
         date: dreamStorageData.dreamData.date 
@@ -292,7 +292,7 @@ export function useAgentDream() {
 
       const contractConfig = getContractConfig();
 
-      debugLog('PublicClient connected for storage');
+      log.debug('PublicClient connected for storage');
 
       const agentMemory = await publicClient.readContract({
         address: contractConfig.address,
@@ -312,7 +312,7 @@ export function useAgentDream() {
       const currentDreamHash = agentMemory.currentDreamDailyHash;
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
-      debugLog('Current dream hash from contract', { currentDreamHash });
+      log.debug('Current dream hash from contract', { currentDreamHash });
 
       // 3. Download existing dreams file if it exists
       setDreamState(prev => ({ ...prev, uploadStatus: 'Downloading existing dreams...' }));
@@ -320,7 +320,7 @@ export function useAgentDream() {
       let existingDreams: any[] = [];
       
       if (currentDreamHash && currentDreamHash !== emptyHash) {
-        debugLog('Downloading existing dreams file', { hash: currentDreamHash });
+        log.debug('Downloading existing dreams file', { hash: currentDreamHash });
         
         const downloadResult = await downloadFile(currentDreamHash);
         
@@ -330,17 +330,17 @@ export function useAgentDream() {
             const textDecoder = new TextDecoder('utf-8');
             const jsonText = textDecoder.decode(downloadResult.data);
             existingDreams = JSON.parse(jsonText);
-            debugLog('Existing dreams loaded', { count: existingDreams.length });
+            log.debug('Existing dreams loaded', { count: existingDreams.length });
           } catch (parseError) {
-            debugLog('Failed to parse existing dreams, starting fresh', parseError);
+            log.debug('Failed to parse existing dreams, starting fresh', parseError);
             existingDreams = [];
           }
         } else {
-          debugLog('Failed to download existing dreams, starting fresh', downloadResult.error);
+          log.debug('Failed to download existing dreams, starting fresh', downloadResult.error);
           existingDreams = [];
         }
       } else {
-        debugLog('No existing dreams file, starting fresh array');
+        log.debug('No existing dreams file, starting fresh array');
       }
 
       // 4. Create new dream entry (optimized format) 
@@ -380,7 +380,7 @@ export function useAgentDream() {
 
       // 5. Append new dream to TOP of array (newest first)
       const updatedDreams = [newDreamEntry, ...existingDreams];
-      debugLog('Updated dreams array created', { totalDreams: updatedDreams.length });
+      log.debug('Updated dreams array created', { totalDreams: updatedDreams.length });
 
       // 6. Create new file content
       setDreamState(prev => ({ ...prev, uploadStatus: 'Creating updated dreams file...' }));
@@ -391,7 +391,7 @@ export function useAgentDream() {
         type: 'application/json'
       });
 
-      debugLog('New dreams file created', { 
+      log.debug('New dreams file created', { 
         fileSize: file.size, 
         fileName: file.name,
         totalDreams: updatedDreams.length
@@ -412,7 +412,7 @@ export function useAgentDream() {
         uploadStatus: 'Dream saved to storage successfully!'
       }));
 
-      debugLog('Dream storage completed successfully', {
+      log.debug('Dream storage completed successfully', {
         newRootHash: uploadResult.rootHash,
         totalDreams: updatedDreams.length,
         dreamId: dreamStorageData.dreamData.id
@@ -431,7 +431,7 @@ export function useAgentDream() {
         error: errorMessage,
         uploadStatus: ''
       }));
-      debugLog('Dream storage failed', { error: errorMessage });
+      log.debug('Dream storage failed', { error: errorMessage });
       return { success: false, error: errorMessage };
     }
   };
@@ -445,7 +445,7 @@ export function useAgentDream() {
     parsedAIResponse: any
   ): Promise<{ success: boolean; rootHash?: string; error?: string }> => {
     try {
-      debugLog('Extracting dream data from AI response', {
+      log.debug('Extracting dream data from AI response', {
         tokenId,
         hasAnalysis: !!parsedAIResponse.analysis,
         hasDreamData: !!parsedAIResponse.dreamData,
@@ -482,7 +482,7 @@ export function useAgentDream() {
         }
       };
 
-      debugLog('Dream storage data extracted', {
+      log.debug('Dream storage data extracted', {
         dreamId: dreamStorageData.dreamData.id,
         date: dreamStorageData.dreamData.date,
         timestamp: dreamStorageData.dreamData.timestamp,
@@ -502,7 +502,7 @@ export function useAgentDream() {
       const result = await saveDreamToStorage(tokenId, dreamStorageData);
       
       if (result.success) {
-        debugLog('Dream data saved to storage successfully', {
+        log.debug('Dream data saved to storage successfully', {
           rootHash: result.rootHash,
           dreamId: dreamStorageData.dreamData.id
         });
@@ -512,7 +512,7 @@ export function useAgentDream() {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      debugLog('Failed to extract and save dream data', { error: errorMessage });
+      log.debug('Failed to extract and save dream data', { error: errorMessage });
       return { success: false, error: errorMessage };
     }
   };
@@ -529,7 +529,7 @@ export function useAgentDream() {
   ) => {
     const isEvolutionDream = dreamCount > 0 && dreamCount % 5 === 0;
     
-    debugLog('Creating PersonalityImpact', {
+    log.debug('Creating PersonalityImpact', {
       dreamCount,
       isEvolutionDream,
       hasAIPersonalityImpact: !!parsedAIResponse.personalityImpact
@@ -539,7 +539,7 @@ export function useAgentDream() {
       // Evolution dream - use AI response data
       const aiImpact = parsedAIResponse.personalityImpact;
       
-      debugLog('Using AI PersonalityImpact for evolution dream', aiImpact);
+      log.debug('Using AI PersonalityImpact for evolution dream', aiImpact);
       
       return {
         creativityChange: aiImpact.creativityChange || 0,
@@ -561,7 +561,7 @@ export function useAgentDream() {
       // Regular dream - use current personality data (neutral impact)
       const currentPersonality = builtContext.personality;
       
-      debugLog('Using neutral PersonalityImpact for regular dream', {
+      log.debug('Using neutral PersonalityImpact for regular dream', {
         currentMood: currentPersonality.dominantMood
       });
       
@@ -591,7 +591,7 @@ export function useAgentDream() {
     if (!isConnected) {
       const error = 'Wallet not connected';
       setDreamState(prev => ({ ...prev, error }));
-      debugLog('Contract call failed - wallet not connected');
+      log.debug('Contract call failed - wallet not connected');
       return { success: false, error };
     }
 
@@ -603,7 +603,7 @@ export function useAgentDream() {
     }));
 
     try {
-      debugLog('Starting processDailyDream contract call', { 
+      log.debug('Starting processDailyDream contract call', { 
         tokenId, 
         dreamHash,
         personalityImpact: {
@@ -629,11 +629,11 @@ export function useAgentDream() {
 
       const contractConfig = getContractConfig();
 
-      debugLog('WalletClient connected for processDailyDream');
+      log.debug('WalletClient connected for processDailyDream');
 
       const dreamHashBytes32 = dreamHash;
       
-      debugLog('Using root hash from storage as bytes32', { 
+      log.debug('Using root hash from storage as bytes32', { 
         originalHash: dreamHash,
         bytes32Hash: dreamHashBytes32
       });
@@ -649,7 +649,7 @@ export function useAgentDream() {
         args: [BigInt(tokenId), dreamHashBytes32 as `0x${string}`, personalityImpact as any]
       });
 
-      debugLog('processDailyDream transaction sent', { 
+      log.debug('processDailyDream transaction sent', { 
         txHash,
         tokenId,
         dreamHash: dreamHashBytes32
@@ -660,7 +660,7 @@ export function useAgentDream() {
       const [publicClient] = await getViemProvider();
       const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
       
-      debugLog('processDailyDream transaction confirmed', {
+      log.debug('processDailyDream transaction confirmed', {
         txHash,
         blockNumber: receipt.blockNumber,
         gasUsed: receipt.gasUsed.toString()
@@ -685,7 +685,7 @@ export function useAgentDream() {
         error: errorMessage,
         contractStatus: ''
       }));
-      debugLog('processDailyDream failed', { error: errorMessage });
+      log.debug('processDailyDream failed', { error: errorMessage });
       return { success: false, error: errorMessage };
     }
   };
@@ -701,12 +701,12 @@ export function useAgentDream() {
     if (!dreamState.builtContext) {
       const error = 'Context not built - call buildDreamContext first';
       setDreamState(prev => ({ ...prev, error }));
-      debugLog('processStorageAndContract failed - no context');
+      log.debug('processStorageAndContract failed - no context');
       return { success: false, error };
     }
 
     try {
-      debugLog('Starting storage and contract processing', {
+      log.debug('Starting storage and contract processing', {
         tokenId,
         hasBuiltContext: !!dreamState.builtContext,
         currentDreamCount: dreamState.builtContext.agentProfile.dreamCount
@@ -719,7 +719,7 @@ export function useAgentDream() {
         throw new Error(`Storage failed: ${storageResult.error}`);
       }
 
-      debugLog('Storage processing completed', {
+      log.debug('Storage processing completed', {
         rootHash: storageResult.rootHash
       });
 
@@ -740,14 +740,14 @@ export function useAgentDream() {
 
       if (!contractResult.success) {
         // Storage succeeded but contract failed
-        debugLog('Contract failed after successful storage', {
+        log.debug('Contract failed after successful storage', {
           storageRootHash: storageResult.rootHash,
           contractError: contractResult.error
         });
         throw new Error(`Contract failed: ${contractResult.error}`);
       }
 
-      debugLog('Storage and contract processing completed successfully', {
+      log.debug('Storage and contract processing completed successfully', {
         rootHash: storageResult.rootHash,
         txHash: contractResult.txHash,
         dreamCount: currentDreamCount,
@@ -762,7 +762,7 @@ export function useAgentDream() {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      debugLog('processStorageAndContract failed', { error: errorMessage });
+      log.debug('processStorageAndContract failed', { error: errorMessage });
       return { success: false, error: errorMessage };
     }
   };

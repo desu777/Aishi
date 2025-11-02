@@ -5,6 +5,9 @@ import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTr
 import toast from 'react-hot-toast';
 import { getActiveChain } from '../../../config/chains';
 import { getContractConfig, MINTING_FEE, MAX_NAME_LENGTH } from '../config/contractConfig';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'useMintAgent' });
 
 const contractValueToNumber = (value: unknown, fallback = 0) => {
   if (typeof value === 'bigint') return Number(value);
@@ -186,7 +189,7 @@ export function useMintAgent() {
         chain: getActiveChain(),
       });
     } catch (error) {
-      console.error('Mint error:', error);
+      log.error('Mint error', { error });
       toast.error('Failed to mint agent');
     }
   };

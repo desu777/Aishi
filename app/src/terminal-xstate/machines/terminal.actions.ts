@@ -6,6 +6,9 @@
 
 import { assign } from 'xstate';
 import type { TerminalContext, TerminalLine } from './types';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'terminal.actions' });
 
 /**
  * Terminal machine actions organized by category
@@ -104,11 +107,9 @@ export const terminalActions = {
   appendLines: assign({
     lines: ({ context, event }: any) => {
       if (event.type === 'APPEND_LINES') {
-        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[Terminal] appendLines action triggered');
-          console.log('[Terminal] Appending lines:', event.lines?.length);
-          console.log('[Terminal] Current lines:', context.lines.length);
-        }
+        log.debug('appendLines action triggered');
+        log.debug('Appending lines', { count: event.lines?.length });
+        log.debug('Current lines count', { count: context.lines.length });
         return [...context.lines, ...event.lines];
       }
       return context.lines;
@@ -506,13 +507,10 @@ export const terminalActions = {
 
   handleVoiceTranscript: assign({
     currentInput: ({ event }: any) => {
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[handleVoiceTranscript] Setting currentInput from event:', {
-          eventType: event.type,
-          transcript: event.transcript,
-          fullEvent: event
-        });
-      }
+      log.debug('Setting currentInput from voice event', {
+        eventType: event.type,
+        transcript: event.transcript
+      });
       if (event.type === 'VOICE.TRANSCRIBED') {
         return event.transcript || '';  // Add fallback
       }
@@ -571,14 +569,12 @@ export const terminalActions = {
    */
   displayVoiceInput: assign({
     lines: ({ context, event }: any) => {
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[terminal.actions] displayVoiceInput triggered', {
-          eventType: event.type,
-          hasAudioBlob: !!event.audioBlob,
-          hasAudioBase64: !!event.audioBase64,
-          duration: event.duration
-        });
-      }
+      log.debug('displayVoiceInput triggered', {
+        eventType: event.type,
+        hasAudioBlob: !!event.audioBlob,
+        hasAudioBase64: !!event.audioBase64,
+        duration: event.duration
+      });
       const timestamp = Date.now();
       const line: TerminalLine = {
         type: 'voice-input',

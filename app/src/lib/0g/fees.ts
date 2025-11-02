@@ -4,10 +4,10 @@
  * using modern viem/wagmi stack instead of ethers
  */
 
-import { 
-  createPublicClient, 
-  createWalletClient, 
-  http, 
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
   custom,
   parseEther,
   formatEther,
@@ -20,6 +20,9 @@ import {
 import { getActiveChain } from '../../config/chains';
 import { getEthersProviderForZeroG, getEthersSignerForZeroG } from './adapter/viemAdapter';
 import { ethers } from 'ethers';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'Fees0G' });
 
 /**
  * Gets a viem public client for reading from the blockchain
@@ -35,7 +38,7 @@ export async function getViemProvider(): Promise<[PublicClient | null, Error | n
     });
     return [publicClient, null];
   } catch (error) {
-    console.error('Failed to create public client:', error);
+    log.error('Failed to create public client', { error });
     return [null, error instanceof Error ? error : new Error(String(error))];
   }
 }
@@ -64,7 +67,7 @@ export async function getViemSigner(): Promise<[WalletClient | null, Error | nul
 
     return [walletClient, null];
   } catch (error) {
-    console.error('Failed to get wallet client:', error);
+    log.error('Failed to get wallet client', { error });
     return [null, error instanceof Error ? error : new Error(String(error))];
   }
 }
@@ -80,7 +83,7 @@ export async function getProvider(): Promise<[ethers.JsonRpcProvider | null, Err
     const provider = getEthersProviderForZeroG(rpcUrl, activeChain.id);
     return [provider, null];
   } catch (error) {
-    console.error('Failed to get provider:', error);
+    log.error('Failed to get provider', { error });
     return [null, error instanceof Error ? error : new Error(String(error))];
   }
 }
@@ -95,7 +98,7 @@ export async function getSigner(provider: ethers.JsonRpcProvider): Promise<[ethe
     const signer = await getEthersSignerForZeroG(activeChain.id);
     return [signer, null];
   } catch (error) {
-    console.error('Failed to get signer:', error);
+    log.error('Failed to get signer', { error });
     return [null, error instanceof Error ? error : new Error(String(error))];
   }
 }
@@ -167,7 +170,7 @@ export async function getCurrentGasPrice(): Promise<bigint> {
     const gasPrice = await publicClient.getGasPrice();
     return gasPrice || parseUnits('20', 9);
   } catch (error) {
-    console.warn('Failed to get gas price, using default:', error);
+    log.warn('Failed to get gas price, using default', { error });
     return parseUnits('20', 9);
   }
 }
@@ -191,7 +194,7 @@ export async function validateSufficientBalance(
     });
     return balance >= requiredFee;
   } catch (error) {
-    console.error('Failed to check balance:', error);
+    log.error('Failed to check balance', { error });
     return false;
   }
 }

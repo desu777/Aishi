@@ -4,6 +4,9 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'useAudioRecorder' });
 
 export interface AudioRecorderState {
   isRecording: boolean;
@@ -132,7 +135,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
         audioBitsPerSecond: opts.audioBitsPerSecond
       });
 
-      console.log('[useAudioRecorder] MediaRecorder created with mimeType:', mimeType);
+      log.debug('MediaRecorder created with mimeType', { mimeType });
 
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -162,12 +165,10 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
       mediaRecorder.start(100); // Collect data every 100ms
       startTimeRef.current = Date.now();
 
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[useAudioRecorder] Recording started', {
-          mimeType,
-          streamActive: stream.active
-        });
-      }
+      log.debug('Recording started', {
+        mimeType,
+        streamActive: stream.active
+      });
 
       // Update duration every second
       durationIntervalRef.current = setInterval(() => {
@@ -199,32 +200,28 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
   // Stop recording
   const stopRecording = useCallback((): Promise<Blob | null> => {
     return new Promise((resolve) => {
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[useAudioRecorder] stopRecording called', {
-          hasMediaRecorder: !!mediaRecorderRef.current,
-          isRecording: state.isRecording,
-          chunksLength: chunksRef.current.length
-        });
-      }
+      log.debug('stopRecording called', {
+        hasMediaRecorder: !!mediaRecorderRef.current,
+        isRecording: state.isRecording,
+        chunksLength: chunksRef.current.length
+      });
 
       if (mediaRecorderRef.current && state.isRecording) {
         // Override the onstop handler to resolve the promise
         const originalOnStop = mediaRecorderRef.current.onstop;
 
         mediaRecorderRef.current.onstop = (event) => {
-          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-            console.log('[useAudioRecorder] MediaRecorder stopped', {
-              chunksLength: chunksRef.current.length,
-              totalSize: chunksRef.current.reduce((acc, chunk) => acc + chunk.size, 0)
-            });
-          }
+          log.debug('MediaRecorder stopped', {
+            chunksLength: chunksRef.current.length,
+            totalSize: chunksRef.current.reduce((acc, chunk) => acc + chunk.size, 0)
+          });
 
           const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
           const audioBlob = new Blob(chunksRef.current, {
             type: mimeType
           });
 
-          console.log('[useAudioRecorder] Created audio blob', {
+          log.debug('Created audio blob', {
             blobType: mimeType,
             blobSize: audioBlob.size
           });
@@ -305,9 +302,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
     const targetBlob = blob || state.audioBlob;
 
     if (!targetBlob) {
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[useAudioRecorder] getBase64 called but no blob available');
-      }
+      log.debug('getBase64 called but no blob available');
       return null;
     }
 
@@ -318,12 +313,10 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}) {
         // Remove data URL prefix
         const base64Data = base64.split(',')[1];
 
-        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[useAudioRecorder] Base64 conversion complete', {
-            blobSize: targetBlob.size,
-            base64Length: base64Data.length
-          });
-        }
+        log.debug('Base64 conversion complete', {
+          blobSize: targetBlob.size,
+          base64Length: base64Data.length
+        });
 
         resolve(base64Data);
       };

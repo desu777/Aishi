@@ -12,6 +12,7 @@ import { getContractConfig } from './config/contractConfig';
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
 import { getActiveChain } from '../../config/chains';
 import type { PublicClient, WalletClient } from 'viem';
+import { logger } from '@/lib/logger';
 
 interface ChatSession {
   sessionId: string;
@@ -66,14 +67,13 @@ export function useAgentChat(tokenId?: number) {
   const { sendConversationMessage } = useAgentConversation();
   const { buildConversationPrompt } = useAgentConversationPrompt();
 
-  // Debug logs dla development
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[useAgentChat] ${message}`, data || '');
-    }
-  };
+  // Logger instance
+  const log = logger.child({ component: 'useAgentChat' });
 
-  debugLog('useAgentChat hook initialized', { tokenId });
+  // Wrapper function for services that expect function parameter
+  const logFn = (message: string, data?: any) => log.debug(message, data);
+
+  log.debug('useAgentChat hook initialized', { tokenId });
 
   /**
    * Inicjalizuje nową sesję chatu
@@ -92,7 +92,7 @@ export function useAgentChat(tokenId?: number) {
     }));
 
     try {
-      debugLog('Initializing chat session', { tokenId, hasAgentData: !!agentData });
+      log('Initializing chat session', { tokenId, hasAgentData: !!agentData });
 
       const sessionId = `chat_${tokenId}_${Date.now()}`;
       
@@ -101,7 +101,7 @@ export function useAgentChat(tokenId?: number) {
       
       if (agentData) {
         // Use pre-loaded data from useAgentRead (faster)
-        const contextBuilder = new ConversationContextBuilder(null as any, debugLog);
+        const contextBuilder = new ConversationContextBuilder(null as any, logFn);
         context = await contextBuilder.buildContext(
           tokenId,
           sessionId,
@@ -116,7 +116,7 @@ export function useAgentChat(tokenId?: number) {
           throw new Error(`PublicClient error: ${publicErr?.message}`);
         }
 
-        const contextBuilder = new ConversationContextBuilder(publicClient, debugLog);
+        const contextBuilder = new ConversationContextBuilder(publicClient, logFn);
         context = await contextBuilder.buildContext(
           tokenId,
           sessionId,
@@ -140,7 +140,7 @@ export function useAgentChat(tokenId?: number) {
         session
       }));
 
-      debugLog('Chat session initialized successfully', {
+      log('Chat session initialized successfully', {
         sessionId,
         agentName: context.agentProfile.name,
         memoryDepth: context.memoryAccess.memoryDepth,
@@ -154,9 +154,9 @@ export function useAgentChat(tokenId?: number) {
         isInitializing: false,
         error: errorMessage
       }));
-      debugLog('Session initialization failed', { error: errorMessage });
+      log('Session initialization failed', { error: errorMessage });
     }
-  }, [tokenId, isConnected, downloadFile, debugLog]);
+  }, [tokenId, isConnected, downloadFile, log]);
 
   /**
    * Wysyła wiadomość do agenta
@@ -172,7 +172,7 @@ export function useAgentChat(tokenId?: number) {
       return;
     }
 
-    debugLog('Sending message to agent', { 
+    log('Sending message to agent', { 
       sessionId: chatState.session.sessionId,
       messageLength: userMessage.length
     });
@@ -208,7 +208,7 @@ export function useAgentChat(tokenId?: number) {
       // Save prompt for debugging
       setChatState(prev => ({ ...prev, lastPrompt: conversationPrompt.prompt }));
       
-      debugLog('Sending to AI', { 
+      log('Sending to AI', { 
         promptLength: conversationPrompt.prompt.length,
         agentName: updatedContext.agentProfile.name
       });
@@ -240,7 +240,7 @@ export function useAgentChat(tokenId?: number) {
           isTyping: false
         }));
 
-        debugLog('Message sent successfully', {
+        log('Message sent successfully', {
           agentResponseLength: agentMsg.content.length,
           totalMessages: chatState.session.messages.length + 2
         });
@@ -255,9 +255,9 @@ export function useAgentChat(tokenId?: number) {
         isTyping: false,
         error: errorMessage
       }));
-      debugLog('Message sending failed', { error: errorMessage });
+      log('Message sending failed', { error: errorMessage });
     }
-  }, [chatState.session, sendConversationMessage, buildConversationPrompt, debugLog]);
+  }, [chatState.session, sendConversationMessage, buildConversationPrompt, log]);
 
   /**
    * NEW: Wysyła rozmowę do LLM dla utworzenia unified summary
@@ -267,7 +267,7 @@ export function useAgentChat(tokenId?: number) {
     context: ConversationContext
   ): Promise<ConversationUnifiedSchema | null> => {
     try {
-      debugLog('Creating conversation summary with LLM', {
+      log('Creating conversation summary with LLM', {
         messageCount: conversationHistory.length,
         agentName: context.agentProfile.name
       });
@@ -275,7 +275,7 @@ export function useAgentChat(tokenId?: number) {
       // Build summarization prompt
       const summaryPrompt = buildConversationSummaryPrompt(context, conversationHistory);
       
-      debugLog('Sending to AI for summarization', { 
+      log('Sending to AI for summarization', { 
         promptLength: summaryPrompt.length
       });
 
@@ -305,7 +305,7 @@ export function useAgentChat(tokenId?: number) {
       }
 
       const aiResponseText = apiResult.data.response;
-      debugLog('LLM summary response received', { responseLength: aiResponseText.length });
+      log('LLM summary response received', { responseLength: aiResponseText.length });
 
       // Parse JSON response
       const jsonMatch = aiResponseText.match(/```json\s*([\s\S]*?)\s*```/);
@@ -315,7 +315,7 @@ export function useAgentChat(tokenId?: number) {
 
       const summaryData = JSON.parse(jsonMatch[1]) as ConversationUnifiedSchema;
       
-      debugLog('Conversation summary created', {
+      log('Conversation summary created', {
         conversationId: summaryData.id,
         topic: summaryData.topic,
         type: summaryData.type,
@@ -327,7 +327,7 @@ export function useAgentChat(tokenId?: number) {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      debugLog('Conversation summarization failed', { error: errorMessage });
+      log('Conversation summarization failed', { error: errorMessage });
       return null;
     }
   };
@@ -349,7 +349,7 @@ export function useAgentChat(tokenId?: number) {
     }));
 
     try {
-      debugLog('Starting conversation save with unified schema', {
+      log('Starting conversation save with unified schema', {
         sessionId: chatState.session.sessionId,
         messageCount: chatState.session.messages.length
       });
@@ -379,7 +379,7 @@ export function useAgentChat(tokenId?: number) {
           saveStatus: 'Conversation saved successfully!'
         }));
 
-        debugLog('Conversation saved successfully with unified schema', {
+        log('Conversation saved successfully with unified schema', {
           conversationId: unifiedSummary.id,
           rootHash,
           topic: unifiedSummary.topic,
@@ -401,16 +401,16 @@ export function useAgentChat(tokenId?: number) {
         isSaving: false,
         saveStatus: `Save failed: ${errorMessage}`
       }));
-      debugLog('Conversation save failed', { error: errorMessage });
+      log('Conversation save failed', { error: errorMessage });
     }
-  }, [chatState.session, address, debugLog]);
+  }, [chatState.session, address, log]);
 
   /**
    * Zapisuje konwersację do storage (append-only pattern) - unified schema
    */
   const saveConversationToStorage = async (tokenId: number, conversationData: ConversationUnifiedSchema): Promise<string> => {
     try {
-      debugLog('Saving conversation to storage with unified schema', { 
+      log('Saving conversation to storage with unified schema', { 
         tokenId, 
         conversationId: conversationData.id,
         topic: conversationData.topic,
@@ -433,7 +433,7 @@ export function useAgentChat(tokenId?: number) {
       // 2. Download existing conversations
       let existingConversations: any[] = [];
       if (currentConvHash && currentConvHash !== emptyHash) {
-        debugLog('Downloading existing conversations', { hash: currentConvHash });
+        log('Downloading existing conversations', { hash: currentConvHash });
         const downloadResult = await downloadFile(currentConvHash);
         if (downloadResult.success && downloadResult.data) {
           const textDecoder = new TextDecoder('utf-8');
@@ -453,7 +453,7 @@ export function useAgentChat(tokenId?: number) {
         { type: 'application/json' }
       );
 
-      debugLog('Uploading conversations file with unified schema', { 
+      log('Uploading conversations file with unified schema', { 
         fileName, 
         totalConversations: updatedConversations.length,
         fileSize: file.size,
@@ -464,7 +464,7 @@ export function useAgentChat(tokenId?: number) {
       const uploadResult = await uploadFile(file);
       
       if (uploadResult.success && uploadResult.rootHash) {
-        debugLog('Conversation uploaded successfully', { 
+        log('Conversation uploaded successfully', { 
           rootHash: uploadResult.rootHash,
           totalConversations: updatedConversations.length
         });
@@ -474,7 +474,7 @@ export function useAgentChat(tokenId?: number) {
       }
 
     } catch (error) {
-      debugLog('Storage save failed', { error: error.message });
+      log('Storage save failed', { error: error.message });
       throw error;
     }
   };
@@ -484,7 +484,7 @@ export function useAgentChat(tokenId?: number) {
    */
   const recordConversationInContract = async (tokenId: number, conversationHash: string) => {
     try {
-      debugLog('Recording conversation in contract', { tokenId, conversationHash });
+      log('Recording conversation in contract', { tokenId, conversationHash });
 
       setChatState(prev => ({ 
         ...prev, 
@@ -537,7 +537,7 @@ export function useAgentChat(tokenId?: number) {
         contractStatus: 'Conversation recorded successfully!'
       }));
 
-      debugLog('Conversation recorded in contract', {
+      log('Conversation recorded in contract', {
         txHash,
         gasUsed: receipt.gasUsed?.toString()
       });
@@ -554,7 +554,7 @@ export function useAgentChat(tokenId?: number) {
         isProcessingContract: false,
         contractStatus: `Contract recording failed: ${errorMessage}`
       }));
-      debugLog('Contract recording failed', { error: errorMessage });
+      log('Contract recording failed', { error: errorMessage });
       throw error;
     }
   };
@@ -574,8 +574,8 @@ export function useAgentChat(tokenId?: number) {
       contractStatus: '',
       lastPrompt: null
     });
-    debugLog('Chat session reset');
-  }, [debugLog]);
+    log('Chat session reset');
+  }, [log]);
 
   return {
     // Session management

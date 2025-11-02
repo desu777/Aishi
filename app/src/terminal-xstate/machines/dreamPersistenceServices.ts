@@ -6,13 +6,10 @@
 import { fromPromise } from 'xstate';
 import { AIResponse } from '../types/contextTypes';
 import { StandardDreamFields } from '../services/dreamDataValidator';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[DreamMachine] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'DreamPersistenceServices' });
 
 // Service: Manage dream file
 export const fileManagementService = fromPromise(async ({ input }: { input: {
@@ -20,7 +17,7 @@ export const fileManagementService = fromPromise(async ({ input }: { input: {
   agentName: string;
   currentRootHash?: string;
 }}) => {
-  debugLog('📁 Starting file management service', {
+  log.debug('📁 Starting file management service', {
     agentName: input.agentName,
     hasCurrentHash: !!input.currentRootHash,
     dreamId: input.aiResponse.dreamData?.id
@@ -58,7 +55,7 @@ export const fileManagementService = fromPromise(async ({ input }: { input: {
       throw new Error(`File management failed: ${result.error}`);
     }
     
-    debugLog('✅ File management completed', {
+    log.debug('✅ File management completed', {
       fileName: result.fileName,
       isNewFile: result.isNewFile,
       totalDreams: result.metadata?.totalDreamsCount
@@ -69,7 +66,7 @@ export const fileManagementService = fromPromise(async ({ input }: { input: {
       fileName: result.fileName
     };
   } catch (error) {
-    debugLog('[ERROR] File management failed', { error: String(error) });
+    log.debug('[ERROR] File management failed', { error: String(error) });
     throw error;
   }
 });
@@ -80,7 +77,7 @@ export const storageUploadService = fromPromise(async ({ input }: { input: {
   fileName: string;
   onStatus?: (message: string) => void;
 }}) => {
-  debugLog('☁️ Starting storage upload service', {
+  log.debug('☁️ Starting storage upload service', {
     fileName: input.fileName,
     dreamsCount: input.data?.length || 0
   });
@@ -105,7 +102,7 @@ export const storageUploadService = fromPromise(async ({ input }: { input: {
       throw new Error(`Storage upload failed: ${result.error || 'No root hash returned'}`);
     }
     
-    debugLog('✅ Storage upload completed', {
+    log.debug('✅ Storage upload completed', {
       rootHash: result.rootHash.substring(0, 10) + '...',
       verified: result.verified,
       uploadTime: result.metadata?.uploadTime
@@ -116,7 +113,7 @@ export const storageUploadService = fromPromise(async ({ input }: { input: {
       verified: result.verified
     };
   } catch (error) {
-    debugLog('[ERROR] Storage upload failed', { error: String(error) });
+    log.debug('[ERROR] Storage upload failed', { error: String(error) });
     throw error;
   }
 });
@@ -128,7 +125,7 @@ export const contractUpdateService = fromPromise(async ({ input }: { input: {
   personalityImpact?: any;
   dreamCount: number;
 }}) => {
-  debugLog('⛓️ Starting contract update service', {
+  log.debug('⛓️ Starting contract update service', {
     tokenId: input.tokenId,
     rootHash: input.rootHash.substring(0, 10) + '...',
     hasPersonalityImpact: !!input.personalityImpact,
@@ -150,7 +147,7 @@ export const contractUpdateService = fromPromise(async ({ input }: { input: {
       throw new Error(`Contract update failed: ${result.error}`);
     }
     
-    debugLog('✅ Contract update completed', {
+    log.debug('✅ Contract update completed', {
       txHash: result.txHash?.substring(0, 10) + '...',
       isEvolutionDream: result.isEvolutionDream
     });
@@ -160,14 +157,14 @@ export const contractUpdateService = fromPromise(async ({ input }: { input: {
       isEvolutionDream: result.isEvolutionDream
     };
   } catch (error) {
-    debugLog('[ERROR] Contract update failed', { error: String(error) });
+    log.debug('[ERROR] Contract update failed', { error: String(error) });
     throw error;
   }
 });
 
 // Service: Dream persistence orchestrator (for backwards compatibility)
 export const dreamPersistenceService = fromPromise(async ({ input }: { input: any }) => {
-  debugLog('Starting dream persistence protocol', {
+  log.debug('Starting dream persistence protocol', {
     agentName: input.agentProfile?.name,
     dreamId: input.aiResponse?.dreamData?.id
   });
@@ -178,7 +175,7 @@ export const dreamPersistenceService = fromPromise(async ({ input }: { input: an
     
     const result = await executeDreamPersistenceProtocol(input);
     
-    debugLog('[SUCCESS] Dream persistence completed', {
+    log.debug('[SUCCESS] Dream persistence completed', {
       rootHash: result.rootHash?.substring(0, 10) + '...',
       txHash: result.txHash?.substring(0, 10) + '...',
       isEvolution: result.isEvolutionDream,
@@ -192,7 +189,7 @@ export const dreamPersistenceService = fromPromise(async ({ input }: { input: an
       persistenceResult: result
     };
   } catch (error) {
-    debugLog('[ERROR] Dream persistence failed', { error: String(error) });
+    log.debug('[ERROR] Dream persistence failed', { error: String(error) });
     throw error;
   }
 });

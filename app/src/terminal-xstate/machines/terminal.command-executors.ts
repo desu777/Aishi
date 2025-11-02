@@ -6,13 +6,10 @@
 import { fromPromise } from 'xstate';
 import { ContractReaderService } from '../services/contractReader';
 import type { TerminalLine } from './types';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log(`[Terminal] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'TerminalCommandExecutors' });
 
 /**
  * Command executor actors using fromPromise pattern (XState v5 best practice)
@@ -28,7 +25,7 @@ export const commandExecutors = {
       agentName: string;
     } 
   }) => {
-    debugLog('Processing personality command', input);
+    log.debug('Processing personality command', input);
     
     try {
       // Import formatter dynamically
@@ -38,7 +35,7 @@ export const commandExecutors = {
       const contractReader = new ContractReaderService();
       const agentData = await contractReader.getCompleteAgentData(input.tokenId);
       
-      debugLog('Agent data fetched', {
+      log.debug('Agent data fetched', {
         hasData: !!agentData,
         agentName: agentData?.basic?.agentName
       });
@@ -46,7 +43,7 @@ export const commandExecutors = {
       // Format and return lines
       const formattedLines = formatPersonalityOutput(agentData);
       
-      debugLog('Formatted lines', {
+      log.debug('Formatted lines', {
         count: formattedLines.length
       });
       
@@ -55,7 +52,7 @@ export const commandExecutors = {
         lines: formattedLines
       };
     } catch (error) {
-      debugLog('Error fetching personality', error);
+      log.debug('Error fetching personality', error);
       
       return {
         success: false,
@@ -73,7 +70,7 @@ export const commandExecutors = {
       agentName: string;
     } 
   }) => {
-    debugLog('Processing unique-features command', input);
+    log.debug('Processing unique-features command', input);
     
     try {
       // Import formatter dynamically
@@ -83,7 +80,7 @@ export const commandExecutors = {
       const contractReader = new ContractReaderService();
       const agentData = await contractReader.getCompleteAgentData(input.tokenId);
       
-      debugLog('Agent data fetched', {
+      log.debug('Agent data fetched', {
         hasData: !!agentData,
         features: agentData?.features?.length || 0
       });
@@ -91,7 +88,7 @@ export const commandExecutors = {
       // Format and return lines
       const formattedLines = formatUniqueFeaturesOutput(agentData);
       
-      debugLog('Formatted lines', {
+      log.debug('Formatted lines', {
         count: formattedLines.length
       });
       
@@ -100,7 +97,7 @@ export const commandExecutors = {
         lines: formattedLines
       };
     } catch (error) {
-      debugLog('Error fetching unique features', error);
+      log.debug('Error fetching unique features', error);
       
       return {
         success: false,
@@ -118,7 +115,7 @@ export const commandExecutors = {
       agentName: string;
     } 
   }) => {
-    debugLog('Processing stats command', input);
+    log.debug('Processing stats command', input);
     
     try {
       // Import formatter dynamically
@@ -128,7 +125,7 @@ export const commandExecutors = {
       const contractReader = new ContractReaderService();
       const agentData = await contractReader.getCompleteAgentData(input.tokenId);
       
-      debugLog('Agent data fetched', {
+      log.debug('Agent data fetched', {
         hasData: !!agentData,
         stats: agentData?.basic
       });
@@ -136,7 +133,7 @@ export const commandExecutors = {
       // Format and return lines
       const formattedLines = formatStatsOutput(agentData);
       
-      debugLog('Formatted lines', {
+      log.debug('Formatted lines', {
         count: formattedLines.length
       });
       
@@ -145,7 +142,7 @@ export const commandExecutors = {
         lines: formattedLines
       };
     } catch (error) {
-      debugLog('Error fetching stats', error);
+      log.debug('Error fetching stats', error);
       
       return {
         success: false,
@@ -163,7 +160,7 @@ export const commandExecutors = {
       agentName: string;
     } 
   }) => {
-    debugLog('Processing memory command', input);
+    log.debug('Processing memory command', input);
     
     try {
       // Import formatter dynamically
@@ -173,7 +170,7 @@ export const commandExecutors = {
       const contractReader = new ContractReaderService();
       const agentData = await contractReader.getCompleteAgentData(input.tokenId);
       
-      debugLog('Agent memory data fetched', {
+      log.debug('Agent memory data fetched', {
         hasData: !!agentData,
         memory: agentData?.memory
       });
@@ -181,7 +178,7 @@ export const commandExecutors = {
       // Format and return lines
       const formattedLines = formatMemoryOutput(agentData);
       
-      debugLog('Formatted memory lines', {
+      log.debug('Formatted memory lines', {
         count: formattedLines.length
       });
       
@@ -190,7 +187,7 @@ export const commandExecutors = {
         lines: formattedLines
       };
     } catch (error) {
-      debugLog('Error fetching memory', error);
+      log.debug('Error fetching memory', error);
       
       return {
         success: false,
@@ -207,7 +204,7 @@ export const commandExecutors = {
       args: string[];
     }
   }) => {
-    debugLog('Processing help command', { args: input.args });
+    log.debug('Processing help command', { args: input.args });
 
     try {
       const {
@@ -265,7 +262,7 @@ export const commandExecutors = {
         lines
       };
     } catch (error) {
-      debugLog('Error processing help', error);
+      log.debug('Error processing help', error);
 
       return {
         success: false,

@@ -5,6 +5,9 @@
 
 import { setup, assign, fromPromise, sendParent, enqueueActions } from 'xstate';
 import { GeminiVoiceId } from './types';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'VoiceMachine' });
 
 interface VoiceContext {
   // Recording
@@ -80,12 +83,10 @@ interface SynthesisResult {
 const transcribeAudio = fromPromise(async ({ input }: { input: { audioBase64: string } }) => {
   const BACKEND_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
 
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log('[voiceMachine] transcribeAudio service called', {
-      backendUrl: BACKEND_URL,
-      audioBase64Length: input.audioBase64?.length || 0
-    });
-  }
+  log.debug('transcribeAudio service called', {
+    backendUrl: BACKEND_URL,
+    audioBase64Length: input.audioBase64?.length || 0
+  });
 
   try {
     const response = await fetch(`${BACKEND_URL}/voice/transcribe`, {
@@ -103,17 +104,15 @@ const transcribeAudio = fromPromise(async ({ input }: { input: { audioBase64: st
 
     const responseData = await response.json();
     const sttResult = responseData.data; // Extract from wrapped API response
-    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-      console.log('[voiceMachine] Transcription response from backend:', {
-        hasTranscript: !!sttResult.transcript,
-        transcript: sttResult.transcript,
-        fullResponse: responseData,
-        extractedData: sttResult
-      });
-    }
+    log.debug('Transcription response from backend', {
+      hasTranscript: !!sttResult.transcript,
+      transcript: sttResult.transcript,
+      fullResponse: responseData,
+      extractedData: sttResult
+    });
     return sttResult as TranscriptionResult;
   } catch (error) {
-    console.error('Error transcribing audio:', error);
+    log.error('Error transcribing audio', { error });
     throw error;
   }
 });
@@ -149,20 +148,18 @@ const synthesizeSpeech = fromPromise(async ({
 
     const responseData = await response.json();
     const ttsResult = responseData.data; // Extract from wrapped API response
-    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-      console.log('[voiceMachine] TTS response from backend:', {
-        hasAudioData: !!ttsResult.audioData,
-        audioDataLength: ttsResult.audioData?.length || 0,
-        duration: ttsResult.duration,
-        format: ttsResult.format,
-        voiceUsed: ttsResult.voiceUsed,
-        fullResponse: responseData,
-        extractedData: ttsResult
-      });
-    }
+    log.debug('TTS response from backend', {
+      hasAudioData: !!ttsResult.audioData,
+      audioDataLength: ttsResult.audioData?.length || 0,
+      duration: ttsResult.duration,
+      format: ttsResult.format,
+      voiceUsed: ttsResult.voiceUsed,
+      fullResponse: responseData,
+      extractedData: ttsResult
+    });
     return ttsResult as SynthesisResult;
   } catch (error) {
-    console.error('Error synthesizing speech:', error);
+    log.error('Error synthesizing speech', { error });
     throw error;
   }
 });
@@ -184,7 +181,7 @@ const loadVoices = fromPromise(async () => {
     const data = await response.json();
     return data.voices || ['aoede', 'zephyr', 'achernar', 'kore', 'charon', 'fenrir', 'puck'];
   } catch (error) {
-    console.error('Error loading voices:', error);
+    log.error('Error loading voices', { error });
     // Return default voices if loading fails
     return ['aoede', 'zephyr', 'achernar', 'kore', 'charon', 'fenrir', 'puck'];
   }
@@ -196,7 +193,7 @@ const saveVoiceToStorage = fromPromise(async ({ input }: { input: { voiceId: str
     localStorage.setItem('aishi-selected-voice', input.voiceId);
     return input.voiceId;
   } catch (error) {
-    console.error('Failed to save voice preference:', error);
+    log.error('Failed to save voice preference', { error });
     throw error;
   }
 });
@@ -213,7 +210,7 @@ const loadVoiceFromStorage = fromPromise(async () => {
     const topVoices = ['aoede', 'zephyr', 'achernar', 'puck'];
     return topVoices[Math.floor(Math.random() * topVoices.length)];
   } catch (error) {
-    console.error('Failed to load voice preference:', error);
+    log.error('Failed to load voice preference', { error });
     return 'aoede';
   }
 });
@@ -264,13 +261,11 @@ export const voiceMachine = setup({
     setTranscript: assign({
       transcript: ({ event }) => {
         if (event.type === 'xstate.done.actor.transcribe') {
-          if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-            console.log('[voiceMachine] setTranscript from event.output:', {
-              hasOutput: !!event.output,
-              transcript: event.output?.transcript,
-              fullOutput: event.output
-            });
-          }
+          log.debug('setTranscript from event.output', {
+            hasOutput: !!event.output,
+            transcript: event.output?.transcript,
+            fullOutput: event.output
+          });
           return event.output?.transcript || null;
         }
         return null;
@@ -367,13 +362,11 @@ export const voiceMachine = setup({
 
     // Send transcription result to parent (terminal machine)
     sendTranscriptToParent: sendParent(({ context }) => {
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[voiceMachine] sendTranscriptToParent sending to terminal:', {
-          transcript: context.transcript,
-          detectedLanguage: context.detectedLanguage,
-          hasTranscript: !!context.transcript
-        });
-      }
+      log.debug('sendTranscriptToParent sending to terminal', {
+        transcript: context.transcript,
+        detectedLanguage: context.detectedLanguage,
+        hasTranscript: !!context.transcript
+      });
       return {
         type: 'VOICE.TRANSCRIBED',
         transcript: context.transcript,
@@ -384,18 +377,16 @@ export const voiceMachine = setup({
     // Send synthesized audio as voice-output line to parent
     sendVoiceOutputToParent: enqueueActions(({ context, event, enqueue }) => {
       if (event.type === 'xstate.done.actor.synthesize') {
-        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[voiceMachine] sendVoiceOutputToParent creating voice-output line:', {
-            hasOutput: !!event.output,
-            hasAudioData: !!event.output?.audioData,
-            audioDataLength: event.output?.audioData?.length || 0,
-            duration: event.output?.duration,
-            voiceUsed: event.output?.voiceUsed,
-            isDreamResponse: context.isDreamResponse,
-            dreamAgentName: context.dreamAgentName,
-            fullOutput: event.output
-          });
-        }
+        log.debug('sendVoiceOutputToParent creating voice-output line', {
+          hasOutput: !!event.output,
+          hasAudioData: !!event.output?.audioData,
+          audioDataLength: event.output?.audioData?.length || 0,
+          duration: event.output?.duration,
+          voiceUsed: event.output?.voiceUsed,
+          isDreamResponse: context.isDreamResponse,
+          dreamAgentName: context.dreamAgentName,
+          fullOutput: event.output
+        });
 
         // First: Send the voice output line
         enqueue(sendParent(() => ({
@@ -437,13 +428,11 @@ export const voiceMachine = setup({
   guards: {
     hasAudioToTranscribe: ({ context, event }) => {
       // Check if audio is in event (from TRANSCRIBE) or in context (from recording)
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[voiceMachine] hasAudioToTranscribe guard', {
-          eventType: event.type,
-          hasEventAudio: event.type === 'TRANSCRIBE' && !!event.audioBase64,
-          hasContextAudio: context.audioBase64 !== null
-        });
-      }
+      log.debug('hasAudioToTranscribe guard', {
+        eventType: event.type,
+        hasEventAudio: event.type === 'TRANSCRIBE' && !!event.audioBase64,
+        hasContextAudio: context.audioBase64 !== null
+      });
       return (event.type === 'TRANSCRIBE' && event.audioBase64) || context.audioBase64 !== null;
     },
 
@@ -560,16 +549,14 @@ export const voiceMachine = setup({
 
     transcribing: {
       entry: ['setProcessing', ({ context, event }) => {
-        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-          console.log('[voiceMachine] Entering transcribing state', {
-            eventType: event.type,
-            hasEventAudio: event.type === 'TRANSCRIBE' && !!event.audioBase64,
-            hasContextAudio: !!context.audioBase64,
-            audioLength: event.type === 'TRANSCRIBE'
-              ? event.audioBase64?.length
-              : context.audioBase64?.length
-          });
-        }
+        log.debug('Entering transcribing state', {
+          eventType: event.type,
+          hasEventAudio: event.type === 'TRANSCRIBE' && !!event.audioBase64,
+          hasContextAudio: !!context.audioBase64,
+          audioLength: event.type === 'TRANSCRIBE'
+            ? event.audioBase64?.length
+            : context.audioBase64?.length
+        });
       }],
       invoke: {
         id: 'transcribe',

@@ -8,6 +8,7 @@
 import { useCallback, useRef } from 'react';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 import type { ShizukuResponse } from '@/hooks/useShizukuAI';
+import { logger } from '@/lib/logger';
 
 // Enhanced expression mapping for new emotion system
 const EMOTION_MAP = {
@@ -65,6 +66,7 @@ export const useShizukuController = (
   modelRef: React.RefObject<Live2DModelRef>,
   options: UseShizukuControllerOptions = {}
 ) => {
+  const log = logger.child({ component: 'useShizukuController' });
   const {
     enableDebugLogs = process.env.NEXT_PUBLIC_DREAM_TEST === 'true',
     smoothTransitions = true,
@@ -128,7 +130,7 @@ export const useShizukuController = (
       smoothSetParameter('ParamMouthOpenY', mouthValue, 50); // Fast transitions for speech
 
       if (enableDebugLogs && currentIndex < 10) { // Log first 10 chars to avoid spam
-        console.log(`[Mouth Timeline] Char "${text[currentIndex]}" -> ${timeline[currentIndex]}% (${mouthValue})`);
+        log.debug(`Char "${text[currentIndex]}" -> ${timeline[currentIndex]}% (${mouthValue})`);
       }
 
       currentIndex++;
@@ -183,7 +185,7 @@ export const useShizukuController = (
       }
 
       if (enableDebugLogs) {
-        console.log(`[Physics Timeline] Step ${currentIndex + 1}/${timeline.length}:`, step);
+        log.debug(`Physics Timeline Step ${currentIndex + 1}/${timeline.length}`, { step });
       }
 
       currentIndex++;
@@ -211,7 +213,7 @@ export const useShizukuController = (
         if (emotions.intensity !== undefined && emotions.intensity !== 1.0) {
           // Could be implemented as expression parameter scaling
           if (enableDebugLogs) {
-            console.log(`[Emotion Intensity] ${emotions.base} at ${emotions.intensity * 100}%`);
+            log.debug(`Emotion Intensity: ${emotions.base} at ${emotions.intensity * 100}%`);
           }
         }
       }
@@ -225,7 +227,7 @@ export const useShizukuController = (
       }
 
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] Applied emotions:', {
+        log.debug('Applied emotions', {
           base: emotions.base,
           intensity: emotions.intensity,
           eyeEffect: emotions.eyeEffect,
@@ -233,7 +235,7 @@ export const useShizukuController = (
         });
       }
     } catch (error) {
-      console.warn('[Shizuku Controller] Failed to apply emotions:', error);
+      log.warn('Failed to apply emotions', { error });
     }
   }, [modelRef, enableDebugLogs]);
 
@@ -252,14 +254,14 @@ export const useShizukuController = (
 
       // Lip sync is handled by the speech system, we just record the preference
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] Applied mouth:', {
+        log.debug('Applied mouth', {
           openness: mouth.openness,
           form: mouth.form,
           lipSync: mouth.lipSync
         });
       }
     } catch (error) {
-      console.warn('[Shizuku Controller] Failed to apply mouth parameters:', error);
+      log.warn('Failed to apply mouth parameters', { error });
     }
   }, [modelRef, enableDebugLogs, smoothSetParameter]);
 
@@ -274,10 +276,10 @@ export const useShizukuController = (
       }
 
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] Applied hand item:', handItem);
+        log.debug('Applied hand item', { handItem });
       }
     } catch (error) {
-      console.warn('[Shizuku Controller] Failed to apply hand item:', error);
+      log.warn('Failed to apply hand item', { error });
     }
   }, [modelRef, enableDebugLogs]);
 
@@ -316,10 +318,10 @@ export const useShizukuController = (
       }
 
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] Applied decorations:', decorations);
+        log.debug('Applied decorations', { decorations });
       }
     } catch (error) {
-      console.warn('[Shizuku Controller] Failed to apply decorations:', error);
+      log.warn('Failed to apply decorations', { error });
     }
   }, [modelRef, enableDebugLogs]);
 
@@ -351,10 +353,10 @@ export const useShizukuController = (
       }
 
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] Applied physics:', physics);
+        log.debug('Applied physics', { physics });
       }
     } catch (error) {
-      console.warn('[Shizuku Controller] Failed to apply physics:', error);
+      log.warn('Failed to apply physics', { error });
     }
   }, [modelRef, enableDebugLogs, smoothSetParameter]);
 
@@ -369,17 +371,17 @@ export const useShizukuController = (
       }
 
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] Applied form preset:', formPreset);
+        log.debug('Applied form preset', { formPreset });
       }
     } catch (error) {
-      console.warn('[Shizuku Controller] Failed to apply form preset:', error);
+      log.warn('Failed to apply form preset', { error });
     }
   }, [modelRef, enableDebugLogs]);
 
   // Main function to apply complete Shizuku response to Live2D model
   const applyShizukuResponse = useCallback((response: ShizukuResponse) => {
     if (!modelRef.current) {
-      console.warn('[Shizuku Controller] Model not ready');
+      log.warn('Model not ready');
       return;
     }
 
@@ -396,7 +398,7 @@ export const useShizukuController = (
 
     try {
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] Applying enhanced Shizuku response:', {
+        log.debug('Applying enhanced Shizuku response', {
           text: response.text.substring(0, 50) + '...',
           mouth_timeline_length: response.mouth_open_timeline.length,
           emotion: response.emotions.base,
@@ -437,11 +439,11 @@ export const useShizukuController = (
       lastAppliedStateRef.current = response;
 
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] ✓ Successfully applied all enhanced parameters');
+        log.debug('Successfully applied all enhanced parameters');
       }
 
     } catch (error) {
-      console.error('[Shizuku Controller] Failed to apply Shizuku response:', error);
+      log.error('Failed to apply Shizuku response', { error });
     }
   }, [
     modelRef, 
@@ -481,10 +483,10 @@ export const useShizukuController = (
       lastAppliedStateRef.current = null;
 
       if (enableDebugLogs) {
-        console.log('[Shizuku Controller] ✓ Reset to neutral state');
+        log.debug('Reset to neutral state');
       }
     } catch (error) {
-      console.warn('[Shizuku Controller] Failed to reset to neutral:', error);
+      log.warn('Failed to reset to neutral', { error });
     }
   }, [modelRef, enableDebugLogs, smoothSetParameter]);
 

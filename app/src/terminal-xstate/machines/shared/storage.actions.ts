@@ -5,13 +5,10 @@
 
 import { assign, sendParent } from 'xstate';
 import type { TerminalLine } from '../types';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[StorageActions] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'StorageActions' });
 
 /**
  * Shared storage-related actions for consistent upload/retry handling across machines
@@ -23,7 +20,7 @@ export const storageActions = {
   storeUploadError: assign({
     error: ({ event }: any) => {
       const errorMsg = event.error || 'Upload failed';
-      debugLog('Storing upload error', { error: errorMsg });
+      log.debug('Storing upload error', { error: errorMsg });
       return errorMsg;
     },
     lastError: ({ event }: any) => event.error || 'Upload failed',
@@ -70,7 +67,7 @@ export const storageActions = {
   incrementRetryCount: assign({
     retryCount: ({ context }: any) => {
       const newCount = (context.retryCount || 0) + 1;
-      debugLog('Incrementing retry count', { newCount, max: context.maxRetries });
+      log.debug('Incrementing retry count', { newCount, max: context.maxRetries });
       return newCount;
     },
     statusMessage: ({ context }: any) => 
@@ -116,7 +113,7 @@ export const storageActions = {
   storeStorageResult: assign({
     storageRootHash: ({ event }: any) => {
       const rootHash = event.output?.rootHash;
-      debugLog('Storing storage result', { rootHash });
+      log.debug('Storing storage result', { rootHash });
       return rootHash;
     },
     statusMessage: ({ event }: any) => {
@@ -133,7 +130,7 @@ export const storageActions = {
   storeContractResult: assign({
     contractTxHash: ({ event }: any) => {
       const txHash = event.output?.txHash;
-      debugLog('Storing contract result', { txHash });
+      log.debug('Storing contract result', { txHash });
       return txHash;
     },
     statusMessage: 'Successfully saved!',

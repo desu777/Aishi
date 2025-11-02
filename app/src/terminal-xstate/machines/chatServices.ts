@@ -5,19 +5,16 @@
  */
 
 import { ChatMessage } from './chatMachine';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[ChatServices] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'ChatServices' });
 
 /**
  * Fetch full agent context for chat session
  */
 export async function fetchChatContext(agentId: number, continueWithoutMemory: boolean = false) {
-  debugLog('Fetching chat context', { agentId, continueWithoutMemory });
+  log.debug('Fetching chat context', { agentId, continueWithoutMemory });
 
   try {
     // Import necessary services
@@ -36,7 +33,7 @@ export async function fetchChatContext(agentId: number, continueWithoutMemory: b
         throw new Error('Agent not found');
       }
 
-      debugLog('Complete agent data fetched', {
+      log.debug('Complete agent data fetched', {
         name: completeData.basic.agentName,
         intelligence: completeData.basic.intelligenceLevel,
         dreamCount: completeData.basic.dreamCount,
@@ -97,7 +94,7 @@ export async function fetchChatContext(agentId: number, continueWithoutMemory: b
       historicalData
     };
   } catch (error) {
-    debugLog('Error fetching chat context', { error: String(error) });
+    log.debug('Error fetching chat context', { error: String(error) });
     
     // Check for memory/storage errors first (preserve original error for guard)
     const errorStr = String(error);
@@ -125,7 +122,7 @@ export async function fetchChatContext(agentId: number, continueWithoutMemory: b
  * Fetch historical data from storage
  */
 async function fetchHistoricalData(agentMemory: any, agentId: number, continueWithoutMemory: boolean = false) {
-  debugLog('Fetching historical data', { agentId, hasMemory: !!agentMemory, continueWithoutMemory });
+  log.debug('Fetching historical data', { agentId, hasMemory: !!agentMemory, continueWithoutMemory });
 
   const historicalData: any = {
     dailyDreams: [],
@@ -137,7 +134,7 @@ async function fetchHistoricalData(agentMemory: any, agentId: number, continueWi
 
   // Return empty if no memory data or continuing without memory
   if (!agentMemory || continueWithoutMemory) {
-    debugLog(continueWithoutMemory ? 
+    log.debug(continueWithoutMemory ? 
       'Continuing without memory (user choice)' : 
       'No memory data available, returning empty historical data');
     return historicalData;
@@ -152,10 +149,10 @@ async function fetchHistoricalData(agentMemory: any, agentId: number, continueWi
         const dreamsData = await downloadFromStorage(agentMemory.currentDreamDailyHash);
         if (dreamsData) {
           historicalData.dailyDreams = JSON.parse(dreamsData);
-          debugLog('Daily dreams loaded', { count: historicalData.dailyDreams.length });
+          log.debug('Daily dreams loaded', { count: historicalData.dailyDreams.length });
         }
       } catch (error) {
-        debugLog('Failed to load daily dreams', { error: String(error) });
+        log.debug('Failed to load daily dreams', { error: String(error) });
         // Re-throw to trigger memory error state
         throw new Error(`Failed to load daily dreams: ${error}`);
       }
@@ -167,10 +164,10 @@ async function fetchHistoricalData(agentMemory: any, agentId: number, continueWi
         const convsData = await downloadFromStorage(agentMemory.currentConvDailyHash);
         if (convsData) {
           historicalData.dailyConversations = JSON.parse(convsData);
-          debugLog('Daily conversations loaded', { count: historicalData.dailyConversations.length });
+          log.debug('Daily conversations loaded', { count: historicalData.dailyConversations.length });
         }
       } catch (error) {
-        debugLog('Failed to load daily conversations', { error: String(error) });
+        log.debug('Failed to load daily conversations', { error: String(error) });
         // Re-throw to trigger memory error state
         throw new Error(`Failed to load daily conversations: ${error}`);
       }
@@ -183,10 +180,10 @@ async function fetchHistoricalData(agentMemory: any, agentId: number, continueWi
         if (monthlyDreamsData) {
           const parsed = JSON.parse(monthlyDreamsData);
           historicalData.monthlyDreams = Array.isArray(parsed) ? parsed : [parsed];
-          debugLog('Monthly dream consolidations loaded', { count: historicalData.monthlyDreams.length });
+          log.debug('Monthly dream consolidations loaded', { count: historicalData.monthlyDreams.length });
         }
       } catch (error) {
-        debugLog('Failed to load monthly dream consolidations', { error: String(error) });
+        log.debug('Failed to load monthly dream consolidations', { error: String(error) });
         // Don't throw - monthly data is optional for chat
       }
     }
@@ -198,10 +195,10 @@ async function fetchHistoricalData(agentMemory: any, agentId: number, continueWi
         if (monthlyConvsData) {
           const parsed = JSON.parse(monthlyConvsData);
           historicalData.monthlyConversations = Array.isArray(parsed) ? parsed : [parsed];
-          debugLog('Monthly conversation consolidations loaded', { count: historicalData.monthlyConversations.length });
+          log.debug('Monthly conversation consolidations loaded', { count: historicalData.monthlyConversations.length });
         }
       } catch (error) {
-        debugLog('Failed to load monthly conversation consolidations', { error: String(error) });
+        log.debug('Failed to load monthly conversation consolidations', { error: String(error) });
         // Don't throw - monthly data is optional for chat
       }
     }
@@ -212,17 +209,17 @@ async function fetchHistoricalData(agentMemory: any, agentId: number, continueWi
         const coreData = await downloadFromStorage(agentMemory.memoryCoreHash);
         if (coreData) {
           historicalData.yearlyCore = JSON.parse(coreData);
-          debugLog('Memory core loaded');
+          log.debug('Memory core loaded');
         }
       } catch (error) {
-        debugLog('Failed to load memory core', { error: String(error) });
+        log.debug('Failed to load memory core', { error: String(error) });
         // Re-throw to trigger memory error state
         throw new Error(`Failed to load memory core: ${error}`);
       }
     }
 
   } catch (error) {
-    debugLog('Error loading historical data', { error: String(error) });
+    log.debug('Error loading historical data', { error: String(error) });
     // Re-throw error to trigger memory error state in machine
     throw error;
   }
@@ -242,7 +239,7 @@ export async function sendChatMessage(
   modelId: string = 'auto',
   walletAddress?: string
 ) {
-  debugLog('Sending chat message to AI', {
+  log.debug('Sending chat message to AI', {
     messageLength: message.length,
     previousMessages: messages.length,
     agentName,
@@ -265,7 +262,7 @@ export async function sendChatMessage(
       isFirstMessage
     });
 
-    debugLog('Chat prompt built', {
+    log.debug('Chat prompt built', {
       promptLength: prompt.length,
       isFirstMessage
     });
@@ -282,7 +279,7 @@ export async function sendChatMessage(
       timeoutPromise
     ]) as string;
 
-    debugLog('AI response received', {
+    log.debug('AI response received', {
       responseLength: aiResponse?.length || 0,
       fullResponse: aiResponse
     });
@@ -292,7 +289,7 @@ export async function sendChatMessage(
       prompt // For debugging
     };
   } catch (error) {
-    debugLog('Error sending chat message', {
+    log.debug('Error sending chat message', {
       error: String(error),
       errorType: error?.constructor?.name
     });
@@ -321,7 +318,7 @@ export async function generateConversationSummary(
   agentId: number,
   modelId: string = 'auto'
 ) {
-  debugLog('Generating conversation summary', {
+  log.debug('Generating conversation summary', {
     transcriptLength: transcript.length,
     messageCount: messages.length,
     modelId
@@ -332,7 +329,7 @@ export async function generateConversationSummary(
     const { buildSummaryPrompt } = await import('../services/chatPromptBuilder');
     const prompt = buildSummaryPrompt(transcript, messages);
 
-    debugLog('Summary prompt built', {
+    log.debug('Summary prompt built', {
       promptLength: prompt.length
     });
 
@@ -370,7 +367,7 @@ export async function generateConversationSummary(
         }
       }
 
-      debugLog('Summary parsed successfully', {
+      log.debug('Summary parsed successfully', {
         hasId: summary && typeof summary === 'object' && 'id' in summary,
         hasDate: summary && typeof summary === 'object' && 'date' in summary,
         hasTopic: summary && typeof summary === 'object' && 'topic' in summary,
@@ -379,7 +376,7 @@ export async function generateConversationSummary(
       });
 
     } catch (parseError) {
-      debugLog('Failed to parse summary JSON', { error: String(parseError) });
+      log.debug('Failed to parse summary JSON', { error: String(parseError) });
       // Create a basic summary if parsing fails
       summary = createBasicSummary(transcript, messages);
     }
@@ -389,7 +386,7 @@ export async function generateConversationSummary(
       rawResponse: aiResponse
     };
   } catch (error) {
-    debugLog('Error generating conversation summary', { error: String(error) });
+    log.debug('Error generating conversation summary', { error: String(error) });
     throw error;
   }
 }
@@ -438,7 +435,7 @@ export async function persistChatConversation(
   conversationSummary: any,
   transcript: string
 ) {
-  debugLog('Persisting chat conversation', {
+  log.debug('Persisting chat conversation', {
     agentId,
     agentName,
     hasSummary: !!conversationSummary
@@ -455,7 +452,7 @@ export async function persistChatConversation(
       conversationSummary
     );
 
-    debugLog('Conversation file managed', {
+    log.debug('Conversation file managed', {
       fileName: fileResult.fileName,
       isNewFile: fileResult.isNewFile,
       totalConversations: fileResult.totalConversations
@@ -468,7 +465,7 @@ export async function persistChatConversation(
       fileResult.fileName
     );
 
-    debugLog('Conversation uploaded to storage', {
+    log.debug('Conversation uploaded to storage', {
       rootHash: uploadResult.rootHash,
       success: uploadResult.success
     });
@@ -486,7 +483,7 @@ export async function persistChatConversation(
       conversationSummary.type
     );
 
-    debugLog('Contract updated', {
+    log.debug('Contract updated', {
       txHash: contractResult.txHash
     });
 
@@ -497,7 +494,7 @@ export async function persistChatConversation(
       conversationId: conversationSummary.id
     };
   } catch (error) {
-    debugLog('Error persisting conversation', { error: String(error) });
+    log.debug('Error persisting conversation', { error: String(error) });
     throw error;
   }
 }

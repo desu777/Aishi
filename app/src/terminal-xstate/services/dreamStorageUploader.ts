@@ -6,13 +6,10 @@
 import { XStateStorageService, UploadResult } from './xstateStorage';
 import { StandardDreamFields } from './dreamDataValidator';
 import { safeJsonStringify } from '../utils/jsonSerializer';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[DreamStorageUploader] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'DreamStorageUploader' });
 
 /**
  * Secure upload result interface
@@ -69,7 +66,7 @@ export async function uploadDreamDataSecurely(
 
   emitStatus('Preparing upload payload');
 
-  debugLog('Starting secure dream data upload', {
+  log.debug('Starting secure dream data upload', {
     fileName,
     dreamsCount: dreamFileData.length,
     fileSize: safeJsonStringify(dreamFileData).length,
@@ -103,7 +100,7 @@ export async function uploadDreamDataSecurely(
 
     emitStatus('Upload complete, verifying...');
 
-    debugLog('Upload completed successfully', {
+    log.debug('Upload completed successfully', {
       rootHash: uploadResult.rootHash.substring(0, 10) + '...',
       txHash: uploadResult.txHash?.substring(0, 10) + '...',
       uploadTime: Date.now() - uploadStartTime
@@ -114,7 +111,7 @@ export async function uploadDreamDataSecurely(
     let verificationTime: number | undefined;
 
     if (finalConfig.enableVerification) {
-      debugLog('Starting upload verification');
+      log.debug('Starting upload verification');
       const verificationStartTime = Date.now();
       
       const verificationResult = await verifyUpload(
@@ -128,12 +125,12 @@ export async function uploadDreamDataSecurely(
       verificationTime = Date.now() - verificationStartTime;
 
       if (!verified) {
-        debugLog('Upload verification failed', { error: verificationResult.error });
+        log.debug('Upload verification failed', { error: verificationResult.error });
         // Note: We don't fail the entire upload if verification fails
         // The upload itself was successful, verification is additional safety
         emitStatus('Upload verification failed');
       } else {
-        debugLog('Upload verification successful', { verificationTime });
+        log.debug('Upload verification successful', { verificationTime });
         emitStatus('Upload verified successfully');
       }
     }
@@ -154,7 +151,7 @@ export async function uploadDreamDataSecurely(
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Secure upload failed', { 
+    log.debug('Secure upload failed', { 
       error: errorMessage,
       uploadTime: Date.now() - uploadStartTime
     });
@@ -185,14 +182,14 @@ async function uploadWithRetry(
 
   for (let attempt = 1; attempt <= config.maxRetries; attempt++) {
     const attemptLabel = `${attempt}/${config.maxRetries}`;
-    debugLog(`Upload attempt ${attemptLabel}`, { fileName });
+    log.debug(`Upload attempt ${attemptLabel}`, { fileName });
     onStatus?.(`Upload attempt ${attemptLabel}…`);
 
     try {
       const result = await storageService.uploadJson(dreamFileData, fileName);
 
       if (result.success) {
-        debugLog(`Upload successful on attempt ${attempt}`, {
+        log.debug(`Upload successful on attempt ${attempt}`, {
           rootHash: result.rootHash?.substring(0, 10) + '...'
         });
         onStatus?.(result.alreadyExists ? 'Upload skipped (already exists)' : 'Upload successful');
@@ -200,11 +197,11 @@ async function uploadWithRetry(
       }
 
       lastError = result.error || 'Unknown upload error';
-      debugLog(`Upload attempt ${attempt} failed`, { error: lastError });
+      log.debug(`Upload attempt ${attempt} failed`, { error: lastError });
       onStatus?.(`Upload failed: ${lastError}`);
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
-      debugLog(`Upload attempt ${attempt} threw error`, { error: lastError });
+      log.debug(`Upload attempt ${attempt} threw error`, { error: lastError });
       onStatus?.(`Upload error: ${lastError}`);
     }
 
@@ -212,7 +209,7 @@ async function uploadWithRetry(
       const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay);
       const jitter = Math.floor(Math.random() * Math.min(baseDelay, 1000));
       const waitTime = exponentialDelay + jitter;
-      debugLog(`Waiting ${waitTime}ms before retry`, { attempt, exponentialDelay, jitter });
+      log.debug(`Waiting ${waitTime}ms before retry`, { attempt, exponentialDelay, jitter });
       onStatus?.(`Retrying in ${waitTime}ms…`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
@@ -233,7 +230,7 @@ async function verifyUpload(
   originalData: StandardDreamFields[],
   timeout: number
 ): Promise<{ success: boolean; error?: string }> {
-  debugLog('Starting upload verification', { 
+  log.debug('Starting upload verification', { 
     rootHash: rootHash.substring(0, 10) + '...',
     originalDataLength: originalData.length
   });
@@ -250,12 +247,12 @@ async function verifyUpload(
     // Race between verification and timeout
     await Promise.race([verificationPromise, timeoutPromise]);
 
-    debugLog('Upload verification completed successfully');
+    log.debug('Upload verification completed successfully');
     return { success: true };
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Upload verification failed', { error: errorMessage });
+    log.debug('Upload verification failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
 }
@@ -284,7 +281,7 @@ async function performVerification(
     throw new Error('Uploaded data does not match original data');
   }
 
-  debugLog('Data comparison successful - upload verified');
+  log.debug('Data comparison successful - upload verified');
 }
 
 /**
@@ -298,7 +295,7 @@ function compareJsonData(original: StandardDreamFields[], uploaded: any): boolea
 
     const isEqual = originalStr === uploadedStr;
 
-    debugLog('JSON comparison completed', {
+    log.debug('JSON comparison completed', {
       isEqual,
       originalLength: originalStr.length,
       uploadedLength: uploadedStr.length
@@ -307,7 +304,7 @@ function compareJsonData(original: StandardDreamFields[], uploaded: any): boolea
     return isEqual;
 
   } catch (error) {
-    debugLog('JSON comparison failed', { error: String(error) });
+    log.debug('JSON comparison failed', { error: String(error) });
     return false;
   }
 }
@@ -404,7 +401,7 @@ export async function testUpload(): Promise<SecureUploadResult> {
 
   const testFileName = `test_${Date.now()}_daily_dreams.json`;
 
-  debugLog('Performing test upload', { testFileName });
+  log.debug('Performing test upload', { testFileName });
 
   return await uploadDreamDataSecurely([testDream], testFileName, {
     enableVerification: true,

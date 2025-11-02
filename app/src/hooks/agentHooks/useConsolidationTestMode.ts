@@ -18,6 +18,7 @@ import {
   callUpdateMemoryCore,
   YearlyMemoryCore
 } from './services/agentMemoryCoreService';
+import { logger } from '@/lib/logger';
 
 // Mock data interfaces
 interface MockDream {
@@ -114,17 +115,13 @@ export function useConsolidationTestMode(tokenId?: number) {
     isLoading: isLoadingAgent 
   } = useAgentRead(tokenId);
 
-  const operationalTokenId = tokenId || 
+  const operationalTokenId = tokenId ||
     (agentData && Number(agentData.intelligenceLevel) > 0 ? tokenId : undefined);
 
-  // Debug logs dla development
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[useConsolidationTestMode] ${message}`, data || '');
-    }
-  };
+  // Logger instance
+  const log = logger.child({ component: 'useConsolidationTestMode' });
 
-  debugLog('useConsolidationTestMode initialized', { tokenId, operationalTokenId });
+  log.debug('useConsolidationTestMode initialized', { tokenId, operationalTokenId });
 
   /**
    * Generates realistic mock conversations for testing
@@ -275,7 +272,7 @@ export function useConsolidationTestMode(tokenId?: number) {
     }));
 
     try {
-      debugLog(`Generating ${mode} mock data`);
+      log.debug(`Generating ${mode} mock data`);
 
       if (mode === 'monthly') {
         // Generate PREVIOUS month mock data (cannot consolidate current month)
@@ -325,7 +322,7 @@ export function useConsolidationTestMode(tokenId?: number) {
           mockDataGenerated: true
         }));
 
-        debugLog('Monthly mock data generated', { 
+        log.debug('Monthly mock data generated', { 
           dreams: dreams.length, 
           conversations: conversations.length,
           month,
@@ -351,7 +348,7 @@ export function useConsolidationTestMode(tokenId?: number) {
           mockDataGenerated: true
         }));
 
-        debugLog('Yearly mock data generated', { 
+        log.debug('Yearly mock data generated', { 
           dreamConsolidations: dreamConsolidations.length,
           conversationConsolidations: conversationConsolidations.length,
           year
@@ -365,7 +362,7 @@ export function useConsolidationTestMode(tokenId?: number) {
         error: `Mock data generation failed: ${errorMessage}`,
         statusMessage: ''
       }));
-      debugLog('Mock data generation failed', { error: errorMessage });
+      log.debug('Mock data generation failed', { error: errorMessage });
     } finally {
       setIsGeneratingMocks(false);
     }
@@ -395,7 +392,7 @@ export function useConsolidationTestMode(tokenId?: number) {
     try {
       const { dreams, conversations, month, year } = mockData.monthlyData;
 
-      debugLog('Starting monthly consolidation test', {
+      log.debug('Starting monthly consolidation test', {
         tokenId: operationalTokenId,
         dreams: dreams.length,
         conversations: conversations.length,
@@ -467,7 +464,7 @@ export function useConsolidationTestMode(tokenId?: number) {
         statusMessage: 'Monthly consolidation test completed successfully!'
       }));
 
-      debugLog('Monthly consolidation test completed', {
+      log.debug('Monthly consolidation test completed', {
         txHash: contractResult.txHash,
         dreamHash: storageResult.dreamHash,
         convHash: storageResult.convHash
@@ -483,11 +480,11 @@ export function useConsolidationTestMode(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('Monthly consolidation test failed', { error: errorMessage });
+      log.debug('Monthly consolidation test failed', { error: errorMessage });
     } finally {
       setIsTestingConsolidation(false);
     }
-  }, [operationalTokenId, mockData.monthlyData, personalityTraits, debugLog]);
+  }, [operationalTokenId, mockData.monthlyData, personalityTraits]);
 
   /**
    * Tests yearly consolidation with mock data but real LLM/storage/contract
@@ -513,7 +510,7 @@ export function useConsolidationTestMode(tokenId?: number) {
     try {
       const { dreamConsolidations, conversationConsolidations, year } = mockData.yearlyData;
 
-      debugLog('Starting yearly consolidation test', {
+      log.debug('Starting yearly consolidation test', {
         tokenId: operationalTokenId,
         dreamConsolidations: dreamConsolidations.length,
         conversationConsolidations: conversationConsolidations.length,
@@ -584,7 +581,7 @@ export function useConsolidationTestMode(tokenId?: number) {
         statusMessage: 'Yearly memory core test completed successfully!'
       }));
 
-      debugLog('Yearly consolidation test completed', {
+      log.debug('Yearly consolidation test completed', {
         txHash: contractResult.txHash,
         memoryCoreHash: storageResult.memoryCoreHash
       });
@@ -599,11 +596,11 @@ export function useConsolidationTestMode(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('Yearly consolidation test failed', { error: errorMessage });
+      log.debug('Yearly consolidation test failed', { error: errorMessage });
     } finally {
       setIsTestingConsolidation(false);
     }
-  }, [operationalTokenId, mockData.yearlyData, personalityTraits, agentData, debugLog]);
+  }, [operationalTokenId, mockData.yearlyData, personalityTraits, agentData]);
 
   /**
    * Resets test mode to initial state
@@ -621,7 +618,7 @@ export function useConsolidationTestMode(tokenId?: number) {
       error: null
     });
     setMockData({});
-    debugLog('Test mode reset');
+    log.debug('Test mode reset');
   }, [debugLog]);
 
   return {

@@ -1,6 +1,9 @@
 import { useMachine } from '@xstate/react';
 import { terminalMachine } from '../machines/terminalMachine';
 import { useEffect } from 'react';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'useTerminal' });
 
 export function useTerminal() {
   const [state, send] = useMachine(terminalMachine);
@@ -22,7 +25,7 @@ export function useTerminal() {
           // We'll handle this in a future update to the machine
         }
       } catch (error) {
-        console.error('Failed to load command history:', error);
+        log.error('Failed to load command history', { error });
       }
     }
   }, []);
@@ -36,7 +39,7 @@ export function useTerminal() {
           JSON.stringify(state.context.commandHistory)
         );
       } catch (error) {
-        console.error('Failed to save command history:', error);
+        log.error('Failed to save command history', { error });
       }
     }
   }, [state.context.commandHistory]);

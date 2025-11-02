@@ -11,12 +11,9 @@ import { buildLive2DChatPrompt } from '../services/live2dChatPromptBuilder';
 import type { ChatMessage } from '@/terminal-xstate/machines/chatMachine';
 import toast from 'react-hot-toast';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_AISHI_COMPANION_DEBUG === 'true') {
-    console.log(`[useAIChatSession] ${message}`, data || '');
-  }
-};
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'useAIChatSession' });
 
 export type SessionState =
   | 'idle'
@@ -95,7 +92,7 @@ export const useAIChatSession = (
    * Loads agent context from blockchain and 0G storage (like terminal chat)
    */
   const initializeSession = useCallback(async (agentId: number = 1, agentName: string = 'Aishi') => {
-    debugLog('Initializing chat session', { agentId, agentName });
+    log.debug('Initializing chat session', { agentId, agentName });
 
     setState('initializing');
     setError(null);
@@ -115,7 +112,7 @@ export const useAIChatSession = (
       });
 
       setState('ready');
-      debugLog('Session initialized successfully', {
+      log.debug('Session initialized successfully', {
         agentName: contractAgentName,
         hasAgentContext: !!contextData.agentContext,
         hasHistoricalData: !!contextData.historicalData
@@ -125,7 +122,7 @@ export const useAIChatSession = (
       const errorMessage = err instanceof Error ? err.message : 'Failed to initialize session';
       setError(errorMessage);
       setState('error');
-      debugLog('Session initialization failed', { error: errorMessage });
+      log.debug('Session initialization failed', { error: errorMessage });
     }
   }, []);
 
@@ -134,11 +131,11 @@ export const useAIChatSession = (
    */
   const sendMessage = useCallback(async (userInput: string): Promise<string | null> => {
     if (!sessionContext) {
-      debugLog('Cannot send message - session not initialized');
+      log.debug('Cannot send message - session not initialized');
       return null;
     }
 
-    debugLog('Sending user message', {
+    log.debug('Sending user message', {
       messageLength: userInput.length,
       currentMessageCount: messages.length
     });
@@ -167,14 +164,14 @@ export const useAIChatSession = (
         currentParameters
       });
 
-      debugLog('Prompt built, sending to AI', {
+      log.debug('Prompt built, sending to AI', {
         promptLength: prompt.length
       });
 
       // Send to AI (reuse terminal service)
       const aiResponse = await sendToAI(prompt, 'gemini-2.5-flash');
 
-      debugLog('AI response received', {
+      log.debug('AI response received', {
         responseLength: aiResponse.length
       });
 
@@ -194,7 +191,7 @@ export const useAIChatSession = (
       const errorMessage = err instanceof Error ? err.message : 'Failed to get AI response';
       setError(errorMessage);
       setState('error');
-      debugLog('Send message failed', { error: errorMessage });
+      log.debug('Send message failed', { error: errorMessage });
       return null;
     }
   }, [sessionContext, messages, currentParameters]);
@@ -204,7 +201,7 @@ export const useAIChatSession = (
    * Used when user has no agent NFT or wallet not connected
    */
   const initializeSessionWithFallback = useCallback(async (agentName: string = 'Aishi') => {
-    debugLog('Initializing session with fallback personality (no blockchain)');
+    log.debug('Initializing session with fallback personality (no blockchain)');
 
     setState('initializing');
     setError(null);
@@ -217,7 +214,7 @@ export const useAIChatSession = (
     });
 
     setState('ready');
-    debugLog('Fallback session initialized successfully');
+    log.debug('Fallback session initialized successfully');
   }, []);
 
   /**
@@ -228,7 +225,7 @@ export const useAIChatSession = (
     setSessionContext(null);
     setState('idle');
     setError(null);
-    debugLog('Session reset');
+    log.debug('Session reset');
   }, []);
 
   /**
@@ -239,7 +236,7 @@ export const useAIChatSession = (
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
       setState('ready');
-      debugLog('AI request cancelled');
+      log.debug('AI request cancelled');
     }
   }, []);
 
@@ -247,7 +244,7 @@ export const useAIChatSession = (
    * End session - trigger save confirmation
    */
   const endSession = useCallback(() => {
-    debugLog('Ending session, showing save confirmation');
+    log.debug('Ending session, showing save confirmation');
     setState('confirmingSave');
   }, []);
 
@@ -256,11 +253,11 @@ export const useAIChatSession = (
    */
   const retryOperation = useCallback(async () => {
     if (!retryStep || !saveData) {
-      debugLog('No retry step defined');
+      log.debug('No retry step defined');
       return;
     }
 
-    debugLog('User chose to retry', { step: retryStep, attempt: retryCount });
+    log.debug('User chose to retry', { step: retryStep, attempt: retryCount });
 
     // Reset retry state for new attempt
     setRetryCount(0);
@@ -275,11 +272,11 @@ export const useAIChatSession = (
         const uploadResult = await uploadToStorage(
           saveData.fileData.fileContent,
           saveData.fileData.fileName,
-          (status) => debugLog('Upload status', { status })
+          (status) => log.debug('Upload status', { status })
         );
 
         setSaveData(prev => ({ ...prev, rootHash: uploadResult.rootHash }));
-        debugLog('Retry upload successful', { rootHash: uploadResult.rootHash });
+        log.debug('Retry upload successful', { rootHash: uploadResult.rootHash });
 
         // Continue to contract update
         const { updateConversationContract } = await import('@/terminal-xstate/services/conversationContractUpdater');
@@ -291,7 +288,7 @@ export const useAIChatSession = (
         );
 
         setSaveData(prev => ({ ...prev, txHash: contractResult.txHash }));
-        debugLog('Contract updated after upload retry', { txHash: contractResult.txHash });
+        log.debug('Contract updated after upload retry', { txHash: contractResult.txHash });
 
         // Show success toast
         toast.success(
@@ -322,7 +319,7 @@ export const useAIChatSession = (
         );
 
         setSaveData(prev => ({ ...prev, txHash: contractResult.txHash }));
-        debugLog('Retry contract update successful', { txHash: contractResult.txHash });
+        log.debug('Retry contract update successful', { txHash: contractResult.txHash });
 
         // Show success toast
         toast.success(
@@ -356,7 +353,7 @@ export const useAIChatSession = (
       const errorMessage = err instanceof Error ? err.message : 'Retry failed';
       setError(errorMessage);
       setState('error');
-      debugLog('Retry operation failed', { error: errorMessage });
+      log.debug('Retry operation failed', { error: errorMessage });
     }
   }, [retryStep, retryCount, saveData, sessionContext, resetSession]);
 
@@ -364,7 +361,7 @@ export const useAIChatSession = (
    * Abort retry - complete session without saving
    */
   const abortRetry = useCallback(() => {
-    debugLog('User aborted retry, completing without save');
+    log.debug('User aborted retry, completing without save');
     setState('completed');
     setRetryCount(0);
     setRetryError(null);
@@ -381,7 +378,7 @@ export const useAIChatSession = (
    */
   const confirmSave = useCallback(async (shouldSave: boolean) => {
     if (!shouldSave || !sessionContext) {
-      debugLog('Save cancelled, completing session');
+      log.debug('Save cancelled, completing session');
       setState('completed');
       setTimeout(() => {
         resetSession();
@@ -390,7 +387,7 @@ export const useAIChatSession = (
     }
 
     if (messages.length === 0) {
-      debugLog('No messages to save');
+      log.debug('No messages to save');
       setState('completed');
       setTimeout(() => {
         resetSession();
@@ -400,7 +397,7 @@ export const useAIChatSession = (
 
     try {
       // Step 1: Generate conversation summary (like chatMachine summarizingConversation)
-      debugLog('Generating conversation summary');
+      log.debug('Generating conversation summary');
       setState('summarizing');
 
       const { generateConversationSummary } = await import('@/terminal-xstate/machines/chatServices');
@@ -417,10 +414,10 @@ export const useAIChatSession = (
       );
 
       setSaveData(prev => ({ ...prev, summary: summaryResult.summary }));
-      debugLog('Summary generated', { summary: summaryResult.summary });
+      log.debug('Summary generated', { summary: summaryResult.summary });
 
       // Step 2: Prepare conversation file (like chatMachine savingConversation.preparingFile)
-      debugLog('Preparing conversation file');
+      log.debug('Preparing conversation file');
       setState('saving');
 
       const { ConversationFileManager } = await import('@/terminal-xstate/services/conversationFileManager');
@@ -433,10 +430,10 @@ export const useAIChatSession = (
       );
 
       setSaveData(prev => ({ ...prev, fileData: fileResult }));
-      debugLog('File prepared', { fileName: fileResult.fileName });
+      log.debug('File prepared', { fileName: fileResult.fileName });
 
       // Step 3: Upload to 0G storage with retry logic (like chatMachine storageUploadFailed)
-      debugLog('Uploading to 0G storage');
+      log.debug('Uploading to 0G storage');
 
       const { uploadToStorage } = await import('@/terminal-xstate/services/xstateStorage');
 
@@ -448,10 +445,10 @@ export const useAIChatSession = (
           uploadResult = await uploadToStorage(
             fileResult.fileContent,
             fileResult.fileName,
-            (status) => debugLog('Upload status', { status })
+            (status) => log.debug('Upload status', { status })
           );
 
-          debugLog('Upload complete', { rootHash: uploadResult.rootHash });
+          log.debug('Upload complete', { rootHash: uploadResult.rootHash });
           break; // Success
 
         } catch (uploadErr) {
@@ -460,7 +457,7 @@ export const useAIChatSession = (
 
           if (uploadAttempt >= MAX_RETRIES) {
             // Max retries reached - ask user
-            debugLog(`Upload failed after ${MAX_RETRIES} attempts`, { error: uploadErrorMsg });
+            log.debug(`Upload failed after ${MAX_RETRIES} attempts`, { error: uploadErrorMsg });
             setRetryCount(uploadAttempt);
             setRetryError(uploadErrorMsg);
             setRetryStep('upload');
@@ -468,7 +465,7 @@ export const useAIChatSession = (
             return; // Wait for user decision via retryOperation()
           }
 
-          debugLog(`Upload attempt ${uploadAttempt} failed, retrying in 2s...`, { error: uploadErrorMsg });
+          log.debug(`Upload attempt ${uploadAttempt} failed, retrying in 2s...`, { error: uploadErrorMsg });
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
@@ -480,7 +477,7 @@ export const useAIChatSession = (
       setSaveData(prev => ({ ...prev, rootHash: uploadResult.rootHash }));
 
       // Step 4: Update contract with retry logic (like chatMachine)
-      debugLog('Updating blockchain contract');
+      log.debug('Updating blockchain contract');
 
       const { updateConversationContract } = await import('@/terminal-xstate/services/conversationContractUpdater');
 
@@ -495,7 +492,7 @@ export const useAIChatSession = (
             summaryResult.summary?.type || 'general_chat'
           );
 
-          debugLog('Contract updated', { txHash: contractResult.txHash });
+          log.debug('Contract updated', { txHash: contractResult.txHash });
           break; // Success
 
         } catch (contractErr) {
@@ -504,7 +501,7 @@ export const useAIChatSession = (
 
           if (contractAttempt >= MAX_RETRIES) {
             // Max retries reached - ask user
-            debugLog(`Contract update failed after ${MAX_RETRIES} attempts`, { error: contractErrorMsg });
+            log.debug(`Contract update failed after ${MAX_RETRIES} attempts`, { error: contractErrorMsg });
             setRetryCount(contractAttempt);
             setRetryError(contractErrorMsg);
             setRetryStep('contract');
@@ -512,7 +509,7 @@ export const useAIChatSession = (
             return; // Wait for user decision via retryOperation()
           }
 
-          debugLog(`Contract attempt ${contractAttempt} failed, retrying in 2s...`, { error: contractErrorMsg });
+          log.debug(`Contract attempt ${contractAttempt} failed, retrying in 2s...`, { error: contractErrorMsg });
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
@@ -543,7 +540,7 @@ export const useAIChatSession = (
 
       // Complete
       setState('completed');
-      debugLog('Save workflow complete');
+      log.debug('Save workflow complete');
 
       // Reset after brief delay
       setTimeout(() => {
@@ -555,7 +552,7 @@ export const useAIChatSession = (
       const errorMessage = err instanceof Error ? err.message : 'Failed to save conversation';
       setError(errorMessage);
       setState('error');
-      debugLog('Save workflow failed', { error: errorMessage });
+      log.debug('Save workflow failed', { error: errorMessage });
     }
   }, [sessionContext, messages, resetSession]);
 

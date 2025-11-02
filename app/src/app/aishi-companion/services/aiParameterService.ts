@@ -3,12 +3,9 @@
  * @description Defines controllable parameters, parses AI responses, validates ranges
  */
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_AISHI_COMPANION_DEBUG === 'true') {
-    console.log(`[AIParameterService] ${message}`, data || '');
-  }
-};
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'AIParameterService' });
 
 /**
  * Live2D Parameter Definition
@@ -210,7 +207,7 @@ export function parseAIResponse(
   aiResponse: string,
   currentValues: Map<string, number>
 ): ParsedAIResponse {
-  debugLog('Parsing AI response', {
+  log.debug('Parsing AI response', {
     responseLength: aiResponse.length,
     hasJsonBlock: aiResponse.includes('```json')
   });
@@ -220,7 +217,7 @@ export function parseAIResponse(
   const match = aiResponse.match(jsonBlockRegex);
 
   if (!match) {
-    debugLog('No JSON block found in response');
+    log.debug('No JSON block found in response');
     return {
       text: aiResponse.trim(),
       parameters: {},
@@ -234,9 +231,9 @@ export function parseAIResponse(
   let parsedJson: any;
   try {
     parsedJson = JSON.parse(match[1]);
-    debugLog('JSON block parsed successfully', parsedJson);
+    log.debug('JSON block parsed successfully', parsedJson);
   } catch (error) {
-    debugLog('Failed to parse JSON block', { error: String(error) });
+    log.debug('Failed to parse JSON block', { error: String(error) });
     return {
       text: aiResponse.replace(jsonBlockRegex, '').trim(),
       parameters: {},
@@ -253,20 +250,20 @@ export function parseAIResponse(
 
   Object.entries(rawParameters).forEach(([aiName, value]) => {
     if (typeof value !== 'number') {
-      debugLog(`Invalid parameter value type for ${aiName}`, { value, type: typeof value });
+      log.debug(`Invalid parameter value type for ${aiName}`, { value, type: typeof value });
       return;
     }
 
     // Map AI name to parameter ID
     const paramId = AI_NAME_TO_PARAM_ID[aiName];
     if (!paramId) {
-      debugLog(`Unknown parameter name: ${aiName}`);
+      log.debug(`Unknown parameter name: ${aiName}`);
       return;
     }
 
     const paramDef = PARAM_ID_TO_DEF[paramId];
     if (!paramDef) {
-      debugLog(`Parameter definition not found: ${paramId}`);
+      log.debug(`Parameter definition not found: ${paramId}`);
       return;
     }
 
@@ -274,7 +271,7 @@ export function parseAIResponse(
     const clampedValue = Math.max(paramDef.min, Math.min(paramDef.max, value));
 
     if (clampedValue !== value) {
-      debugLog(`Clamped ${aiName} from ${value} to ${clampedValue}`);
+      log.debug(`Clamped ${aiName} from ${value} to ${clampedValue}`);
     }
 
     validatedParameters[paramId] = clampedValue;
@@ -286,7 +283,7 @@ export function parseAIResponse(
   // Remove JSON block from text
   const cleanText = aiResponse.replace(jsonBlockRegex, '').trim();
 
-  debugLog('Response parsing complete', {
+  log.debug('Response parsing complete', {
     parameterCount: Object.keys(validatedParameters).length,
     expressionCount: expressions.length,
     textLength: cleanText.length
@@ -329,7 +326,7 @@ export function buildParameterUpdates(
 
     // Skip if no change needed
     if (Math.abs(targetValue - currentValue) < 0.01) {
-      debugLog(`Skipping ${paramDef.name} - no change needed`, {
+      log.debug(`Skipping ${paramDef.name} - no change needed`, {
         current: currentValue,
         target: targetValue
       });
@@ -345,7 +342,7 @@ export function buildParameterUpdates(
     });
   });
 
-  debugLog('Built parameter updates', {
+  log.debug('Built parameter updates', {
     totalUpdates: updates.length,
     validUpdates: updates.filter(u => u.isValid).length
   });

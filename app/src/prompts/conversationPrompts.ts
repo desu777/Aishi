@@ -1,6 +1,9 @@
 'use client';
 
+import { logger } from '@/lib/logger/logger';
 import { ConversationContext, ChatMessage } from '../hooks/agentHooks/services/conversationContextBuilder';
+
+const log = logger.child({ component: 'conversationPrompts' });
 
 export interface ConversationPrompt {
   prompt: string;
@@ -37,13 +40,13 @@ export interface ConversationResponse {
  * Buduje kompletny prompt do konwersacji na podstawie ConversationContext
  */
 export const buildConversationPrompt = (
-  context: ConversationContext, 
+  context: ConversationContext,
   userMessage: string
 ): ConversationPrompt => {
   // Debug logs dla development
   const debugLog = (message: string, data?: any) => {
     if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[buildConversationPrompt] ${message}`, data || '');
+      log.debug(`[buildConversationPrompt] ${message}`, data ? { data } : undefined);
     }
   };
 

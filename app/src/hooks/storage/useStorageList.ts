@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { NetworkType, getDefaultNetworkType } from '../../lib/0g/network';
+import { logger } from '@/lib/logger';
 
 interface FileInfo {
   rootHash: string;
@@ -26,6 +27,7 @@ interface UseStorageListReturn {
 const STORAGE_KEY = 'dreamscape-uploaded-files';
 
 export function useStorageList(): UseStorageListReturn {
+  const log = logger.child({ component: 'useStorageList' });
   const [files, setFiles] = useState<FileInfo[]>([]);
   const networkType = getDefaultNetworkType();
 
@@ -36,13 +38,11 @@ export function useStorageList(): UseStorageListReturn {
       if (savedFiles) {
         const parsedFiles = JSON.parse(savedFiles) as FileInfo[];
         setFiles(parsedFiles);
-        
-        if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-          console.log('[useStorageList] Loaded files from localStorage:', parsedFiles.length);
-        }
+
+        log.debug('Loaded files from localStorage', { count: parsedFiles.length });
       }
     } catch (error) {
-      console.error('[useStorageList] Error loading files from localStorage:', error);
+      log.error('Error loading files from localStorage', { error });
     }
   }, []);
 
@@ -50,13 +50,11 @@ export function useStorageList(): UseStorageListReturn {
   const saveToLocalStorage = useCallback((updatedFiles: FileInfo[]) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedFiles));
-      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log('[useStorageList] Saved files to localStorage:', updatedFiles.length);
-      }
+      log.debug('Saved files to localStorage', { count: updatedFiles.length });
     } catch (error) {
-      console.error('[useStorageList] Error saving files to localStorage:', error);
+      log.error('Error saving files to localStorage', { error });
     }
-  }, []);
+  }, [log]);
 
   const addFile = useCallback((fileInfo: Omit<FileInfo, 'uploadDate' | 'networkType'>) => {
     const newFile: FileInfo = {
@@ -83,10 +81,8 @@ export function useStorageList(): UseStorageListReturn {
       return updatedFiles;
     });
 
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log('[useStorageList] Added file:', newFile);
-    }
-  }, [networkType, saveToLocalStorage]);
+    log.debug('Added file', { file: newFile });
+  }, [networkType, saveToLocalStorage, log]);
 
   const removeFile = useCallback((rootHash: string) => {
     setFiles(prevFiles => {
@@ -95,19 +91,15 @@ export function useStorageList(): UseStorageListReturn {
       return updatedFiles;
     });
 
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log('[useStorageList] Removed file:', rootHash);
-    }
-  }, [saveToLocalStorage]);
+    log.debug('Removed file', { rootHash });
+  }, [saveToLocalStorage, log]);
 
   const clearFiles = useCallback(() => {
     setFiles([]);
     saveToLocalStorage([]);
-    
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log('[useStorageList] Cleared all files');
-    }
-  }, [saveToLocalStorage]);
+
+    log.debug('Cleared all files');
+  }, [saveToLocalStorage, log]);
 
   const formatFileSize = useCallback((bytes: number): string => {
     if (bytes === 0) return '0 Bytes';

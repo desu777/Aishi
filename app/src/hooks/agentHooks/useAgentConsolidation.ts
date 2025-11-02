@@ -16,6 +16,7 @@ import {
   MonthlyDreamConsolidation,
   MonthlyConversationConsolidation
 } from './services/agentConsolidationService';
+import { logger } from '@/lib/logger';
 
 // State interface for consolidation process
 interface ConsolidationState {
@@ -67,12 +68,9 @@ export function useAgentConsolidation(tokenId?: number) {
     effectiveTokenId
   } = useAgentRead();
   
-  // Debug log helper
-  const debugLog = useCallback((message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[useAgentConsolidation] ${message}`, data || '');
-    }
-  }, []);
+  // Logger instance
+  const log = logger.child({ component: 'useAgentConsolidation' });
+  const logFn = (message: string, data?: any) => log.debug(message, data);
 
   const [consolidationState, setConsolidationState] = useState<ConsolidationState>({
     isCheckingNeed: false,
@@ -118,7 +116,7 @@ export function useAgentConsolidation(tokenId?: number) {
     }));
 
     try {
-      debugLog('Checking consolidation need', { tokenId: operationalTokenId });
+      log.debug('Checking consolidation need', { tokenId: operationalTokenId });
 
       const [publicClient, publicErr] = await getViemProvider();
       if (!publicClient || publicErr) {
@@ -168,7 +166,7 @@ export function useAgentConsolidation(tokenId?: number) {
         statusMessage: isNeeded ? 'Consolidation needed!' : 'No consolidation needed'
       }));
 
-      debugLog('Consolidation check completed', {
+      log.debug('Consolidation check completed', {
         isNeeded,
         currentMonth: Number(currentMonth),
         currentYear: Number(currentYear),
@@ -183,7 +181,7 @@ export function useAgentConsolidation(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('Consolidation check failed', { error: errorMessage });
+      log.debug('Consolidation check failed', { error: errorMessage });
     }
   }, [isConnected, operationalTokenId, debugLog]);
 
@@ -207,7 +205,7 @@ export function useAgentConsolidation(tokenId?: number) {
     }));
 
     try {
-      debugLog('Loading monthly data', { tokenId: operationalTokenId });
+      log.debug('Loading monthly data', { tokenId: operationalTokenId });
 
       const [publicClient, publicErr] = await getViemProvider();
       if (!publicClient || publicErr) {
@@ -235,7 +233,7 @@ export function useAgentConsolidation(tokenId?: number) {
       const currentConvHash = agentMemory.currentConvDailyHash;
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
-      debugLog('Agent memory retrieved', {
+      log.debug('Agent memory retrieved', {
         currentDreamHash,
         currentConvHash
       });
@@ -253,7 +251,7 @@ export function useAgentConsolidation(tokenId?: number) {
           const textDecoder = new TextDecoder('utf-8');
           const jsonText = textDecoder.decode(dreamResult.data);
           monthlyDreams = JSON.parse(jsonText);
-          debugLog('Dreams loaded', { count: monthlyDreams.length });
+          log.debug('Dreams loaded', { count: monthlyDreams.length });
         }
       }
 
@@ -270,7 +268,7 @@ export function useAgentConsolidation(tokenId?: number) {
           const textDecoder = new TextDecoder('utf-8');
           const jsonText = textDecoder.decode(convResult.data);
           monthlyConversations = JSON.parse(jsonText);
-          debugLog('Conversations loaded', { count: monthlyConversations.length });
+          log.debug('Conversations loaded', { count: monthlyConversations.length });
         }
       }
 
@@ -282,7 +280,7 @@ export function useAgentConsolidation(tokenId?: number) {
         statusMessage: `Loaded ${monthlyDreams.length} dreams and ${monthlyConversations.length} conversations`
       }));
 
-      debugLog('Monthly data loaded successfully', {
+      log.debug('Monthly data loaded successfully', {
         dreamsCount: monthlyDreams.length,
         conversationsCount: monthlyConversations.length
       });
@@ -295,7 +293,7 @@ export function useAgentConsolidation(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('Monthly data loading failed', { error: errorMessage });
+      log.debug('Monthly data loading failed', { error: errorMessage });
     }
   }, [isConnected, operationalTokenId, downloadFile, debugLog]);
 
@@ -322,7 +320,7 @@ export function useAgentConsolidation(tokenId?: number) {
     }
 
     try {
-      debugLog('Starting full consolidation process', {
+      log.debug('Starting full consolidation process', {
         tokenId: operationalTokenId,
         month: currentMonth,
         year: currentYear,
@@ -366,7 +364,7 @@ export function useAgentConsolidation(tokenId?: number) {
         statusMessage: 'AI processing completed'
       }));
 
-      debugLog('LLM processing completed', {
+      log.debug('LLM processing completed', {
         hasDreamConsolidation: !!dreamConsolidation,
         hasConversationConsolidation: !!conversationConsolidation
       });
@@ -399,7 +397,7 @@ export function useAgentConsolidation(tokenId?: number) {
         statusMessage: 'Storage upload completed'
       }));
 
-      debugLog('Storage upload completed', {
+      log.debug('Storage upload completed', {
         dreamHash: storageResult.dreamHash,
         convHash: storageResult.convHash
       });
@@ -430,7 +428,7 @@ export function useAgentConsolidation(tokenId?: number) {
         statusMessage: 'Contract updated successfully'
       }));
 
-      debugLog('Contract update completed', {
+      log.debug('Contract update completed', {
         txHash: contractResult.txHash
       });
 
@@ -445,7 +443,7 @@ export function useAgentConsolidation(tokenId?: number) {
       
       if (!clearResult.success) {
         // Non-critical error - log but don't fail
-        debugLog('Clear files failed (non-critical)', { error: clearResult.error });
+        log.debug('Clear files failed (non-critical)', { error: clearResult.error });
       }
 
       setConsolidationState(prev => ({
@@ -455,7 +453,7 @@ export function useAgentConsolidation(tokenId?: number) {
         statusMessage: 'Consolidation completed successfully! 🎉'
       }));
 
-      debugLog('Full consolidation process completed successfully');
+      log.debug('Full consolidation process completed successfully');
 
       // Refresh agent data by re-fetching if needed
       // Note: useAgentRead doesn't provide refreshAgentData, so we rely on automatic updates
@@ -471,7 +469,7 @@ export function useAgentConsolidation(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('Consolidation process failed', { error: errorMessage });
+      log.debug('Consolidation process failed', { error: errorMessage });
     }
   }, [
     isConnected, 

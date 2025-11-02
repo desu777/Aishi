@@ -5,13 +5,10 @@
  */
 
 import { AIResponse } from '../types/contextTypes';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[APIService] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'APIService' });
 
 interface DreamAPIRequest {
   prompt: string;
@@ -50,8 +47,8 @@ function sanitizeJsonString(str: string): string {
  * Enhanced JSON diagnostic logging
  */
 function logJsonDiagnostics(responseText: string, blockContent?: string, blockIndex?: number) {
-  debugLog('=== JSON DIAGNOSTICS START ===');
-  debugLog('Full AI Response Preview', {
+  log.debug('=== JSON DIAGNOSTICS START ===');
+  log.debug('Full AI Response Preview', {
     length: responseText.length,
     firstChars: responseText.substring(0, 100),
     lastChars: responseText.substring(responseText.length - 100),
@@ -60,7 +57,7 @@ function logJsonDiagnostics(responseText: string, blockContent?: string, blockIn
   });
   
   if (blockContent !== undefined && blockIndex !== undefined) {
-    debugLog(`JSON Block ${blockIndex + 1} Diagnostics`, {
+    log.debug(`JSON Block ${blockIndex + 1} Diagnostics`, {
       length: blockContent.length,
       firstChars: blockContent.substring(0, 50),
       hexDump: Array.from(blockContent.substring(0, 20)).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' '),
@@ -69,7 +66,7 @@ function logJsonDiagnostics(responseText: string, blockContent?: string, blockIn
       endsWithBrace: blockContent.trim().endsWith('}')
     });
   }
-  debugLog('=== JSON DIAGNOSTICS END ===');
+  log.debug('=== JSON DIAGNOSTICS END ===');
 }
 
 /**
@@ -81,10 +78,10 @@ function parseJsonSafely(jsonStr: string, blockIndex: number): any | null {
   // Strategy 1: Direct parsing (fastest path)
   try {
     const result = JSON.parse(jsonStr);
-    debugLog(`JSON Block ${blockIndex + 1} parsed successfully (direct)`, { strategy: 'direct' });
+    log.debug(`JSON Block ${blockIndex + 1} parsed successfully (direct)`, { strategy: 'direct' });
     return result;
   } catch (directError) {
-    debugLog(`JSON Block ${blockIndex + 1} direct parsing failed`, { 
+    log.debug(`JSON Block ${blockIndex + 1} direct parsing failed`, { 
       error: String(directError),
       errorPosition: (directError as any).message?.match(/position (\d+)/)?.[1]
     });
@@ -98,10 +95,10 @@ function parseJsonSafely(jsonStr: string, blockIndex: number): any | null {
       .normalize('NFC'); // Unicode normalization
     
     const result = JSON.parse(normalized);
-    debugLog(`JSON Block ${blockIndex + 1} parsed successfully (normalized)`, { strategy: 'normalized' });
+    log.debug(`JSON Block ${blockIndex + 1} parsed successfully (normalized)`, { strategy: 'normalized' });
     return result;
   } catch (normalizedError) {
-    debugLog(`JSON Block ${blockIndex + 1} normalized parsing failed`, { 
+    log.debug(`JSON Block ${blockIndex + 1} normalized parsing failed`, { 
       error: String(normalizedError) 
     });
   }
@@ -118,17 +115,17 @@ function parseJsonSafely(jsonStr: string, blockIndex: number): any | null {
       .replace(/\\\\t/g, '\\t');       // Fix double-escaped tabs
     
     const result = JSON.parse(escaped);
-    debugLog(`JSON Block ${blockIndex + 1} parsed successfully (escaped)`, { strategy: 'escaped' });
+    log.debug(`JSON Block ${blockIndex + 1} parsed successfully (escaped)`, { strategy: 'escaped' });
     return result;
   } catch (escapedError) {
-    debugLog(`JSON Block ${blockIndex + 1} escaped parsing failed`, { 
+    log.debug(`JSON Block ${blockIndex + 1} escaped parsing failed`, { 
       error: String(escapedError) 
     });
   }
 
   // Strategy 4: Manual content extraction (last resort)
   try {
-    debugLog(`JSON Block ${blockIndex + 1} attempting manual extraction`, { 
+    log.debug(`JSON Block ${blockIndex + 1} attempting manual extraction`, { 
       originalLength: originalStr.length 
     });
     
@@ -139,7 +136,7 @@ function parseJsonSafely(jsonStr: string, blockIndex: number): any | null {
     
     if (fullAnalysisMatch && blockIndex === 0) {
       const result = { full_analysis: fullAnalysisMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n') };
-      debugLog(`JSON Block ${blockIndex + 1} manual extraction successful`, { strategy: 'manual', extracted: 'full_analysis' });
+      log.debug(`JSON Block ${blockIndex + 1} manual extraction successful`, { strategy: 'manual', extracted: 'full_analysis' });
       return result;
     }
     
@@ -149,17 +146,17 @@ function parseJsonSafely(jsonStr: string, blockIndex: number): any | null {
         analysis: analysisMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n'),
         dreamData 
       };
-      debugLog(`JSON Block ${blockIndex + 1} manual extraction successful`, { strategy: 'manual', extracted: 'analysis+dreamData' });
+      log.debug(`JSON Block ${blockIndex + 1} manual extraction successful`, { strategy: 'manual', extracted: 'analysis+dreamData' });
       return result;
     }
   } catch (manualError) {
-    debugLog(`JSON Block ${blockIndex + 1} manual extraction failed`, { 
+    log.debug(`JSON Block ${blockIndex + 1} manual extraction failed`, { 
       error: String(manualError) 
     });
   }
 
   // All strategies failed
-  debugLog(`JSON Block ${blockIndex + 1} ALL PARSING STRATEGIES FAILED`, { 
+  log.debug(`JSON Block ${blockIndex + 1} ALL PARSING STRATEGIES FAILED`, { 
     originalLength: originalStr.length,
     strategies: ['direct', 'normalized', 'escaped', 'manual']
   });
@@ -171,7 +168,7 @@ function parseJsonSafely(jsonStr: string, blockIndex: number): any | null {
  * Extract JSON blocks from AI response text with enhanced error handling
  */
 function extractJsonBlocks(responseText: string): { fullAnalysis?: any; dreamData?: any } {
-  debugLog('Extracting JSON blocks from response', { 
+  log.debug('Extracting JSON blocks from response', { 
     responseLength: responseText.length 
   });
   
@@ -182,21 +179,21 @@ function extractJsonBlocks(responseText: string): { fullAnalysis?: any; dreamDat
   const jsonBlockRegex = /```json\s*({[\s\S]*?})\s*```/g;
   const matches = [...responseText.matchAll(jsonBlockRegex)];
   
-  debugLog('Found JSON blocks', { count: matches.length });
+  log.debug('Found JSON blocks', { count: matches.length });
   
   if (matches.length === 0) {
-    debugLog('No JSON blocks found with enhanced regex, trying fallback');
+    log.debug('No JSON blocks found with enhanced regex, trying fallback');
     
     // Fallback: try original regex pattern
     const fallbackRegex = /```json\s*([\s\S]*?)```/g;
     const fallbackMatches = [...responseText.matchAll(fallbackRegex)];
     
     if (fallbackMatches.length === 0) {
-      debugLog('No JSON blocks found at all, treating as plain text');
+      log.debug('No JSON blocks found at all, treating as plain text');
       return { fullAnalysis: responseText };
     }
     
-    debugLog('Found JSON blocks with fallback regex', { count: fallbackMatches.length });
+    log.debug('Found JSON blocks with fallback regex', { count: fallbackMatches.length });
     
     // Process fallback matches
     const result: any = {};
@@ -230,7 +227,7 @@ function extractJsonBlocks(responseText: string): { fullAnalysis?: any; dreamDat
     const parsed = parseJsonSafely(jsonStr, index);
     
     if (parsed) {
-      debugLog(`Successfully processed JSON block ${index + 1}`, { 
+      log.debug(`Successfully processed JSON block ${index + 1}`, { 
         hasFullAnalysis: !!parsed.full_analysis,
         hasAnalysis: !!parsed.analysis,
         hasDreamData: !!parsed.dreamData
@@ -246,18 +243,18 @@ function extractJsonBlocks(responseText: string): { fullAnalysis?: any; dreamDat
         result.dreamData = parsed;
       }
     } else {
-      debugLog(`Failed to process JSON block ${index + 1} with all strategies`);
+      log.debug(`Failed to process JSON block ${index + 1} with all strategies`);
       
       // Graceful fallback: if first block fails but second succeeds, use second for both
       if (index === 0 && matches.length > 1) {
-        debugLog('Will attempt to use second block as fallback for first block content');
+        log.debug('Will attempt to use second block as fallback for first block content');
       }
     }
   });
   
   // Fallback strategy: if first block failed but we have second block
   if (!result.fullAnalysis && result.dreamData && result.dreamData.analysis) {
-    debugLog('Using analysis from second block as fallback for full_analysis');
+    log.debug('Using analysis from second block as fallback for full_analysis');
     result.fullAnalysis = result.dreamData.analysis;
   }
   
@@ -274,7 +271,7 @@ async function routeToBackend(request: DreamAPIRequest): Promise<BackendResponse
   const isGeminiModel = request.modelId.startsWith('gemini-');
   const endpoint = isGeminiModel ? '/gemini' : '/0g-compute';
   
-  debugLog('Routing request to backend', {
+  log.debug('Routing request to backend', {
     model: request.modelId,
     endpoint,
     isGemini: isGeminiModel,
@@ -289,7 +286,7 @@ async function routeToBackend(request: DreamAPIRequest): Promise<BackendResponse
     // For 0G Network models, walletAddress is REQUIRED (no zero address fallback!)
     if (!request.walletAddress || request.walletAddress === '0x0000000000000000000000000000000000000000') {
       const error = 'Wallet address required for 0G Network models. Please ensure wallet is connected and agent is synced.';
-      debugLog('❌ Missing or invalid walletAddress for 0G model', {
+      log.debug('❌ Missing or invalid walletAddress for 0G model', {
         modelId: request.modelId,
         hasWalletAddress: !!request.walletAddress,
         walletAddress: request.walletAddress || 'undefined'
@@ -322,7 +319,7 @@ async function routeToBackend(request: DreamAPIRequest): Promise<BackendResponse
     
     return data;
   } catch (error) {
-    debugLog('Backend request failed', { error: String(error) });
+    log.debug('Backend request failed', { error: String(error) });
     throw error;
   }
 }
@@ -337,7 +334,7 @@ export async function sendDreamToAI(
   isEvolutionDream: boolean = false,
   dreamCount: number = 0
 ): Promise<AIResponse> {
-  debugLog('=== BANDYCKA JAZDA: Sending dream to REAL AI ===', {
+  log.debug('=== BANDYCKA JAZDA: Sending dream to REAL AI ===', {
     promptLength: prompt.length,
     modelId,
     isEvolutionDream,
@@ -359,7 +356,7 @@ export async function sendDreamToAI(
       throw new Error(backendResponse.error || 'Backend request failed');
     }
     
-    debugLog('Received backend response', {
+    log.debug('Received backend response', {
       hasData: !!backendResponse.data,
       dataLength: backendResponse.data?.length,
       metadata: backendResponse.metadata
@@ -396,7 +393,7 @@ export async function sendDreamToAI(
         dreamData.personalityImpact : undefined
     };
     
-    debugLog('=== AI Response Parsed Successfully ===', {
+    log.debug('=== AI Response Parsed Successfully ===', {
       hasFullAnalysis: !!aiResponse.fullAnalysis,
       fullAnalysisLength: aiResponse.fullAnalysis.length,
       dreamId: aiResponse.dreamData.id,
@@ -408,7 +405,7 @@ export async function sendDreamToAI(
     return aiResponse;
     
   } catch (error) {
-    debugLog('=== AI Request Failed ===', { error: String(error) });
+    log.debug('=== AI Request Failed ===', { error: String(error) });
     
     // Return a fallback response on error
     const fallbackResponse: AIResponse = {
@@ -440,7 +437,7 @@ export async function sendToAI(
   modelId: string = 'gemini-2.5-flash',
   walletAddress?: string
 ): Promise<string> {
-  debugLog('=== Sending chat message to AI ===', {
+  log.debug('=== Sending chat message to AI ===', {
     promptLength: prompt.length,
     modelId,
     hasWalletAddress: !!walletAddress,
@@ -455,7 +452,7 @@ export async function sendToAI(
       walletAddress
     });
 
-    debugLog('Backend response received for chat', {
+    log.debug('Backend response received for chat', {
       hasData: !!backendResponse.data,
       hasError: !!backendResponse.error,
       model: backendResponse.metadata?.model || modelId
@@ -472,7 +469,7 @@ export async function sendToAI(
       throw new Error('Empty response from AI');
     }
 
-    debugLog('Chat response parsed successfully', {
+    log.debug('Chat response parsed successfully', {
       responseLength: responseText.length,
       fullResponse: responseText
     });
@@ -480,7 +477,7 @@ export async function sendToAI(
     return responseText;
 
   } catch (error) {
-    debugLog('Chat AI request failed', { error: String(error) });
+    log.debug('Chat AI request failed', { error: String(error) });
     
     // Return a fallback message instead of throwing
     return `I apologize, but I'm having trouble connecting to the AI service right now (${String(error).replace('Error: ', '')}). Please try again in a moment.`;
@@ -495,7 +492,7 @@ export function getSelectedModel(modelRef: any): string {
     const modelState = modelRef?.getSnapshot();
     const selectedModel = modelState?.context?.selectedModel;
     
-    debugLog('Retrieved selected model from modelRef', { 
+    log.debug('Retrieved selected model from modelRef', { 
       selectedModel,
       hasModelRef: !!modelRef,
       hasContext: !!modelState?.context
@@ -503,7 +500,7 @@ export function getSelectedModel(modelRef: any): string {
     
     return selectedModel || 'gemini-2.5-flash-auto';
   } catch (error) {
-    debugLog('Failed to get selected model, using default', { error: String(error) });
+    log.debug('Failed to get selected model, using default', { error: String(error) });
     return 'gemini-2.5-flash-auto';
   }
 }

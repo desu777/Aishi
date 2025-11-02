@@ -10,13 +10,10 @@ import { ContractReaderService } from '../services/contractReader';
 import { XStateStorageService } from '../services/xstateStorage';
 import { getTxExplorerUrl } from '../../config/chains';
 import type { TerminalLine } from './types';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-    console.log(`[MemoryCoreMachine] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'MemoryCoreMachine' });
 
 // Context interface
 export interface MemoryCoreContext {
@@ -97,7 +94,7 @@ const fetchMemoryHashesService = fromPromise(async ({ input }: {
     tokenId: number;
   }
 }) => {
-  debugLog('Fetching memory hashes from contract', input);
+  log.debug('Fetching memory hashes from contract', input);
 
   const contractReader = new ContractReaderService();
   const agentData = await contractReader.getCompleteAgentData(input.tokenId);
@@ -132,7 +129,7 @@ const downloadMonthlyDataService = fromPromise(async ({ input }: {
     lastConvMonthlyHash: string | null;
   }
 }) => {
-  debugLog('Downloading monthly consolidations from storage', input);
+  log.debug('Downloading monthly consolidations from storage', input);
 
   const storage = new XStateStorageService();
   const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -145,7 +142,7 @@ const downloadMonthlyDataService = fromPromise(async ({ input }: {
     const dreamResult = await storage.downloadJson(input.lastDreamMonthlyHash);
     if (dreamResult.success && dreamResult.data) {
       dreamConsolidations = Array.isArray(dreamResult.data) ? dreamResult.data : [dreamResult.data];
-      debugLog('Dream consolidations downloaded', { count: dreamConsolidations.length });
+      log.debug('Dream consolidations downloaded', { count: dreamConsolidations.length });
     }
   }
 
@@ -154,7 +151,7 @@ const downloadMonthlyDataService = fromPromise(async ({ input }: {
     const convResult = await storage.downloadJson(input.lastConvMonthlyHash);
     if (convResult.success && convResult.data) {
       conversationConsolidations = Array.isArray(convResult.data) ? convResult.data : [convResult.data];
-      debugLog('Conversation consolidations downloaded', { count: conversationConsolidations.length });
+      log.debug('Conversation consolidations downloaded', { count: conversationConsolidations.length });
     }
   }
 
@@ -175,7 +172,7 @@ const aiMemoryCoreService = fromPromise(async ({ input }: {
     modelId: string;
   }
 }) => {
-  debugLog('Generating AI memory core', {
+  log.debug('Generating AI memory core', {
     dreamConsolidationsCount: input.dreamConsolidations.length,
     conversationConsolidationsCount: input.conversationConsolidations.length,
     year: input.year,
@@ -208,7 +205,7 @@ const aiMemoryCoreService = fromPromise(async ({ input }: {
     modelId: input.modelId
   };
 
-  debugLog('Sending to AI for memory core', { endpoint, isGemini: isGeminiModel });
+  log.debug('Sending to AI for memory core', { endpoint, isGemini: isGeminiModel });
 
   const response = await fetch(`${apiUrl}${endpoint}`, {
     method: 'POST',
@@ -249,7 +246,7 @@ const uploadCoreService = fromPromise(async ({ input }: {
     year: number;
   }
 }) => {
-  debugLog('Uploading memory core (APPEND pattern)');
+  log.debug('Uploading memory core (APPEND pattern)');
 
   const storage = new XStateStorageService();
   const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -260,7 +257,7 @@ const uploadCoreService = fromPromise(async ({ input }: {
     const downloadResult = await storage.downloadJson(input.memoryCoreHash);
     if (downloadResult.success && downloadResult.data) {
       existingMemoryCores = Array.isArray(downloadResult.data) ? downloadResult.data : [downloadResult.data];
-      debugLog('Existing memory cores loaded', { count: existingMemoryCores.length });
+      log.debug('Existing memory cores loaded', { count: existingMemoryCores.length });
     }
   }
 
@@ -288,7 +285,7 @@ const contractUpdateService = fromPromise(async ({ input }: {
     memoryCoreStorageHash: string;
   }
 }) => {
-  debugLog('Updating contract with memory core hash', input);
+  log.debug('Updating contract with memory core hash', input);
 
   const { getViemSigner } = await import('../../lib/0g/fees');
   const { getContractConfig } = await import('../services/contractService');
@@ -629,7 +626,7 @@ export const memoryCoreMemachine = setup({
     completed: {
       type: 'final',
       entry: [
-        () => debugLog('Memory-core workflow completed'),
+        () => log.debug('Memory-core workflow completed'),
         sendParent({ type: 'MEMORY_CORE.COMPLETE' })
       ]
     },

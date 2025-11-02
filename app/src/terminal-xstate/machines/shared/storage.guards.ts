@@ -3,12 +3,10 @@
  * @description Common guards for storage operations and retry logic used by both dream and chat machines
  */
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[StorageGuards] ${message}`, data || '');
-  }
-};
+import { logger } from '@/lib/logger';
+
+// Logger instance
+const log = logger.child({ component: 'StorageGuards' });
 
 /**
  * Shared storage-related guards for consistent validation across machines
@@ -22,7 +20,7 @@ export const storageGuards = {
     const maxRetries = context.maxRetries || 3;
     const canRetry = retryCount < maxRetries;
     
-    debugLog('Checking retry eligibility', { 
+    log.debug('Checking retry eligibility', { 
       retryCount, 
       maxRetries, 
       canRetry 
@@ -39,7 +37,7 @@ export const storageGuards = {
     const maxRetries = context.maxRetries || 3;
     const exceeded = retryCount >= maxRetries;
     
-    debugLog('Checking if max retries exceeded', { 
+    log.debug('Checking if max retries exceeded', { 
       retryCount, 
       maxRetries, 
       exceeded 
@@ -61,7 +59,7 @@ export const storageGuards = {
                    hash !== '0x0000000000000000000000000000000000000000000000000000000000000000' &&
                    hash.length === 66;
 
-    debugLog('Validating root hash from event', {
+    log.debug('Validating root hash from event', {
       hash: hash ? `${hash.substring(0, 10)}...` : 'none',
       hashLength: hash?.length,
       expectedLength: 66,
@@ -100,7 +98,7 @@ export const storageGuards = {
 
       const isStorageError = storageErrorPatterns.some(pattern => normalizedMsg.includes(pattern));
 
-      debugLog('Checking if storage upload error', {
+      log.debug('Checking if storage upload error', {
         errorMsg: raw.substring(0, 50),
         isStorageError
       });
@@ -121,7 +119,7 @@ export const storageGuards = {
     const value = event.value?.toLowerCase().trim();
     const isYes = value === 'y' || value === 'yes';
     
-    debugLog('Checking yes input', { value, isYes });
+    log.debug('Checking yes input', { value, isYes });
     
     return isYes;
   },
@@ -137,7 +135,7 @@ export const storageGuards = {
     const value = event.value?.toLowerCase().trim();
     const isNo = value === 'n' || value === 'no';
     
-    debugLog('Checking no input', { value, isNo });
+    log.debug('Checking no input', { value, isNo });
     
     return isNo;
   },
@@ -149,7 +147,7 @@ export const storageGuards = {
     const canRetry = storageGuards.canRetry({ context });
     const wantsRetry = storageGuards.isYesInput({ event });
     
-    debugLog('Checking should retry', { canRetry, wantsRetry });
+    log.debug('Checking should retry', { canRetry, wantsRetry });
     
     return canRetry && wantsRetry;
   },
@@ -161,7 +159,7 @@ export const storageGuards = {
     const exceededMax = storageGuards.hasExceededMaxRetries({ context });
     const wantsRetry = storageGuards.isYesInput({ event });
     
-    debugLog('Checking should abort after max retries', { exceededMax, wantsRetry });
+    log.debug('Checking should abort after max retries', { exceededMax, wantsRetry });
     
     return exceededMax && wantsRetry;
   }

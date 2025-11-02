@@ -14,6 +14,7 @@ import {
   YearlyMemoryCore
 } from './services/agentMemoryCoreService';
 import type { MonthlyDreamConsolidation, MonthlyConversationConsolidation } from './services/agentConsolidationService';
+import { logger } from '@/lib/logger';
 
 // State interface for yearly memory core consolidation process
 interface MemoryCoreState {
@@ -54,12 +55,9 @@ export function useAgentMemoryCore(tokenId?: number) {
     effectiveTokenId
   } = useAgentRead();
   
-  // Debug log helper
-  const debugLog = useCallback((message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[useAgentMemoryCore] ${message}`, data || '');
-    }
-  }, []);
+  // Logger instance
+  const log = logger.child({ component: 'useAgentMemoryCore' });
+  const logFn = (message: string, data?: any) => log.debug(message, data);
 
   const [memoryCoreState, setMemoryCoreState] = useState<MemoryCoreState>({
     isCheckingYearlyReflection: false,
@@ -101,7 +99,7 @@ export function useAgentMemoryCore(tokenId?: number) {
     }));
 
     try {
-      debugLog('Checking yearly reflection status', { tokenId: operationalTokenId });
+      log.debug('Checking yearly reflection status', { tokenId: operationalTokenId });
 
       const [publicClient, publicErr] = await getViemProvider();
       if (!publicClient || publicErr) {
@@ -125,7 +123,7 @@ export function useAgentMemoryCore(tokenId?: number) {
         statusMessage: hasYearlyReflection ? 'Yearly reflection available!' : 'No yearly reflection available'
       }));
 
-      debugLog('Yearly reflection check completed', {
+      log.debug('Yearly reflection check completed', {
         hasYearlyReflection,
         pendingRewards: {
           intelligenceBonus: Number(intelligenceBonus),
@@ -142,7 +140,7 @@ export function useAgentMemoryCore(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('Yearly reflection check failed', { error: errorMessage });
+      log.debug('Yearly reflection check failed', { error: errorMessage });
     }
   }, [isConnected, operationalTokenId, debugLog]);
 
@@ -166,7 +164,7 @@ export function useAgentMemoryCore(tokenId?: number) {
     }));
 
     try {
-      debugLog('Loading monthly consolidations', { tokenId: operationalTokenId, year });
+      log.debug('Loading monthly consolidations', { tokenId: operationalTokenId, year });
 
       const [publicClient, publicErr] = await getViemProvider();
       if (!publicClient || publicErr) {
@@ -191,7 +189,7 @@ export function useAgentMemoryCore(tokenId?: number) {
         currentYear: number;
       };
       
-      debugLog('Agent memory retrieved', {
+      log.debug('Agent memory retrieved', {
         lastDreamMonthlyHash: agentMemory.lastDreamMonthlyHash,
         lastConvMonthlyHash: agentMemory.lastConvMonthlyHash
       });
@@ -217,7 +215,7 @@ export function useAgentMemoryCore(tokenId?: number) {
           const jsonText = textDecoder.decode(dreamResult.data);
           const dreamConsolidation = JSON.parse(jsonText) as MonthlyDreamConsolidation;
           monthlyDreamConsolidations.push(dreamConsolidation);
-          debugLog('Dream consolidation loaded', { month: dreamConsolidation.month, year: dreamConsolidation.year });
+          log.debug('Dream consolidation loaded', { month: dreamConsolidation.month, year: dreamConsolidation.year });
         }
       }
 
@@ -233,7 +231,7 @@ export function useAgentMemoryCore(tokenId?: number) {
           const jsonText = textDecoder.decode(convResult.data);
           const convConsolidation = JSON.parse(jsonText) as MonthlyConversationConsolidation;
           monthlyConversationConsolidations.push(convConsolidation);
-          debugLog('Conversation consolidation loaded', { month: convConsolidation.month, year: convConsolidation.year });
+          log.debug('Conversation consolidation loaded', { month: convConsolidation.month, year: convConsolidation.year });
         }
       }
 
@@ -248,7 +246,7 @@ export function useAgentMemoryCore(tokenId?: number) {
         statusMessage: `Loaded ${monthlyDreamConsolidations.length} dream consolidations and ${monthlyConversationConsolidations.length} conversation consolidations`
       }));
 
-      debugLog('Monthly consolidations loaded successfully', {
+      log.debug('Monthly consolidations loaded successfully', {
         dreamConsolidationsCount: monthlyDreamConsolidations.length,
         conversationConsolidationsCount: monthlyConversationConsolidations.length
       });
@@ -261,7 +259,7 @@ export function useAgentMemoryCore(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('Monthly consolidations loading failed', { error: errorMessage });
+      log.debug('Monthly consolidations loading failed', { error: errorMessage });
     }
   }, [isConnected, operationalTokenId, downloadFile, debugLog]);
 
@@ -288,7 +286,7 @@ export function useAgentMemoryCore(tokenId?: number) {
     }
 
     try {
-      debugLog('Starting full yearly consolidation process', {
+      log.debug('Starting full yearly consolidation process', {
         tokenId: operationalTokenId,
         year: currentYear,
         dreamConsolidationsCount: monthlyDreamConsolidations.length,
@@ -325,7 +323,7 @@ export function useAgentMemoryCore(tokenId?: number) {
         statusMessage: 'AI processing completed'
       }));
 
-      debugLog('LLM processing completed', {
+      log.debug('LLM processing completed', {
         year: memoryCoreData.year,
         totalDreams: memoryCoreData.yearly_overview.total_dreams,
         totalConversations: memoryCoreData.yearly_overview.total_conversations,
@@ -355,7 +353,7 @@ export function useAgentMemoryCore(tokenId?: number) {
         statusMessage: 'Storage upload completed'
       }));
 
-      debugLog('Storage upload completed', {
+      log.debug('Storage upload completed', {
         memoryCoreHash: storageResult.memoryCoreHash
       });
 
@@ -383,7 +381,7 @@ export function useAgentMemoryCore(tokenId?: number) {
         isCompleted: true
       }));
 
-      debugLog('Contract update completed', {
+      log.debug('Contract update completed', {
         txHash: contractResult.txHash
       });
 
@@ -402,7 +400,7 @@ export function useAgentMemoryCore(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('Yearly consolidation failed', { error: errorMessage });
+      log.debug('Yearly consolidation failed', { error: errorMessage });
     }
   }, [isConnected, operationalTokenId, personalityTraits, agentData, memoryCoreState, debugLog]);
 
@@ -426,7 +424,7 @@ export function useAgentMemoryCore(tokenId?: number) {
       error: null,
       isCompleted: false
     });
-    debugLog('Memory core state reset');
+    log.debug('Memory core state reset');
   }, [debugLog]);
 
   // Check if can start yearly consolidation

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useWallet } from '../useWallet';
 import { ConversationPrompt, ConversationResponse } from './useAgentConversationPrompt';
+import { logger } from '@/lib/logger';
 
 interface ConversationState {
   isLoading: boolean;
@@ -52,14 +53,10 @@ export function useAgentConversation() {
 
   const { address } = useWallet();
 
-  // Debug logs dla development
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[useAgentConversation] ${message}`, data || '');
-    }
-  };
+  // Logger instance
+  const log = logger.child({ component: 'useAgentConversation' });
 
-  debugLog('useAgentConversation hook initialized');
+  log.debug('useAgentConversation hook initialized');
 
   const resetConversation = () => {
     setState({
@@ -68,7 +65,7 @@ export function useAgentConversation() {
       aiResponse: null,
       parsedResponse: null
     });
-    debugLog('Conversation state reset');
+    log.debug('Conversation state reset');
   };
 
   /**
@@ -80,14 +77,14 @@ export function useAgentConversation() {
     if (!address) {
       const error = 'Wallet not connected';
       setState(prev => ({ ...prev, error }));
-      debugLog('Conversation failed - wallet not connected');
+      log.debug('Conversation failed - wallet not connected');
       return null;
     }
 
     if (!conversationPrompt.prompt.trim()) {
       const error = 'Conversation prompt is required';
       setState(prev => ({ ...prev, error }));
-      debugLog('Conversation failed - no prompt');
+      log.debug('Conversation failed - no prompt');
       return null;
     }
 
@@ -100,7 +97,7 @@ export function useAgentConversation() {
     }));
 
     try {
-      debugLog('Starting conversation message', { 
+      log.debug('Starting conversation message', { 
         walletAddress: address,
         promptLength: conversationPrompt.prompt.length,
         isConversation: conversationPrompt.expectedFormat.isConversation
@@ -109,7 +106,7 @@ export function useAgentConversation() {
       // Get API URL from environment
       const apiUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
       
-      debugLog('API URL configured', { apiUrl });
+      log.debug('API URL configured', { apiUrl });
 
       // Send request to 0g-compute API (same endpoint, different parsing)
       const response = await fetch(`${apiUrl}/0g-compute`, {
@@ -136,7 +133,7 @@ export function useAgentConversation() {
 
       const aiResponse: ConversationAIResponse = apiResult.data;
       
-      debugLog('AI conversation response received', {
+      log.debug('AI conversation response received', {
         model: aiResponse.model,
         cost: aiResponse.cost,
         responseTime: aiResponse.responseTime,
@@ -161,7 +158,7 @@ export function useAgentConversation() {
         parsedResponse
       }));
 
-      debugLog('Conversation completed successfully', {
+      log.debug('Conversation completed successfully', {
         responseLength: parsedResponse.agentResponse.length,
         topic: parsedResponse.conversationSummary.topic,
         emotionalTone: parsedResponse.conversationSummary.emotional_tone,
@@ -178,7 +175,7 @@ export function useAgentConversation() {
         isLoading: false,
         error: errorMessage
       }));
-      debugLog('Conversation failed', { error: errorMessage });
+      log.debug('Conversation failed', { error: errorMessage });
       return null;
     }
   };
@@ -191,7 +188,7 @@ export function useAgentConversation() {
     expectedFormat: any
   ): ParsedConversationResponse | null => {
     try {
-      debugLog('Parsing conversation response', { 
+      log.debug('Parsing conversation response', { 
         responseLength: responseText.length,
         isConversation: expectedFormat.isConversation,
         needsStructuredResponse: expectedFormat.needsStructuredResponse
@@ -202,7 +199,7 @@ export function useAgentConversation() {
       
       if (jsonBlocks.length < 1) {
         // Fallback to basic response if no JSON found
-        debugLog('No JSON blocks found, creating fallback response');
+        log.debug('No JSON blocks found, creating fallback response');
         return {
           agentResponse: responseText,
           references: [],
@@ -226,7 +223,7 @@ export function useAgentConversation() {
         const conversationData: ConversationResponse = JSON.parse(jsonBlocks[0]);
         
         if (!conversationData.agent_response || !conversationData.conversation_summary) {
-          debugLog('Missing required fields in conversation JSON');
+          log.debug('Missing required fields in conversation JSON');
           throw new Error('Invalid conversation JSON structure');
         }
 
@@ -242,7 +239,7 @@ export function useAgentConversation() {
           conversationSummary: conversationData.conversation_summary
         };
 
-        debugLog('Conversation response parsed successfully', {
+        log.debug('Conversation response parsed successfully', {
           responseLength: parsedResponse.agentResponse.length,
           topic: parsedResponse.conversationSummary.topic,
           emotionalTone: parsedResponse.conversationSummary.emotional_tone,
@@ -252,7 +249,7 @@ export function useAgentConversation() {
         return parsedResponse;
 
       } catch (parseError) {
-        debugLog('Failed to parse conversation JSON, using fallback', parseError);
+        log.debug('Failed to parse conversation JSON, using fallback', parseError);
         
         // Fallback to basic response
         return {
@@ -274,7 +271,7 @@ export function useAgentConversation() {
       }
 
     } catch (error) {
-      debugLog('Failed to parse conversation response', { 
+      log.debug('Failed to parse conversation response', { 
         error: error instanceof Error ? error.message : String(error) 
       });
       return null;
@@ -308,7 +305,7 @@ export function useAgentConversation() {
       }
     }
     
-    debugLog('JSON blocks extracted for conversation', { count: jsonBlocks.length });
+    log.debug('JSON blocks extracted for conversation', { count: jsonBlocks.length });
     return jsonBlocks;
   };
 

@@ -4,6 +4,7 @@ import { CollapsibleText } from './CollapsibleText';
 import { parseMarkdownToReact, containsMarkdown } from '../services/markdownParser';
 import { VoiceMessage } from '../../terminal-xstate/voice/VoiceMessage';
 import { breakpoints } from '../../utils/responsive';
+import { logger } from '@/lib/logger';
 
 interface MinimalOutputProps {
   lines: TerminalLine[];
@@ -35,6 +36,7 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
   onEndSession,
   isInitialState = false
 }) => {
+  const log = logger.child({ component: 'MinimalOutput' });
   const outputRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -281,15 +283,13 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
   const formatContent = (line: TerminalLine) => {
     // Handle voice messages
     if (line.type === 'voice-input' || line.type === 'voice-output') {
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[MinimalOutput] Rendering voice message', {
-          type: line.type,
-          hasAudioBlob: !!line.audioBlob,
-          hasAudioData: !!line.audioData,
-          duration: line.duration,
-          transcript: line.transcript
-        });
-      }
+      log.debug('Rendering voice message', {
+        type: line.type,
+        hasAudioBlob: !!line.audioBlob,
+        hasAudioData: !!line.audioData,
+        duration: line.duration,
+        transcript: line.transcript
+      });
       // Convert base64 audio to Blob if needed
       let audioBlob: Blob | undefined;
       if (line.audioData) {
@@ -302,7 +302,7 @@ const MinimalOutputComponent: React.FC<MinimalOutputProps> = ({
           const byteArray = new Uint8Array(byteNumbers);
           audioBlob = new Blob([byteArray], { type: line.audioFormat || 'audio/mp3' });
         } catch (error) {
-          console.error('Failed to convert audio data to blob:', error);
+          log.error('Failed to convert audio data to blob', { error });
         }
       }
 

@@ -1,26 +1,23 @@
 'use client';
 
 import { ConversationContext, ChatMessage } from './services/conversationContextBuilder';
-import { 
+import {
   buildConversationPrompt as buildConversationPromptFromFile,
   buildConversationSummaryPrompt,
   ConversationPrompt,
   ConversationResponse
 } from '../../prompts/conversationPrompts';
+import { logger } from '@/lib/logger';
 
 // Re-export types for compatibility
 export type { ConversationPrompt, ConversationResponse };
 
 export function useAgentConversationPrompt() {
-  
-  // Debug logs dla development
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[useAgentConversationPrompt] ${message}`, data || '');
-    }
-  };
 
-  debugLog('useAgentConversationPrompt hook initialized');
+  // Logger instance
+  const log = logger.child({ component: 'useAgentConversationPrompt' });
+
+  log.debug('useAgentConversationPrompt hook initialized');
 
   /**
    * Buduje kompletny prompt do konwersacji na podstawie ConversationContext

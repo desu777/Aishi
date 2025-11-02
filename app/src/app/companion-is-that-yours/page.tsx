@@ -10,8 +10,10 @@ import { useShizukuAI } from '@/hooks/useShizukuAI';
 import { useShizukuController } from '@/hooks/useShizukuController';
 import { useShizukuControllerEnhanced } from '@/hooks/useShizukuControllerEnhanced';
 import { motion } from 'framer-motion';
+import { logger } from '@/lib/logger';
 
 export default function CompanionIsYours() {
+  const log = logger.child({ component: 'CompanionIsYours' });
   const router = useRouter();
   const [isMicActive, setIsMicActive] = useState(false);
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -32,7 +34,7 @@ export default function CompanionIsYours() {
   const isEnhancedPhysics = process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true';
   
   // Debug log AI mode status
-  console.log('[Companion Page] Mode Status:', {
+  log.debug('Mode Status', {
     isAIMode,
     isTestMode,
     isShizukuTestMode,
@@ -105,20 +107,20 @@ export default function CompanionIsYours() {
             shizukuController.applyShizukuResponse(response);
           }
         }
-        
+
         if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-          console.log('[AI Mode] ✓ Message processed:', {
+          log.debug('AI Mode message processed', {
             userMessage: message,
             aiResponse: response.text,
             emotion: response.emotions.base
           });
         }
       } catch (error) {
-        console.error('[AI Mode] Failed to process message:', error);
+        log.error('AI Mode failed to process message', { error });
       }
     } else {
       // Normal Mode: Simple random expression (legacy behavior)
-      console.log('Normal mode - sending message:', message);
+      log.debug('Normal mode - sending message', { message });
       
       if (modelRef.current && isModelReady) {
         const expressions = modelRef.current.getAvailableExpressions();
@@ -136,13 +138,13 @@ export default function CompanionIsYours() {
     if (modelRef.current) {
       setAvailableMotions(modelRef.current.getAvailableMotions());
       setAvailableExpressions(modelRef.current.getAvailableExpressions());
-      console.log('Available motions:', modelRef.current.getAvailableMotions());
-      console.log('Available expressions:', modelRef.current.getAvailableExpressions());
-      
+      log.debug('Available motions', { motions: modelRef.current.getAvailableMotions() });
+      log.debug('Available expressions', { expressions: modelRef.current.getAvailableExpressions() });
+
       // Log AI mode status (no auto-initialization)
       if (isAIMode) {
         if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-          console.log('[AI Mode] ✓ Ready for interaction', {
+          log.debug('AI Mode ready for interaction', {
             testMode: isShizukuTestMode,
             modelReady: true
           });
@@ -154,11 +156,11 @@ export default function CompanionIsYours() {
   const handleModelError = (error: string) => {
     setModelError(error);
     setIsLoading(false);
-    console.error('Live2D model error:', error);
+    log.error('Live2D model error', { error });
   };
 
   const handleModelHit = (hitAreaNames: string[]) => {
-    console.log('Hit areas:', hitAreaNames);
+    log.debug('Hit areas', { hitAreaNames });
     // Play random motion when model is clicked
     if (modelRef.current && availableMotions.length > 0) {
       const randomMotion = availableMotions[Math.floor(Math.random() * availableMotions.length)];

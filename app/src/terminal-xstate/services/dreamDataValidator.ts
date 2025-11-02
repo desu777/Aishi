@@ -3,12 +3,9 @@
  * @description Validates AI response data for dream persistence with conditional evolution logic
  */
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[DreamDataValidator] ${message}`, data || '');
-  }
-};
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'DreamDataValidator' });
 
 /**
  * Standard dream data structure (always required)
@@ -79,7 +76,7 @@ export function validateDreamDataSchema(
   aiResponseBlock2: any, 
   dreamCount: number
 ): ValidationResult {
-  debugLog('Starting dream data validation', { 
+  log.debug('Starting dream data validation', { 
     dreamCount, 
     nextDreamId: dreamCount + 1,
     isEvolutionDream: (dreamCount + 1) % 5 === 0,
@@ -113,7 +110,7 @@ export function validateDreamDataSchema(
 
   // Conditional validation for evolution dreams
   if (isEvolutionDream) {
-    debugLog('Validating evolution dream fields', { dreamId: dreamCount + 1 });
+    log.debug('Validating evolution dream fields', { dreamId: dreamCount + 1 });
     
     if (!aiResponseBlock2.personalityImpact) {
       errors.push('Evolution dream missing required personalityImpact field');
@@ -130,7 +127,7 @@ export function validateDreamDataSchema(
 
   const isValid = errors.length === 0;
 
-  debugLog('Validation completed', {
+  log.debug('Validation completed', {
     isValid,
     errorsCount: errors.length,
     warningsCount: warnings.length,

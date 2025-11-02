@@ -5,6 +5,9 @@
 
 import { useSelector } from '@xstate/react';
 import type { AnyActorRef } from 'xstate';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'useSafeSelector' });
 
 // Dummy actor used as fallback when real actor is null/undefined
 // This ensures useSelector is always called with a valid reference
@@ -49,7 +52,7 @@ export function useSafeSelector<TActor extends Pick<AnyActorRef, 'subscribe' | '
       try {
         return selector(snapshot);
       } catch (error) {
-        console.warn('[useSafeSelector] Selector error:', error);
+        log.warn('Selector error', { error });
         return defaultValue;
       }
     }

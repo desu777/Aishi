@@ -7,6 +7,7 @@ import { getEthersSignerForZeroG } from '../../../lib/0g/adapter/viemAdapter';
 import { getActiveChain } from '../../../config/chains';
 import { getNetworkConfig } from '../../../lib/0g/network';
 import type { PublicClient, WalletClient } from 'viem';
+import { logger } from '@/lib/logger';
 
 // Schemat JSON dla konsolidacji miesięcznej snów (UNIFIED)
 export interface MonthlyDreamConsolidation {
@@ -115,12 +116,8 @@ export interface MonthlyConversationConsolidation {
 // Network-aware storage configuration
 const NETWORK = getNetworkConfig('turbo');
 
-// Debug log helper
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[ConsolidationService] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'ConsolidationService' });
 
 /**
  * Tworzy prompt do LLM dla konsolidacji miesięcznej snów
@@ -334,7 +331,7 @@ export const consolidateDreamsWithLLM = async (
   walletAddress: string
 ): Promise<{ success: boolean; data?: MonthlyDreamConsolidation; error?: string }> => {
   try {
-    debugLog('Starting dream consolidation with LLM', { 
+    log.debug('Starting dream consolidation with LLM', { 
       dreamsCount: dreams.length, 
       month, 
       year 
@@ -368,7 +365,7 @@ export const consolidateDreamsWithLLM = async (
     }
 
     const aiResponseText = apiResult.data.response;
-    debugLog('LLM response received', { responseLength: aiResponseText.length });
+    log.debug('LLM response received', { responseLength: aiResponseText.length });
 
     // Parse JSON response
     const jsonMatch = aiResponseText.match(/```json\s*([\s\S]*?)\s*```/);
@@ -378,7 +375,7 @@ export const consolidateDreamsWithLLM = async (
 
     const consolidatedData = JSON.parse(jsonMatch[1]) as MonthlyDreamConsolidation;
     
-    debugLog('Dream consolidation completed', {
+    log.debug('Dream consolidation completed', {
       totalDreams: consolidatedData.total_dreams,
       dominantThemes: consolidatedData.dominant.themes,
       monthlyEssenceLength: consolidatedData.monthly_essence.length
@@ -388,7 +385,7 @@ export const consolidateDreamsWithLLM = async (
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Dream consolidation failed', { error: errorMessage });
+    log.debug('Dream consolidation failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
 };
@@ -404,7 +401,7 @@ export const consolidateConversationsWithLLM = async (
   walletAddress: string
 ): Promise<{ success: boolean; data?: MonthlyConversationConsolidation; error?: string }> => {
   try {
-    debugLog('Starting conversation consolidation with LLM', { 
+    log.debug('Starting conversation consolidation with LLM', { 
       conversationsCount: conversations.length, 
       month, 
       year 
@@ -438,7 +435,7 @@ export const consolidateConversationsWithLLM = async (
     }
 
     const aiResponseText = apiResult.data.response;
-    debugLog('LLM response received', { responseLength: aiResponseText.length });
+    log.debug('LLM response received', { responseLength: aiResponseText.length });
 
     // Parse JSON response
     const jsonMatch = aiResponseText.match(/```json\s*([\s\S]*?)\s*```/);
@@ -448,7 +445,7 @@ export const consolidateConversationsWithLLM = async (
 
     const consolidatedData = JSON.parse(jsonMatch[1]) as MonthlyConversationConsolidation;
     
-    debugLog('Conversation consolidation completed', {
+    log.debug('Conversation consolidation completed', {
       totalConversations: consolidatedData.total_conversations,
       dominantTopics: consolidatedData.dominant.topics,
       monthlyEssenceLength: consolidatedData.monthly_essence.length
@@ -458,7 +455,7 @@ export const consolidateConversationsWithLLM = async (
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Conversation consolidation failed', { error: errorMessage });
+    log.debug('Conversation consolidation failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
 };
@@ -474,7 +471,7 @@ export const saveConsolidationToStorage = async (
   downloadFile: (hash: string) => Promise<{ success: boolean; data?: ArrayBuffer; error?: string }>
 ): Promise<{ success: boolean; dreamHash?: string; convHash?: string; error?: string }> => {
   try {
-    debugLog('Saving consolidation to storage using APPEND pattern', {
+    log.debug('Saving consolidation to storage using APPEND pattern', {
       tokenId,
       dreamMonth: `${dreamConsolidation.year}-${dreamConsolidation.month}`,
       convMonth: `${conversationConsolidation.year}-${conversationConsolidation.month}`
@@ -508,7 +505,7 @@ export const saveConsolidationToStorage = async (
     const currentConvMonthlyHash = agentMemory.lastConvMonthlyHash;
     const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
-    debugLog('Current monthly hashes from contract', {
+    log.debug('Current monthly hashes from contract', {
       dreamHash: currentDreamMonthlyHash,
       convHash: currentConvMonthlyHash
     });
@@ -517,7 +514,7 @@ export const saveConsolidationToStorage = async (
     let existingDreamConsolidations: MonthlyDreamConsolidation[] = [];
     
     if (currentDreamMonthlyHash && currentDreamMonthlyHash !== emptyHash) {
-      debugLog('Downloading existing dream consolidations', { hash: currentDreamMonthlyHash });
+      log.debug('Downloading existing dream consolidations', { hash: currentDreamMonthlyHash });
       const downloadResult = await downloadFile(currentDreamMonthlyHash);
       
       if (downloadResult.success && downloadResult.data) {
@@ -526,27 +523,27 @@ export const saveConsolidationToStorage = async (
           const jsonText = textDecoder.decode(downloadResult.data);
           const parsedData = JSON.parse(jsonText);
           existingDreamConsolidations = Array.isArray(parsedData) ? parsedData : [];
-          debugLog('Existing dream consolidations loaded', { count: existingDreamConsolidations.length });
+          log.debug('Existing dream consolidations loaded', { count: existingDreamConsolidations.length });
         } catch (parseError) {
-          debugLog('Failed to parse existing dream consolidations, starting fresh', parseError);
+          log.debug('Failed to parse existing dream consolidations, starting fresh', parseError);
           existingDreamConsolidations = [];
         }
       } else {
-        debugLog('Failed to download existing dream consolidations, starting fresh', downloadResult.error);
+        log.debug('Failed to download existing dream consolidations, starting fresh', downloadResult.error);
       }
     } else {
-      debugLog('No existing dream consolidations, starting fresh array');
+      log.debug('No existing dream consolidations, starting fresh array');
     }
 
     // Append new dream consolidation to TOP of array (newest first)
     const updatedDreamConsolidations = [dreamConsolidation, ...existingDreamConsolidations];
-    debugLog('Updated dream consolidations array created', { totalCount: updatedDreamConsolidations.length });
+    log.debug('Updated dream consolidations array created', { totalCount: updatedDreamConsolidations.length });
 
     // 2. CONVERSATION CONSOLIDATIONS - APPEND PATTERN
     let existingConvConsolidations: MonthlyConversationConsolidation[] = [];
     
     if (currentConvMonthlyHash && currentConvMonthlyHash !== emptyHash) {
-      debugLog('Downloading existing conversation consolidations', { hash: currentConvMonthlyHash });
+      log.debug('Downloading existing conversation consolidations', { hash: currentConvMonthlyHash });
       const downloadResult = await downloadFile(currentConvMonthlyHash);
       
       if (downloadResult.success && downloadResult.data) {
@@ -555,21 +552,21 @@ export const saveConsolidationToStorage = async (
           const jsonText = textDecoder.decode(downloadResult.data);
           const parsedData = JSON.parse(jsonText);
           existingConvConsolidations = Array.isArray(parsedData) ? parsedData : [];
-          debugLog('Existing conversation consolidations loaded', { count: existingConvConsolidations.length });
+          log.debug('Existing conversation consolidations loaded', { count: existingConvConsolidations.length });
         } catch (parseError) {
-          debugLog('Failed to parse existing conversation consolidations, starting fresh', parseError);
+          log.debug('Failed to parse existing conversation consolidations, starting fresh', parseError);
           existingConvConsolidations = [];
         }
       } else {
-        debugLog('Failed to download existing conversation consolidations, starting fresh', downloadResult.error);
+        log.debug('Failed to download existing conversation consolidations, starting fresh', downloadResult.error);
       }
     } else {
-      debugLog('No existing conversation consolidations, starting fresh array');
+      log.debug('No existing conversation consolidations, starting fresh array');
     }
 
     // Append new conversation consolidation to TOP of array (newest first)
     const updatedConvConsolidations = [conversationConsolidation, ...existingConvConsolidations];
-    debugLog('Updated conversation consolidations array created', { totalCount: updatedConvConsolidations.length });
+    log.debug('Updated conversation consolidations array created', { totalCount: updatedConvConsolidations.length });
 
     // 3. CREATE AND UPLOAD FILES
     const dreamFileName = `dream_consolidations_monthly_${new Date().getFullYear()}.json`;
@@ -580,7 +577,7 @@ export const saveConsolidationToStorage = async (
     const convContent = JSON.stringify(updatedConvConsolidations, null, 2);
     const convFile = new File([convContent], convFileName, { type: 'application/json' });
 
-    debugLog('Created new consolidation files', {
+    log.debug('Created new consolidation files', {
       dreamFileSize: dreamFile.size,
       convFileSize: convFile.size,
       dreamFileName,
@@ -605,7 +602,7 @@ export const saveConsolidationToStorage = async (
       throw new Error(`Conversation consolidation upload failed: ${convResult.error}`);
     }
 
-    debugLog('Consolidation APPEND completed successfully', {
+    log.debug('Consolidation APPEND completed successfully', {
       dreamHash: dreamResult.rootHash,
       convHash: convResult.rootHash,
       totalDreamConsolidations: updatedDreamConsolidations.length,
@@ -620,7 +617,7 @@ export const saveConsolidationToStorage = async (
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Consolidation storage failed', { error: errorMessage });
+    log.debug('Consolidation storage failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
 };
@@ -636,7 +633,7 @@ export const callConsolidateMonth = async (
   year: number
 ): Promise<{ success: boolean; txHash?: string; error?: string }> => {
   try {
-    debugLog('Calling consolidateMonth contract function', {
+    log.debug('Calling consolidateMonth contract function', {
       tokenId, 
       dreamHash, 
       convHash, 
@@ -669,13 +666,13 @@ export const callConsolidateMonth = async (
       args: [BigInt(tokenId), dreamHash as `0x${string}`, convHash as `0x${string}`, month, year]
     });
 
-    debugLog('ConsolidateMonth transaction sent', { txHash });
+    log.debug('ConsolidateMonth transaction sent', { txHash });
 
     // Wait for confirmation
     const [publicClient] = await getViemProvider();
     const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
     
-    debugLog('ConsolidateMonth transaction confirmed', { 
+    log.debug('ConsolidateMonth transaction confirmed', { 
       txHash, 
       blockNumber: receipt.blockNumber 
     });
@@ -684,7 +681,7 @@ export const callConsolidateMonth = async (
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('ConsolidateMonth contract call failed', { error: errorMessage });
+    log.debug('ConsolidateMonth contract call failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
 };
@@ -696,7 +693,7 @@ export const clearMonthlyFiles = async (
   tokenId: number
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    debugLog('Clearing monthly files', { tokenId });
+    log.debug('Clearing monthly files', { tokenId });
 
     const signer = await getEthersSignerForZeroG();
 
@@ -717,7 +714,7 @@ export const clearMonthlyFiles = async (
     // Note: W rzeczywistości, daily hashe zostają automatycznie wyczyszczone przez kontrakt
     // podczas _checkMonthChange() - nie musimy ich ręcznie resetować
     
-    debugLog('Monthly files cleared', {
+    log.debug('Monthly files cleared', {
       emptyDreamHash: dreamResult.rootHash,
       emptyConvHash: convResult.rootHash
     });
@@ -726,7 +723,7 @@ export const clearMonthlyFiles = async (
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Clear monthly files failed', { error: errorMessage });
+    log.debug('Clear monthly files failed', { error: errorMessage });
     return { success: false, error: errorMessage };
   }
 }; 

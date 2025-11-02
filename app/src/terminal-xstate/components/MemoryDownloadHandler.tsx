@@ -5,6 +5,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { XStateStorageService } from '../services/xstateStorage';
+import { logger } from '@/lib/logger';
 
 interface MemoryDownloadHandlerProps {
   send: (event: any) => void; // Send function from XState
@@ -14,6 +15,7 @@ interface MemoryDownloadHandlerProps {
  * Component that listens for memory download clicks and handles the download process
  */
 export const MemoryDownloadHandler: React.FC<MemoryDownloadHandlerProps> = ({ send }) => {
+  const log = logger.child({ component: 'MemoryDownloadHandler' });
   const storageServiceRef = useRef<XStateStorageService | null>(null);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export const MemoryDownloadHandler: React.FC<MemoryDownloadHandlerProps> = ({ se
     // Handler for download clicks
     const handleDownloadClick = async (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      
+
       // Check if clicked element is a download trigger
       if (!target.classList.contains('memory-download-trigger')) {
         return;
@@ -34,17 +36,15 @@ export const MemoryDownloadHandler: React.FC<MemoryDownloadHandlerProps> = ({ se
       const memoryType = target.getAttribute('data-memorytype');
 
       if (!rootHash || !storageServiceRef.current) {
-        console.error('Missing rootHash or storage service');
+        log.error('Missing rootHash or storage service');
         return;
       }
 
       // Debug logging
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log('[MemoryDownloadHandler] Initiating download:', {
-          rootHash,
-          memoryType
-        });
-      }
+      log.debug('Initiating download', {
+        rootHash,
+        memoryType
+      });
 
       // Update terminal with download status
       send({
@@ -106,16 +106,14 @@ export const MemoryDownloadHandler: React.FC<MemoryDownloadHandlerProps> = ({ se
         });
 
         // Debug logging
-        if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-          console.log('[MemoryDownloadHandler] Download successful:', {
-            filename,
-            size: blob.size
-          });
-        }
+        log.debug('Download successful', {
+          filename,
+          size: blob.size
+        });
 
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
-        
+
         // Update terminal with error
         send({
           type: 'APPEND_LINES',
@@ -126,7 +124,7 @@ export const MemoryDownloadHandler: React.FC<MemoryDownloadHandlerProps> = ({ se
           }]
         });
 
-        console.error('[MemoryDownloadHandler] Download error:', error);
+        log.error('Download error', { error });
       }
     };
 

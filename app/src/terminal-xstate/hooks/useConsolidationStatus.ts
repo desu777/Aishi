@@ -5,13 +5,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-    console.log(`[useConsolidationStatus] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'useConsolidationStatus' });
 
 interface ConsolidationStatus {
   consolidation_date: string;
@@ -49,7 +46,7 @@ export function useConsolidationStatus(): UseConsolidationStatusReturn {
       setStatus(null);
       setIsLoading(false);
       setError('Wallet not connected');
-      debugLog('No wallet address - skipping fetch');
+      log.debug('No wallet address - skipping fetch');
       return;
     }
 
@@ -60,12 +57,12 @@ export function useConsolidationStatus(): UseConsolidationStatusReturn {
       const API_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
       const url = `${API_URL}/consolidation/${address}`;
 
-      debugLog('Fetching consolidation status', { url, address });
+      log.debug('Fetching consolidation status', { url, address });
 
       const response = await fetch(url);
       const data = await response.json();
 
-      debugLog('Response received', {
+      log.debug('Response received', {
         ok: response.ok,
         status: response.status,
         data
@@ -74,7 +71,7 @@ export function useConsolidationStatus(): UseConsolidationStatusReturn {
       if (!response.ok) {
         if (response.status === 404) {
           // Broker not found - acceptable in test mode
-          debugLog('Broker not found (404) - commands will work in test mode');
+          log.debug('Broker not found (404) - commands will work in test mode');
           setStatus(null);
           setError(null);
         } else {
@@ -84,7 +81,7 @@ export function useConsolidationStatus(): UseConsolidationStatusReturn {
         const consolidationData: ConsolidationStatus = data.data;
         setStatus(consolidationData);
 
-        debugLog('Consolidation status loaded', {
+        log.debug('Consolidation status loaded', {
           month_learn: consolidationData.month_learn,
           year_learn: consolidationData.year_learn,
           consolidation_date: consolidationData.consolidation_date
@@ -96,7 +93,7 @@ export function useConsolidationStatus(): UseConsolidationStatusReturn {
       const errorMsg = err.message || 'Failed to fetch consolidation status';
       setError(errorMsg);
       setStatus(null);
-      debugLog('Error fetching status', { error: errorMsg });
+      log.debug('Error fetching status', { error: errorMsg });
     } finally {
       setIsLoading(false);
     }

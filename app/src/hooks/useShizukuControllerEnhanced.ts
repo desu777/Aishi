@@ -9,6 +9,7 @@ import { useCallback, useRef } from 'react';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 import type { ShizukuResponse } from '@/hooks/useShizukuAI';
 import { PHYSICS_PARAM_SCALING } from '@/prompts/physics-mapping';
+import { logger } from '@/lib/logger';
 
 // Enhanced expression mapping for new emotion system
 const EMOTION_MAP = {
@@ -69,6 +70,7 @@ interface EnhancedPhysics {
 }
 
 export function useShizukuControllerEnhanced() {
+  const log = logger.child({ component: 'useShizukuControllerEnhanced' });
   const mouthTimelineRef = useRef<NodeJS.Timeout | null>(null);
   const physicsTimelineRef = useRef<NodeJS.Timeout | null>(null);
   const currentEmotionRef = useRef<string | null>(null);
@@ -258,13 +260,14 @@ export function useShizukuControllerEnhanced() {
     if (emotionKey) {
       modelRef.setExpression(emotionKey);
       currentEmotionRef.current = emotionKey;
-      
+
+
       // Enhanced debug logging
       if (process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true') {
-        console.log(`[Enhanced Controller] ✓ Applied emotion "${emotions.base}" (${emotionKey}) with intensity ${emotions.intensity}`);
+        log.debug(`Applied emotion "${emotions.base}" (${emotionKey}) with intensity ${emotions.intensity}`);
       }
     } else if (process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true') {
-      console.warn(`[Enhanced Controller] ⚠️ No emotion mapping found for: ${emotions.base}`);
+      log.warn(`No emotion mapping found for: ${emotions.base}`);
     }
 
     // Apply eye effect if different from base
@@ -273,11 +276,11 @@ export function useShizukuControllerEnhanced() {
       if (eyeEffectKey) {
         modelRef.setExpression(eyeEffectKey);
         if (process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true') {
-          console.log(`[Enhanced Controller] ✓ Applied eye effect "${emotions.eyeEffect}" (${eyeEffectKey})`);
+          log.debug(`Applied eye effect "${emotions.eyeEffect}" (${eyeEffectKey})`);
         }
       }
     }
-  }, []);
+  }, [log]);
 
   // Apply enhanced decorations
   const applyEnhancedDecorations = useCallback((modelRef: Live2DModelRef, decorations: any) => {
@@ -421,7 +424,7 @@ export function useShizukuControllerEnhanced() {
         applyEnhancedPhysics(modelRef, completePhysics);
 
         if (process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true') {
-          console.log(`[Advanced Physics Timeline] 🎬 Keyframe ${index + 1}/${timeline.length} (${physicsStep.duration || 300}ms):`, {
+          log.debug(`Advanced Physics Timeline Keyframe ${index + 1}/${timeline.length} (${physicsStep.duration || 300}ms)`, {
             eyeOpening: physicsStep.eyeOpening,
             headMovement: physicsStep.headMovement,
             hairDynamics: physicsStep.hairDynamics,

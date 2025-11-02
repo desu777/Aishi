@@ -6,10 +6,11 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { 
+import {
   buildShizukuPrompt
 } from '@/prompts/shizuku';
 import { SHIZUKU_MASTER_PROMPT_COMPLETE } from '@/prompts/shizuku-complete';
+import { logger } from '@/lib/logger';
 
 // Enhanced type definitions based on new JSON Schema
 export interface ShizukuResponse {
@@ -84,6 +85,7 @@ interface ShizukuAIState {
 }
 
 export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
+  const log = logger.child({ component: 'useShizukuAI' });
   const {
     backendUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api',
     temperature = 0.8,
@@ -91,17 +93,15 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
     enableTestMode = process.env.NEXT_PUBLIC_LIVE2MODEL_SHIZUKU_TEST === 'true',
     useEnhancedPhysics = process.env.NEXT_PUBLIC_SHIZUKU_ENHANCED_PHYSICS === 'true'
   } = options;
-  
+
   // Debug log initialization
-  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log('[useShizukuAI] Hook initialized:', {
-      backendUrl,
-      enableTestMode,
-      isAIMode: process.env.NEXT_PUBLIC_LIVE2MODEL_AI,
-      temperature,
-      maxTokens
-    });
-  }
+  log.debug('Hook initialized', {
+    backendUrl,
+    enableTestMode,
+    isAIMode: process.env.NEXT_PUBLIC_LIVE2MODEL_AI,
+    temperature,
+    maxTokens
+  });
 
   const [state, setState] = useState<ShizukuAIState>({
     isLoading: false,
@@ -166,13 +166,13 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
       
       // If mouth_open_timeline is still missing, generate default
       if (!parsed.mouth_open_timeline) {
-        console.warn('[Shizuku AI] mouth_open_timeline missing, generating default');
+        log.warn('mouth_open_timeline missing, generating default');
         parsed.mouth_open_timeline = Array(parsed.text.length).fill(20);
       }
-      
+
       // Validate mouth_open_timeline length matches text length
       if (parsed.mouth_open_timeline.length !== parsed.text.length) {
-        console.warn(`[Shizuku AI] mouth_open_timeline length (${parsed.mouth_open_timeline.length}) doesn't match text length (${parsed.text.length})`);
+        log.warn(`mouth_open_timeline length (${parsed.mouth_open_timeline.length}) doesn't match text length (${parsed.text.length})`);
         // Auto-fix by padding or truncating
         const targetLength = parsed.text.length;
         if (parsed.mouth_open_timeline.length < targetLength) {
@@ -189,11 +189,10 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
       
       // Return with type safety
       return parsed as ShizukuResponse;
-      
+
     } catch (error) {
-      console.error('[Shizuku AI] Failed to parse response:', error);
-      console.error('[Shizuku AI] Raw response:', rawResponse);
-      
+      log.error('Failed to parse response', { error, rawResponse });
+
       // Return fallback response with new schema
       const fallbackText = "Sorry, I'm a bit confused right now...";
       return {
@@ -240,17 +239,15 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
 
     try {
       // Build prompt with user message and conversation history
-      const prompt = useEnhancedPhysics 
+      const prompt = useEnhancedPhysics
         ? SHIZUKU_MASTER_PROMPT_COMPLETE + `\n\n## CONVERSATION_HISTORY\n${state.conversationHistory.slice(-3).join('\n')}\n\n## USER_MESSAGE\n${userMessage}`
         : buildShizukuPrompt(userMessage, state.conversationHistory);
 
-      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log('[Shizuku AI] Sending prompt to Gemini:', {
-          userMessage,
-          promptLength: prompt.length,
-          conversationHistory: state.conversationHistory.length
-        });
-      }
+      log.debug('Sending prompt to Gemini', {
+        userMessage,
+        promptLength: prompt.length,
+        conversationHistory: state.conversationHistory.length
+      });
 
       // Send request to 0g-compute backend
       const response = await fetch(`${backendUrl}/api/gemini`, {
@@ -272,18 +269,16 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
       }
 
       const result = await response.json();
-      
-      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log('[Shizuku AI] Raw backend response:', {
-          success: result.success,
-          dataType: typeof result.data,
-          dataLength: typeof result.data === 'string' ? result.data.length : 'N/A',
-          error: result.error,
-          // Log first 200 chars of response
-          preview: typeof result.data === 'string' ? result.data.substring(0, 200) + '...' : result.data
-        });
-      }
-      
+
+      log.debug('Raw backend response', {
+        success: result.success,
+        dataType: typeof result.data,
+        dataLength: typeof result.data === 'string' ? result.data.length : 'N/A',
+        error: result.error,
+        // Log first 200 chars of response
+        preview: typeof result.data === 'string' ? result.data.substring(0, 200) + '...' : result.data
+      });
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to get AI response');
       }
@@ -316,17 +311,15 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
         error: null
       }));
 
-      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log('[Shizuku AI] ✓ Response parsed successfully:', {
-          text: shizukuResponse.text,
-          mouth_timeline_length: shizukuResponse.mouth_open_timeline.length,
-          emotion: shizukuResponse.emotions.base,
-          emotion_intensity: shizukuResponse.emotions.intensity,
-          hand_item: shizukuResponse.handItem,
-          breathing: shizukuResponse.physics.breathing,
-          has_physics_timeline: !!shizukuResponse.physics_timeline
-        });
-      }
+      log.debug('Response parsed successfully', {
+        text: shizukuResponse.text,
+        mouth_timeline_length: shizukuResponse.mouth_open_timeline.length,
+        emotion: shizukuResponse.emotions.base,
+        emotion_intensity: shizukuResponse.emotions.intensity,
+        hand_item: shizukuResponse.handItem,
+        breathing: shizukuResponse.physics.breathing,
+        has_physics_timeline: !!shizukuResponse.physics_timeline
+      });
 
       return shizukuResponse;
 
@@ -344,8 +337,8 @@ export const useShizukuAI = (options: UseShizukuAIOptions = {}) => {
         error: errorMessage
       }));
 
-      console.error('[Shizuku AI] Error:', errorMessage);
-      
+      log.error('Error', { errorMessage });
+
       // Return error response with new schema
       const errorText = `Sorry, I encountered an issue: ${errorMessage}`;
       return parseShizukuResponse(JSON.stringify({

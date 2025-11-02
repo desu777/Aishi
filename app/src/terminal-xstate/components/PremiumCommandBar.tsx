@@ -4,6 +4,7 @@ import MicrophoneButton from './MicrophoneButton';
 import VoiceInputMessage from './VoiceInputMessage';
 import { Send } from 'lucide-react';
 import { breakpoints } from '../../utils/responsive';
+import { logger } from '@/lib/logger';
 
 interface PremiumCommandBarProps {
   value: string;
@@ -60,6 +61,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
   onQuickSubmit,
   isInitialState = false
 }) => {
+  const log = logger.child({ component: 'PremiumCommandBar' });
   const inputRef = useRef<HTMLInputElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState(0);
@@ -103,14 +105,12 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
 
   // Handle voice recording completion
   const handleVoiceRecordingComplete = useCallback((audioBase64: string, audioBlob: Blob) => {
-    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-      console.log('[PremiumCommandBar] Voice recording completed', {
-        audioBlobSize: audioBlob.size,
-        base64Length: audioBase64.length,
-        isDreamActive,
-        isChatActive
-      });
-    }
+    log.debug('Voice recording completed', {
+      audioBlobSize: audioBlob.size,
+      base64Length: audioBase64.length,
+      isDreamActive,
+      isChatActive
+    });
 
     // Store both blob and base64
     setVoiceInputBlob(audioBlob);
@@ -120,20 +120,18 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
     try {
       const url = URL.createObjectURL(audioBlob);
       setVoiceInputUrl(url);
-      console.log('[PremiumCommandBar] Created blob URL:', url);
+      log.debug('Created blob URL', { url });
     } catch (error) {
-      console.error('[PremiumCommandBar] Failed to create blob URL:', error);
+      log.error('Failed to create blob URL', { error });
     }
 
     // Clear text input when voice is recorded
     onChange('');
-  }, [onChange, isDreamActive, isChatActive]);
+  }, [onChange, isDreamActive, isChatActive, log]);
 
   // Handle voice input deletion
   const handleDeleteVoiceInput = useCallback(() => {
-    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-      console.log('[PremiumCommandBar] Voice input deleted');
-    }
+    log.debug('Voice input deleted');
 
     // Cleanup blob URL if exists
     if (voiceInputUrl) {
@@ -143,17 +141,15 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
     setVoiceInputBlob(null);
     setVoiceInputBase64(null);
     setVoiceInputUrl(null);
-  }, [voiceInputUrl]);
+  }, [voiceInputUrl, log]);
 
   // Submit voice input
   const submitVoiceInput = useCallback(() => {
     if (voiceInputBase64 && voiceInputBlob && onVoiceInput) {
-      if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-        console.log('[PremiumCommandBar] Submitting voice input', {
-          blobSize: voiceInputBlob.size,
-          base64Length: voiceInputBase64.length
-        });
-      }
+      log.debug('Submitting voice input', {
+        blobSize: voiceInputBlob.size,
+        base64Length: voiceInputBase64.length
+      });
       onVoiceInput(voiceInputBase64, voiceInputBlob);
 
       // Cleanup blob URL if exists
@@ -166,7 +162,7 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
       setVoiceInputBase64(null);
       setVoiceInputUrl(null);
     }
-  }, [voiceInputBase64, voiceInputBlob, onVoiceInput, voiceInputUrl]);
+  }, [voiceInputBase64, voiceInputBlob, onVoiceInput, voiceInputUrl, log]);
 
   // Auto-focus on mount
   useEffect(() => {
@@ -431,12 +427,10 @@ const PremiumCommandBarComponent: React.FC<PremiumCommandBarProps> = ({
         }}>
           {voiceInputBlob ? (
             <>
-              {process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' &&
-                console.log('[PremiumCommandBar] Rendering VoiceInputMessage', {
-                  hasBlob: !!voiceInputBlob,
-                  hasBase64: !!voiceInputBase64
-                })
-              }
+              {log.debug('Rendering VoiceInputMessage', {
+                hasBlob: !!voiceInputBlob,
+                hasBase64: !!voiceInputBase64
+              })}
               <VoiceInputMessage
                 audioBlob={voiceInputBlob}
                 audioBase64={voiceInputBase64}

@@ -16,6 +16,7 @@ import {
 } from './services/yearLearnService';
 import { YearLearnPromptData } from '../../prompts/yearLearnConsolidationPrompt';
 import { MonthlyDreamConsolidation, MonthlyConversationConsolidation } from './services/monthLearnService';
+import { logger } from '@/lib/logger';
 
 // Interface for yearly consolidation state (streamlined like month-learn)
 interface YearLearnState {
@@ -56,17 +57,13 @@ export function useYearLearn(tokenId?: number) {
   // Get operational token ID
   const operationalTokenId = tokenId || effectiveTokenId;
 
-  // Debug logging
-  const debugLog = useCallback((message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-      console.log(`[useYearLearn] ${message}`, data || '');
-    }
-  }, []);
+  // Logger instance
+  const log = logger.child({ component: 'useYearLearn' });
 
   // Debug log initialization ONLY ONCE to prevent infinite re-renders
   useEffect(() => {
-    debugLog('useYearLearn hook initialized', { tokenId: operationalTokenId });
-  }, [operationalTokenId, debugLog]);
+    log.debug('useYearLearn hook initialized', { tokenId: operationalTokenId });
+  }, [operationalTokenId]);
 
   // Add 30-second timeout before showing "Agent data not available" error
   useEffect(() => {
@@ -75,7 +72,7 @@ export function useYearLearn(tokenId?: number) {
         ...prev,
         hasWaitedForData: true
       }));
-      debugLog('30-second timeout reached - will show error if no agent data');
+      log.debug('30-second timeout reached - will show error if no agent data');
     }, 30000); // 30 seconds
 
     // Clear timeout if data becomes available or component unmounts
@@ -84,7 +81,7 @@ export function useYearLearn(tokenId?: number) {
     }
 
     return () => clearTimeout(timer);
-  }, [operationalTokenId, agentData?.memory, debugLog]);
+  }, [operationalTokenId, agentData?.memory]);
 
   // Extract stable hash values to prevent re-renders (like month-learn)
   const lastDreamMonthlyHash = agentData?.memory?.lastDreamMonthlyHash;
@@ -95,20 +92,15 @@ export function useYearLearn(tokenId?: number) {
    * Load monthly consolidations data from 0G storage (like month-learn loads daily data)
    */
   const loadYearlyData = useCallback(async (): Promise<{ success: boolean; yearlyDreamConsolidations?: MonthlyDreamConsolidation[]; yearlyConversationConsolidations?: MonthlyConversationConsolidation[] }> => {
-    if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-      console.log('[useYearLearn] loadYearlyData: FUNCTION CALLED!');
-      console.log('[useYearLearn] loadYearlyData: isConnected:', isConnected);
-      console.log('[useYearLearn] loadYearlyData: operationalTokenId:', operationalTokenId);
-      console.log('[useYearLearn] loadYearlyData: lastDreamMonthlyHash:', lastDreamMonthlyHash);
-      console.log('[useYearLearn] loadYearlyData: lastConvMonthlyHash:', lastConvMonthlyHash);
-    }
-    debugLog('Starting yearly data loading');
+    log.debug('loadYearlyData: FUNCTION CALLED', {
+      isConnected,
+      operationalTokenId,
+      lastDreamMonthlyHash,
+      lastConvMonthlyHash
+    });
 
     if (!isConnected || !operationalTokenId) {
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] loadYearlyData: NOT CONNECTED OR NO TOKEN ID - returning false');
-      }
-      debugLog('Not connected or no token ID');
+      log.debug('loadYearlyData: NOT CONNECTED OR NO TOKEN ID - returning false');
       return { success: false };
     }
 
@@ -127,76 +119,48 @@ export function useYearLearn(tokenId?: number) {
       // lastDreamMonthlyHash already extracted at hook level
       if (lastDreamMonthlyHash && lastDreamMonthlyHash !== emptyHash) {
         try {
-          if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-            console.log('[useYearLearn] loadYearlyData: About to download dream consolidations from hash:', lastDreamMonthlyHash);
-          }
-          debugLog('Downloading dream consolidations from hash', { hash: lastDreamMonthlyHash });
+          log.debug('About to download dream consolidations from hash', { hash: lastDreamMonthlyHash });
           const dreamDownloadResult = await downloadFile(lastDreamMonthlyHash);
-          
-          if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-            console.log('[useYearLearn] loadYearlyData: Dream consolidations download result:', dreamDownloadResult);
-          }
-          
+
+          log.debug('Dream consolidations download result', dreamDownloadResult);
+
           if (dreamDownloadResult.success && dreamDownloadResult.data) {
             const textDecoder = new TextDecoder('utf-8');
             const dreamDataString = textDecoder.decode(dreamDownloadResult.data);
             const dreamData = JSON.parse(dreamDataString);
-            
+
             yearlyDreamConsolidations = Array.isArray(dreamData) ? dreamData : [dreamData];
-            if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-              console.log('[useYearLearn] loadYearlyData: Dream consolidations parsed successfully, count:', yearlyDreamConsolidations.length);
-            }
-            debugLog('Monthly dream consolidations loaded from hash', { count: yearlyDreamConsolidations.length });
+            log.debug('Dream consolidations parsed successfully', { count: yearlyDreamConsolidations.length });
           }
         } catch (dreamError) {
-          if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-            console.log('[useYearLearn] loadYearlyData: ERROR loading dream consolidations:', dreamError);
-          }
-          debugLog('Error loading dream consolidations from hash', { error: dreamError });
+          log.error('ERROR loading dream consolidations', { dreamError });
         }
       } else {
-        if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-          console.log('[useYearLearn] loadYearlyData: No valid dream consolidation hash found');
-        }
-        debugLog('No valid dream consolidation hash found - starting with empty array');
+        log.debug('No valid dream consolidation hash found - starting with empty array');
       }
 
       // Download conversation consolidations using monthly hash from contract (like month-learn)
       // lastConvMonthlyHash already extracted at hook level
       if (lastConvMonthlyHash && lastConvMonthlyHash !== emptyHash) {
         try {
-          if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-            console.log('[useYearLearn] loadYearlyData: About to download conversation consolidations from hash:', lastConvMonthlyHash);
-          }
-          debugLog('Downloading conversation consolidations from hash', { hash: lastConvMonthlyHash });
+          log.debug('About to download conversation consolidations from hash', { hash: lastConvMonthlyHash });
           const convDownloadResult = await downloadFile(lastConvMonthlyHash);
-          
-          if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-            console.log('[useYearLearn] loadYearlyData: Conversation consolidations download result:', convDownloadResult);
-          }
-          
+
+          log.debug('Conversation consolidations download result', convDownloadResult);
+
           if (convDownloadResult.success && convDownloadResult.data) {
             const textDecoder = new TextDecoder('utf-8');
             const convDataString = textDecoder.decode(convDownloadResult.data);
             const convData = JSON.parse(convDataString);
-            
+
             yearlyConversationConsolidations = Array.isArray(convData) ? convData : [convData];
-            if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-              console.log('[useYearLearn] loadYearlyData: Conversation consolidations parsed successfully, count:', yearlyConversationConsolidations.length);
-            }
-            debugLog('Monthly conversation consolidations loaded from hash', { count: yearlyConversationConsolidations.length });
+            log.debug('Conversation consolidations parsed successfully', { count: yearlyConversationConsolidations.length });
           }
         } catch (convError) {
-          if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-            console.log('[useYearLearn] loadYearlyData: ERROR loading conversation consolidations:', convError);
-          }
-          debugLog('Error loading conversation consolidations from hash', { error: convError });
+          log.error('ERROR loading conversation consolidations', { convError });
         }
       } else {
-        if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-          console.log('[useYearLearn] loadYearlyData: No valid conversation consolidation hash found');
-        }
-        debugLog('No valid conversation consolidation hash found - starting with empty array');
+        log.debug('No valid conversation consolidation hash found - starting with empty array');
       }
 
       setState(prev => ({
@@ -205,13 +169,7 @@ export function useYearLearn(tokenId?: number) {
         statusMessage: `Loaded ${yearlyDreamConsolidations.length} dream consolidations and ${yearlyConversationConsolidations.length} conversation consolidations`
       }));
 
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] loadYearlyData: About to return success with data');
-        console.log('[useYearLearn] loadYearlyData: Final dream consolidations count:', yearlyDreamConsolidations.length);
-        console.log('[useYearLearn] loadYearlyData: Final conversation consolidations count:', yearlyConversationConsolidations.length);
-      }
-
-      debugLog('Yearly data loading completed from monthly hashes', {
+      log.debug('Yearly data loading completed from monthly hashes', {
         dreamConsolidationsCount: yearlyDreamConsolidations.length,
         conversationConsolidationsCount: yearlyConversationConsolidations.length,
         dreamHash: lastDreamMonthlyHash,
@@ -222,11 +180,8 @@ export function useYearLearn(tokenId?: number) {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] loadYearlyData: CATCH ERROR:', errorMessage);
-      }
-      debugLog('Error loading yearly data', { error: errorMessage });
-      
+      log.error('Error loading yearly data', { error: errorMessage });
+
       setState(prev => ({
         ...prev,
         isLoadingData: false,
@@ -236,7 +191,7 @@ export function useYearLearn(tokenId?: number) {
 
       return { success: false };
     }
-  }, [isConnected, operationalTokenId, lastDreamMonthlyHash, lastConvMonthlyHash, downloadFile, debugLog]);
+  }, [isConnected, operationalTokenId, lastDreamMonthlyHash, lastConvMonthlyHash, downloadFile]);
 
   /**
    * Generate AI consolidation for yearly memory core (like month-learn generates consolidation)
@@ -246,18 +201,15 @@ export function useYearLearn(tokenId?: number) {
     const currentDreamConsolidations = dreamConsolidations || [];
     const currentConversationConsolidations = conversationConsolidations || [];
 
-    if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-      console.log('[useYearLearn] generateYearlyConsolidation: FUNCTION CALLED!');
-      console.log('[useYearLearn] generateYearlyConsolidation: Dream consolidations count:', currentDreamConsolidations.length);
-      console.log('[useYearLearn] generateYearlyConsolidation: Conversation consolidations count:', currentConversationConsolidations.length);
-      console.log('[useYearLearn] generateYearlyConsolidation: Dreams passed as param:', !!dreamConsolidations);
-      console.log('[useYearLearn] generateYearlyConsolidation: Conversations passed as param:', !!conversationConsolidations);
-    }
+    log.debug('generateYearlyConsolidation: FUNCTION CALLED', {
+      dreamConsolidationsCount: currentDreamConsolidations.length,
+      conversationConsolidationsCount: currentConversationConsolidations.length,
+      dreamsPassedAsParam: !!dreamConsolidations,
+      conversationsPassedAsParam: !!conversationConsolidations
+    });
 
     if (currentDreamConsolidations.length === 0 && currentConversationConsolidations.length === 0) {
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] generateYearlyConsolidation: NO DATA - returning null');
-      }
+      log.debug('generateYearlyConsolidation: NO DATA - returning null');
       setState(prev => ({
         ...prev,
         error: 'No yearly consolidation data available for memory core creation'
@@ -266,9 +218,7 @@ export function useYearLearn(tokenId?: number) {
     }
 
     if (!address) {
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] generateYearlyConsolidation: NO ADDRESS - returning null');
-      }
+      log.debug('generateYearlyConsolidation: NO ADDRESS - returning null');
       setState(prev => ({
         ...prev,
         error: 'Wallet not connected'
@@ -276,9 +226,7 @@ export function useYearLearn(tokenId?: number) {
       return null;
     }
 
-    if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-      console.log('[useYearLearn] generateYearlyConsolidation: Starting AI memory core generation');
-    }
+    log.debug('generateYearlyConsolidation: Starting AI memory core generation');
 
     setState(prev => ({
       ...prev,
@@ -288,20 +236,20 @@ export function useYearLearn(tokenId?: number) {
     }));
 
     try {
-      debugLog('Starting AI memory core generation');
+      log.debug('Starting AI memory core generation');
 
       // Use test mode dates or current date based on environment (like month-learn)
       let currentYear: number;
-      
+
       if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
         // Test mode: use fixed past year to avoid validation issues
         currentYear = 2024;
-        debugLog('Using test mode year for memory core', { year: currentYear });
+        log.debug('Using test mode year for memory core', { year: currentYear });
       } else {
         // Production mode: use actual current date
         const now = new Date();
         currentYear = now.getFullYear();
-        debugLog('Using current year for memory core', { year: currentYear });
+        log.debug('Using current year for memory core', { year: currentYear });
       }
 
       // Build prompt using the dedicated prompt builder - SAME AS MONTH-LEARN WORKFLOW
@@ -312,7 +260,7 @@ export function useYearLearn(tokenId?: number) {
         agentPersonality: personalityTraits
       };
 
-      debugLog('Prompt data prepared', { 
+      log.debug('Prompt data prepared', {
         dreamConsolidationsCount: promptData.dreamConsolidations.length,
         conversationConsolidationsCount: promptData.conversationConsolidations.length,
         year: promptData.year,
@@ -321,8 +269,8 @@ export function useYearLearn(tokenId?: number) {
       });
 
       // Validate data completeness before sending to AI
-      const validation = validateYearlyDataCompleteness(promptData, debugLog);
-      
+      const validation = validateYearlyDataCompleteness(promptData, log);
+
       if (!validation.isValid) {
         const errorMessage = `Insufficient yearly data: ${validation.warnings.join(', ')}`;
         setState(prev => ({
@@ -331,22 +279,22 @@ export function useYearLearn(tokenId?: number) {
           error: errorMessage,
           statusMessage: ''
         }));
-        debugLog('Yearly data validation failed', { validation });
+        log.warn('Yearly data validation failed', { validation });
         return null;
       }
 
       if (validation.warnings.length > 0) {
-        debugLog('Yearly data validation warnings', { warnings: validation.warnings, recommendations: validation.recommendations });
+        log.warn('Yearly data validation warnings', { warnings: validation.warnings, recommendations: validation.recommendations });
       }
 
       // Generate data summary for logging
       const dataSummary = generateYearlyDataSummary(promptData);
-      debugLog('Yearly data summary generated', dataSummary);
+      log.debug('Yearly data summary generated', dataSummary);
 
       // Use service layer to send consolidation request - SAME AS MONTH-LEARN WORKFLOW
-      debugLog('Sending yearly consolidation request via service layer');
-      const memoryCore = await sendYearlyConsolidation(promptData, address, debugLog);
-      
+      log.debug('Sending yearly consolidation request via service layer');
+      const memoryCore = await sendYearlyConsolidation(promptData, address, log);
+
       if (!memoryCore) {
         throw new Error('No memory core returned from AI service');
       }
@@ -357,12 +305,12 @@ export function useYearLearn(tokenId?: number) {
         statusMessage: 'AI memory core generation completed'
       }));
 
-      debugLog('AI memory core generation completed successfully', {
+      log.debug('AI memory core generation completed successfully', {
         year: memoryCore.year,
         evolutionStage: memoryCore.yearly_overview.agent_evolution_stage,
         consciousnessLevel: memoryCore.final_metrics.consciousness_level
       });
-      
+
       // Return the generated memory core directly (like month-learn/chat/dream workflows)
       return memoryCore;
 
@@ -374,14 +322,14 @@ export function useYearLearn(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('AI memory core generation failed', { 
+      log.error('AI memory core generation failed', {
         error: errorMessage,
         fullError: error,
         stack: error instanceof Error ? error.stack : undefined
       });
       return null;
     }
-  }, [address, personalityTraits, debugLog]); // REMOVED state dependencies
+  }, [address, personalityTraits]); // REMOVED state dependencies
 
   /**
    * Save memory core to storage and update contract (like month-learn saves consolidation)
@@ -403,45 +351,45 @@ export function useYearLearn(tokenId?: number) {
     }));
 
     try {
-      debugLog('Starting memory core save process');
+      log.debug('Starting memory core save process');
 
       // Use test mode dates or current date based on environment (like month-learn)
       let currentYear: number;
-      
+
       if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
         // Test mode: use fixed past year to avoid "still current year" contract error
         currentYear = 2024;
-        debugLog('Using test mode year for storage', { year: currentYear });
+        log.debug('Using test mode year for storage', { year: currentYear });
       } else {
         // Production mode: use actual current date
         const now = new Date();
         currentYear = now.getFullYear();
-        debugLog('Using current year for storage', { year: currentYear });
+        log.debug('Using current year for storage', { year: currentYear });
       }
-      
+
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
       // Download existing memory cores using hash from contract (like month-learn)
       let existingMemoryCores: any[] = [];
       // memoryCoreHash already extracted at hook level
-      
+
       if (memoryCoreHash && memoryCoreHash !== emptyHash) {
         try {
-          debugLog('Downloading existing memory cores', { hash: memoryCoreHash });
+          log.debug('Downloading existing memory cores', { hash: memoryCoreHash });
           const downloadResult = await downloadFile(memoryCoreHash);
-          
+
           if (downloadResult.success && downloadResult.data) {
             const textDecoder = new TextDecoder('utf-8');
             const dataString = textDecoder.decode(downloadResult.data);
             const existingData = JSON.parse(dataString);
             existingMemoryCores = Array.isArray(existingData) ? existingData : [existingData];
-            debugLog('Existing memory cores loaded', { count: existingMemoryCores.length });
+            log.debug('Existing memory cores loaded', { count: existingMemoryCores.length });
           }
         } catch (error) {
-          debugLog('No existing memory cores found - creating new file', { error });
+          log.debug('No existing memory cores found - creating new file', { error });
         }
       } else {
-        debugLog('No existing memory core hash - creating new file');
+        log.debug('No existing memory core hash - creating new file');
       }
 
       // Add new memory core to the list (newest first) - using passed data (like month-learn)
@@ -460,8 +408,8 @@ export function useYearLearn(tokenId?: number) {
         throw new Error(`Memory core upload failed: ${uploadResult.error}`);
       }
       const memoryCoreStorageHash = uploadResult.rootHash;
-      
-      debugLog('Memory core saved to storage', { hash: memoryCoreStorageHash });
+
+      log.debug('Memory core saved to storage', { hash: memoryCoreStorageHash });
 
       setState(prev => ({
         ...prev,
@@ -480,9 +428,9 @@ export function useYearLearn(tokenId?: number) {
         statusMessage: 'Year-learn memory core consolidation completed successfully!'
       }));
 
-      debugLog('Memory core save process completed', { 
+      log.debug('Memory core save process completed', {
         memoryCoreHash: memoryCoreStorageHash,
-        txHash 
+        txHash
       });
 
       return true;
@@ -496,16 +444,16 @@ export function useYearLearn(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('Memory core save process failed', { error: errorMessage });
+      log.error('Memory core save process failed', { error: errorMessage });
       return false;
     }
-  }, [memoryCoreHash, downloadFile, uploadFile, debugLog]);
+  }, [memoryCoreHash, downloadFile, uploadFile]);
 
   /**
    * Update smart contract with memory core hash using updateMemoryCore function
    */
   const updateMemoryCore = async (memoryCoreHash: string): Promise<string> => {
-    debugLog('Updating contract with memory core hash', { memoryCoreHash });
+    log.debug('Updating contract with memory core hash', { memoryCoreHash });
 
     const [walletClient, walletErr] = await getViemSigner();
     if (!walletClient || walletErr) {
@@ -534,7 +482,7 @@ export function useYearLearn(tokenId?: number) {
     const [publicClient] = await getViemProvider();
     const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
 
-    debugLog('Contract updated successfully with memory core', { txHash, blockNumber: receipt.blockNumber });
+    log.debug('Contract updated successfully with memory core', { txHash, blockNumber: receipt.blockNumber });
     return txHash;
   };
 
@@ -542,19 +490,14 @@ export function useYearLearn(tokenId?: number) {
    * Execute complete year-learn workflow
    */
   const executeYearLearn = useCallback(async () => {
-    if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-      console.log('[useYearLearn] executeYearLearn: Starting complete year-learn workflow');
-      console.log('[useYearLearn] executeYearLearn: operationalTokenId:', operationalTokenId);
-      console.log('[useYearLearn] executeYearLearn: agentData available:', !!agentData);
-    }
-    debugLog('Starting complete year-learn workflow');
+    log.debug('executeYearLearn: Starting complete year-learn workflow', {
+      operationalTokenId,
+      agentDataAvailable: !!agentData
+    });
 
     // Early return if no token ID available yet
     if (!operationalTokenId) {
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] executeYearLearn: No operationalTokenId yet, returning early');
-      }
-      debugLog('No operational token ID available yet');
+      log.debug('executeYearLearn: No operationalTokenId yet, returning early');
       return false;
     }
 
@@ -567,39 +510,28 @@ export function useYearLearn(tokenId?: number) {
 
     try {
       // Step 1: Load yearly data (direct call to avoid circular dependency)
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] executeYearLearn: About to call loadYearlyData()');
-      }
+      log.debug('executeYearLearn: About to call loadYearlyData()');
       const { success, yearlyDreamConsolidations, yearlyConversationConsolidations } = await loadYearlyData();
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] executeYearLearn: loadYearlyData returned:', success);
-      }
+      log.debug('executeYearLearn: loadYearlyData returned', { success });
       if (!success) {
         throw new Error('Failed to load yearly data');
       }
 
       // Step 2: Generate AI memory core (direct call to avoid circular dependency)
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] executeYearLearn: About to call generateYearlyConsolidation()');
-        console.log('[useYearLearn] executeYearLearn: Dream consolidations count:', yearlyDreamConsolidations?.length);
-        console.log('[useYearLearn] executeYearLearn: Conversation consolidations count:', yearlyConversationConsolidations?.length);
-      }
+      log.debug('executeYearLearn: About to call generateYearlyConsolidation()', {
+        dreamConsolidationsCount: yearlyDreamConsolidations?.length,
+        conversationConsolidationsCount: yearlyConversationConsolidations?.length
+      });
       const memoryCore = await generateYearlyConsolidation(yearlyDreamConsolidations, yearlyConversationConsolidations);
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] executeYearLearn: generateYearlyConsolidation returned:', !!memoryCore);
-      }
+      log.debug('executeYearLearn: generateYearlyConsolidation returned', { hasMemoryCore: !!memoryCore });
       if (!memoryCore) {
         throw new Error('Failed to generate AI memory core');
       }
 
       // Step 3: Save memory core (direct call to avoid circular dependency)
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] executeYearLearn: About to call saveMemoryCore()');
-      }
+      log.debug('executeYearLearn: About to call saveMemoryCore()');
       const memoryCoresSaved = await saveMemoryCore(memoryCore);
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] executeYearLearn: saveMemoryCore returned:', memoryCoresSaved);
-      }
+      log.debug('executeYearLearn: saveMemoryCore returned', { memoryCoresSaved });
       if (!memoryCoresSaved) {
         throw new Error('Failed to save memory core');
       }
@@ -609,34 +541,27 @@ export function useYearLearn(tokenId?: number) {
         isLoading: false
       }));
 
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] executeYearLearn: Year-learn workflow completed successfully');
-      }
-      debugLog('Year-learn workflow completed successfully');
+      log.info('Year-learn workflow completed successfully');
       return true;
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
-      if (process.env.NEXT_PUBLIC_YEAR_LEARN_TEST === 'true') {
-        console.log('[useYearLearn] executeYearLearn: CAUGHT ERROR!');
-        console.log('[useYearLearn] executeYearLearn: Error message:', errorMessage);
-        console.log('[useYearLearn] executeYearLearn: Full error:', error);
-        if (error instanceof Error && error.stack) {
-          console.log('[useYearLearn] executeYearLearn: Stack trace:', error.stack);
-        }
-      }
-      
+
+      log.error('Year-learn workflow failed', {
+        error: errorMessage,
+        fullError: error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: errorMessage
       }));
-      
-      debugLog('Year-learn workflow failed', { error: errorMessage });
+
       return false;
     }
-  }, [operationalTokenId, agentData, loadYearlyData, generateYearlyConsolidation, saveMemoryCore, debugLog]);
+  }, [operationalTokenId, agentData, loadYearlyData, generateYearlyConsolidation, saveMemoryCore]);
 
   /**
    * Reset year-learn state
@@ -653,8 +578,8 @@ export function useYearLearn(tokenId?: number) {
       isCompleted: false,
       hasWaitedForData: false
     });
-    debugLog('Year-learn state reset');
-  }, [debugLog]);
+    log.debug('Year-learn state reset');
+  }, []);
 
   // Check if we have valid agent data - conditional logic AFTER all hooks
   const hasValidAgentData = operationalTokenId && agentData?.memory;

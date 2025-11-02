@@ -5,13 +5,9 @@
 
 import type { ParameterUpdate } from './aiParameterService';
 import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_AISHI_COMPANION_DEBUG === 'true') {
-    console.log(`[ParameterAnimator] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'ParameterAnimator' });
 
 /**
  * Animation step for single parameter
@@ -106,7 +102,7 @@ export class ParameterAnimator {
    */
   createAnimationSequence(update: ParameterUpdate): AnimationSequence | null {
     if (!update.isValid) {
-      debugLog(`Skipping invalid parameter: ${update.paramId}`, { error: update.error });
+      log.debug('Skipping invalid parameter', { paramId: update.paramId, error: update.error });
       return null;
     }
 
@@ -116,7 +112,8 @@ export class ParameterAnimator {
       update.targetValue
     );
 
-    debugLog(`Created animation sequence for ${update.name}`, {
+    log.debug('Created animation sequence', {
+      name: update.name,
       paramId: update.paramId,
       from: update.currentValue,
       to: update.targetValue,
@@ -147,7 +144,8 @@ export class ParameterAnimator {
       }
     });
 
-    debugLog(`Queued ${sequences.length} animations`, {
+    log.debug('Queued animations', {
+      count: sequences.length,
       parameters: sequences.map(s => s.name)
     });
 
@@ -163,14 +161,14 @@ export class ParameterAnimator {
     modelRef: Live2DModelRef
   ): Promise<void> {
     if (sequences.length === 0) {
-      debugLog('No animations to execute');
+      log.debug('No animations to execute');
       return;
     }
 
     // Find longest animation duration
     const maxSteps = Math.max(...sequences.map(s => s.totalSteps));
 
-    debugLog(`Starting animation execution`, {
+    log.debug('Starting animation execution', {
       totalSequences: sequences.length,
       maxSteps,
       estimatedDuration: maxSteps * this.frameInterval
@@ -197,7 +195,7 @@ export class ParameterAnimator {
       this.activeAnimations.delete(seq.paramId);
     });
 
-    debugLog('Animation execution complete');
+    log.debug('Animation execution complete');
   }
 
   /**
@@ -205,7 +203,7 @@ export class ParameterAnimator {
    */
   cancelAll(): void {
     this.activeAnimations.clear();
-    debugLog('All animations cancelled');
+    log.debug('All animations cancelled');
   }
 
   /**

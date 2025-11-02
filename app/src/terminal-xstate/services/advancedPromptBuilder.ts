@@ -4,6 +4,9 @@
  */
 
 import { DreamContext } from '../types/contextTypes';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'AdvancedPromptBuilder' });
 
 export interface AdvancedDreamPrompt {
   systemPrompt: string;
@@ -19,18 +22,11 @@ export interface AdvancedDreamPrompt {
   };
 }
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[AdvancedPromptBuilder] ${message}`, data || '');
-  }
-};
-
 /**
  * Main function to build the advanced, on-chain aware dream analysis prompt.
  */
 export function buildAdvancedDreamPrompt(context: DreamContext): AdvancedDreamPrompt {
-  debugLog('Building advanced dream prompt with on-chain context', {
+  log.debug('Building advanced dream prompt with on-chain context', {
     agentName: context.agentProfile.name,
     dreamCount: context.agentProfile.dreamCount,
     memoryDepth: context.memoryAccess?.memoryDepth || 'shallow'
@@ -43,16 +39,16 @@ export function buildAdvancedDreamPrompt(context: DreamContext): AdvancedDreamPr
 
   // Log evolution dream detection at prompt building stage
   if (isEvolutionDream) {
-    debugLog('🎨 ========================================');
-    debugLog('🎨 BUILDING EVOLUTION DREAM PROMPT!');
-    debugLog('🎨 ========================================');
-    debugLog('🎨 Agent: ' + context.agentProfile.name);
-    debugLog('🎨 Dream #' + nextDreamId + ' (Evolution milestone!)');
-    debugLog('🎨 Current intelligence level: ' + context.agentProfile.intelligenceLevel);
-    debugLog('🎨 Memory depth: ' + (context.memoryAccess?.memoryDepth || 'shallow'));
-    debugLog('🎨 Months accessible: ' + (context.memoryAccess?.monthsAccessible || 1));
-    debugLog('🎨 AI will be instructed to generate personality impact');
-    debugLog('🎨 ========================================');
+    log.debug('🎨 ========================================');
+    log.debug('🎨 BUILDING EVOLUTION DREAM PROMPT!');
+    log.debug('🎨 ========================================');
+    log.debug('🎨 Agent: ' + context.agentProfile.name);
+    log.debug('🎨 Dream #' + nextDreamId + ' (Evolution milestone!)');
+    log.debug('🎨 Current intelligence level: ' + context.agentProfile.intelligenceLevel);
+    log.debug('🎨 Memory depth: ' + (context.memoryAccess?.memoryDepth || 'shallow'));
+    log.debug('🎨 Months accessible: ' + (context.memoryAccess?.monthsAccessible || 1));
+    log.debug('🎨 AI will be instructed to generate personality impact');
+    log.debug('🎨 ========================================');
   }
 
   // Build prompt sections based on the new, professional structure
@@ -90,7 +86,7 @@ ${outputFormat}
 
   const userPrompt = `Dream to analyze: ${context.userDream}`;
 
-  debugLog('Prompt built successfully', {
+  log.debug('Prompt built successfully', {
     systemPromptLength: systemPrompt.length,
     isEvolutionDream,
     nextDreamId

@@ -7,13 +7,10 @@ import { assign, sendParent, enqueueActions, type ActionFunction } from 'xstate'
 import { DreamMachineContext, DreamEvent } from './dreamMachine';
 import { defaultAgentData } from '../types/contextTypes';
 import { TerminalLine } from './types';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[DreamMachine] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'DreamActions' });
 
 export const dreamActions = {
   // Initialize dream session

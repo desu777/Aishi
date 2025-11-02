@@ -7,13 +7,9 @@ import { createPublicClient, http, Address } from 'viem';
 import { getActiveChain } from '../../config/chains';
 import { getContractConfig, ContractFunctions } from './contractService';
 import { aishiAgentAbi } from '../../generated';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[ContractReader] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'ContractReader' });
 
 /**
  * Complete agent data structure containing all contract information
@@ -130,7 +126,7 @@ export class ContractReaderService {
       transport: http()
     });
     
-    debugLog('Service initialized', {
+    log.debug('Service initialized', {
       contractAddress: this.contractConfig.address,
       chainId: this.contractConfig.chainId
     });
@@ -149,27 +145,27 @@ export class ContractReaderService {
         const result = await fn();
         
         if (result !== undefined && result !== null) {
-          debugLog(`[SUCCESS] ${name} fetched on attempt ${i + 1}`);
+          log.debug(`[SUCCESS] ${name} fetched on attempt ${i + 1}`);
           return result;
         }
         
         if (i < retries - 1) {
           const delay = 1000 * (i + 1);
-          debugLog(`[RETRY] Attempt ${i + 1} for ${name} failed, retrying in ${delay}ms...`);
+          log.debug(`[RETRY] Attempt ${i + 1} for ${name} failed, retrying in ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       } catch (error) {
         if (i === retries - 1) {
-          debugLog(`[ERROR] Failed to fetch ${name} after ${retries} attempts`, { error: String(error) });
+          log.debug(`[ERROR] Failed to fetch ${name} after ${retries} attempts`, { error: String(error) });
           throw error;
         }
         const delay = 1000 * (i + 1);
-        debugLog(`[WARNING] Attempt ${i + 1} for ${name} failed, retrying...`, { error: String(error) });
+        log.debug(`[WARNING] Attempt ${i + 1} for ${name} failed, retrying...`, { error: String(error) });
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
     
-    debugLog(`[WARNING] Returning undefined for ${name} after ${retries} attempts`);
+    log.debug(`[WARNING] Returning undefined for ${name} after ${retries} attempts`);
     return undefined;
   }
 
@@ -179,7 +175,7 @@ export class ContractReaderService {
   private getCached<T>(key: string): T | null {
     const cached = this.cache.get(key);
     if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
-      debugLog(`[CACHE HIT] ${key}`);
+      log.debug(`[CACHE HIT] ${key}`);
       return cached.data as T;
     }
     return null;
@@ -190,7 +186,7 @@ export class ContractReaderService {
    */
   private setCached(key: string, data: any): void {
     this.cache.set(key, { data, timestamp: Date.now() });
-    debugLog(`[CACHE SET] ${key}`);
+    log.debug(`[CACHE SET] ${key}`);
   }
 
   /**
@@ -201,7 +197,7 @@ export class ContractReaderService {
     const cached = this.getCached<CompleteAgentData>(cacheKey);
     if (cached) return cached;
 
-    debugLog('Fetching complete agent data', { tokenId });
+    log.debug('Fetching complete agent data', { tokenId });
 
     try {
       // Fetch all data in parallel for efficiency
@@ -230,7 +226,7 @@ export class ContractReaderService {
       ]);
 
       if (!basic) {
-        debugLog('No basic data found for token', { tokenId });
+        log.debug('No basic data found for token', { tokenId });
         return null;
       }
 
@@ -267,7 +263,7 @@ export class ContractReaderService {
       return completeData;
 
     } catch (error) {
-      debugLog('Error fetching complete agent data', { error: String(error) });
+      log.debug('Error fetching complete agent data', { error: String(error) });
       return null;
     }
   }
@@ -280,7 +276,7 @@ export class ContractReaderService {
     const cached = this.getCached<CompleteAgentData['basic']>(cacheKey);
     if (cached) return cached;
 
-    debugLog('Fetching basic agent data', { tokenId });
+    log.debug('Fetching basic agent data', { tokenId });
 
     const agentData = await this.fetchWithRetry(
       () => this.publicClient.readContract({
@@ -322,7 +318,7 @@ export class ContractReaderService {
     const cached = this.getCached<CompleteAgentData['personality']>(cacheKey);
     if (cached) return cached;
 
-    debugLog('Fetching personality traits', { tokenId });
+    log.debug('Fetching personality traits', { tokenId });
 
     const traits = await this.fetchWithRetry(
       () => this.publicClient.readContract({
@@ -360,7 +356,7 @@ export class ContractReaderService {
     const cached = this.getCached<CompleteAgentData['memory']>(cacheKey);
     if (cached) return cached;
 
-    debugLog('Fetching memory data', { tokenId });
+    log.debug('Fetching memory data', { tokenId });
 
     const memory = await this.fetchWithRetry(
       () => this.publicClient.readContract({
@@ -398,7 +394,7 @@ export class ContractReaderService {
     const cached = this.getCached<CompleteAgentData['features']>(cacheKey);
     if (cached) return cached;
 
-    debugLog('Fetching unique features', { tokenId });
+    log.debug('Fetching unique features', { tokenId });
 
     try {
       const features = await this.fetchWithRetry(
@@ -423,7 +419,7 @@ export class ContractReaderService {
       this.setCached(cacheKey, parsed);
       return parsed;
     } catch (error) {
-      debugLog('Error fetching unique features', { error: String(error) });
+      log.debug('Error fetching unique features', { error: String(error) });
       return [];
     }
   }
@@ -436,7 +432,7 @@ export class ContractReaderService {
     const cached = this.getCached<CompleteAgentData['status']>(cacheKey);
     if (cached) return cached;
 
-    debugLog('Fetching status data', { tokenId });
+    log.debug('Fetching status data', { tokenId });
 
     try {
       // Fetch canProcessDreamToday
@@ -466,7 +462,7 @@ export class ContractReaderService {
         );
       } catch {
         // Function might not exist in contract
-        debugLog('Memory access function not available');
+        log.debug('Memory access function not available');
       }
 
       const parsed: CompleteAgentData['status'] = {
@@ -478,7 +474,7 @@ export class ContractReaderService {
       this.setCached(cacheKey, parsed);
       return parsed;
     } catch (error) {
-      debugLog('Error fetching status data', { error: String(error) });
+      log.debug('Error fetching status data', { error: String(error) });
       return this.getDefaultStatus();
     }
   }
@@ -491,7 +487,7 @@ export class ContractReaderService {
     const cached = this.getCached<CompleteAgentData['consolidationReward']>(cacheKey);
     if (cached) return cached;
 
-    debugLog('Fetching consolidation reward', { tokenId });
+    log.debug('Fetching consolidation reward', { tokenId });
 
     try {
       const reward = await this.fetchWithRetry(
@@ -517,7 +513,7 @@ export class ContractReaderService {
       this.setCached(cacheKey, parsed);
       return parsed;
     } catch (error) {
-      debugLog('Error fetching consolidation reward', { error: String(error) });
+      log.debug('Error fetching consolidation reward', { error: String(error) });
       return null;
     }
   }
@@ -530,7 +526,7 @@ export class ContractReaderService {
     const cached = this.getCached<CompleteAgentData['evolutionStats']>(cacheKey);
     if (cached) return cached;
 
-    debugLog('Fetching evolution stats', { tokenId });
+    log.debug('Fetching evolution stats', { tokenId });
 
     try {
       const stats = await this.fetchWithRetry(
@@ -555,7 +551,7 @@ export class ContractReaderService {
       this.setCached(cacheKey, parsed);
       return parsed;
     } catch (error) {
-      debugLog('Error fetching evolution stats', { error: String(error) });
+      log.debug('Error fetching evolution stats', { error: String(error) });
       return null;
     }
   }
@@ -568,7 +564,7 @@ export class ContractReaderService {
     const cached = this.getCached<number>(cacheKey);
     if (cached !== null) return cached;
 
-    debugLog('Fetching consolidation streak', { tokenId });
+    log.debug('Fetching consolidation streak', { tokenId });
 
     try {
       const streak = await this.fetchWithRetry(
@@ -586,7 +582,7 @@ export class ContractReaderService {
       this.setCached(cacheKey, parsed);
       return parsed;
     } catch (error) {
-      debugLog('Error fetching consolidation streak', { error: String(error) });
+      log.debug('Error fetching consolidation streak', { error: String(error) });
       return 0;
     }
   }
@@ -599,7 +595,7 @@ export class ContractReaderService {
     const cached = this.getCached<string>(cacheKey);
     if (cached) return cached;
 
-    debugLog('Fetching cached response style', { tokenId });
+    log.debug('Fetching cached response style', { tokenId });
 
     try {
       const style = await this.fetchWithRetry(
@@ -618,7 +614,7 @@ export class ContractReaderService {
       this.setCached(cacheKey, style);
       return style;
     } catch (error) {
-      debugLog('Error fetching response style', { error: String(error) });
+      log.debug('Error fetching response style', { error: String(error) });
       return null;
     }
   }
@@ -631,7 +627,7 @@ export class ContractReaderService {
     const cached = this.getCached<CompleteAgentData['pendingRewards']>(cacheKey);
     if (cached) return cached;
 
-    debugLog('Fetching pending rewards', { tokenId });
+    log.debug('Fetching pending rewards', { tokenId });
 
     try {
       const rewards = await this.fetchWithRetry(
@@ -656,7 +652,7 @@ export class ContractReaderService {
       this.setCached(cacheKey, parsed);
       return parsed;
     } catch (error) {
-      debugLog('Error fetching pending rewards', { error: String(error) });
+      log.debug('Error fetching pending rewards', { error: String(error) });
       return null;
     }
   }
@@ -782,7 +778,7 @@ export class ContractReaderService {
    */
   clearCache(): void {
     this.cache.clear();
-    debugLog('Cache cleared');
+    log.debug('Cache cleared');
   }
 
   /**
@@ -790,7 +786,7 @@ export class ContractReaderService {
    */
   setCacheTTL(ttl: number): void {
     this.cacheTTL = ttl;
-    debugLog('Cache TTL updated', { ttl });
+    log.debug('Cache TTL updated', { ttl });
   }
 }
 

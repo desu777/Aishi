@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Model } from '../components/ModelSelector';
+import { logger } from '@/lib/logger';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 export const useModelDiscovery = () => {
+  const log = logger.child({ component: 'useModelDiscovery' });
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     // Load saved model from localStorage on init
@@ -50,9 +52,9 @@ export const useModelDiscovery = () => {
         throw new Error('Invalid response format from server');
       }
     } catch (error) {
-      console.error('Failed to discover models:', error);
+      log.error('Failed to discover models', { error });
       setError(error instanceof Error ? error.message : 'Failed to discover models');
-      
+
       // Fallback to Gemini only (fast profile for fallback scenarios)
       const fallbackModels: Model[] = [{
         id: 'gemini-2.5-flash-fast',
@@ -105,17 +107,17 @@ export const useModelDiscovery = () => {
 
         if (openaiModel) {
           smartDefault = 'openai/gpt-oss-120b';
-          console.log('🎯 Smart default: openai/gpt-oss-120b (0G models available)');
+          log.debug('Smart default: openai/gpt-oss-120b (0G models available)');
         } else {
           // Fallback to first available 0G model
           const first0G = models.find(m => m.type === 'decentralized' && m.available);
           if (first0G) {
             smartDefault = first0G.id;
-            console.log(`🎯 Smart default: ${first0G.id} (first available 0G model)`);
+            log.debug(`Smart default: ${first0G.id} (first available 0G model)`);
           }
         }
       } else {
-        console.log('🎯 Smart default: gemini-2.5-flash-fast (0G models unavailable)');
+        log.debug('Smart default: gemini-2.5-flash-fast (0G models unavailable)');
       }
 
       setSelectedModel(smartDefault);

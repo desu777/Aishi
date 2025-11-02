@@ -5,6 +5,9 @@ import React, { useEffect, useRef, useMemo, useCallback } from "react";
 import { FaultyTerminalProps, FaultyTerminalConfig, defaultConfig, performanceConfig } from "./types";
 import { vertexShader, fragmentShader } from "./shaders";
 import "./styles.css";
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'FaultyTerminal' });
 
 function hexToRgb(hex: string): [number, number, number] {
   let h = hex.replace("#", "").trim();
@@ -103,7 +106,7 @@ export default function FaultyTerminal({
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
     if (!gl) {
-      console.warn('WebGL not supported, FaultyTerminal background disabled');
+      log.warn('WebGL not supported, FaultyTerminal background disabled');
       return;
     }
 

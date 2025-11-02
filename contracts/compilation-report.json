@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-10-30T10:40:22.110Z",
+  "timestamp": "2025-11-02T10:15:36.467Z",
   "network": "Mainnet",
   "optimizer": {
     "enabled": true,
@@ -8,8 +8,8 @@
   "contracts": [
     {
       "name": "AishiAgent",
-      "bytecodeSize": 25478,
-      "deployedSize": 24475,
+      "bytecodeSize": 25433,
+      "deployedSize": 24430,
       "hasConstructor": true,
       "isLibrary": false
     },
@@ -23,7 +23,7 @@
   ],
   "summary": {
     "totalContracts": 2,
-    "mainContractSize": 24475
+    "mainContractSize": 24430
   },
   "compiler": {
     "version": "0.8.20",

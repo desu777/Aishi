@@ -8,6 +8,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Play, Pause, X, Mic } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'VoiceInputMessage' });
 
 interface VoiceInputMessageProps {
   audioBlob: Blob;
@@ -35,19 +38,19 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
   const audioUrl = React.useMemo(() => {
     // Prefer base64 as it's more stable than blob URLs
     if (audioBase64) {
-      console.log('[VoiceInputMessage] Using base64 data URL');
+      log.debug('Using base64 data URL');
       return `data:audio/webm;base64,${audioBase64}`;
     } else if (audioBlob) {
       try {
         const url = URL.createObjectURL(audioBlob);
-        console.log('[VoiceInputMessage] Created blob URL', {
+        log.debug('Created blob URL', {
           url,
           blobSize: audioBlob.size,
           blobType: audioBlob.type
         });
         return url;
       } catch (error) {
-        console.error('[VoiceInputMessage] Failed to create blob URL', error);
+        log.error('Failed to create blob URL', { error });
       }
     }
     return null;
@@ -65,11 +68,11 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
   // Initialize audio element
   useEffect(() => {
     if (audioUrl) {
-      console.log('[VoiceInputMessage] Initializing audio element with URL:', audioUrl);
+      log.debug('Initializing audio element with URL', { audioUrl });
       const audio = new Audio(audioUrl);
 
       audio.addEventListener('loadedmetadata', () => {
-        console.log('[VoiceInputMessage] Audio metadata loaded', {
+        log.debug('Audio metadata loaded', {
           duration: audio.duration,
           readyState: audio.readyState
         });
@@ -78,7 +81,7 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
           // Estimate duration from blob size if available (rough estimate: ~10KB per second for webm/opus)
           if (audioBlob) {
             const estimatedDuration = Math.max(1, Math.round(audioBlob.size / 10000));
-            console.log('[VoiceInputMessage] Using estimated duration', {
+            log.debug('Using estimated duration', {
               blobSize: audioBlob.size,
               estimatedDuration
             });
@@ -93,7 +96,7 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
       });
 
       audio.addEventListener('error', (e) => {
-        console.error('[VoiceInputMessage] Audio error', {
+        log.error('Audio error', {
           error: e,
           audioUrl,
           readyState: audio.readyState,
@@ -126,7 +129,7 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
   // Handle play/pause
   const handleTogglePlay = useCallback(() => {
     if (!audioRef.current) {
-      console.error('[VoiceInputMessage] No audio ref available');
+      log.error('No audio ref available');
       return;
     }
 
@@ -138,7 +141,7 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
       }
     } else {
       audioRef.current.play().then(() => {
-        console.log('[VoiceInputMessage] Audio playback started');
+        log.debug('Audio playback started');
         setIsPlaying(true);
 
         // Update progress
@@ -148,7 +151,7 @@ export const VoiceInputMessage: React.FC<VoiceInputMessageProps> = ({
           }
         }, 100);
       }).catch((error) => {
-        console.error('[VoiceInputMessage] Failed to play audio', error);
+        log.error('Failed to play audio', { error });
         setIsPlaying(false);
       });
     }

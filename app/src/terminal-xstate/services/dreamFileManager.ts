@@ -5,13 +5,9 @@
 
 import { XStateStorageService } from './xstateStorage';
 import { StandardDreamFields } from './dreamDataValidator';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[DreamFileManager] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'DreamFileManager' });
 
 /**
  * File management result interface
@@ -50,7 +46,7 @@ export async function manageDailyDreamsFile(
   newDreamData: StandardDreamFields,
   currentRootHash?: string
 ): Promise<FileManagementResult> {
-  debugLog('Starting dream file management', {
+  log.debug('Starting dream file management', {
     agentName,
     dreamId: newDreamData.id,
     dreamDate: newDreamData.date,
@@ -69,7 +65,7 @@ export async function manageDailyDreamsFile(
     const shouldDownloadExisting = currentRootHash && !isEmptyHash(currentRootHash);
     
     if (shouldDownloadExisting) {
-      debugLog('Existing file detected, downloading for merge', { 
+      log.debug('Existing file detected, downloading for merge', { 
         currentRootHash: currentRootHash!.substring(0, 10) + '...' 
       });
       
@@ -80,14 +76,14 @@ export async function manageDailyDreamsFile(
         newFileName
       );
     } else {
-      debugLog('No existing file, creating new file', { fileName: newFileName });
+      log.debug('No existing file, creating new file', { fileName: newFileName });
       
       return await handleNewFile(newDreamData, newFileName);
     }
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Dream file management failed', { error: errorMessage });
+    log.debug('Dream file management failed', { error: errorMessage });
     
     return {
       success: false,
@@ -105,7 +101,7 @@ async function handleExistingFile(
   newDreamData: StandardDreamFields,
   newFileName: string
 ): Promise<FileManagementResult> {
-  debugLog('Downloading existing dreams file', { 
+  log.debug('Downloading existing dreams file', { 
     rootHash: currentRootHash.substring(0, 10) + '...' 
   });
 
@@ -126,7 +122,7 @@ async function handleExistingFile(
       existingDreams = [downloadResult.data];
     }
 
-    debugLog('Existing dreams downloaded successfully', {
+    log.debug('Existing dreams downloaded successfully', {
       existingCount: existingDreams.length,
       firstDreamId: existingDreams[0]?.id,
       lastDreamId: existingDreams[existingDreams.length - 1]?.id
@@ -138,7 +134,7 @@ async function handleExistingFile(
     // Create updated dreams array with new dream at the beginning
     const updatedDreams = [newDreamData, ...existingDreams];
 
-    debugLog('Dreams merged successfully', {
+    log.debug('Dreams merged successfully', {
       totalCount: updatedDreams.length,
       newDreamId: newDreamData.id,
       newFileName
@@ -158,10 +154,10 @@ async function handleExistingFile(
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    debugLog('Failed to handle existing file', { error: errorMessage });
+    log.debug('Failed to handle existing file', { error: errorMessage });
     
     // Fallback to creating new file if download fails
-    debugLog('Falling back to new file creation');
+    log.debug('Falling back to new file creation');
     return await handleNewFile(newDreamData, newFileName);
   }
 }
@@ -173,7 +169,7 @@ async function handleNewFile(
   newDreamData: StandardDreamFields,
   fileName: string
 ): Promise<FileManagementResult> {
-  debugLog('Creating new dreams file', { fileName, dreamId: newDreamData.id });
+  log.debug('Creating new dreams file', { fileName, dreamId: newDreamData.id });
 
   const newDreamsArray = [newDreamData];
 
@@ -243,36 +239,36 @@ function extractOriginalFileName(existingDreams: StandardDreamFields[]): string 
  */
 export function validateDreamsArray(dreams: any[]): boolean {
   if (!Array.isArray(dreams)) {
-    debugLog('Invalid dreams data: not an array');
+    log.debug('Invalid dreams data: not an array');
     return false;
   }
 
   if (dreams.length === 0) {
-    debugLog('Warning: empty dreams array');
+    log.debug('Warning: empty dreams array');
     return true; // Empty array is valid
   }
 
   // Basic validation of dream structure
   const isValid = dreams.every((dream, index) => {
     if (!dream || typeof dream !== 'object') {
-      debugLog(`Invalid dream at index ${index}: not an object`);
+      log.debug(`Invalid dream at index ${index}: not an object`);
       return false;
     }
 
     if (typeof dream.id !== 'number' || dream.id <= 0) {
-      debugLog(`Invalid dream at index ${index}: invalid ID`);
+      log.debug(`Invalid dream at index ${index}: invalid ID`);
       return false;
     }
 
     if (typeof dream.date !== 'string') {
-      debugLog(`Invalid dream at index ${index}: invalid date`);
+      log.debug(`Invalid dream at index ${index}: invalid date`);
       return false;
     }
 
     return true;
   });
 
-  debugLog('Dreams array validation completed', { 
+  log.debug('Dreams array validation completed', { 
     isValid, 
     dreamsCount: dreams.length 
   });
@@ -307,11 +303,11 @@ export function removeDuplicateDreams(dreams: StandardDreamFields[]): StandardDr
       seenIds.add(dream.id);
       uniqueDreams.push(dream);
     } else {
-      debugLog(`Removed duplicate dream ID: ${dream.id}`);
+      log.debug(`Removed duplicate dream ID: ${dream.id}`);
     }
   }
 
-  debugLog('Duplicate removal completed', {
+  log.debug('Duplicate removal completed', {
     originalCount: dreams.length,
     uniqueCount: uniqueDreams.length,
     duplicatesRemoved: dreams.length - uniqueDreams.length

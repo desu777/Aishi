@@ -27,13 +27,10 @@ import {
 } from './dreamPersistenceServices';
 import type { DreamContext, AIResponse } from '../types/contextTypes';
 import type { TerminalLine } from './types';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[DreamMachine] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'DreamMachine' });
 
 // Dream machine context
 export interface DreamMachineContext {
@@ -153,7 +150,7 @@ export const dreamMachine = setup({
     initializeDream: assign({
       tokenId: ({ event }) => {
         if (event.type === 'START') {
-          debugLog('[INIT] Dream session starting', {
+          log.debug('[INIT] Dream session starting', {
             tokenId: event.tokenId,
             agentName: event.agentName,
             wasVoiceInput: event.wasVoiceInput
@@ -183,7 +180,7 @@ export const dreamMachine = setup({
     storeDreamInput: assign({
       dreamInput: ({ event, context }) => {
         if (event.type === 'SUBMIT_DREAM') {
-          debugLog('[INPUT] Dream text submitted', {
+          log.debug('[INPUT] Dream text submitted', {
             textLength: event.dreamText.length,
             wasVoiceInput: event.wasVoiceInput // Log the incoming voice flag
           });
@@ -194,7 +191,7 @@ export const dreamMachine = setup({
       wasVoiceInput: ({ event }) => {
         // Preserve wasVoiceInput from the SUBMIT_DREAM event
         if (event.type === 'SUBMIT_DREAM') {
-          debugLog('[INPUT] Setting wasVoiceInput from event', {
+          log.debug('[INPUT] Setting wasVoiceInput from event', {
             wasVoiceInput: event.wasVoiceInput
           });
           return event.wasVoiceInput || false;
@@ -633,7 +630,7 @@ export const dreamMachine = setup({
     completed: {
       type: 'final',
       entry: [
-        () => debugLog('Dream workflow completed'),
+        () => log.debug('Dream workflow completed'),
         sendParent({ type: 'DREAM.COMPLETE' })
       ]
     },

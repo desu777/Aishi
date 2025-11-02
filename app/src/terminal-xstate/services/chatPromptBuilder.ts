@@ -4,13 +4,10 @@
  */
 
 import { ChatMessage } from '../machines/chatMachine';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[ChatPromptBuilder] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'ChatPromptBuilder' });
 
 /**
  * Build chat prompt with full context
@@ -25,7 +22,7 @@ export function buildChatPrompt(params: {
 }) {
   const { userMessage, messages, agentContext, historicalData, agentName, isFirstMessage } = params;
 
-  debugLog('Building chat prompt', {
+  log.debug('Building chat prompt', {
     isFirstMessage,
     previousMessages: messages.length - 1,
     hasHistoricalData: !!historicalData
@@ -135,7 +132,7 @@ ${userMessage}
 
   // Log full prompt when debug mode is enabled
   if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    debugLog('=== FULL CHAT PROMPT (Initial Message) ===', {
+    log.debug('=== FULL CHAT PROMPT (Initial Message) ===', {
       promptLength: systemPrompt.length,
       agentName,
       intelligenceLevel: agentData.intelligenceLevel,
@@ -180,7 +177,7 @@ ${userMessage}
 **Your Response:**`;
 
   if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    debugLog('=== FULL CHAT PROMPT (Follow-up Message) ===', {
+    log.debug('=== FULL CHAT PROMPT (Follow-up Message) ===', {
       promptLength: prompt.length,
       agentName,
       messageCount: messages.length,
@@ -436,7 +433,7 @@ function getResponseStyle(personality: any): string {
  * Build conversation summary prompt
  */
 export function buildSummaryPrompt(transcript: string, messages: ChatMessage[]) {
-  debugLog('Building summary prompt', {
+  log.debug('Building summary prompt', {
     transcriptLength: transcript.length,
     messageCount: messages.length
   });

@@ -14,11 +14,12 @@ import {
   MonthlyDreamConsolidation,
   MonthlyConversationConsolidation
 } from './services/monthLearnService';
-import { 
-  MonthLearnPromptData, 
-  buildMonthLearnConsolidationPrompt 
+import {
+  MonthLearnPromptData,
+  buildMonthLearnConsolidationPrompt
 } from '../../prompts/monthLearnConsolidationPrompt';
 import { parseMonthLearnResponse } from '../../prompts/monthLearnResponseParser';
+import { logger } from '@/lib/logger';
 
 // Interface for monthly consolidation state
 interface MonthLearnState {
@@ -81,17 +82,13 @@ export function useMonthLearn(tokenId?: number) {
   const lastDreamMonthlyHash = agentData?.memory?.lastDreamMonthlyHash;
   const lastConvMonthlyHash = agentData?.memory?.lastConvMonthlyHash;
 
-  // Debug logging
-  const debugLog = useCallback((message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-      console.log(`[useMonthLearn] ${message}`, data || '');
-    }
-  }, []);
+  // Logger instance
+  const log = logger.child({ component: 'useMonthLearn' });
 
   // Debug log initialization ONLY ONCE to prevent infinite re-renders
   useEffect(() => {
-    debugLog('useMonthLearn hook initialized', { tokenId: operationalTokenId });
-  }, [operationalTokenId, debugLog]);
+    log.debug('useMonthLearn hook initialized', { tokenId: operationalTokenId });
+  }, [operationalTokenId]);
 
   // Add 30-second timeout before showing "Agent data not available" error
   useEffect(() => {
@@ -100,7 +97,7 @@ export function useMonthLearn(tokenId?: number) {
         ...prev,
         hasWaitedForData: true
       }));
-      debugLog('30-second timeout reached - will show error if no agent data');
+      log.debug('30-second timeout reached - will show error if no agent data');
     }, 30000); // 30 seconds
 
     // Clear timeout if data becomes available or component unmounts
@@ -109,26 +106,21 @@ export function useMonthLearn(tokenId?: number) {
     }
 
     return () => clearTimeout(timer);
-  }, [operationalTokenId, agentData?.memory, debugLog]);
+  }, [operationalTokenId, agentData?.memory]);
 
   /**
    * Load monthly dreams and conversations data from 0G storage
    */
   const loadMonthlyData = useCallback(async (): Promise<{ success: boolean; monthlyDreams?: any[]; monthlyConversations?: any[] }> => {
-    if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-      console.log('[useMonthLearn] loadMonthlyData: FUNCTION CALLED!');
-      console.log('[useMonthLearn] loadMonthlyData: isConnected:', isConnected);
-      console.log('[useMonthLearn] loadMonthlyData: operationalTokenId:', operationalTokenId);
-      console.log('[useMonthLearn] loadMonthlyData: currentDreamHash:', currentDreamHash);
-      console.log('[useMonthLearn] loadMonthlyData: currentConvHash:', currentConvHash);
-    }
-    debugLog('Starting monthly data loading');
+    log.debug('loadMonthlyData: FUNCTION CALLED', {
+      isConnected,
+      operationalTokenId,
+      currentDreamHash,
+      currentConvHash
+    });
 
     if (!isConnected || !operationalTokenId) {
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] loadMonthlyData: NOT CONNECTED OR NO TOKEN ID - returning false');
-      }
-      debugLog('Not connected or no token ID');
+      log.debug('loadMonthlyData: NOT CONNECTED OR NO TOKEN ID - returning false');
       return { success: false };
     }
 
@@ -147,76 +139,48 @@ export function useMonthLearn(tokenId?: number) {
       // currentDreamHash already extracted at hook level
       if (currentDreamHash && currentDreamHash !== emptyHash) {
         try {
-          if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-            console.log('[useMonthLearn] loadMonthlyData: About to download dreams from hash:', currentDreamHash);
-          }
-          debugLog('Downloading dreams from hash', { hash: currentDreamHash });
+          log.debug('About to download dreams from hash', { hash: currentDreamHash });
           const dreamDownloadResult = await downloadFile(currentDreamHash);
-          
-          if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-            console.log('[useMonthLearn] loadMonthlyData: Dream download result:', dreamDownloadResult);
-          }
-          
+
+          log.debug('Dream download result', dreamDownloadResult);
+
           if (dreamDownloadResult.success && dreamDownloadResult.data) {
             const textDecoder = new TextDecoder('utf-8');
             const dreamDataString = textDecoder.decode(dreamDownloadResult.data);
             const dreamData = JSON.parse(dreamDataString);
-            
+
             monthlyDreams = Array.isArray(dreamData) ? dreamData : [dreamData];
-            if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-              console.log('[useMonthLearn] loadMonthlyData: Dreams parsed successfully, count:', monthlyDreams.length);
-            }
-            debugLog('Monthly dreams loaded from hash', { count: monthlyDreams.length });
+            log.debug('Dreams parsed successfully', { count: monthlyDreams.length });
           }
         } catch (dreamError) {
-          if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-            console.log('[useMonthLearn] loadMonthlyData: ERROR loading dreams:', dreamError);
-          }
-          debugLog('Error loading dreams from hash', { error: dreamError });
+          log.error('ERROR loading dreams', { dreamError });
         }
       } else {
-        if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-          console.log('[useMonthLearn] loadMonthlyData: No valid dream hash found');
-        }
-        debugLog('No valid dream hash found - starting with empty array');
+        log.debug('No valid dream hash found - starting with empty array');
       }
 
       // Download conversations data using root hash from contract
       // currentConvHash already extracted at hook level
       if (currentConvHash && currentConvHash !== emptyHash) {
         try {
-          if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-            console.log('[useMonthLearn] loadMonthlyData: About to download conversations from hash:', currentConvHash);
-          }
-          debugLog('Downloading conversations from hash', { hash: currentConvHash });
+          log.debug('About to download conversations from hash', { hash: currentConvHash });
           const convDownloadResult = await downloadFile(currentConvHash);
-          
-          if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-            console.log('[useMonthLearn] loadMonthlyData: Conversation download result:', convDownloadResult);
-          }
-          
+
+          log.debug('Conversation download result', convDownloadResult);
+
           if (convDownloadResult.success && convDownloadResult.data) {
             const textDecoder = new TextDecoder('utf-8');
             const convDataString = textDecoder.decode(convDownloadResult.data);
             const convData = JSON.parse(convDataString);
-            
+
             monthlyConversations = Array.isArray(convData) ? convData : [convData];
-            if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-              console.log('[useMonthLearn] loadMonthlyData: Conversations parsed successfully, count:', monthlyConversations.length);
-            }
-            debugLog('Monthly conversations loaded from hash', { count: monthlyConversations.length });
+            log.debug('Conversations parsed successfully', { count: monthlyConversations.length });
           }
         } catch (convError) {
-          if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-            console.log('[useMonthLearn] loadMonthlyData: ERROR loading conversations:', convError);
-          }
-          debugLog('Error loading conversations from hash', { error: convError });
+          log.error('ERROR loading conversations', { convError });
         }
       } else {
-        if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-          console.log('[useMonthLearn] loadMonthlyData: No valid conversation hash found');
-        }
-        debugLog('No valid conversation hash found - starting with empty array');
+        log.debug('No valid conversation hash found - starting with empty array');
       }
 
       setState(prev => ({
@@ -227,13 +191,7 @@ export function useMonthLearn(tokenId?: number) {
         statusMessage: `Loaded ${monthlyDreams.length} dreams and ${monthlyConversations.length} conversations from storage`
       }));
 
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] loadMonthlyData: About to return success with data');
-        console.log('[useMonthLearn] loadMonthlyData: Final dreams count:', monthlyDreams.length);
-        console.log('[useMonthLearn] loadMonthlyData: Final conversations count:', monthlyConversations.length);
-      }
-
-      debugLog('Monthly data loading completed from root hashes', {
+      log.debug('Monthly data loading completed from root hashes', {
         dreamsCount: monthlyDreams.length,
         conversationsCount: monthlyConversations.length,
         dreamHash: currentDreamHash,
@@ -244,11 +202,8 @@ export function useMonthLearn(tokenId?: number) {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] loadMonthlyData: CATCH ERROR:', errorMessage);
-      }
-      debugLog('Error loading monthly data', { error: errorMessage });
-      
+      log.error('Error loading monthly data', { error: errorMessage });
+
       setState(prev => ({
         ...prev,
         isLoadingData: false,
@@ -258,7 +213,7 @@ export function useMonthLearn(tokenId?: number) {
 
       return { success: false };
     }
-  }, [isConnected, operationalTokenId, currentDreamHash, currentConvHash, downloadFile, debugLog]);
+  }, [isConnected, operationalTokenId, currentDreamHash, currentConvHash, downloadFile]);
 
   /**
    * Generate AI consolidation for dreams and conversations
@@ -268,18 +223,15 @@ export function useMonthLearn(tokenId?: number) {
     const currentDreams = dreams || state.monthlyDreams;
     const currentConversations = conversations || state.monthlyConversations;
 
-    if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-      console.log('[useMonthLearn] generateConsolidation: FUNCTION CALLED!');
-      console.log('[useMonthLearn] generateConsolidation: Dreams count:', currentDreams.length);
-      console.log('[useMonthLearn] generateConsolidation: Conversations count:', currentConversations.length);
-      console.log('[useMonthLearn] generateConsolidation: Dreams passed as param:', !!dreams);
-      console.log('[useMonthLearn] generateConsolidation: Conversations passed as param:', !!conversations);
-    }
+    log.debug('generateConsolidation: FUNCTION CALLED', {
+      dreamsCount: currentDreams.length,
+      conversationsCount: currentConversations.length,
+      dreamsPassedAsParam: !!dreams,
+      conversationsPassedAsParam: !!conversations
+    });
 
     if (currentDreams.length === 0 && currentConversations.length === 0) {
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] generateConsolidation: NO DATA - returning false');
-      }
+      log.debug('generateConsolidation: NO DATA - returning false');
       setState(prev => ({
         ...prev,
         error: 'No monthly data available for consolidation'
@@ -288,9 +240,7 @@ export function useMonthLearn(tokenId?: number) {
     }
 
     if (!address) {
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] generateConsolidation: NO ADDRESS - returning false');
-      }
+      log.debug('generateConsolidation: NO ADDRESS - returning false');
       setState(prev => ({
         ...prev,
         error: 'Wallet not connected'
@@ -298,9 +248,7 @@ export function useMonthLearn(tokenId?: number) {
       return null;
     }
 
-    if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-      console.log('[useMonthLearn] generateConsolidation: Starting AI consolidation generation');
-    }
+    log.debug('generateConsolidation: Starting AI consolidation generation');
 
     setState(prev => ({
       ...prev,
@@ -310,23 +258,23 @@ export function useMonthLearn(tokenId?: number) {
     }));
 
     try {
-      debugLog('Starting AI consolidation generation');
+      log.debug('Starting AI consolidation generation');
 
       // Use test mode dates or current date based on environment
       let currentYear: number;
       let currentMonth: number;
-      
+
       if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
         // Test mode: use fixed past month to avoid "still current month" contract error
         currentYear = 2024;
         currentMonth = 1; // January 2024
-        debugLog('Using test mode dates', { year: currentYear, month: currentMonth });
+        log.debug('Using test mode dates', { year: currentYear, month: currentMonth });
       } else {
         // Production mode: use actual current date
         const now = new Date();
         currentYear = now.getFullYear();
         currentMonth = now.getMonth() + 1;
-        debugLog('Using current date', { year: currentYear, month: currentMonth });
+        log.debug('Using current date', { year: currentYear, month: currentMonth });
       }
 
       // Build unified prompt using the new prompt builder - SAME AS DREAM WORKFLOW
@@ -338,7 +286,7 @@ export function useMonthLearn(tokenId?: number) {
         agentPersonality: personalityTraits
       };
 
-      debugLog('Prompt data prepared', { 
+      log.debug('Prompt data prepared', {
         dreamsCount: promptData.dreams.length,
         conversationsCount: promptData.conversations.length,
         month: promptData.month,
@@ -348,8 +296,8 @@ export function useMonthLearn(tokenId?: number) {
       });
 
       const prompt = buildMonthLearnConsolidationPrompt(promptData);
-      
-      debugLog('Prompt built successfully', { 
+
+      log.debug('Prompt built successfully', {
         promptLength: prompt.length,
         dreamsCount: promptData.dreams.length,
         conversationsCount: promptData.conversations.length,
@@ -357,7 +305,7 @@ export function useMonthLearn(tokenId?: number) {
       });
 
       // Send single request to AI - SAME AS DREAM/CHAT WORKFLOW
-      debugLog('Sending to AI', { promptLength: prompt.length });
+      log.debug('Sending to AI', { promptLength: prompt.length });
       
       const apiUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
       
@@ -384,8 +332,8 @@ export function useMonthLearn(tokenId?: number) {
       }
 
       const aiResponse = apiResult.data.response;
-      
-      debugLog('AI response received', {
+
+      log.debug('AI response received', {
         model: apiResult.data.model,
         cost: apiResult.data.cost,
         responseTime: apiResult.data.responseTime,
@@ -394,12 +342,12 @@ export function useMonthLearn(tokenId?: number) {
 
       // Parse the unified response - SAME AS DREAM WORKFLOW
       const parseResult = parseMonthLearnResponse(aiResponse);
-      
+
       if (!parseResult.success) {
         throw new Error(`Failed to parse AI response: ${parseResult.error}`);
       }
 
-      debugLog('Response parsed successfully', {
+      log.debug('Response parsed successfully', {
         hasDreamConsolidation: !!parseResult.dreamConsolidation,
         hasConversationConsolidation: !!parseResult.conversationConsolidation
       });
@@ -412,8 +360,8 @@ export function useMonthLearn(tokenId?: number) {
         statusMessage: 'AI consolidation completed'
       }));
 
-      debugLog('AI consolidation generation completed successfully');
-      
+      log.debug('AI consolidation generation completed successfully');
+
       // Return the generated consolidation data directly (like dream/chat workflows)
       return {
         dreamConsolidation: parseResult.dreamConsolidation,
@@ -428,14 +376,14 @@ export function useMonthLearn(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('AI consolidation generation failed', { 
+      log.error('AI consolidation generation failed', {
         error: errorMessage,
         fullError: error,
         stack: error instanceof Error ? error.stack : undefined
       });
       return null;
     }
-  }, [address, personalityTraits, debugLog]); // REMOVED state.monthlyDreams, state.monthlyConversations
+  }, [address, personalityTraits]); // REMOVED state.monthlyDreams, state.monthlyConversations
 
   /**
    * Save consolidation to storage and update contract - now accepts data directly
@@ -465,23 +413,23 @@ export function useMonthLearn(tokenId?: number) {
     }));
 
     try {
-      debugLog('Starting consolidation save process');
+      log.debug('Starting consolidation save process');
 
       // Use test mode dates or current date based on environment
       let currentYear: number;
       let currentMonth: number;
-      
+
       if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
         // Test mode: use fixed past month to avoid "still current month" contract error
         currentYear = 2024;
         currentMonth = 1; // January 2024
-        debugLog('Using test mode dates for storage', { year: currentYear, month: currentMonth });
+        log.debug('Using test mode dates for storage', { year: currentYear, month: currentMonth });
       } else {
         // Production mode: use actual current date
         const now = new Date();
         currentYear = now.getFullYear();
         currentMonth = now.getMonth() + 1;
-        debugLog('Using current date for storage', { year: currentYear, month: currentMonth });
+        log.debug('Using current date for storage', { year: currentYear, month: currentMonth });
       }
       
       const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -498,21 +446,21 @@ export function useMonthLearn(tokenId?: number) {
         
         if (lastDreamMonthlyHash && lastDreamMonthlyHash !== emptyHash) {
           try {
-            debugLog('Downloading existing dream consolidations', { hash: lastDreamMonthlyHash });
+            log.debug('Downloading existing dream consolidations', { hash: lastDreamMonthlyHash });
             const downloadResult = await downloadFile(lastDreamMonthlyHash);
-            
+
             if (downloadResult.success && downloadResult.data) {
               const textDecoder = new TextDecoder('utf-8');
               const dataString = textDecoder.decode(downloadResult.data);
               const existingData = JSON.parse(dataString);
               existingDreamConsolidations = Array.isArray(existingData) ? existingData : [existingData];
-              debugLog('Existing dream consolidations loaded', { count: existingDreamConsolidations.length });
+              log.debug('Existing dream consolidations loaded', { count: existingDreamConsolidations.length });
             }
           } catch (error) {
-            debugLog('No existing dream consolidations found - creating new file', { error });
+            log.debug('No existing dream consolidations found - creating new file', { error });
           }
         } else {
-          debugLog('No existing dream consolidations hash - creating new file');
+          log.debug('No existing dream consolidations hash - creating new file');
         }
 
         // Add new consolidation to the list (newest first) - using passed data
@@ -531,8 +479,8 @@ export function useMonthLearn(tokenId?: number) {
           throw new Error(`Dream consolidation upload failed: ${dreamUploadResult.error}`);
         }
         dreamStorageHash = dreamUploadResult.rootHash;
-        
-        debugLog('Dream consolidation saved to storage', { hash: dreamStorageHash });
+
+        log.debug('Dream consolidation saved to storage', { hash: dreamStorageHash });
       }
 
       // Save conversation consolidation (using passed data instead of state)
@@ -544,21 +492,21 @@ export function useMonthLearn(tokenId?: number) {
         
         if (lastConvMonthlyHash && lastConvMonthlyHash !== emptyHash) {
           try {
-            debugLog('Downloading existing conversation consolidations', { hash: lastConvMonthlyHash });
+            log.debug('Downloading existing conversation consolidations', { hash: lastConvMonthlyHash });
             const downloadResult = await downloadFile(lastConvMonthlyHash);
-            
+
             if (downloadResult.success && downloadResult.data) {
               const textDecoder = new TextDecoder('utf-8');
               const dataString = textDecoder.decode(downloadResult.data);
               const existingData = JSON.parse(dataString);
               existingConversationConsolidations = Array.isArray(existingData) ? existingData : [existingData];
-              debugLog('Existing conversation consolidations loaded', { count: existingConversationConsolidations.length });
+              log.debug('Existing conversation consolidations loaded', { count: existingConversationConsolidations.length });
             }
           } catch (error) {
-            debugLog('No existing conversation consolidations found - creating new file', { error });
+            log.debug('No existing conversation consolidations found - creating new file', { error });
           }
         } else {
-          debugLog('No existing conversation consolidations hash - creating new file');
+          log.debug('No existing conversation consolidations hash - creating new file');
         }
 
         // Add new consolidation to the list (newest first) - using passed data
@@ -577,8 +525,8 @@ export function useMonthLearn(tokenId?: number) {
           throw new Error(`Conversation consolidation upload failed: ${convUploadResult.error}`);
         }
         conversationStorageHash = convUploadResult.rootHash;
-        
-        debugLog('Conversation consolidation saved to storage', { hash: conversationStorageHash });
+
+        log.debug('Conversation consolidation saved to storage', { hash: conversationStorageHash });
       }
 
       setState(prev => ({
@@ -611,7 +559,7 @@ export function useMonthLearn(tokenId?: number) {
             functionName: 'getAgentMemory',
             args: [BigInt(operationalTokenId)]
           }) as any;
-          debugLog('Memory state after consolidation', {
+          log.debug('Memory state after consolidation', {
             currentDreamDailyHash: memoryAfterConsolidation.currentDreamDailyHash,
             currentConvDailyHash: memoryAfterConsolidation.currentConvDailyHash,
             lastDreamMonthlyHash: memoryAfterConsolidation.lastDreamMonthlyHash,
@@ -619,7 +567,7 @@ export function useMonthLearn(tokenId?: number) {
             shouldBeEmpty: memoryAfterConsolidation.currentDreamDailyHash === '0x0000000000000000000000000000000000000000000000000000000000000000'
           });
         } catch (debugError) {
-          debugLog('Debug check failed', { error: debugError });
+          log.debug('Debug check failed', { error: debugError });
         }
       }
 
@@ -631,10 +579,10 @@ export function useMonthLearn(tokenId?: number) {
         statusMessage: 'Month-learn consolidation completed successfully!'
       }));
 
-      debugLog('Consolidation save process completed', { 
+      log.debug('Consolidation save process completed', {
         dreamHash: dreamStorageHash,
         conversationHash: conversationStorageHash,
-        txHash 
+        txHash
       });
 
       return true;
@@ -648,16 +596,16 @@ export function useMonthLearn(tokenId?: number) {
         error: errorMessage,
         statusMessage: ''
       }));
-      debugLog('Consolidation save process failed', { error: errorMessage });
+      log.error('Consolidation save process failed', { error: errorMessage });
       return false;
     }
-  }, [lastDreamMonthlyHash, lastConvMonthlyHash, downloadFile, uploadFile, debugLog]);
+  }, [lastDreamMonthlyHash, lastConvMonthlyHash, downloadFile, uploadFile]);
 
   /**
    * Update smart contract with consolidation hashes
    */
   const updateContract = async (dreamHash: string | null, conversationHash: string | null, month: number, year: number): Promise<string> => {
-    debugLog('Updating contract with consolidation hashes', { dreamHash, conversationHash, month, year });
+    log.debug('Updating contract with consolidation hashes', { dreamHash, conversationHash, month, year });
 
     const [walletClient, walletErr] = await getViemSigner();
     if (!walletClient || walletErr) {
@@ -691,7 +639,7 @@ export function useMonthLearn(tokenId?: number) {
     const [publicClient] = await getViemProvider();
     const receipt = await publicClient!.waitForTransactionReceipt({ hash: txHash });
 
-    debugLog('Contract updated successfully', { txHash });
+    log.debug('Contract updated successfully', { txHash });
     return txHash;
   };
 
@@ -699,19 +647,14 @@ export function useMonthLearn(tokenId?: number) {
    * Execute complete month-learn workflow
    */
   const executeMonthLearn = useCallback(async () => {
-    if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-      console.log('[useMonthLearn] executeMonthLearn: Starting complete month-learn workflow');
-      console.log('[useMonthLearn] executeMonthLearn: operationalTokenId:', operationalTokenId);
-      console.log('[useMonthLearn] executeMonthLearn: agentData available:', !!agentData);
-    }
-    debugLog('Starting complete month-learn workflow');
+    log.debug('executeMonthLearn: Starting complete month-learn workflow', {
+      operationalTokenId,
+      agentDataAvailable: !!agentData
+    });
 
     // Early return if no token ID available yet
     if (!operationalTokenId) {
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] executeMonthLearn: No operationalTokenId yet, returning early');
-      }
-      debugLog('No operational token ID available yet');
+      log.debug('executeMonthLearn: No operationalTokenId yet, returning early');
       return false;
     }
 
@@ -724,44 +667,34 @@ export function useMonthLearn(tokenId?: number) {
 
     try {
       // Step 1: Load monthly data (direct call to avoid circular dependency)
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] executeMonthLearn: About to call loadMonthlyData()');
-      }
+      log.debug('executeMonthLearn: About to call loadMonthlyData()');
       const { success, monthlyDreams, monthlyConversations } = await loadMonthlyData();
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] executeMonthLearn: loadMonthlyData returned:', success);
-      }
+      log.debug('executeMonthLearn: loadMonthlyData returned', { success });
       if (!success) {
         throw new Error('Failed to load monthly data');
       }
 
       // Step 2: Generate AI consolidation (direct call to avoid circular dependency)
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] executeMonthLearn: About to call generateConsolidation()');
-        console.log('[useMonthLearn] executeMonthLearn: Current state dreams count:', monthlyDreams.length);
-        console.log('[useMonthLearn] executeMonthLearn: Current state conversations count:', monthlyConversations.length);
-      }
+      log.debug('executeMonthLearn: About to call generateConsolidation()', {
+        dreamsCount: monthlyDreams.length,
+        conversationsCount: monthlyConversations.length
+      });
       const consolidationData = await generateConsolidation(monthlyDreams, monthlyConversations);
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] executeMonthLearn: generateConsolidation returned:', consolidationData);
-      }
+      log.debug('executeMonthLearn: generateConsolidation returned', { consolidationData });
       if (!consolidationData) {
         throw new Error('Failed to generate AI consolidation');
       }
 
       // Step 3: Save consolidation (direct call to avoid circular dependency)
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] executeMonthLearn: About to call saveConsolidation()');
-        console.log('[useMonthLearn] executeMonthLearn: Passing dreamConsolidation:', !!consolidationData.dreamConsolidation);
-        console.log('[useMonthLearn] executeMonthLearn: Passing conversationConsolidation:', !!consolidationData.conversationConsolidation);
-      }
+      log.debug('executeMonthLearn: About to call saveConsolidation()', {
+        hasDreamConsolidation: !!consolidationData.dreamConsolidation,
+        hasConversationConsolidation: !!consolidationData.conversationConsolidation
+      });
       const consolidationSaved = await saveConsolidation(
-        consolidationData.dreamConsolidation, 
+        consolidationData.dreamConsolidation,
         consolidationData.conversationConsolidation
       );
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] executeMonthLearn: saveConsolidation returned:', consolidationSaved);
-      }
+      log.debug('executeMonthLearn: saveConsolidation returned', { consolidationSaved });
       if (!consolidationSaved) {
         throw new Error('Failed to save consolidation');
       }
@@ -771,34 +704,27 @@ export function useMonthLearn(tokenId?: number) {
         isLoading: false
       }));
 
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] executeMonthLearn: Month-learn workflow completed successfully');
-      }
-      debugLog('Month-learn workflow completed successfully');
+      log.info('Month-learn workflow completed successfully');
       return true;
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
-      if (process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-        console.log('[useMonthLearn] executeMonthLearn: CAUGHT ERROR!');
-        console.log('[useMonthLearn] executeMonthLearn: Error message:', errorMessage);
-        console.log('[useMonthLearn] executeMonthLearn: Full error:', error);
-        if (error instanceof Error && error.stack) {
-          console.log('[useMonthLearn] executeMonthLearn: Stack trace:', error.stack);
-        }
-      }
-      
+
+      log.error('Month-learn workflow failed', {
+        error: errorMessage,
+        fullError: error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: errorMessage
       }));
-      
-      debugLog('Month-learn workflow failed', { error: errorMessage });
+
       return false;
     }
-  }, [operationalTokenId, agentData, loadMonthlyData, generateConsolidation, saveConsolidation, debugLog]);
+  }, [operationalTokenId, agentData, loadMonthlyData, generateConsolidation, saveConsolidation]);
 
   /**
    * Reset month-learn state
@@ -822,8 +748,8 @@ export function useMonthLearn(tokenId?: number) {
       isCompleted: false,
       hasWaitedForData: false
     });
-    debugLog('Month-learn state reset');
-  }, [debugLog]);
+    log.debug('Month-learn state reset');
+  }, []);
 
   // Check if we have valid agent data - conditional logic AFTER all hooks
   const hasValidAgentData = operationalTokenId && agentData?.memory;

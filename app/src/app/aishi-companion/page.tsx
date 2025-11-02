@@ -18,15 +18,10 @@ import { useLipSync } from './hooks/useLipSync';
 import { PHYSICS_DEFAULTS } from './services/aiParameterService';
 import { useReadAishiAgentOwnerToTokenId } from '@/generated';
 import { Toaster } from 'react-hot-toast';
-
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_AISHI_COMPANION_DEBUG === 'true') {
-    console.log(`[AishiCompanion] ${message}`, data || '');
-  }
-};
+import { logger } from '@/lib/logger';
 
 export default function AishiCompanion() {
+  const log = logger.child({ component: 'AishiCompanion' });
   const router = useRouter();
   const modelRef = useRef<Live2DModelRef>(null);
 
@@ -93,11 +88,11 @@ export default function AishiCompanion() {
   useEffect(() => {
     if (!isModelReady) return;
 
-    debugLog('Checking for agent', { isConnected, address, tokenId });
+    log.debug('Checking for agent', { isConnected, address, tokenId });
 
     if (!isConnected || !address) {
       // No wallet connected - use fallback
-      debugLog('No wallet connected, will use fallback personality');
+      log.debug('No wallet connected, will use fallback personality');
       setHasAgent(false);
       setAgentId(null);
       setShowSessionDialog(true);
@@ -108,13 +103,13 @@ export default function AishiCompanion() {
 
     if (agentTokenId === 0) {
       // Wallet connected but no agent NFT
-      debugLog('Wallet connected but no agent NFT, will use fallback');
+      log.debug('Wallet connected but no agent NFT, will use fallback');
       setHasAgent(false);
       setAgentId(null);
       setShowSessionDialog(true);
     } else {
       // User has agent NFT
-      debugLog('Agent found', { tokenId: agentTokenId });
+      log.debug('Agent found', { tokenId: agentTokenId });
       setHasAgent(true);
       setAgentId(agentTokenId);
       setShowSessionDialog(true);
@@ -126,7 +121,7 @@ export default function AishiCompanion() {
     if (!modelRef.current) return;
 
     setIsModelReady(true);
-    debugLog('Model loaded successfully');
+    log.debug('Model loaded successfully');
 
     try {
       const model = modelRef.current.getModel();
@@ -135,33 +130,33 @@ export default function AishiCompanion() {
       // Disable auto blinking for manual control
       if (model.internalModel.eyeBlink) {
         model.internalModel.eyeBlink = null;
-        debugLog('Auto blinking disabled');
+        log.debug('Auto blinking disabled');
       }
 
       // Stop idle motion
       modelRef.current.stopAllMotions();
-      debugLog('Idle motion stopped');
+      log.debug('Idle motion stopped');
 
       // Initialize physics defaults
       Object.entries(PHYSICS_DEFAULTS).forEach(([paramId, value]) => {
         modelRef.current!.setParameterValue(paramId, value);
       });
 
-      debugLog('Physics defaults applied', PHYSICS_DEFAULTS);
+      log.debug('Physics defaults applied', PHYSICS_DEFAULTS);
 
       // Initialize model position (will be set after agent check)
       const initialPos = modelRef.current.getPosition();
       setModelPosition(initialPos);
 
     } catch (error) {
-      debugLog('Error in model initialization', { error: String(error) });
+      log.error('Error in model initialization', { error: String(error) });
     }
   }, []);
 
   // Model error handler
   const handleModelError = useCallback((error: string) => {
     setModelError(error);
-    debugLog('Model load error', { error });
+    log.error('Model load error', { error });
   }, []);
 
   // Drag handlers
@@ -254,7 +249,7 @@ export default function AishiCompanion() {
 
     container.addEventListener('mousemove', handleCursorTracking);
 
-    debugLog('Enhanced Mode cursor tracking enabled');
+    log.debug('Enhanced Mode cursor tracking enabled');
 
     return () => {
       container.removeEventListener('mousemove', handleCursorTracking);
@@ -267,14 +262,14 @@ export default function AishiCompanion() {
         modelRef.current.setParameterValue('ParamEyeBallY', 0);
       }
 
-      debugLog('Enhanced Mode cursor tracking disabled');
+      log.debug('Enhanced Mode cursor tracking disabled');
     };
   }, [enhancedMode, sessionState, isDragging, isModelReady]);
 
   // Start session handler
   const handleStartSession = useCallback(async () => {
     setShowSessionDialog(false);
-    debugLog('Starting chat session', { hasAgent, agentId });
+    log.debug('Starting chat session', { hasAgent, agentId });
 
     if (hasAgent && agentId) {
       // Load from blockchain
@@ -294,17 +289,17 @@ export default function AishiCompanion() {
   // Send message handler
   const handleSendMessage = useCallback(async (text: string) => {
     if (sessionState !== 'ready' || isAnimating) {
-      debugLog('Cannot send message', { sessionState, isAnimating });
+      log.debug('Cannot send message', { sessionState, isAnimating });
       return;
     }
 
-    debugLog('User sent message', { text });
+    log.debug('User sent message', { text });
 
     // Send message and get AI response
     const aiResponse = await sendMessage(text);
 
     if (!aiResponse) {
-      debugLog('No AI response received');
+      log.debug('No AI response received');
       return;
     }
 
@@ -324,7 +319,7 @@ export default function AishiCompanion() {
   const handleMessageComplete = useCallback(() => {
     setCurrentMessage(null);
     stopLipSync();
-    debugLog('Message display complete');
+    log.debug('Message display complete');
   }, [stopLipSync]);
 
   return (

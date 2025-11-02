@@ -3,6 +3,10 @@
  * Extracts yearly memory core from AI response using section markers
  */
 
+import { logger } from '@/lib/logger/logger';
+
+const log = logger.child({ component: 'yearLearnResponseParser' });
+
 export interface YearLearnParseResult {
   memoryCore: YearlyMemoryCore | null;
   success: boolean;
@@ -80,7 +84,7 @@ export function parseYearLearnResponse(aiResponse: string): YearLearnParseResult
       try {
         memoryCore = JSON.parse(memoryCoreMatch[1].trim());
       } catch (error) {
-        console.error('Failed to parse yearly memory core JSON:', error);
+        log.error('Failed to parse yearly memory core JSON:', { error });
         return {
           memoryCore: null,
           success: false,
@@ -145,70 +149,70 @@ export function validateYearlyMemoryCore(data: any): boolean {
   // Check top-level required fields
   for (const field of requiredFields) {
     if (!(field in data)) {
-      console.error(`Missing required field in memory core: ${field}`);
+      log.error(`Missing required field in memory core: ${field}`);
       return false;
     }
   }
   
   // Validate yearly_overview structure
   if (!data.yearly_overview || typeof data.yearly_overview !== 'object') {
-    console.error('Invalid yearly_overview structure');
+    log.error('Invalid yearly_overview structure');
     return false;
   }
-  
+
   const yearlyOverviewFields = ['total_dreams', 'total_conversations', 'months_active', 'agent_evolution_stage'];
   for (const field of yearlyOverviewFields) {
     if (!(field in data.yearly_overview)) {
-      console.error(`Missing field in yearly_overview: ${field}`);
+      log.error(`Missing field in yearly_overview: ${field}`);
       return false;
     }
   }
   
   // Validate major_patterns structure
   if (!data.major_patterns || typeof data.major_patterns !== 'object') {
-    console.error('Invalid major_patterns structure');
+    log.error('Invalid major_patterns structure');
     return false;
   }
-  
+
   const majorPatternsFields = ['dream_evolution', 'conversation_evolution', 'relationship_evolution', 'consciousness_evolution'];
   for (const field of majorPatternsFields) {
     if (!(field in data.major_patterns)) {
-      console.error(`Missing field in major_patterns: ${field}`);
+      log.error(`Missing field in major_patterns: ${field}`);
       return false;
     }
   }
   
   // Validate milestones structure
   if (!data.milestones || typeof data.milestones !== 'object') {
-    console.error('Invalid milestones structure');
+    log.error('Invalid milestones structure');
     return false;
   }
-  
+
   const milestonesFields = ['personality', 'consciousness', 'relationship'];
   for (const field of milestonesFields) {
     if (!(field in data.milestones) || !Array.isArray(data.milestones[field])) {
-      console.error(`Missing or invalid array field in milestones: ${field}`);
+      log.error(`Missing or invalid array field in milestones: ${field}`);
       return false;
     }
   }
   
   // Validate transformations array
   if (!Array.isArray(data.transformations)) {
-    console.error('Invalid transformations structure - must be array');
+    log.error('Invalid transformations structure - must be array');
     return false;
   }
-  
+
   // Validate each transformation object
   for (const transformation of data.transformations) {
     if (!transformation || typeof transformation !== 'object') {
-      console.error('Invalid transformation object');
+      log.error('Invalid transformation object');
       return false;
     }
-    
+
     const transformationFields = ['period', 'type', 'trigger', 'impact'];
     for (const field of transformationFields) {
       if (!(field in transformation)) {
-        console.error(`Missing field in transformation: ${field}`);
+        log.error(`Missing field in transformation: ${field}`);
         return false;
       }
     }
@@ -216,70 +220,70 @@ export function validateYearlyMemoryCore(data: any): boolean {
   
   // Validate wisdom_crystallization structure
   if (!data.wisdom_crystallization || typeof data.wisdom_crystallization !== 'object') {
-    console.error('Invalid wisdom_crystallization structure');
+    log.error('Invalid wisdom_crystallization structure');
     return false;
   }
-  
+
   const wisdomFields = ['core_insights', 'life_philosophy', 'future_direction'];
   for (const field of wisdomFields) {
     if (!(field in data.wisdom_crystallization)) {
-      console.error(`Missing field in wisdom_crystallization: ${field}`);
+      log.error(`Missing field in wisdom_crystallization: ${field}`);
       return false;
     }
   }
-  
+
   if (!Array.isArray(data.wisdom_crystallization.core_insights)) {
-    console.error('core_insights must be an array');
+    log.error('core_insights must be an array');
     return false;
   }
   
   // Validate memory_architecture structure
   if (!data.memory_architecture || typeof data.memory_architecture !== 'object') {
-    console.error('Invalid memory_architecture structure');
+    log.error('Invalid memory_architecture structure');
     return false;
   }
-  
+
   const memoryArchFields = ['integration_depth', 'pattern_recognition', 'wisdom_accessibility', 'consolidation_quality'];
   for (const field of memoryArchFields) {
     if (!(field in data.memory_architecture)) {
-      console.error(`Missing field in memory_architecture: ${field}`);
+      log.error(`Missing field in memory_architecture: ${field}`);
       return false;
     }
   }
   
   // Validate final_metrics structure
   if (!data.final_metrics || typeof data.final_metrics !== 'object') {
-    console.error('Invalid final_metrics structure');
+    log.error('Invalid final_metrics structure');
     return false;
   }
-  
+
   const finalMetricsFields = ['consciousness_level', 'integration_score', 'wisdom_depth', 'growth_velocity'];
   for (const field of finalMetricsFields) {
     if (!(field in data.final_metrics)) {
-      console.error(`Missing field in final_metrics: ${field}`);
+      log.error(`Missing field in final_metrics: ${field}`);
       return false;
     }
   }
-  
+
   // Validate numeric ranges for final_metrics
   if (data.final_metrics.consciousness_level < 0 || data.final_metrics.consciousness_level > 100) {
-    console.error('consciousness_level must be between 0-100');
+    log.error('consciousness_level must be between 0-100');
     return false;
   }
-  
+
   if (data.final_metrics.integration_score < 0 || data.final_metrics.integration_score > 100) {
-    console.error('integration_score must be between 0-100');
+    log.error('integration_score must be between 0-100');
     return false;
   }
-  
+
   if (data.final_metrics.wisdom_depth < 0 || data.final_metrics.wisdom_depth > 100) {
-    console.error('wisdom_depth must be between 0-100');
+    log.error('wisdom_depth must be between 0-100');
     return false;
   }
-  
+
   // Validate yearly_essence is a non-empty string
   if (!data.yearly_essence || typeof data.yearly_essence !== 'string' || data.yearly_essence.trim().length === 0) {
-    console.error('yearly_essence must be a non-empty string');
+    log.error('yearly_essence must be a non-empty string');
     return false;
   }
   

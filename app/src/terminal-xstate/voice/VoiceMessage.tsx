@@ -4,6 +4,9 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'VoiceMessage' });
 
 export interface VoiceMessageProps {
   audioUrl?: string;
@@ -96,7 +99,7 @@ export const VoiceMessage: React.FC<VoiceMessageProps> = ({
       }
     } catch (err) {
       setError('Failed to play audio');
-      console.error('Audio playback error:', err);
+      log.error('Audio playback error', { error: err });
     }
   }, [isPlaying, onPlay, onPause, updateTime]);
 
@@ -119,7 +122,7 @@ export const VoiceMessage: React.FC<VoiceMessageProps> = ({
         // Use provided duration or estimate from blob size
         if (audioBlob) {
           const estimatedDuration = Math.max(1, Math.round(audioBlob.size / 10000));
-          console.log('[VoiceMessage] Using estimated duration', {
+          log.debug('Using estimated duration', {
             blobSize: audioBlob.size,
             estimatedDuration
           });

@@ -11,6 +11,7 @@ import { FundBrokerModal } from './FundBrokerModal';
 import { X } from 'lucide-react';
 import { touchTargets } from '../../utils/responsive';
 import GradientText from '../../components/ui/GradientText';
+import { logger } from '@/lib/logger';
 
 interface TerminalSystemHeaderProps {
   agentName: string | null;
@@ -41,13 +42,9 @@ const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
   const { theme } = useTheme();
   const { address } = useAccount();
   const [showFundModal, setShowFundModal] = useState(false);
-  
-  // Debug helper - defined first
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-      console.log(`[TerminalSystemHeader] ${message}`, data || '');
-    }
-  };
+
+  // Logger instance
+  const log = logger.child({ component: 'TerminalSystemHeader' });
   
   // Use props if provided
   const brokerRef = propBrokerRef;
@@ -64,7 +61,7 @@ const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
   // Debug broker state only when it changes
   React.useEffect(() => {
     if (brokerStatus !== 'uninitialized') {
-      debugLog('Broker state changed', { 
+      log.debug('Broker state changed', { 
         status: brokerStatus, 
         balance: brokerBalance,
         error: brokerState?.context?.errorMessage,
@@ -133,7 +130,7 @@ const TerminalSystemHeaderComponent: React.FC<TerminalSystemHeaderProps> = ({
   
   const handleCreateBroker = () => {
     if (brokerRef && address) {
-      debugLog('Creating broker for wallet', { address });
+      log.debug('Creating broker for wallet', { address });
       brokerRef.send({ type: 'CREATE' });
     }
   };

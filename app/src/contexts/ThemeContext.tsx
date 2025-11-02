@@ -2,6 +2,7 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { ThemeContextType, ThemeColors } from '../types';
+import { logger } from '@/lib/logger';
 
 // Create context
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -12,13 +13,12 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
+  const log = logger.child({ component: 'ThemeContext' });
   const [mounted, setMounted] = useState(false);
-  
-  // Debug helper
+
+  // Debug helper (now using logger)
   const debugLog = (message: string, data: any = null) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[💜 AISHI] ${message}`, data || '');
-    }
+    log.debug(message, data || {});
   };
 
   useEffect(() => {

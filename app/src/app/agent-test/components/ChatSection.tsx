@@ -48,10 +48,12 @@ export default function ChatSection({
   } = useAgentChat(effectiveTokenId);
 
   // Debug logs dla development
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[ChatSection] ${message}`, data || '');
-    }
+  import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'ChatSection' });
+
+const debugLog = (message: string, data?: any) => {
+    log.debug(message, data || {});
   };
 
   // Auto-scroll to bottom when new messages arrive

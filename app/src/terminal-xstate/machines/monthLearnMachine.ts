@@ -10,13 +10,10 @@ import { ContractReaderService } from '../services/contractReader';
 import { XStateStorageService } from '../services/xstateStorage';
 import { getTxExplorerUrl } from '../../config/chains';
 import type { TerminalLine } from './types';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_CONSOLIDATION_TEST === 'true') {
-    console.log(`[MonthLearnMachine] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'MonthLearnMachine' });
 
 // Context interface
 export interface MonthLearnContext {
@@ -101,7 +98,7 @@ const fetchMemoryHashesService = fromPromise(async ({ input }: {
     tokenId: number;
   }
 }) => {
-  debugLog('Fetching memory hashes from contract', input);
+  log.debug('Fetching memory hashes from contract', input);
 
   const contractReader = new ContractReaderService();
   const agentData = await contractReader.getCompleteAgentData(input.tokenId);
@@ -141,7 +138,7 @@ const downloadDailyDataService = fromPromise(async ({ input }: {
     currentConvDailyHash: string | null;
   }
 }) => {
-  debugLog('Downloading daily data from storage', input);
+  log.debug('Downloading daily data from storage', input);
 
   const storage = new XStateStorageService();
   const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -154,7 +151,7 @@ const downloadDailyDataService = fromPromise(async ({ input }: {
     const dreamResult = await storage.downloadJson(input.currentDreamDailyHash);
     if (dreamResult.success && dreamResult.data) {
       dailyDreams = Array.isArray(dreamResult.data) ? dreamResult.data : [dreamResult.data];
-      debugLog('Daily dreams downloaded', { count: dailyDreams.length });
+      log.debug('Daily dreams downloaded', { count: dailyDreams.length });
     }
   }
 
@@ -163,7 +160,7 @@ const downloadDailyDataService = fromPromise(async ({ input }: {
     const convResult = await storage.downloadJson(input.currentConvDailyHash);
     if (convResult.success && convResult.data) {
       dailyConversations = Array.isArray(convResult.data) ? convResult.data : [convResult.data];
-      debugLog('Daily conversations downloaded', { count: dailyConversations.length });
+      log.debug('Daily conversations downloaded', { count: dailyConversations.length });
     }
   }
 
@@ -185,7 +182,7 @@ const aiConsolidationService = fromPromise(async ({ input }: {
     modelId: string;
   }
 }) => {
-  debugLog('Generating AI consolidation', {
+  log.debug('Generating AI consolidation', {
     dreamsCount: input.dailyDreams.length,
     conversationsCount: input.dailyConversations.length,
     month: input.month,
@@ -220,7 +217,7 @@ const aiConsolidationService = fromPromise(async ({ input }: {
     modelId: input.modelId
   };
 
-  debugLog('Sending to AI', { endpoint, isGemini: isGeminiModel });
+  log.debug('Sending to AI', { endpoint, isGemini: isGeminiModel });
 
   const response = await fetch(`${apiUrl}${endpoint}`, {
     method: 'POST',
@@ -261,7 +258,7 @@ const uploadMonthlyService = fromPromise(async ({ input }: {
     year: number;
   }
 }) => {
-  debugLog('Uploading monthly consolidations (APPEND pattern)');
+  log.debug('Uploading monthly consolidations (APPEND pattern)');
 
   const storage = new XStateStorageService();
   const emptyHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -333,7 +330,7 @@ const contractUpdateService = fromPromise(async ({ input }: {
     year: number;
   }
 }) => {
-  debugLog('Updating contract with consolidation hashes', input);
+  log.debug('Updating contract with consolidation hashes', input);
 
   const { getViemSigner } = await import('../../lib/0g/fees');
   const { getContractConfig } = await import('../services/contractService');
@@ -685,7 +682,7 @@ export const monthLearnMachine = setup({
     completed: {
       type: 'final',
       entry: [
-        () => debugLog('Month-learn workflow completed'),
+        () => log.debug('Month-learn workflow completed'),
         sendParent({ type: 'MONTH_LEARN.COMPLETE' })
       ]
     },

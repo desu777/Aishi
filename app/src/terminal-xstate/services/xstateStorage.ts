@@ -8,13 +8,10 @@ import { downloadByRootHashAPI } from '../../lib/0g/downloader';
 import { getNetworkConfig, getDefaultNetworkType, NetworkType } from '../../lib/0g/network';
 import { getProvider, getSigner } from '../../lib/0g/fees';
 import { safeJsonStringifyPretty } from '../utils/jsonSerializer';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[xstateStorage] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'xstateStorage' });
 
 export interface UploadResult {
   success: boolean;
@@ -47,7 +44,7 @@ export class XStateStorageService {
     this.networkType = context?.networkType || getDefaultNetworkType();
     this.networkConfig = getNetworkConfig(this.networkType);
     
-    debugLog('Storage service initialized', {
+    log.debug('Storage service initialized', {
       networkType: this.networkType,
       storageRpc: this.networkConfig.storageRpc,
       l1Rpc: this.networkConfig.l1Rpc
@@ -59,7 +56,7 @@ export class XStateStorageService {
    */
   async uploadBlob(file: File): Promise<UploadResult> {
     try {
-      debugLog('Starting blob upload', {
+      log.debug('Starting blob upload', {
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type
@@ -84,7 +81,7 @@ export class XStateStorageService {
         signer
       );
 
-      debugLog('Upload completed', {
+      log.debug('Upload completed', {
         success: result.success,
         rootHash: result.rootHash,
         alreadyExists: result.alreadyExists
@@ -93,7 +90,7 @@ export class XStateStorageService {
       return result;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      debugLog('Upload failed', { error: errorMsg });
+      log.debug('Upload failed', { error: errorMsg });
       return {
         success: false,
         error: errorMsg
@@ -106,7 +103,7 @@ export class XStateStorageService {
    */
   async downloadBlob(rootHash: string): Promise<DownloadResult> {
     try {
-      debugLog('Starting blob download', { rootHash });
+      log.debug('Starting blob download', { rootHash });
 
       if (!rootHash || !rootHash.trim()) {
         throw new Error('Root hash is required');
@@ -122,7 +119,7 @@ export class XStateStorageService {
         throw downloadError || new Error('Download failed - no data received');
       }
 
-      debugLog('Download completed', {
+      log.debug('Download completed', {
         rootHash,
         dataSize: fileData.byteLength
       });
@@ -133,7 +130,7 @@ export class XStateStorageService {
       };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      debugLog('Download failed', { error: errorMsg });
+      log.debug('Download failed', { error: errorMsg });
       return {
         success: false,
         error: errorMsg
@@ -158,7 +155,7 @@ export class XStateStorageService {
       const text = decoder.decode(buffer);
       return JSON.parse(text);
     } catch (error) {
-      debugLog('Failed to parse buffer as JSON', { error });
+      log.debug('Failed to parse buffer as JSON', { error });
       throw new Error('Invalid JSON data in buffer');
     }
   }
@@ -256,7 +253,7 @@ export async function uploadToStorage(data: any, fileName: string, onStatus?: (m
   // If data is string (JSON), parse it first to validate
   const jsonData = typeof data === 'string' ? JSON.parse(data) : data;
   
-  debugLog('uploadToStorage called', {
+  log.debug('uploadToStorage called', {
     fileName,
     dataType: typeof data,
     isString: typeof data === 'string'
@@ -271,7 +268,7 @@ export async function uploadToStorage(data: any, fileName: string, onStatus?: (m
 export async function downloadFromStorage(rootHash: string): Promise<string> {
   const service = new XStateStorageService();
   
-  debugLog('downloadFromStorage called', {
+  log.debug('downloadFromStorage called', {
     rootHash: rootHash.substring(0, 10) + '...'
   });
   
@@ -280,7 +277,7 @@ export async function downloadFromStorage(rootHash: string): Promise<string> {
   // Fixed: Check result.success instead of just !result
   if (!result.success || !result.data) {
     const errorMsg = result.error || `Download failed for rootHash: ${rootHash}`;
-    debugLog('Download failed', { error: errorMsg, rootHash });
+    log.debug('Download failed', { error: errorMsg, rootHash });
     throw new Error(errorMsg);
   }
   

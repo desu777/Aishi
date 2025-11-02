@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useWallet } from '../useWallet';
 import { useModelDiscovery } from '../useModelDiscovery';
 import { DreamAnalysisPrompt } from './useAgentPrompt';
+import { logger } from '@/lib/logger';
 
 interface AIAnalysisState {
   isLoading: boolean;
@@ -78,14 +79,10 @@ export function useAgentAI() {
   const { address } = useWallet();
   const { getSelectedModel } = useModelDiscovery();
 
-  // Debug logs dla development
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[useAgentAI] ${message}`, data || '');
-    }
-  };
+  // Logger instance
+  const log = logger.child({ component: 'useAgentAI' });
 
-  debugLog('useAgentAI hook initialized');
+  log.debug('useAgentAI hook initialized');
 
   const resetAI = () => {
     setState({
@@ -94,7 +91,7 @@ export function useAgentAI() {
       aiResponse: null,
       parsedResponse: null
     });
-    debugLog('AI state reset');
+    log.debug('AI state reset');
   };
 
   /**
@@ -106,14 +103,14 @@ export function useAgentAI() {
     if (!address) {
       const error = 'Wallet not connected';
       setState(prev => ({ ...prev, error }));
-      debugLog('Dream analysis failed - wallet not connected');
+      log.debug('Dream analysis failed - wallet not connected');
       return null;
     }
 
     if (!promptData.prompt.trim()) {
       const error = 'Prompt is required';
       setState(prev => ({ ...prev, error }));
-      debugLog('Dream analysis failed - no prompt');
+      log.debug('Dream analysis failed - no prompt');
       return null;
     }
 
@@ -130,7 +127,7 @@ export function useAgentAI() {
       const selectedModel = getSelectedModel();
       const modelId = selectedModel?.id || 'auto';
 
-      debugLog('Starting dream analysis', { 
+      log.debug('Starting dream analysis', { 
         walletAddress: address,
         promptLength: promptData.prompt.length,
         needsEvolution: promptData.expectedFormat.needsPersonalityEvolution,
@@ -141,7 +138,7 @@ export function useAgentAI() {
       // Get API URL from environment
       const apiUrl = process.env.NEXT_PUBLIC_COMPUTE_API_URL || 'http://localhost:3001/api';
       
-      debugLog('API URL configured', { apiUrl });
+      log.debug('API URL configured', { apiUrl });
 
       // Send request to 0g-compute API with model selection
       const response = await fetch(`${apiUrl}/0g-compute`, {
@@ -169,7 +166,7 @@ export function useAgentAI() {
 
       const aiResponse: AIResponse = apiResult.data;
       
-      debugLog('AI response received', {
+      log.debug('AI response received', {
         model: aiResponse.model,
         cost: aiResponse.cost,
         responseTime: aiResponse.responseTime,
@@ -191,7 +188,7 @@ export function useAgentAI() {
         parsedResponse
       }));
 
-      debugLog('Dream analysis completed successfully', {
+      log.debug('Dream analysis completed successfully', {
         dreamId: parsedResponse.dreamData?.id,
         hasEvolution: !!parsedResponse.personalityImpact,
         analysisLength: parsedResponse.analysis.length,
@@ -207,7 +204,7 @@ export function useAgentAI() {
         isLoading: false,
         error: errorMessage
       }));
-      debugLog('Dream analysis failed', { error: errorMessage });
+      log.debug('Dream analysis failed', { error: errorMessage });
       return null;
     }
   };
@@ -220,7 +217,7 @@ export function useAgentAI() {
     expectedFormat: any
   ): ParsedAIResponse | null => {
     try {
-      debugLog('Parsing dream analysis response', { 
+      log.debug('Parsing dream analysis response', { 
         responseLength: responseText.length,
         needsEvolution: expectedFormat.needsPersonalityEvolution
       });
@@ -229,21 +226,21 @@ export function useAgentAI() {
       const jsonBlocks = extractJsonBlocks(responseText);
       
       if (jsonBlocks.length < 2) {
-        debugLog('Not enough JSON blocks found for dream analysis', { found: jsonBlocks.length });
+        log.debug('Not enough JSON blocks found for dream analysis', { found: jsonBlocks.length });
         return null;
       }
 
       // Parse first JSON block (full analysis)
       const fullAnalysisData = JSON.parse(jsonBlocks[0]);
       if (!fullAnalysisData.full_analysis) {
-        debugLog('Missing full_analysis in first JSON block');
+        log.debug('Missing full_analysis in first JSON block');
         return null;
       }
 
       // Parse second JSON block (storage summary)
       const storageData = JSON.parse(jsonBlocks[1]);
       if (!storageData.analysis || !storageData.dreamData) {
-        debugLog('Missing required fields in second JSON block');
+        log.debug('Missing required fields in second JSON block');
         return null;
       }
 
@@ -254,7 +251,7 @@ export function useAgentAI() {
         personalityImpact: expectedFormat.needsPersonalityEvolution ? storageData.personalityImpact : undefined
       };
 
-      debugLog('Dream analysis response parsed successfully', {
+      log.debug('Dream analysis response parsed successfully', {
         hasFullAnalysis: !!parsedResponse.fullAnalysis,
         hasDreamData: !!parsedResponse.dreamData,
         hasPersonalityImpact: !!parsedResponse.personalityImpact
@@ -263,7 +260,7 @@ export function useAgentAI() {
       return parsedResponse;
 
     } catch (error) {
-      debugLog('Failed to parse dream analysis response', { 
+      log.debug('Failed to parse dream analysis response', { 
         error: error instanceof Error ? error.message : String(error) 
       });
       return null;
@@ -297,7 +294,7 @@ export function useAgentAI() {
       }
     }
     
-    debugLog('JSON blocks extracted', { count: jsonBlocks.length });
+    log.debug('JSON blocks extracted', { count: jsonBlocks.length });
     return jsonBlocks;
   };
 

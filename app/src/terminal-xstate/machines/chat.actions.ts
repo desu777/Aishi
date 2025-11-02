@@ -8,13 +8,10 @@ import React from 'react';
 import { getTxExplorerUrl } from '../../config/chains';
 import type { ChatMessage, ChatContext } from './chatMachine';
 import type { TerminalLine } from './types';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[ChatMachine] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'ChatActions' });
 
 export const chatActions = {
   /**
@@ -157,7 +154,7 @@ export const chatActions = {
    * Send lines to parent (terminal) with voice support
    */
   sendLinesToParent: enqueueActions(({ context, enqueue }: any) => {
-    debugLog('[Chat] sendLinesToParent triggered', {
+    log.debug('[Chat] sendLinesToParent triggered', {
       wasVoiceInput: context.wasVoiceInput,
       messagesCount: context.messages.length,
       agentName: context.agentName
@@ -191,7 +188,7 @@ export const chatActions = {
       const lastMessage = context.messages[context.messages.length - 1];
 
       if (lastMessage && lastMessage.role === 'assistant') {
-        debugLog('[Chat] ✅ TRIGGERING TTS - Voice input detected with AI response', {
+        log.debug('[Chat] ✅ TRIGGERING TTS - Voice input detected with AI response', {
           textLength: lastMessage.content.length,
           textPreview: lastMessage.content.substring(0, 100),
           agentName: context.agentName
@@ -205,7 +202,7 @@ export const chatActions = {
         })));
       }
     } else {
-      debugLog('[Chat] ❌ NO TTS TRIGGERED - Text input mode', {
+      log.debug('[Chat] ❌ NO TTS TRIGGERED - Text input mode', {
         wasVoiceInput: context.wasVoiceInput
       });
     }

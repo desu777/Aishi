@@ -8,13 +8,9 @@ import { getActiveChain } from '../../config/chains';
 import { getViemProvider, getViemSigner } from '../../lib/0g/fees';
 import type { PublicClient, WalletClient } from 'viem';
 import { formatErrorForTerminal } from '../utils/viemErrorParser';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[ConversationContractUpdater] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'ConversationContractUpdater' });
 
 // Context types from contract
 enum ContextType {
@@ -58,7 +54,7 @@ async function waitForReceiptWithRetry(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      debugLog(`Waiting for receipt (attempt ${attempt + 1}/${maxRetries + 1})`, {
+      log.debug(`Waiting for receipt (attempt ${attempt + 1}/${maxRetries + 1})`, {
         txHash: txHash.substring(0, 10) + '...'
       });
 
@@ -69,7 +65,7 @@ async function waitForReceiptWithRetry(
         pollingInterval: 2_000 // Check every 2s (faster than 4s default)
       });
 
-      debugLog('Receipt received successfully', {
+      log.debug('Receipt received successfully', {
         blockNumber: receipt.blockNumber,
         status: receipt.status,
         attempt: attempt + 1
@@ -79,14 +75,14 @@ async function waitForReceiptWithRetry(
 
     } catch (error) {
       lastError = error;
-      debugLog(`Receipt wait attempt ${attempt + 1} failed`, {
+      log.debug(`Receipt wait attempt ${attempt + 1} failed`, {
         error: String(error).substring(0, 200)
       });
 
       // On last attempt, try to manually fetch transaction
       if (attempt === maxRetries) {
         try {
-          debugLog('Attempting fallback transaction verification...');
+          log.debug('Attempting fallback transaction verification...');
 
           // Fallback: manually check if transaction exists
           const tx = await publicClient.getTransaction({
@@ -94,7 +90,7 @@ async function waitForReceiptWithRetry(
           });
 
           if (tx && tx.blockNumber) {
-            debugLog('⚠️ Transaction found in block but receipt timeout - fetching manually', {
+            log.debug('⚠️ Transaction found in block but receipt timeout - fetching manually', {
               blockNumber: tx.blockNumber
             });
 
@@ -104,12 +100,12 @@ async function waitForReceiptWithRetry(
             });
 
             if (receipt) {
-              debugLog('✅ Receipt retrieved via fallback method');
+              log.debug('✅ Receipt retrieved via fallback method');
               return receipt;
             }
           }
         } catch (fallbackError) {
-          debugLog('Fallback transaction check failed', {
+          log.debug('Fallback transaction check failed', {
             error: String(fallbackError).substring(0, 200)
           });
         }
@@ -118,14 +114,14 @@ async function waitForReceiptWithRetry(
       // Wait before retry (exponential backoff)
       if (attempt < maxRetries) {
         const delay = Math.min(2000 * Math.pow(2, attempt), 10000);
-        debugLog(`Waiting ${delay}ms before retry...`);
+        log.debug(`Waiting ${delay}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
 
   // All retries failed
-  debugLog('All receipt retrieval attempts failed', {
+  log.debug('All receipt retrieval attempts failed', {
     txHash: txHash.substring(0, 10) + '...',
     attempts: maxRetries + 1
   });
@@ -141,7 +137,7 @@ export async function updateConversationContract(
   conversationHash: string,
   conversationType: string
 ) {
-  debugLog('Updating conversation contract', {
+  log.debug('Updating conversation contract', {
     tokenId,
     conversationHash: conversationHash ? conversationHash.substring(0, 10) + '...' : 'undefined',
     conversationType
@@ -172,7 +168,7 @@ export async function updateConversationContract(
     // Map conversation type to contract enum
     const contextType = mapConversationType(conversationType);
 
-    debugLog('Preparing contract call', {
+    log.debug('Preparing contract call', {
       contractAddress: contractConfig.address,
       contextType,
       account: account
@@ -188,7 +184,7 @@ export async function updateConversationContract(
       chain: getActiveChain()
     });
 
-    debugLog('Contract simulation successful');
+    log.debug('Contract simulation successful');
 
     // Execute the transaction with explicit chain and account
     const txHash = await walletClient.writeContract({
@@ -197,12 +193,12 @@ export async function updateConversationContract(
       account: account
     });
 
-    debugLog('Transaction submitted', { txHash });
+    log.debug('Transaction submitted', { txHash });
 
     // Wait for confirmation with retry logic
     const receipt = await waitForReceiptWithRetry(publicClient, txHash);
 
-    debugLog('Transaction confirmed', {
+    log.debug('Transaction confirmed', {
       txHash,
       blockNumber: receipt.blockNumber,
       gasUsed: receipt.gasUsed.toString(),
@@ -223,7 +219,7 @@ export async function updateConversationContract(
   } catch (error) {
     const errorMessage = formatErrorForTerminal(error);
 
-    debugLog('Error updating conversation contract', {
+    log.debug('Error updating conversation contract', {
       error: errorMessage,
       originalError: error instanceof Error ? error.message : String(error)
     });

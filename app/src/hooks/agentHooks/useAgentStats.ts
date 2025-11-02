@@ -5,6 +5,7 @@ import { useWallet } from '../useWallet';
 import { getContractConfig } from './config/contractConfig';
 import { getViemProvider } from '../../lib/0g/fees';
 import type { PublicClient } from 'viem';
+import { logger } from '@/lib/logger';
 
 // Types for agent statistics
 interface EvolutionStats {
@@ -78,14 +79,10 @@ export function useAgentStats(tokenId?: number) {
     error: null
   });
 
-  // Debug logging
-  const debugLog = (message: string, data?: any) => {
-    if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-      console.log(`[useAgentStats] ${message}`, data || '');
-    }
-  };
+  // Logger instance
+  const log = logger.child({ component: 'useAgentStats' });
 
-  debugLog('useAgentStats hook initialized', { tokenId });
+  log.debug('useAgentStats hook initialized', { tokenId });
 
   // Load all agent statistics
   const loadAgentStats = async () => {
@@ -104,7 +101,7 @@ export function useAgentStats(tokenId?: number) {
     }));
 
     try {
-      debugLog('Loading agent statistics', { tokenId });
+      log.debug('Loading agent statistics', { tokenId });
 
       const [publicClient, publicErr] = await getViemProvider();
       if (!publicClient || publicErr) {
@@ -113,7 +110,7 @@ export function useAgentStats(tokenId?: number) {
 
       const contractConfig = getContractConfig();
 
-      debugLog('PublicClient connected for stats loading');
+      log.debug('PublicClient connected for stats loading');
 
       const [
         evolutionStatsRaw,
@@ -154,7 +151,7 @@ export function useAgentStats(tokenId?: number) {
         }) as Promise<string>
       ]);
 
-      debugLog('Raw contract data loaded', {
+      log.debug('Raw contract data loaded', {
         evolutionStatsRaw,
         uniqueFeaturesCount: uniqueFeaturesRaw.length,
         consolidationStreakRaw,
@@ -198,7 +195,7 @@ export function useAgentStats(tokenId?: number) {
         isLoadingRewards: false
       }));
 
-      debugLog('Agent statistics loaded successfully', {
+      log.debug('Agent statistics loaded successfully', {
         evolutionStats,
         uniqueFeaturesCount: uniqueFeatures.length,
         consolidationStreak: Number(consolidationStreakRaw),
@@ -218,14 +215,14 @@ export function useAgentStats(tokenId?: number) {
         isLoadingRewards: false,
         error: errorMessage
       }));
-      debugLog('Failed to load agent statistics', { error: errorMessage });
+      log.debug('Failed to load agent statistics', { error: errorMessage });
     }
   };
 
   // Load milestones (individual calls required)
   const loadMilestones = async (publicClient: PublicClient, tokenId: number) => {
     try {
-      debugLog('Loading milestones', { tokenId, milestonesToCheck: MILESTONE_NAMES.length });
+      log.debug('Loading milestones', { tokenId, milestonesToCheck: MILESTONE_NAMES.length });
 
       const contractConfig = getContractConfig();
       
@@ -243,7 +240,7 @@ export function useAgentStats(tokenId?: number) {
             achievedAt: Number(result.at)
           };
         } catch (error) {
-          debugLog(`Failed to check milestone ${milestoneName}`, { error });
+          log.debug(`Failed to check milestone ${milestoneName}`, { error });
           return {
             milestoneName,
             achieved: false,
@@ -260,7 +257,7 @@ export function useAgentStats(tokenId?: number) {
         isLoadingMilestones: false
       }));
 
-      debugLog('Milestones loaded successfully', {
+      log.debug('Milestones loaded successfully', {
         totalMilestones: milestones.length,
         achievedMilestones: milestones.filter(m => m.achieved).length
       });
@@ -272,7 +269,7 @@ export function useAgentStats(tokenId?: number) {
         isLoadingMilestones: false,
         error: errorMessage
       }));
-      debugLog('Failed to load milestones', { error: errorMessage });
+      log.debug('Failed to load milestones', { error: errorMessage });
     }
   };
 

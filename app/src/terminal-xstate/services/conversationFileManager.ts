@@ -3,12 +3,9 @@
  * @description Manages conversation files with append-only pattern like dreams
  */
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[ConversationFileManager] ${message}`, data || '');
-  }
-};
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'ConversationFileManager' });
 
 export class ConversationFileManager {
   /**
@@ -19,7 +16,7 @@ export class ConversationFileManager {
     agentName: string,
     newConversation: any
   ) {
-    debugLog('Managing conversation file', {
+    log.debug('Managing conversation file', {
       agentId,
       agentName,
       hasNewConversation: !!newConversation
@@ -32,11 +29,11 @@ export class ConversationFileManager {
       const agentMemory = await contractReader.getMemoryData(agentId);
 
       if (!agentMemory) {
-        debugLog('No memory data found, creating new file');
+        log.debug('No memory data found, creating new file');
         return await this.createNewFile(agentName, newConversation);
       }
 
-      debugLog('Agent memory fetched', {
+      log.debug('Agent memory fetched', {
         hasExistingConversations: !!agentMemory.currentConvDailyHash && 
           agentMemory.currentConvDailyHash !== '0x0000000000000000000000000000000000000000000000000000000000000000'
       });
@@ -51,17 +48,17 @@ export class ConversationFileManager {
             newConversation
           );
         } catch (error) {
-          debugLog('Failed to merge with existing file, creating new', { error: String(error) });
+          log.debug('Failed to merge with existing file, creating new', { error: String(error) });
           // Fall back to creating new file
           return await this.createNewFile(agentName, newConversation);
         }
       } else {
         // No existing file, create new
-        debugLog('No existing conversations file, creating new');
+        log.debug('No existing conversations file, creating new');
         return await this.createNewFile(agentName, newConversation);
       }
     } catch (error) {
-      debugLog('Error managing conversation file', { error: String(error) });
+      log.debug('Error managing conversation file', { error: String(error) });
       throw error;
     }
   }
@@ -74,7 +71,7 @@ export class ConversationFileManager {
     agentName: string,
     newConversation: any
   ) {
-    debugLog('Merging with existing file', { existingHash });
+    log.debug('Merging with existing file', { existingHash });
 
     // Download existing file
     const { downloadFromStorage } = await import('./xstateStorage');
@@ -89,15 +86,15 @@ export class ConversationFileManager {
     try {
       existingConversations = JSON.parse(existingData);
       if (!Array.isArray(existingConversations)) {
-        debugLog('Invalid existing data format, not an array');
+        log.debug('Invalid existing data format, not an array');
         existingConversations = [];
       }
     } catch (error) {
-      debugLog('Failed to parse existing conversations', { error: String(error) });
+      log.debug('Failed to parse existing conversations', { error: String(error) });
       existingConversations = [];
     }
 
-    debugLog('Existing conversations loaded', { count: existingConversations.length });
+    log.debug('Existing conversations loaded', { count: existingConversations.length });
 
     // Generate next ID
     const nextId = this.getNextConversationId(existingConversations);
@@ -106,7 +103,7 @@ export class ConversationFileManager {
     // Append new conversation at the beginning (newest first)
     const updatedConversations = [newConversation, ...existingConversations];
 
-    debugLog('Conversations merged', {
+    log.debug('Conversations merged', {
       previousCount: existingConversations.length,
       newCount: updatedConversations.length
     });
@@ -128,7 +125,7 @@ export class ConversationFileManager {
    * Create new conversations file
    */
   private async createNewFile(agentName: string, newConversation: any) {
-    debugLog('Creating new conversations file');
+    log.debug('Creating new conversations file');
 
     // Set ID for first conversation
     newConversation.id = 1;
@@ -138,7 +135,7 @@ export class ConversationFileManager {
     const fileContent = JSON.stringify(conversations, null, 2);
     const fileName = this.generateFileName(agentName);
 
-    debugLog('New file created', {
+    log.debug('New file created', {
       fileName,
       conversationId: 1
     });

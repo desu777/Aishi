@@ -5,13 +5,10 @@
 
 import { XStateStorageService } from './xstateStorage';
 import { safeJsonStringify } from '../utils/jsonSerializer';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[storageRetryUploader] ${message}`, data || '');
-  }
-};
+// Logger instance
+const log = logger.child({ component: 'storageRetryUploader' });
 
 export type RetryOptions = {
   enableVerification?: boolean;
@@ -70,7 +67,7 @@ export async function uploadJsonWithRetry(
       emit(verified ? 'Upload verified successfully' : `Upload verification failed${verifyRes.error ? `: ${verifyRes.error}` : ''}`);
     }
 
-    debugLog('Upload finished', {
+    log.debug('Upload finished', {
       fileName,
       rootHash: uploadResult.rootHash,
       verified,
@@ -86,7 +83,7 @@ export async function uploadJsonWithRetry(
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    debugLog('Upload failed', { error: msg });
+    log.debug('Upload failed', { error: msg });
     emit(`Upload failed: ${msg}`);
     return { success: false, error: msg };
   }
@@ -105,7 +102,7 @@ async function uploadWithRetry(
 
   for (let attempt = 1; attempt <= opts.maxRetries; attempt++) {
     const label = `${attempt}/${opts.maxRetries}`;
-    debugLog(`Upload attempt ${label}`, { fileName });
+    log.debug(`Upload attempt ${label}`, { fileName });
     onStatus?.(`Upload attempt ${label}…`);
 
     try {
@@ -116,11 +113,11 @@ async function uploadWithRetry(
       }
       lastError = res.error || 'Unknown upload error';
       onStatus?.(`Upload failed: ${lastError}`);
-      debugLog(`Attempt ${attempt} failed`, { lastError });
+      log.debug(`Attempt ${attempt} failed`, { lastError });
     } catch (e) {
       lastError = e instanceof Error ? e.message : String(e);
       onStatus?.(`Upload error: ${lastError}`);
-      debugLog(`Attempt ${attempt} threw`, { lastError });
+      log.debug(`Attempt ${attempt} threw`, { lastError });
     }
 
     if (attempt < opts.maxRetries) {
@@ -165,7 +162,7 @@ function compareJsonGeneric(a: any, b: any): boolean {
     const bs = safeJsonStringify(b);
     return as === bs;
   } catch (e) {
-    debugLog('compareJsonGeneric failed', { error: String(e) });
+    log.debug('compareJsonGeneric failed', { error: String(e) });
     return false;
   }
 }

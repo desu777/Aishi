@@ -4,6 +4,9 @@
  */
 
 import { setup, assign, fromPromise } from 'xstate';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'ModelMachine' });
 
 interface Model {
   id: string;
@@ -59,7 +62,7 @@ const discoverModels = fromPromise(async () => {
     
     return [];
   } catch (error) {
-    console.error('Error discovering models:', error);
+    log.error('Error discovering models', { error });
     // Return some default models if discovery fails
     return [
       { id: 'auto', name: 'Auto Select', provider: 'system', needsBroker: false },
@@ -75,7 +78,7 @@ const saveModelToStorage = fromPromise(async ({ input }: { input: { modelId: str
     localStorage.setItem('aishi-selected-model', input.modelId);
     return input.modelId;
   } catch (error) {
-    console.error('Failed to save model to localStorage:', error);
+    log.error('Failed to save model to localStorage', { error });
     throw error;
   }
 });
@@ -86,7 +89,7 @@ const loadModelFromStorage = fromPromise(async () => {
     const saved = localStorage.getItem('aishi-selected-model');
     return saved || 'auto';
   } catch (error) {
-    console.error('Failed to load model from localStorage:', error);
+    log.error('Failed to load model from localStorage', { error });
     return 'auto';
   }
 });

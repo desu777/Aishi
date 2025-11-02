@@ -1,5 +1,5 @@
 /**
- * @fileoverview Dream Persistence Orchestrator for XState Terminal  
+ * @fileoverview Dream Persistence Orchestrator for XState Terminal
  * @description Main orchestrator for the complete dream persistence protocol
  */
 
@@ -7,13 +7,9 @@
 import { manageDailyDreamsFile, FileManagementResult } from './dreamFileManager';
 import { uploadDreamDataSecurely, SecureUploadResult } from './dreamStorageUploader';
 import { updateDreamContract, ContractUpdateResult } from './dreamContractUpdater';
+import { logger } from '@/lib/logger';
 
-// Debug logging
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true' || process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[DreamPersistenceOrchestrator] ${message}`, data || '');
-  }
-};
+const log = logger.child({ component: 'DreamPersistenceOrchestrator' });
 
 /**
  * Complete persistence protocol result
@@ -78,7 +74,7 @@ export async function executeDreamPersistenceProtocol(
   const protocolStartTime = Date.now();
   const stageTimings = { fileManagement: 0, storageUpload: 0, contractUpdate: 0 };
   
-  debugLog('🚀 Starting Dream Persistence Protocol', {
+  log.debug('🚀 Starting Dream Persistence Protocol', {
     tokenId: input.tokenId,
     agentName: input.agentName,
     dreamCount: input.dreamCount,
@@ -89,7 +85,7 @@ export async function executeDreamPersistenceProtocol(
 
   try {
     // ====== STAGE 1: FILE MANAGEMENT (Direct Schema Mapping) ======
-    debugLog('📁 STAGE 1: Managing daily dreams file with direct schema mapping');
+    log.debug('📁 STAGE 1: Managing daily dreams file with direct schema mapping');
     const fileManagementStart = Date.now();
     
     // Direct mapping from AI response to schema - no validation layer
@@ -104,7 +100,7 @@ export async function executeDreamPersistenceProtocol(
       timestamp: dreamData.timestamp || Math.floor(Date.now() / 1000)
     };
     
-    debugLog('✅ Dream data prepared for file management', {
+    log.debug('✅ Dream data prepared for file management', {
       dreamId: safeDreamData.id,
       hasAllCriticalFields: !!(safeDreamData.id && safeDreamData.date && safeDreamData.timestamp),
       hasAnalysis: !!safeDreamData.analysis,
@@ -123,7 +119,7 @@ export async function executeDreamPersistenceProtocol(
     stageTimings.fileManagement = Date.now() - fileManagementStart;
     
     if (!fileManagementResult.success || !fileManagementResult.data || !fileManagementResult.fileName) {
-      debugLog('❌ File management failed', { error: fileManagementResult.error });
+      log.debug('❌ File management failed', { error: fileManagementResult.error });
       return {
         success: false,
         error: `File management failed: ${fileManagementResult.error}`,
@@ -138,14 +134,14 @@ export async function executeDreamPersistenceProtocol(
       };
     }
 
-    debugLog('✅ File management successful', {
+    log.debug('✅ File management successful', {
       fileName: fileManagementResult.fileName,
       dreamsCount: fileManagementResult.data.length,
       isNewFile: fileManagementResult.isNewFile
     });
 
     // ====== STAGE 2: STORAGE UPLOAD ======
-    debugLog('☁️ STAGE 2: Uploading to 0G Storage');
+    log.debug('☁️ STAGE 2: Uploading to 0G Storage');
     const storageUploadStart = Date.now();
     
     const uploadResult = await uploadDreamDataSecurely(
@@ -160,7 +156,7 @@ export async function executeDreamPersistenceProtocol(
     stageTimings.storageUpload = Date.now() - storageUploadStart;
     
     if (!uploadResult.success || !uploadResult.rootHash) {
-      debugLog('❌ Storage upload failed', { error: uploadResult.error });
+      log.debug('❌ Storage upload failed', { error: uploadResult.error });
       return {
         success: false,
         error: `Storage upload failed: ${uploadResult.error}`,
@@ -176,7 +172,7 @@ export async function executeDreamPersistenceProtocol(
       };
     }
 
-    debugLog('✅ Storage upload successful', {
+    log.debug('✅ Storage upload successful', {
       rootHash: uploadResult.rootHash.substring(0, 10) + '...',
       verified: uploadResult.verified,
       fileSize: uploadResult.metadata?.fileSize
@@ -184,7 +180,7 @@ export async function executeDreamPersistenceProtocol(
 
     // ====== STAGE 3: CONTRACT UPDATE ======
     if (input.config?.skipContractUpdate) {
-      debugLog('⚠️ Skipping contract update (test mode)');
+      log.debug('⚠️ Skipping contract update (test mode)');
       
       return {
         success: true,
@@ -202,7 +198,7 @@ export async function executeDreamPersistenceProtocol(
       };
     }
 
-    debugLog('⛓️ STAGE 3: Updating smart contract');
+    log.debug('⛓️ STAGE 3: Updating smart contract');
     const contractUpdateStart = Date.now();
     
     const contractUpdateResult = await updateDreamContract(
@@ -215,7 +211,7 @@ export async function executeDreamPersistenceProtocol(
     stageTimings.contractUpdate = Date.now() - contractUpdateStart;
     
     if (!contractUpdateResult.success) {
-      debugLog('❌ Contract update failed', { error: contractUpdateResult.error });
+      log.debug('❌ Contract update failed', { error: contractUpdateResult.error });
       
       // Note: At this point, storage upload was successful but contract update failed
       // The data is persisted in storage but not recorded in blockchain
@@ -237,7 +233,7 @@ export async function executeDreamPersistenceProtocol(
       };
     }
 
-    debugLog('✅ Contract update successful', {
+    log.debug('✅ Contract update successful', {
       txHash: contractUpdateResult.txHash?.substring(0, 10) + '...',
       gasUsed: contractUpdateResult.gasUsed,
       isEvolutionDream: contractUpdateResult.isEvolutionDream
@@ -246,7 +242,7 @@ export async function executeDreamPersistenceProtocol(
     // ====== PROTOCOL COMPLETED SUCCESSFULLY ======
     const totalTime = Date.now() - protocolStartTime;
     
-    debugLog('🎉 Dream Persistence Protocol completed successfully!', {
+    log.debug('🎉 Dream Persistence Protocol completed successfully!', {
       totalTime,
       rootHash: uploadResult.rootHash.substring(0, 10) + '...',
       txHash: contractUpdateResult.txHash?.substring(0, 10) + '...',
@@ -275,7 +271,7 @@ export async function executeDreamPersistenceProtocol(
     const errorMessage = error instanceof Error ? error.message : String(error);
     const totalTime = Date.now() - protocolStartTime;
     
-    debugLog('💥 Dream Persistence Protocol failed with unexpected error', {
+    log.debug('💥 Dream Persistence Protocol failed with unexpected error', {
       error: errorMessage,
       totalTime,
       stageTimings
@@ -394,7 +390,7 @@ export async function testProtocol(): Promise<PersistenceProtocolResult> {
     }
   };
 
-  debugLog('🧪 Running protocol test');
+  log.debug('🧪 Running protocol test');
   return await executeDreamPersistenceProtocol(testInput);
 }
 

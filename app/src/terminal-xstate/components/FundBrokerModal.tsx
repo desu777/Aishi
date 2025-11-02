@@ -8,6 +8,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useWallet } from '../../hooks/useWallet';
 import { FiX, FiCheck, FiLoader, FiAlertCircle } from 'react-icons/fi';
 import AnimatedDots from '../../components/ui/AnimatedDots';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ component: 'FundBrokerModal' });
 
 interface FundBrokerModalProps {
   isOpen: boolean;
@@ -15,13 +18,6 @@ interface FundBrokerModalProps {
   brokerRef: any;
   currentBalance: number;
 }
-
-// Debug helper
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_XSTATE_TERMINAL === 'true') {
-    console.log(`[FundBrokerModal] ${message}`, data || '');
-  }
-};
 
 export const FundBrokerModal: React.FC<FundBrokerModalProps> = ({
   isOpen,
@@ -66,7 +62,7 @@ export const FundBrokerModal: React.FC<FundBrokerModalProps> = ({
     
     setStatus('sending');
     setError(null);
-    debugLog('Starting fund transaction', { amount, address });
+    log.debug('Starting fund transaction', { amount, address });
     
     try {
       // Send transaction through wagmi
@@ -78,7 +74,7 @@ export const FundBrokerModal: React.FC<FundBrokerModalProps> = ({
       
       setTxHash(txResult.txHash!);
       setStatus('confirming');
-      debugLog('Transaction sent', { txHash: txResult.txHash });
+      log.debug('Transaction sent', { txHash: txResult.txHash });
       
       // Notify backend through broker actor
       if (brokerRef && txResult.txHash) {
@@ -89,7 +85,7 @@ export const FundBrokerModal: React.FC<FundBrokerModalProps> = ({
           txHash: txResult.txHash
         });
         
-        debugLog('Notified broker actor', { amount, txHash: txResult.txHash });
+        log.debug('Notified broker actor', { amount, txHash: txResult.txHash });
       }
       
       setStatus('success');
@@ -97,7 +93,7 @@ export const FundBrokerModal: React.FC<FundBrokerModalProps> = ({
     } catch (err: any) {
       setError(err.message || 'Failed to send transaction');
       setStatus('error');
-      debugLog('Fund transaction error', err);
+      log.debug('Fund transaction error', err);
     }
   };
   

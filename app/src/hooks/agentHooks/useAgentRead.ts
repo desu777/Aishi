@@ -4,13 +4,10 @@ import { useReadContract } from 'wagmi'
 import { getContractConfig } from './config/contractConfig'
 import { useWallet } from '../useWallet'
 import { Address } from 'viem'
+import { logger } from '@/lib/logger'
 
-// Debug function
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-    console.log(`[useAgentRead] ${message}`, data ? data : '');
-  }
-};
+// Logger instance (module-level for top-level hook)
+const log = logger.child({ component: 'useAgentRead' });
 
 export function useAgentRead(tokenId?: number) {
   const { address } = useWallet()
@@ -30,7 +27,7 @@ export function useAgentRead(tokenId?: number) {
   const effectiveTokenId = tokenId || (userTokenId ? Number(userTokenId) : undefined)
   const shouldLoadData = effectiveTokenId && effectiveTokenId > 0
 
-  debugLog('useAgentRead initialized', {
+  log.debug('useAgentRead initialized', {
     tokenId,
     userTokenId: userTokenId ? Number(userTokenId) : undefined,
     effectiveTokenId,
@@ -72,7 +69,7 @@ export function useAgentRead(tokenId?: number) {
     },
   })
 
-  debugLog('Raw contract data', {
+  log.debug('Raw contract data', {
     agentData: agentData ? 'loaded' : 'null',
     personalityTraits: personalityTraits ? 'loaded' : 'null',
     memoryData: memoryData ? 'loaded' : 'null',
@@ -82,7 +79,7 @@ export function useAgentRead(tokenId?: number) {
 
   // DETAILED PERSONALITY TRAITS LOGGING
   if (personalityTraits) {
-    debugLog('PersonalityTraits RAW data from contract', {
+    log.debug('PersonalityTraits RAW data from contract', {
       rawPersonalityTraits: personalityTraits,
       personalityTraitsType: typeof personalityTraits,
       personalityTraitsConstructor: personalityTraits.constructor.name,
@@ -91,7 +88,7 @@ export function useAgentRead(tokenId?: number) {
     });
 
     // Test wagmi v2 vs array access
-    debugLog('PersonalityTraits Wagmi v2 vs Array parsing', {
+    log.debug('PersonalityTraits Wagmi v2 vs Array parsing', {
       // Array style (old ethers)
       creativityArray: (personalityTraits as any)[0],
       analyticalArray: (personalityTraits as any)[1],
@@ -107,7 +104,7 @@ export function useAgentRead(tokenId?: number) {
   }
 
   if (memoryData) {
-    debugLog('Memory data details', {
+    log.debug('Memory data details', {
       memoryCoreHash: (memoryData as any).memoryCoreHash,
       currentDreamDailyHash: (memoryData as any).currentDreamDailyHash,
       currentConvDailyHash: (memoryData as any).currentConvDailyHash,
@@ -118,7 +115,7 @@ export function useAgentRead(tokenId?: number) {
       currentYear: (memoryData as any).currentYear
     });
   } else {
-    debugLog('Memory data is null/undefined', { memoryData });
+    log.debug('Memory data is null/undefined', { memoryData });
   }
 
   // NOWA FUNKCJA: Sprawdź czy można przetwarzać sen dzisiaj
@@ -145,7 +142,7 @@ export function useAgentRead(tokenId?: number) {
 
   // DETAILED AGENT DATA LOGGING
   if (agentData) {
-    debugLog('AgentData RAW data from contract', {
+    log.debug('AgentData RAW data from contract', {
       rawAgentData: agentData,
       agentDataType: typeof agentData,
       agentDataConstructor: agentData.constructor.name,
@@ -154,7 +151,7 @@ export function useAgentRead(tokenId?: number) {
     });
 
     // Test wagmi v2 vs array access for agent data
-    debugLog('AgentData Wagmi v2 vs Array parsing', {
+    log.debug('AgentData Wagmi v2 vs Array parsing', {
       // Array style (old ethers)
       agentNameArray: (agentData as any)[1],
       intelligenceLevelArray: (agentData as any)[4],
@@ -228,7 +225,7 @@ export function useAgentRead(tokenId?: number) {
     } : undefined
   } : undefined
 
-  debugLog('Combined agent data', {
+  log.debug('Combined agent data', {
     hasAgentData: !!agentData,
     hasPersonalityTraits: !!personalityTraits,
     hasMemoryData: !!memoryData,
@@ -239,7 +236,7 @@ export function useAgentRead(tokenId?: number) {
 
   // DETAILED COMBINED DATA LOGGING
   if (combinedAgentData) {
-    debugLog('Combined AgentData FULL details', {
+    log.debug('Combined AgentData FULL details', {
       agentName: combinedAgentData.agentName,
       intelligenceLevel: combinedAgentData.intelligenceLevel,
       dreamCount: combinedAgentData.dreamCount,

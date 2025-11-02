@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { downloadByRootHashAPI, downloadBlobAsFile } from '../../lib/0g/downloader';
 import { getNetworkConfig, getDefaultNetworkType, NetworkType } from '../../lib/0g/network';
+import { logger } from '@/lib/logger';
 
 interface DownloadResult {
   success: boolean;
@@ -23,12 +24,14 @@ interface UseStorageDownloadReturn {
 }
 
 export function useStorageDownload(): UseStorageDownloadReturn {
+  const log = logger.child({ component: 'useStorageDownload' });
+
   // Download state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [progress, setProgress] = useState(0);
-  
+
   // Network state
   const [networkType] = useState<NetworkType>(getDefaultNetworkType());
 
@@ -53,14 +56,12 @@ export function useStorageDownload(): UseStorageDownloadReturn {
       
       setStatus('Downloading from 0G Storage...');
       setProgress(30);
-      
-      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log('[useStorageDownload] Starting download:', {
-          rootHash,
-          networkType,
-          storageRpc: networkConfig.storageRpc
-        });
-      }
+
+      log.debug('Starting download', {
+        rootHash,
+        networkType,
+        storageRpc: networkConfig.storageRpc
+      });
 
       // Download using lib function
       const [fileData, downloadError] = await downloadByRootHashAPI(
@@ -76,13 +77,11 @@ export function useStorageDownload(): UseStorageDownloadReturn {
       
       setStatus('Download completed successfully!');
       setProgress(100);
-      
-      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log('[useStorageDownload] Download successful:', {
-          rootHash,
-          dataSize: fileData.byteLength
-        });
-      }
+
+      log.debug('Download successful', {
+        rootHash,
+        dataSize: fileData.byteLength
+      });
 
       return {
         success: true,
@@ -94,9 +93,9 @@ export function useStorageDownload(): UseStorageDownloadReturn {
       setError(errorMsg);
       setStatus(`Download failed: ${errorMsg}`);
       setProgress(0);
-      
-      console.error('[useStorageDownload] Download error:', error);
-      
+
+      log.error('Download error', { error });
+
       return { success: false, error: errorMsg };
     } finally {
       setIsLoading(false);
@@ -117,10 +116,8 @@ export function useStorageDownload(): UseStorageDownloadReturn {
       setStatus('Saving file...');
       downloadBlobAsFile(result.data, finalFileName);
       setStatus('File saved successfully!');
-      
-      if (process.env.NEXT_PUBLIC_DREAM_TEST === 'true') {
-        console.log('[useStorageDownload] File saved:', finalFileName);
-      }
+
+      log.debug('File saved', { fileName: finalFileName });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       setError(`Failed to save file: ${errorMsg}`);

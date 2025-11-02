@@ -8,8 +8,10 @@ import type { Live2DModelRef } from '@/components/live2d/utils/live2d-types';
 import { CompanionControlPanel } from '@/components/companion/CompanionControlPanel';
 import { PARAMETER_DEFINITIONS } from '@/components/companion/ParameterDefinitions';
 import { Toaster } from 'react-hot-toast';
+import { logger } from '@/lib/logger';
 
 export default function CompanionPreview() {
+  const log = logger.child({ component: 'CompanionPreview' });
   const router = useRouter();
   const modelRef = useRef<Live2DModelRef>(null);
 
@@ -70,16 +72,16 @@ export default function CompanionPreview() {
       // CRITICAL: Disable auto blinking for manual control
       if (model.internalModel.eyeBlink) {
         model.internalModel.eyeBlink = null;
-        console.log('[Companion] ✓ Auto blinking DISABLED for manual control');
+        log.debug('Auto blinking DISABLED for manual control');
       }
 
       // CRITICAL: Stop idle motion for static testing
       modelRef.current.stopAllMotions();
-      console.log('[Companion] ✓ Idle motion STOPPED for static testing');
+      log.debug('Idle motion STOPPED for static testing');
 
       // Keep auto breathing ENABLED (user preference)
       // ParamBreath will oscillate automatically via physics
-      console.log('[Companion] ✓ Auto breathing ENABLED (physics-driven)');
+      log.debug('Auto breathing ENABLED (physics-driven)');
 
       // Initialize parameter state from model's current values
       const paramMap = new Map<string, number>();
@@ -102,7 +104,7 @@ export default function CompanionPreview() {
       if (autoSaved) {
         try {
           const savedState = JSON.parse(autoSaved);
-          console.log('[Companion] Found auto-saved state, restoring...');
+          log.debug('Found auto-saved state, restoring...');
 
           // Restore parameters
           Object.entries(savedState.parameters || {}).forEach(([paramId, value]) => {
@@ -120,13 +122,13 @@ export default function CompanionPreview() {
           }
 
           setAllParameters(new Map(paramMap));
-          console.log('[Companion] ✓ Auto-saved state restored');
+          log.debug('Auto-saved state restored');
         } catch (error) {
-          console.error('[Companion] Failed to restore auto-saved state:', error);
+          log.error('Failed to restore auto-saved state', { error });
         }
       }
 
-      console.log('[Companion] ✓ Model initialized successfully', {
+      log.debug('Model initialized successfully', {
         totalParams: paramMap.size,
         autoBreathing: true,
         autoBlinking: false,
@@ -134,7 +136,7 @@ export default function CompanionPreview() {
       });
 
     } catch (error) {
-      console.error('[Companion] Error in model initialization:', error);
+      log.error('Error in model initialization', { error });
     }
   }, []);
 
@@ -142,7 +144,7 @@ export default function CompanionPreview() {
   const handleModelError = useCallback((error: string) => {
     setModelError(error);
     setIsLoading(false);
-    console.error('[Companion] Live2D model error:', error);
+    log.error('Live2D model error', { error });
   }, []);
 
   // Parameter change handler (live updates!)
@@ -206,7 +208,7 @@ export default function CompanionPreview() {
     };
 
     localStorage.setItem('companion_autosave', JSON.stringify(state));
-    console.log('[Companion] Auto-saved state');
+    log.debug('Auto-saved state');
   }, [allParameters, activeExpressions]);
 
   // Zoom handlers
