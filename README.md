@@ -227,18 +227,7 @@ const agentAddress = deployments['0g-mainnet'].AishiAgent.address;
 
 ### 2. Backend Setup (`0g-compute/`)
 
-The backend orchestrates AI requests using **0G Network Compute** and optionally **Google Vertex AI (Gemini)** for enhanced features.
-
-#### Prerequisites
-
-**Required:**
-- Node.js 18+ and npm
-- 0G testnet wallet with OG tokens (minimum 2 OG for testing, 5-10 OG recommended for development)
-- Build tools for native modules (WSL: `build-essential`, Windows: Visual Studio Build Tools)
-
-**Optional (for Gemini AI features):**
-- Google Cloud account with Vertex AI API enabled
-- Service account JSON credentials with "Vertex AI User" role
+The backend processes AI requests using 0G Network and optionally Google Gemini.
 
 ```bash
 # 1. Navigate to the backend directory
@@ -248,149 +237,40 @@ cd 0g-compute
 npm install && npm run rebuild
 
 # 3. Create your environment file
-# Copy the template to get started:
 cp .env.example .env
 
-# Then edit .env and configure the required variables:
-#
-# REQUIRED - Master Wallet & 0G Network:
+# Then edit .env and fill in your values:
 # - MASTER_WALLET_KEY: Your wallet's private key (64 hex characters, no 0x prefix)
-# - RPC_URL: 0G Network RPC endpoint (default: https://evmrpc-testnet.0g.ai)
-# - CHAIN_ID: Network chain ID (16602 for Galileo testnet, 16661 for mainnet)
+# - RPC_URL: 0G Network RPC (default: https://evmrpc-testnet.0g.ai)
+# - CHAIN_ID: Network ID (16602 for Galileo testnet, 16661 for mainnet)
 #
-# OPTIONAL - Google Vertex AI (for Gemini features):
-# - GOOGLE_APPLICATION_CREDENTIALS: Path to service account JSON file
+# OPTIONAL (for Gemini AI features):
+# - GOOGLE_APPLICATION_CREDENTIALS: Path to Google Cloud service account JSON
 # - VERTEX_AI_PROJECT: Your Google Cloud Project ID
-# - VERTEX_AI_LOCATION: Google Cloud region (e.g., us-central1, europe-west1)
+# - VERTEX_AI_LOCATION: Region (e.g., us-central1, europe-west1)
 #
-# OPTIONAL - Server Configuration:
-# - PORT: Backend server port (default: 3001)
-# - FRONTEND_URL: CORS allowed origin (default: http://localhost:3003)
-# - AUTO_REFILL_THRESHOLD: Ledger auto-refill trigger in OG (default: 0.5)
-# - AUTO_REFILL_AMOUNT: Ledger deposit amount in OG (default: 1.5)
-#
-# See .env.example for all 20+ configuration options with detailed comments.
+# (See .env.example for all configuration options)
 
-# 4. Fund Master Wallet (REQUIRED)
-#
-# The Master Wallet funds all 0G Network compute queries via a ledger system.
-#
-# Step 1: Get your Master Wallet address
-npm run dev:wsl
+# 4. Fund Master Wallet
+# Start server to get wallet address:
+npm run dev
 # Look for: "Master Wallet Info → address: 0x..."
-# Stop the server with Ctrl+C
-#
-# Step 2: Send OG tokens to that address
-# - Testnet (Galileo): Minimum 2 OG, recommended 5-10 OG
-# - Mainnet: Minimum 5 OG, recommended 15-20 OG
-# Use 0G testnet faucet or transfer from your wallet
-#
-# Step 3: Move balance to ledger (required for 0G SDK)
-npm run fund-ledger:wsl
-#
-# Expected output:
-#   ETH Balance: 5.00000000 OG
-#   Ledger Balance: 0.00000000 OG
-#   Funding ledger with 1.5 OG...
-#   ✓ Ledger funded successfully
-#   New Ledger Balance: 1.50000000 OG
+# Stop with Ctrl+C
+
+# Send OG tokens to that address (min 2 OG for testing, 5-10 OG recommended)
+# Then move balance to ledger:
+npm run fund-ledger
 
 # 5. Run the development server
-#
-# WSL (recommended):
-npm run dev:wsl
-
-# Windows:
-npm run dev:windows
-
-# Auto-detect environment:
 npm run dev
 
-# Expected output:
-#   [MasterWallet] Master Wallet Info: address=0x..., ledgerBalance=1.5 OG
-#   [Server] Backend running on port 3001
-
 # The backend will be running at http://localhost:3001
+
+# MAINNET: Update RPC_URL and CHAIN_ID in .env to mainnet values
+# (See .env.example Section H for mainnet configuration)
+
+# WSL Users: Use `npm run dev:wsl` and `npm run fund-ledger:wsl`
 ```
-
-#### Google Cloud Setup (Optional - for Gemini Features)
-
-If you want to use Gemini AI capabilities, follow these steps:
-
-1. **Create Google Cloud Project** at [console.cloud.google.com](https://console.cloud.google.com/)
-2. **Enable Vertex AI API**: APIs & Services → Library → Search "Vertex AI API" → Enable
-3. **Create Service Account**:
-   - IAM & Admin → Service Accounts → Create Service Account
-   - Grant role: "Vertex AI User"
-4. **Generate JSON Key**:
-   - Click service account → Keys → Add Key → Create New Key → JSON
-   - Save file securely (e.g., `/mnt/c/Users/user/Desktop/env/gemini.json`)
-   - **Never commit to git!**
-5. **Configure .env**:
-   ```env
-   GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-   VERTEX_AI_PROJECT=your-project-id
-   VERTEX_AI_LOCATION=us-central1
-   ```
-
-See [Google Cloud Documentation](https://cloud.google.com/vertex-ai/docs/authentication) for detailed setup instructions.
-
-#### Verification
-
-```bash
-# Health check
-curl http://localhost:3001/api/health
-# Expected: {"status":"healthy","services":{"gemini":"ready","0g-network":"ready"}}
-
-# Check Master Wallet balance
-curl http://localhost:3001/api/master-wallet-address
-# Expected: {"address":"0x...","balance":5.0,"ledgerBalance":1.5}
-
-# Test 0G Network query (using llama model)
-curl -X POST http://localhost:3001/api/0g-compute \
-  -H "Content-Type: application/json" \
-  -d '{"prompt":"Hello","model":"llama"}'
-```
-
-#### Mainnet Configuration
-
-For production deployment on 0G Mainnet (Chain ID: 16661):
-
-1. Update `.env` with mainnet settings:
-   ```env
-   RPC_URL=https://evmrpc.0g.ai
-   CHAIN_ID=16661
-   ```
-2. Fund Master Wallet with **mainnet OG tokens** (min 5-10 OG)
-3. Run `npm run fund-ledger:wsl` to move balance to ledger
-4. Update `NODE_ENV=production` and `LOG_LEVEL=warn` for production logging
-
-⚠️ **Important**: Mainnet uses REAL tokens. Test thoroughly on Galileo testnet first.
-
-#### Troubleshooting
-
-**"LEDGER BALANCE TOO LOW FOR 0G PROVIDERS"**
-- Run `npm run fund-ledger:wsl` to deposit ETH balance → Ledger balance
-- Minimum: 1.5 OG for testing (1 provider)
-- Recommended: 5-10 OG for development (multiple providers)
-
-**"Port 3001 already in use"**
-- Change `PORT=3002` in `.env` file
-- Or stop the process using port 3001
-
-**"better-sqlite3 compilation errors"**
-- Run `npm run rebuild` to recompile for your platform
-- WSL: Install build tools (`sudo apt install build-essential`)
-- Windows: Install Visual Studio Build Tools
-
-**"Authentication failed" (Gemini/Vertex AI)**
-- Verify service account has "Vertex AI User" role in Google Cloud
-- Check Project ID and Location match your Google Cloud project
-- Ensure JSON credentials file path is correct and accessible
-
-**"Cannot find Master Wallet private key"**
-- Verify `MASTER_WALLET_KEY` is set in `.env` (64 hex characters, no 0x prefix)
-- Use MetaMask export or Hardhat test accounts to generate key
 
 ### 3. Frontend Setup (`app/`)
 
