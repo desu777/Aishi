@@ -2,14 +2,6 @@
 
 pragma solidity ^0.8.20;
 
-/*
- * ────────────────────────────────────────────────────────────────────────────────
- *  IMPORTS
- * ────────────────────────────────────────────────────────────────────────────────
- *  Interfaces                                                  OpenZeppelin utils
- * ──────────────────────────────────────────────────────────── ──────────────────
- */
-
 import "./interfaces/IERC7857.sol";               // ERC‑7857 base interface (iNFT standard)
 import "./interfaces/IERC7857DataVerifier.sol";    // Optional: ZK‑proof verifier used at mint
 import "./interfaces/IPersonalityEvolution.sol";   // Trait & evolution data‑model
@@ -18,27 +10,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";  // protects against
 import "@openzeppelin/contracts/access/AccessControl.sol";   // role‑based admin system
 import "@openzeppelin/contracts/utils/Pausable.sol";         // emergency stop
 
-import "@quant-finance/solidity-datetime/contracts/DateTime.sol"; // Gas-efficient DateTime library
+import "@quant-finance/solidity-datetime/contracts/DateTime.sol";
 
-/**
- * @title  AishiAgent – iNFT with Hierarchical Memory & Personality Evolution
- * @notice Single‑per‑wallet autonomous agent that stores memories in a three‑layer
- *         hierarchy (daily → monthly → yearly) and evolves its personality from
- *         analysed dreams & conversations.
- *
- *         This contract is a *lean* revision: we removed unbounded on‑chain arrays
- *         of raw hashes to save gas and instead rely on off‑chain storage + a
- *         rotating «current» hash per period.  All public getters needed by dApp
- *         remain, but they now return an empty array and are marked *deprecated*.
- *
- *         The contract **still** complies with ERC‑7857 by preserving the original
- *         ABI of `mintAgent(...)`; callers MAY pass empty arrays when proofs are
- *         not needed.  Optional ZKP verification can be disabled by setting the
- *         `verifier` address to zero at deployment.
- *
- * @dev    Designed for direct deployment – no upgrade proxy included.  For
- *         upgradability, wrap this logic in a UUPS/Beacon proxy.
- */
 contract AishiAgent is
     IERC7857,
     IPersonalityEvolution,
@@ -279,14 +252,7 @@ contract AishiAgent is
         emit FeePaid(tokenId, msg.sender, price);
     }
 
-    /* ───────────────────────────────────────────────── PERSONALITY LOGIC ─── */
-
-    /**
-     * @notice Called once per «dream»; every 5th dream triggers evolution.
-     *         Also updates hierarchical memory with dream hash.
-     * @dev    ZK‑verified dream *content* lives off‑chain; contract stores only
-     *         hash + counters to keep gas low.
-     */
+    
     function processDailyDream(
         uint256            tokenId,
         bytes32            dreamHash,
@@ -297,14 +263,6 @@ contract AishiAgent is
         Aishi storage agent = agents[tokenId];
         PersonalityTraits storage traits = agentPersonalities[tokenId];
 
-        // cooldown – first dream is allowed instantly; afterwards 24h gap
-        // COMMENTED FOR TESTING - REMOVE COOLDOWN
-        /*
-        require(
-            traits.lastDreamDate == 0 || block.timestamp >= traits.lastDreamDate + 24 hours,
-            "cooldown <24h"
-        );
-        */
 
         // update counters (unchecked for gas optimization)
         unchecked {
@@ -411,10 +369,7 @@ contract AishiAgent is
 
 
 
-    /**
-     * @notice User‑driven monthly consolidation.  Merges daily files off‑chain and
-     *         stores the finalised month hash on‑chain, rewarding the agent.
-     */
+    
     function consolidateMonth(
         uint256 tokenId,
         bytes32 dreamMonthlyHash,
@@ -428,14 +383,6 @@ contract AishiAgent is
         AgentMemory storage mem = agentMemories[tokenId];
         require(mem.currentMonth != month || mem.currentYear != year, "still current month");
 
-        /*
-         * COOLDOWN FOR TESTING: Enforce a 25-day gap between consolidations
-         * Note: Disabled for test convenience. Enable for stricter testing.
-         * require(
-         *     block.timestamp >= mem.lastConsolidation + 25 days,
-         *     "cooldown <25d"
-         * );
-         */
 
         mem.lastDreamMonthlyHash = dreamMonthlyHash;
         mem.lastConvMonthlyHash  = convMonthlyHash;
@@ -469,22 +416,12 @@ contract AishiAgent is
         mem.currentConvDailyHash  = bytes32(0);
     }
 
-    /**
-     * @notice Stores the yearly «memory core» hash and grants bonus INT.
-     */
+    
     function updateMemoryCore(uint256 tokenId, bytes32 newHash)
         external whenNotPaused onlyOwnerOrAuthorized(tokenId)
     {
         AgentMemory storage mem = agentMemories[tokenId];
 
-        /*
-         * COOLDOWN FOR TESTING: Enforce a 180-day (~6 months) gap for memory core updates
-         * Note: For production, validate against calendar-year boundaries instead.
-         * require(
-         *     block.timestamp >= mem.lastConsolidation + 180 days,
-         *     "cooldown <180d"
-         * );
-         */
         bytes32 old = mem.memoryCoreHash;
         mem.memoryCoreHash = newHash;
         emit MemoryUpdated(tokenId, "memory_core", newHash, old);
@@ -511,12 +448,7 @@ contract AishiAgent is
         return agentPersonalities[tokenId];
     }
 
-    /**
-     * @notice Get memory access level based on intelligence
-     * @param tokenId Agent to check
-     * @return monthsAccessible Number of months accessible 
-     * @return memoryDepth Human-readable description
-     */
+    
     function getMemoryAccess(uint256 tokenId) external view returns (
         uint256 monthsAccessible,
         string memory memoryDepth
@@ -551,32 +483,19 @@ contract AishiAgent is
         }
     }
 
-    /**
-     * @notice Get agent's hierarchical memory structure
-     * @param tokenId Agent to query
-     * @return memory Current memory structure
-     */
+    
     function getAgentMemory(uint256 tokenId) external view returns (AgentMemory memory) {
         require(agents[tokenId].owner != address(0), "agent !exist");
         return agentMemories[tokenId];
     }
 
-    /**
-     * @notice Current mint price based on totalAgents already minted
-     *         Example: 0–9 → 0.1; 10–19 → 0.11; 20–29 → 0.12; etc.
-     */
+    
     function currentMintPrice() public view returns (uint256) {
         uint256 tier = totalAgents / PRICE_STEP_INTERVAL;
         return MINTING_FEE + (tier * PRICE_STEP);
     }
 
-    /**
-     * @notice Pricing parameters and current tier (for UI)
-     * @return base Base price
-     * @return step Price increment per tier
-     * @return interval Number of mints per tier
-     * @return currentTier Current pricing tier index
-     */
+    
     function pricingInfo() external view returns (
         uint256 base,
         uint256 step,
@@ -590,14 +509,7 @@ contract AishiAgent is
     }
 
 
-    /**
-     * @notice Get consolidation reward preview
-     * @param tokenId Agent to check
-     * @return baseReward Base intelligence reward
-     * @return streakBonus Bonus from consolidation streak
-     * @return earlyBirdBonus Bonus for early consolidation
-     * @return totalReward Total intelligence reward
-     */
+    
     function getConsolidationReward(uint256 tokenId) external view returns (
         uint256 baseReward,
         uint256 streakBonus,
@@ -623,17 +535,10 @@ contract AishiAgent is
         totalReward = baseReward + streakBonus + earlyBirdBonus;
     }
 
-    /**
-     * @notice Check if agent can process dream today (24h cooldown)
-     * @param tokenId Agent to check
-     * @return canProcess True if agent can process a dream today
-     */
+    
     function canProcessDreamToday(uint256 tokenId) external view returns (bool canProcess) {
         require(agents[tokenId].owner != address(0), "agent !exist");
-        // COMMENTED FOR TESTING - ALWAYS RETURN TRUE
-        // PersonalityTraits memory t = agentPersonalities[tokenId];
-        // return t.lastDreamDate == 0 || block.timestamp >= t.lastDreamDate + 24 hours;
-        return true; // TESTING: No cooldown
+        return true;
     }
 
 
