@@ -4,7 +4,7 @@
  * with ethers compatibility through viemAdapter
  */
 
-import { Indexer, Blob, ZgFile } from '@0glabs/0g-ts-sdk';
+import { Indexer, Blob, ZgFile, StorageNode, Uploader, selectNodes, getFlowContract } from '@0glabs/0g-ts-sdk';
 import { Contract } from 'ethers';
 import { getEthersSignerForZeroG } from './adapter/viemAdapter';
 import { logger } from '@/lib/logger';
@@ -54,18 +54,56 @@ export async function uploadToStorage(
 
     const indexer = new Indexer(storageRpc);
 
+    // Prefer full transaction path (no skipTx) to align with SDK's Uploader
     const uploadOptions = {
       taskSize: 10,
       expectedReplica: 1,
       finalityRequired: true,
       tags: uniqueTag || '0x',
-      skipTx: true, // Skip transaction like 0gdrive-main
-      fee: BigInt(0)
+      // fee: BigInt(0) // let SDK calculate price if omitted
     };
 
     log.debug('Upload options configured', uploadOptions);
 
-    const uploadResult = await indexer.upload(blob, l1Rpc, signer, uploadOptions);
+    // If running over HTTPS and storage nodes are HTTP, use HTTPS proxy route
+    const useProxy = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    let uploadResult: any;
+
+    if (useProxy) {
+      try {
+        // Discover nodes and build proxied clients
+        const nodes = await indexer.getShardedNodes();
+        const trusted = nodes?.trusted || [];
+        if (!trusted.length) {
+          throw new Error('No storage nodes returned by indexer');
+        }
+        const [selected] = selectNodes(trusted as any, uploadOptions.expectedReplica || 1);
+        const clients = selected.map((n: any) => {
+          const target = n.url as string;
+          const proxyUrl = `${window.location.origin}/api/storage-proxy?target=${encodeURIComponent(target)}`;
+          return new StorageNode(proxyUrl);
+        });
+
+        // Get network identity via proxy
+        const status = await clients[0].getStatus();
+        if (!status?.networkIdentity?.flowAddress) {
+          throw new Error('Failed to query storage node status via proxy');
+        }
+
+        // Create flow contract bound to signer
+        const flow = getFlowContract(status.networkIdentity.flowAddress, signer);
+
+        // Create uploader manually with proxied clients
+        const uploader = new Uploader(clients as any, l1Rpc, flow);
+        uploadResult = await uploader.uploadFile(blob as any, uploadOptions as any);
+      } catch (proxyErr) {
+        log.warn('Proxy upload path failed, falling back to direct indexer.upload', { error: String(proxyErr).slice(0, 200) });
+        uploadResult = await indexer.upload(blob, l1Rpc, signer, uploadOptions);
+      }
+    } else {
+      // Non-HTTPS context can use direct upload
+      uploadResult = await indexer.upload(blob, l1Rpc, signer, uploadOptions);
+    }
     log.debug('Upload result received', uploadResult);
     
     // Handle different result formats (like 0gdrive-main)
@@ -95,11 +133,18 @@ export async function uploadToStorage(
     }
 
     // Default success case
-    return [{
-      success: true,
-      alreadyExists: false,
-      message: 'File uploaded successfully'
-    }, null];
+    // If SDK returned a plain txHash string on success (Uploader.uploadFile)
+    if (typeof uploadResult === 'string' && uploadResult.startsWith('0x')) {
+      return [{
+        success: true,
+        txHash: uploadResult,
+        alreadyExists: false,
+        message: 'File uploaded successfully'
+      }, null];
+    }
+
+    // Default success case when no explicit error returned
+    return [{ success: true, alreadyExists: false, message: 'File uploaded successfully' }, null];
   } catch (error) {
     log.error('Upload error', { error });
     return [null, error instanceof Error ? error : new Error(String(error))];
