@@ -4,7 +4,7 @@
  * with ethers compatibility through viemAdapter
  */
 
-import { Indexer, Blob, ZgFile, StorageNode, Uploader, selectNodes, getFlowContract } from '@0glabs/0g-ts-sdk';
+import { Indexer, Blob, ZgFile, StorageNode, Uploader, getFlowContract } from '@0glabs/0g-ts-sdk';
 import { Contract } from 'ethers';
 import { getEthersSignerForZeroG } from './adapter/viemAdapter';
 import { logger } from '@/lib/logger';
@@ -77,7 +77,9 @@ export async function uploadToStorage(
         if (!trusted.length) {
           throw new Error('No storage nodes returned by indexer');
         }
-        const [selected] = selectNodes(trusted as any, uploadOptions.expectedReplica || 1);
+        // Simple selection: take first N trusted nodes
+        const replica = Math.max(1, uploadOptions.expectedReplica || 1);
+        const selected = trusted.slice(0, replica);
         const clients = selected.map((n: any) => {
           const target = n.url as string;
           const proxyUrl = `${window.location.origin}/api/storage-proxy?target=${encodeURIComponent(target)}`;
