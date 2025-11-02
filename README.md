@@ -266,6 +266,26 @@ npm run dev
 
 # The backend will be running at http://localhost:3001
 
+# Test server is working:
+curl http://localhost:3001/api/health
+curl http://localhost:3001/api/master-wallet-address
+
+# Create broker account (replace 0xYourAddress with your wallet):
+curl -X POST http://localhost:3001/api/create-broker \
+  -H "Content-Type: application/json" \
+  -d '{"walletAddress":"0xYourWalletAddress"}'
+
+# Check balance:
+curl http://localhost:3001/api/balance/0xYourWalletAddress
+
+# Test AI query (requires funded broker):
+curl -X POST http://localhost:3001/api/0g-compute \
+  -H "Content-Type: application/json" \
+  -d '{"walletAddress":"0xYourWalletAddress","query":"Hello, test query"}'
+
+# Check system status:
+curl http://localhost:3001/api/status
+
 # MAINNET: Update RPC_URL and CHAIN_ID in .env to mainnet values
 # (See .env.example Section H for mainnet configuration)
 
