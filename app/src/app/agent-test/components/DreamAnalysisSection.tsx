@@ -5,6 +5,7 @@ import { AlertCircle } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useAgentDream, useAgentPrompt, useAgentAI, useAgentRead } from '../../../hooks/agentHooks';
 import { useStorageDownload } from '../../../hooks/storage/useStorageDownload';
+import { logger } from '@/lib/logger';
 
 // Import all the extracted components
 import MemoryFileManager from './MemoryFileManager';
@@ -66,9 +67,6 @@ export default function DreamAnalysisSection({
   const [builtPrompt, setBuiltPrompt] = useState<string | null>(null);
   const [promptFormat, setPromptFormat] = useState<any>(null);
   
-  // Debug logs function
-  import { logger } from '@/lib/logger';
-
 const log = logger.child({ component: 'DreamAnalysis' });
 
 const debugLog = (message: string, data?: any) => {

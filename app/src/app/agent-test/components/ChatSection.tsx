@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useAgentChat } from '../../../hooks/agentHooks/useAgentChat';
 import { useAgentRead } from '../../../hooks/agentHooks/useAgentRead';
+import { logger } from '@/lib/logger';
 import { MessageCircle, Send, Loader2, AlertCircle, Database, Users, Sparkles, Bot, User, Save } from 'lucide-react';
 import { ChatMessage } from '../../../hooks/agentHooks/services/conversationContextBuilder';
 
@@ -46,9 +47,6 @@ export default function ChatSection({
     clearError,
     lastPrompt
   } = useAgentChat(effectiveTokenId);
-
-  // Debug logs dla development
-  import { logger } from '@/lib/logger';
 
 const log = logger.child({ component: 'ChatSection' });
 

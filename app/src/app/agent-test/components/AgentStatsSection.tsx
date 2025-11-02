@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useAgentStats } from '../../../hooks/agentHooks/useAgentStats';
+import { logger } from '@/lib/logger';
 import { 
   TrendingUp, 
   Zap, 
@@ -47,9 +48,6 @@ export default function AgentStatsSection({ tokenId }: AgentStatsSectionProps) {
     error,
     clearError
   } = useAgentStats(tokenId);
-
-  // Debug logging
-  import { logger } from '@/lib/logger';
 
 const log = logger.child({ component: 'AgentStatsSection' });
 
