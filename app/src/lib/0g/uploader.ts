@@ -118,7 +118,8 @@ export async function uploadToStorage(
 
         // Create uploader manually with proxied clients
         const uploader = new Uploader(clients as any, l1Rpc, flow);
-        uploadResult = await uploader.uploadFile(blob as any, uploadOptions as any);
+        const retryOpts = { Retries: 10, Interval: 3, MaxGasPrice: 0, TooManyDataRetries: 3 } as any;
+        uploadResult = await uploader.uploadFile(blob as any, uploadOptions as any, retryOpts);
       } catch (proxyErr) {
         log.warn('Proxy upload path failed, falling back to direct indexer.upload', { error: String(proxyErr).slice(0, 200) });
         uploadResult = await indexer.upload(blob, l1Rpc, signer, uploadOptions);
@@ -131,7 +132,7 @@ export async function uploadToStorage(
     
     // Handle different result formats (like 0gdrive-main)
     if (Array.isArray(uploadResult) && uploadResult.length === 2) {
-      const [result, error] = uploadResult;
+      const [result, error] = uploadResult as [{ txHash?: string; rootHash?: string } | string, any];
       
       if (error) {
         // Check if it's "Data already exists" error
@@ -146,12 +147,11 @@ export async function uploadToStorage(
           return [null, error];
         }
       } else if (result) {
-        return [{
-          success: true,
-          txHash: result,
-          alreadyExists: false,
-          message: 'File uploaded successfully'
-        }, null];
+        // Support both legacy string txHash and new object { txHash, rootHash }
+        if (typeof result === 'string') {
+          return [{ success: true, txHash: result, alreadyExists: false, message: 'File uploaded successfully' }, null];
+        }
+        return [{ success: true, txHash: result.txHash, alreadyExists: false, message: 'File uploaded successfully' }, null];
       }
     }
 
