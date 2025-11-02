@@ -77,14 +77,35 @@ export async function uploadToStorage(
         if (!trusted.length) {
           throw new Error('No storage nodes returned by indexer');
         }
-        // Simple selection: take first N trusted nodes
-        const replica = Math.max(1, uploadOptions.expectedReplica || 1);
-        const selected = trusted.slice(0, replica);
-        const clients = selected.map((n: any) => {
-          const target = n.url as string;
-          const proxyUrl = `${window.location.origin}/api/storage-proxy?target=${encodeURIComponent(target)}`;
-          return new StorageNode(proxyUrl);
-        });
+        // Prefer indexer's selection logic for proper shard/replica coverage
+        let clients: StorageNode[] = [] as any;
+        try {
+          const expected = Math.max(1, uploadOptions.expectedReplica || 1);
+          const [selected, selErr] = await (indexer as any).selectNodes(expected);
+          if (selErr || !selected || !selected.length) {
+            throw selErr || new Error('Indexer.selectNodes returned no nodes');
+          }
+          const toClientUrl = (raw: string) => {
+            try {
+              const u = new URL(raw);
+              if (u.protocol === 'https:') return raw;
+            } catch {}
+            return `${window.location.origin}/api/storage-proxy?target=${encodeURIComponent(raw)}`;
+          };
+          clients = selected.map((c: any) => new StorageNode(toClientUrl(String(c.url || ''))));
+        } catch (selError) {
+          // Fallback: use all trusted + discovered nodes (proxied)
+          const toClientUrl = (raw: string) => {
+            try {
+              const u = new URL(raw);
+              if (u.protocol === 'https:') return raw;
+            } catch {}
+            return `${window.location.origin}/api/storage-proxy?target=${encodeURIComponent(raw)}`;
+          };
+          const discovered = Array.isArray((nodes as any)?.discovered) ? (nodes as any).discovered : [];
+          const all = [...trusted, ...discovered];
+          clients = all.map((n: any) => new StorageNode(toClientUrl(String(n.url || ''))));
+        }
 
         // Get network identity via proxy
         const status = await clients[0].getStatus();
